@@ -155,7 +155,7 @@
       "id": "asserter",
       "type": "backend",
       "label": "Asserter",
-      "sublabel": "Playwright check → statement to Jev",
+      "sublabel": "Playwright check → Jev visual → Jev DOM text",
       "pos": [
         680,
         840
@@ -382,7 +382,7 @@
       "id": "driver-asserter",
       "from": "driver",
       "to": "asserter",
-      "label": "page state · shot",
+      "label": "page state · shot · DOM",
       "fromSide": "top",
       "toSide": "bottom"
     },

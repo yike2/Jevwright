@@ -6,11 +6,11 @@
   "status": "skipped",
   "visualReview": "not-requested",
   "provenance": "current",
-  "deliveryReceiptId": "d3d3afe7-e2a4-4f1c-b7c1-cca1cbaede11",
+  "deliveryReceiptId": "345f0a49-a437-4fa4-87a5-59d2d7b5a7be",
   "artifact": {
     "path": "/home/dev/workspace/6983/Jevwright/.archify/jevwright-sequence/index.html",
-    "sha256": "64cbe7fd90c952dcaea2ff390a93f0f2b45d98772b62b96d196b06748edaeeef",
-    "bytes": 870312
+    "sha256": "3b393e0b2ddb87d33b963c22c9522cad24cda436c6c61e7fbe95dbc3b911977b",
+    "bytes": 873251
   },
   "state": {
     "detail": "read",

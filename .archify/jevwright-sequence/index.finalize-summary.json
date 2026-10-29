@@ -7,13 +7,13 @@
   "quality": "showcase",
   "specification": {
     "path": "/home/dev/workspace/6983/Jevwright/.archify/jevwright-sequence/candidate.json",
-    "sha256": "6a522848257d5953d1c09b9ca19aff65c0f1b55209f5f7ec7993b44659b4fc21",
-    "bytes": 10868
+    "sha256": "b5ac99a0eb0c16a96163667c58acc0171e3cac3bb11f203c5fbf2222a87705eb",
+    "bytes": 11544
   },
   "artifact": {
     "path": "/home/dev/workspace/6983/Jevwright/.archify/jevwright-sequence/index.html",
-    "sha256": "64cbe7fd90c952dcaea2ff390a93f0f2b45d98772b62b96d196b06748edaeeef",
-    "bytes": 870312
+    "sha256": "3b393e0b2ddb87d33b963c22c9522cad24cda436c6c61e7fbe95dbc3b911977b",
+    "bytes": 873251
   },
   "gates": {
     "validate": "pass",
@@ -59,7 +59,7 @@
     "noticeText": null
   },
   "visualReview": "not-requested",
-  "durationMs": 1409,
+  "durationMs": 1281,
   "browserCheck": {
     "requested": true,
     "ran": false

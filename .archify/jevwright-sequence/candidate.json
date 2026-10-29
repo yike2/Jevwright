@@ -92,18 +92,18 @@
     },
     {
       "from": 1792,
-      "label": "Step 2: assert (Playwright fails, Jev passes)",
-      "to": 2246
+      "label": "Step 2: assert (Playwright fails, visual unsure, DOM text passes)",
+      "to": 2422
     },
     {
-      "from": 2250,
-      "label": "Alt — Jev judges false",
-      "to": 2444
+      "from": 2426,
+      "label": "Alt — Jev judges false on both",
+      "to": 2620
     },
     {
-      "from": 2448,
+      "from": 2624,
       "label": "Finish (always)",
-      "to": 2774
+      "to": 2950
     }
   ],
   "messages": [
@@ -392,88 +392,120 @@
       "from": "harness",
       "to": "asserter",
       "y": 2132,
-      "label": "true · confidence",
+      "label": "unsure / low confidence",
       "variant": "return"
     },
     {
       "id": "m36",
       "from": "asserter",
-      "to": "executor",
+      "to": "driver",
       "y": 2176,
-      "label": "passed (fallback)",
-      "variant": "return",
-      "note": "Marked as a fallback pass in the report"
+      "label": "extractDOM()",
+      "variant": "default"
     },
     {
       "id": "m37",
-      "from": "harness",
+      "from": "driver",
       "to": "asserter",
-      "y": 2286,
-      "label": "false · confidence",
+      "y": 2220,
+      "label": "DOM list (text)",
       "variant": "return"
     },
     {
       "id": "m38",
       "from": "asserter",
+      "to": "harness",
+      "y": 2264,
+      "label": "judge(DOM list, statement)",
+      "variant": "default"
+    },
+    {
+      "id": "m39",
+      "from": "harness",
+      "to": "asserter",
+      "y": 2308,
+      "label": "true · confidence",
+      "variant": "return"
+    },
+    {
+      "id": "m40",
+      "from": "asserter",
       "to": "executor",
-      "y": 2330,
+      "y": 2352,
+      "label": "passed (fallback)",
+      "variant": "return",
+      "note": "Marked as a fallback pass in the report"
+    },
+    {
+      "id": "m41",
+      "from": "harness",
+      "to": "asserter",
+      "y": 2462,
+      "label": "false · confidence",
+      "variant": "return"
+    },
+    {
+      "id": "m42",
+      "from": "asserter",
+      "to": "executor",
+      "y": 2506,
       "label": "failed + reason",
       "variant": "return"
     },
     {
-      "id": "m39",
+      "id": "m43",
       "from": "executor",
       "to": "pipeline",
-      "y": 2374,
+      "y": 2550,
       "label": "onEvent(step2 failed)",
       "variant": "dashed",
       "note": "Remaining steps are skipped; go to Finish"
     },
     {
-      "id": "m40",
+      "id": "m44",
       "from": "executor",
       "to": "driver",
-      "y": 2484,
+      "y": 2660,
       "label": "close()",
       "variant": "default"
     },
     {
-      "id": "m41",
+      "id": "m45",
       "from": "driver",
       "to": "executor",
-      "y": 2528,
+      "y": 2704,
       "label": "trace.zip",
       "variant": "return"
     },
     {
-      "id": "m42",
+      "id": "m46",
       "from": "executor",
       "to": "pipeline",
-      "y": 2572,
+      "y": 2748,
       "label": "StepResult[] · trace",
       "variant": "return"
     },
     {
-      "id": "m43",
+      "id": "m47",
       "from": "pipeline",
       "to": "report",
-      "y": 2616,
+      "y": 2792,
       "label": "build(results, trace)",
       "variant": "default"
     },
     {
-      "id": "m44",
+      "id": "m48",
       "from": "report",
       "to": "pipeline",
-      "y": 2660,
+      "y": 2836,
       "label": "Report .json (passed / failed)",
       "variant": "return"
     },
     {
-      "id": "m45",
+      "id": "m49",
       "from": "pipeline",
       "to": "api",
-      "y": 2704,
+      "y": 2880,
       "label": "Report",
       "variant": "return",
       "note": "Worker stores it and pushes Run passed / failed"
@@ -483,13 +515,13 @@
     {
       "participant": "api",
       "from": 181,
-      "to": 2710,
+      "to": 2886,
       "type": "backend"
     },
     {
       "participant": "pipeline",
       "from": 181,
-      "to": 2710,
+      "to": 2886,
       "type": "backend"
     },
     {
@@ -501,7 +533,7 @@
     {
       "participant": "executor",
       "from": 559,
-      "to": 2578,
+      "to": 2754,
       "type": "backend"
     },
     {
@@ -513,25 +545,25 @@
     {
       "participant": "asserter",
       "from": 1823,
-      "to": 2336,
+      "to": 2512,
       "type": "backend"
     },
     {
       "participant": "driver",
       "from": 603,
-      "to": 2534,
+      "to": 2710,
       "type": "cloud"
     },
     {
       "participant": "harness",
       "from": 951,
-      "to": 2292,
+      "to": 2468,
       "type": "external"
     },
     {
       "participant": "report",
-      "from": 2611,
-      "to": 2666,
+      "from": 2787,
+      "to": 2842,
       "type": "backend"
     }
   ]

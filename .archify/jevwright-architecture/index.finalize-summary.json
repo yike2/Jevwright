@@ -7,13 +7,13 @@
   "quality": "showcase",
   "specification": {
     "path": "/home/dev/workspace/6983/Jevwright/.archify/jevwright-architecture/candidate.json",
-    "sha256": "1877efef49f5c2c2af2bf5e2b0a4c4df0a2db88d545604e16ba185c093a1d753",
-    "bytes": 7821
+    "sha256": "14d143977b92856f77f3790feb003317e97448ac626ee2965abaf72b2b4187e5",
+    "bytes": 7839
   },
   "artifact": {
     "path": "/home/dev/workspace/6983/Jevwright/.archify/jevwright-architecture/index.html",
-    "sha256": "3125971659c56dbb22cdf75e8740b41cb18577df4f0390a1fa21f4fe1e6fc3c7",
-    "bytes": 864425
+    "sha256": "29c2d4969e387f5f562ca61d65faeb382bbb68da2137a84333a09addb7b781e1",
+    "bytes": 864506
   },
   "gates": {
     "validate": "pass",
@@ -59,7 +59,7 @@
     "noticeText": null
   },
   "visualReview": "not-requested",
-  "durationMs": 1776,
+  "durationMs": 1236,
   "browserCheck": {
     "requested": true,
     "ran": false
