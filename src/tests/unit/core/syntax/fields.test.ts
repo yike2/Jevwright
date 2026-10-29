@@ -45,6 +45,20 @@ describe("FieldReader", () => {
       expect(reader.string("value", true)).toBeUndefined();
       expect(positions(diagnostics)).toEqual([{ code: "E007", line: 2 }]);
     });
+
+    it("reports E007 at the value for an empty string", () => {
+      const { reader, diagnostics } = readerFor('click:\n  selector: ""\n');
+
+      expect(reader.string("selector")).toBeUndefined();
+      expect(positions(diagnostics)).toEqual([{ code: "E007", line: 2 }]);
+    });
+
+    it("reads an empty string when allowEmpty is set", () => {
+      const { reader, diagnostics } = readerFor('input:\n  value: ""\n');
+
+      expect(reader.string("value", true, true)).toBe("");
+      expect(diagnostics).toEqual([]);
+    });
   });
 
   describe("positiveInt", () => {

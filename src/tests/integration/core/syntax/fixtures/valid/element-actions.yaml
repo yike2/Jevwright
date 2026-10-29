@@ -12,3 +12,6 @@ steps:
       selector: "#email"
       target: "Email input in the login form"
       value: "student@example.com"
+  - input:
+      selector: "#search"
+      value: ""

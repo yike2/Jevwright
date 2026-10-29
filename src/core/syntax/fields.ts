@@ -24,8 +24,9 @@ export class FieldReader {
     return this.map.has(key);
   }
 
-  string(key: string, required = false): string | undefined {
-    return this.value(key, required, (v) => typeof v === "string", "a string");
+  string(key: string, required = false, allowEmpty = false): string | undefined {
+    const isString = (v: unknown) => typeof v === "string" && (allowEmpty || v !== "");
+    return this.value(key, required, isString, allowEmpty ? "a string" : "a non-empty string");
   }
 
   positiveInt(key: string, required = false): number | undefined {

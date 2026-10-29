@@ -6,6 +6,7 @@
     { "line": 5, "action": "doubleClick", "target": "First row of the results table" },
     { "line": 7, "action": "rightClick", "selector": "//li[1]" },
     { "line": 9, "action": "hover", "target": "Account menu in the top-right corner" },
-    { "line": 11, "action": "input", "selector": "#email", "target": "Email input in the login form", "value": "student@example.com" }
+    { "line": 11, "action": "input", "selector": "#email", "target": "Email input in the login form", "value": "student@example.com" },
+    { "line": 15, "action": "input", "selector": "#search", "value": "" }
   ]
 }

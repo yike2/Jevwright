@@ -1,0 +1,4 @@
+name: "Empty selector"
+steps:
+  - click:
+      selector: ""

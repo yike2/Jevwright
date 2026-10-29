@@ -20,14 +20,14 @@ export function analyze(source: string): AnalyzeResult {
 
   const root = doc.contents;
   if (!isMap(root)) {
-    return { diagnostics: [{ code: "E002", message: "The root must be an object", line: 1 }] };
+    const line = root ? lineOf(lineCounter, root) : 1;
+    return { diagnostics: [{ code: "E002", message: "The root must be an object", line }] };
   }
 
   const diagnostics: Diagnostic[] = [];
   const fields = new FieldReader(root, root, lineCounter, diagnostics);
 
   const name = fields.string("name", true);
-  if (name === "") fields.report("E007", '"name" must not be empty', root.get("name", true) as Node);
   const description = fields.string("description");
   const baseUrl = fields.string("baseUrl");
   const timeoutMs = fields.positiveInt("timeoutMs") ?? DEFAULT_TIMEOUT_MS;

@@ -25,7 +25,7 @@ const parsers: Record<string, Parse> = {
   doubleClick: locate,
   rightClick: locate,
   hover: locate,
-  input: (f) => ({ value: f.string("value", true), ...locate(f) }),
+  input: (f) => ({ value: f.string("value", true, true), ...locate(f) }),
   waitFor: (f) => {
     if (["condition", "selector", "url"].filter((key) => f.has(key)).length !== 1) {
       f.report("E008", 'Needs exactly one of "condition", "selector" and "url"');
@@ -35,8 +35,12 @@ const parsers: Record<string, Parse> = {
   assert: (f) => {
     const selector = f.has("selector");
     const url = f.has("url");
-    if ((selector && url) || (f.has("text") && !selector) || (!selector && !url && !f.has("statement"))) {
-      f.report("E008", 'Needs "statement" and/or one check: "selector" (optionally with "text") or "url"');
+    if (selector && url) {
+      f.report("E008", 'Use either "selector" or "url" as the check, not both');
+    } else if (f.has("text") && !selector) {
+      f.report("E008", '"text" needs "selector"');
+    } else if (!selector && !url && !f.has("statement")) {
+      f.report("E008", 'Needs "statement" or a check: "selector" (optionally with "text") or "url"');
     }
     return {
       statement: f.string("statement"),
