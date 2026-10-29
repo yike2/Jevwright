@@ -1,0 +1,15 @@
+{
+  "name": "User Login",
+  "description": "A valid user can sign in and reach the dashboard",
+  "baseUrl": "https://demo.example.com",
+  "timeoutMs": 15000,
+  "steps": [
+    { "line": 5, "action": "open", "url": "/login" },
+    { "line": 7, "action": "input", "selector": "#email", "value": "{{TEST_EMAIL}}" },
+    { "line": 10, "action": "input", "target": "Password input field", "value": "{{TEST_PASSWORD}}" },
+    { "line": 13, "action": "click", "selector": "button[type=submit]", "target": "Sign in button" },
+    { "line": 16, "action": "waitFor", "url": "/dashboard" },
+    { "line": 18, "action": "assert", "selector": "h1", "text": "Welcome" },
+    { "line": 21, "action": "assert", "statement": "The navigation bar shows the logged-in account" }
+  ]
+}

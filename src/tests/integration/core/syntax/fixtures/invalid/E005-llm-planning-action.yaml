@@ -1,0 +1,4 @@
+name: "LLM planning"
+steps:
+  - aiAct:
+      prompt: "Log in as the test user"

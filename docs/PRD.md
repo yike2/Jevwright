@@ -18,7 +18,8 @@ This document describes what the product must do and how users interact with it.
 | 0.2     | 2026-10-27 | Zhimin Gan, Yike Li | Added MoSCoW Prioritization |
 | 0.3     | 2026-10-29 | Zhimin Gan          | Moved syntax technical details to the Syntax Analyzer technical design |
 | 0.3.1   | 2026-10-29 | Zhimin Gan          | Linked the interactive UI prototype |
-| 0.3.2   | 2026-10-30 | Zhimin Gan          | Linked the architecture and run sequence diagrams; moved the UI prototype link to GitHub Pages |
+| 0.3.2   | 2026-10-29 | Zhimin Gan          | Validation errors report file and line only, no column |
+| 0.3.3   | 2026-10-30 | Zhimin Gan          | Linked the architecture and run sequence diagrams; moved the UI prototype link to GitHub Pages |
 
 ### 1.4 Key Concepts
 
@@ -361,8 +362,8 @@ The local CLI (`jevwright`) provides two primary commands for local development,
 - **Expected Output & Exit Codes**:
   ```text
   $ jevwright validate ./tests/broken.yaml
-  ✖ ./tests/broken.yaml:12:5 — Error: Unknown action "aiAct"
-  ✖ ./tests/broken.yaml:18:3 — Error: Step must contain exactly one action, found "click" and "input"
+  ✖ ./tests/broken.yaml:12 — Error: Unknown action "aiAct"
+  ✖ ./tests/broken.yaml:18 — Error: Step must contain exactly one action, found "click" and "input"
   Validation FAILED (2 errors).
   ```
   Error codes and messages are defined in the [Syntax Analyzer technical design](tech/syntax-analyzer.md).

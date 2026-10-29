@@ -176,7 +176,7 @@ flowchart LR
 ```
 
 1. Parse with `parseDocument` from the [`yaml`](https://eemeli.org/yaml/) library, using a `LineCounter` to keep each node's position in the source.
-2. Validate directly on the YAML node tree, converting node positions to line and column numbers for errors.
+2. Validate directly on the YAML node tree, converting node positions to line numbers for errors.
 3. Do not stop at the first error; keep validating the remaining fields and steps and return all errors at once.
 4. If there are no errors, output the `TestCase`.
 
@@ -196,7 +196,6 @@ type Diagnostic = {
   code: string;
   message: string;
   line: number; // 1-based
-  column: number; // 1-based
 };
 ```
 
@@ -243,12 +242,12 @@ type TestCase = {
 
 ### 3.4 CLI Output
 
-`validate` prints one line per error as `file:line:column — Error: message`; with `--json` it prints the `diagnostics` array. It exits with code `2` when there are errors.
+`validate` prints one line per error as `file:line — Error: message`; with `--json` it prints the `diagnostics` array. It exits with code `2` when there are errors.
 
 ```text
 $ jevwright validate ./tests/broken.yaml
-✖ ./tests/broken.yaml:12:5 — Error: Unknown action "aiAct"
-✖ ./tests/broken.yaml:18:3 — Error: Step must contain exactly one action, found "click" and "input"
+✖ ./tests/broken.yaml:12 — Error: Unknown action "aiAct"
+✖ ./tests/broken.yaml:18 — Error: Step must contain exactly one action, found "click" and "input"
 Validation FAILED (2 errors).
 ```
 
@@ -267,7 +266,7 @@ flowchart LR
 | ------------ | -------------- |
 | `analyze.ts` | Entry point `analyze()`: parses YAML, validates root fields, iterates `steps`, and checks that each step has exactly one action |
 | `steps.ts`   | One parse function per action, plus a map from action name to parse function; reports `E005` when the action is not found |
-| `fields.ts`  | `FieldReader` class: wraps a YAML object, reads fields by type, and records `E003`/`E004`/`E007` with line and column |
+| `fields.ts`  | `FieldReader` class: wraps a YAML object, reads fields by type, and records `E003`/`E004`/`E007` with the line number |
 
 To add an action, add a parse function in `steps.ts` and register it in the map.
 
@@ -286,9 +285,9 @@ src/core/syntax/
 
 | Type        | Coverage | Location |
 | ----------- | -------- | -------- |
-| Unit        | `FieldReader`: reading fields by type, line/column conversion | `src/tests/unit/core/syntax/fields.test.ts` |
-| Integration | `analyze()` valid fixtures: at least one per action; the output `TestCase` matches the expected one | `src/tests/integration/syntax/fixtures/valid/` |
-| Integration | `analyze()` invalid fixtures: at least one per error code; assert `code`, `line`, `column` | `src/tests/integration/syntax/fixtures/invalid/` |
+| Unit        | `FieldReader`: reading fields by type, line number conversion | `src/tests/unit/core/syntax/fields.test.ts` |
+| Integration | `analyze()` valid fixtures: at least one per action; the output `TestCase` matches the expected one | `src/tests/integration/core/syntax/fixtures/valid/` |
+| Integration | `analyze()` invalid fixtures: at least one per error code; assert `code` and `line` | `src/tests/integration/core/syntax/fixtures/invalid/` |
 | Integration | CLI `validate`: output format, `--json`, exit code | `src/tests/integration/cli/` |
 
 Invalid fixtures are named after the error code, e.g. `E003-missing-value.yaml`, with a `.json` file of the same name next to it containing the expected `diagnostics`.

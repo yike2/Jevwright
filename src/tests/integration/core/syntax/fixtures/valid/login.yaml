@@ -1,0 +1,22 @@
+name: "User Login"
+description: "A valid user can sign in and reach the dashboard"
+baseUrl: "https://demo.example.com"
+steps:
+  - open:
+      url: "/login"
+  - input:
+      selector: "#email"
+      value: "{{TEST_EMAIL}}"
+  - input:
+      target: "Password input field"
+      value: "{{TEST_PASSWORD}}"
+  - click:
+      selector: "button[type=submit]"
+      target: "Sign in button"
+  - waitFor:
+      url: "/dashboard"
+  - assert:
+      selector: "h1"
+      text: "Welcome"
+  - assert:
+      statement: "The navigation bar shows the logged-in account"

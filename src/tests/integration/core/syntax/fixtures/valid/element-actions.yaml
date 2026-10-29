@@ -1,0 +1,14 @@
+name: "Element actions"
+steps:
+  - click:
+      selector: "button[type=submit]"
+  - doubleClick:
+      target: "First row of the results table"
+  - rightClick:
+      selector: "//li[1]"
+  - hover:
+      target: "Account menu in the top-right corner"
+  - input:
+      selector: "#email"
+      target: "Email input in the login form"
+      value: "student@example.com"

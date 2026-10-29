@@ -1,0 +1,5 @@
+name: "Unknown field"
+steps:
+  - click:
+      selector: "#submit"
+      force: true

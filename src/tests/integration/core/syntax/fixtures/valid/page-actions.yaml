@@ -1,0 +1,15 @@
+name: "Page actions"
+timeoutMs: 5000
+steps:
+  - open:
+      url: "https://demo.example.com"
+  - reload: {}
+  - back: {}
+  - forward: {}
+  - press:
+      key: "Shift+A"
+  - scroll:
+      direction: down
+      distance: 600
+  - sleep:
+      ms: 250
