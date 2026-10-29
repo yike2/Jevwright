@@ -92,7 +92,7 @@ steps:
 
 | Field         | Type             | Required | Default | Description |
 | ------------- | ---------------- | -------- | ------- | ----------- |
-| `name`        | string           | ✔        | –       | Test name, non-empty |
+| `name`        | string           | ✔        | –       | Test name |
 | `description` | string           |          | –       | Test description |
 | `baseUrl`     | string           |          | –       | Base for relative paths in `open` and `url` |
 | `timeoutMs`   | positive integer |          | `15000` | Timeout for each step |
@@ -106,22 +106,15 @@ Each step is an object with exactly one key. The key is the action name and the 
 
 ```yaml
 steps:
-  - input:                       # "-" is one level deeper than steps
-      selector: "#email"         # parameters are one level deeper than the action name
+  - input:
+      selector: "#email"
       value: "student@example.com"
   - back: {}
 ```
 
-Indentation rules:
-
-- Indent with spaces only, never tabs.
-- Each level is 2 spaces.
-- Each step under `steps` starts with `- ` and is one level deeper than `steps`.
-- Parameters are one level deeper than the action name, and all parameters of an action share the same indentation.
-
 ### 1.5 Action Fields
 
-`*` marks a required field.
+`*` marks a required field. String fields must not be empty, except `input`'s `value`, where `""` clears the field.
 
 | Action                                       | Fields |
 | -------------------------------------------- | ------ |
