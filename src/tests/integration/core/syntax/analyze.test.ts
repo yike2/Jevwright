@@ -37,4 +37,11 @@ describe("analyze", () => {
     expect(testCase).toBeUndefined();
     expect(positions(diagnostics)).toEqual(expected);
   });
+
+  it("blames the key, not the parameters, for a non-scalar action key", () => {
+    const { diagnostics } = analyze("name: a\nsteps:\n  - ? [a]\n    : {}\n");
+
+    expect(diagnostics).toEqual([{ code: "E006", line: 3, message: expect.stringMatching(/key/) }]);
+    expect(diagnostics[0].message).not.toMatch(/parameters/);
+  });
 });

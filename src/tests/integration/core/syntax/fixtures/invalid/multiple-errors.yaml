@@ -2,7 +2,7 @@ name: ""
 timeoutMs: -1
 steps:
   - open:
-      url: "/login"
+      url: "https://demo.example.com/login"
   - aiTap:
       target: "Sign in"
   - scroll:

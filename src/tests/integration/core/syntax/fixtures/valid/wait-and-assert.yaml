@@ -5,7 +5,7 @@ steps:
   - waitFor:
       selector: ".results"
   - assert:
-      url: "/results"
+      url: "https://demo.example.com/results"
   - assert:
       selector: ".results"
   - assert:

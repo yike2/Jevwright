@@ -9,7 +9,7 @@ function readerFor(source: string) {
   const doc = parseDocument(source, { lineCounter });
   const action = (doc.contents as YAMLMap).items[0] as Pair<Scalar, YAMLMap>;
   const diagnostics: Diagnostic[] = [];
-  const reader = new FieldReader(action.value!, action.key, lineCounter, diagnostics);
+  const reader = new FieldReader(action.value!, action.key, lineCounter, diagnostics, doc);
   return { reader, diagnostics };
 }
 
@@ -39,11 +39,29 @@ describe("FieldReader", () => {
       expect(positions(diagnostics)).toEqual([{ code: "E003", line: 1 }]);
     });
 
-    it("reports E007 at the value for a non-string", () => {
-      const { reader, diagnostics } = readerFor("input:\n  value: 42\n");
+    it("reports E007 at the value for a non-scalar", () => {
+      const { reader, diagnostics } = readerFor("input:\n  value: [42]\n");
 
       expect(reader.string("value", true)).toBeUndefined();
       expect(positions(diagnostics)).toEqual([{ code: "E007", line: 2 }]);
+    });
+
+    it.each([
+      ["1", "1"],
+      ["030", "030"],
+      ["true", "true"],
+    ])("reads the plain scalar %s as its source text", (source, expected) => {
+      const { reader, diagnostics } = readerFor(`press:\n  key: ${source}\n`);
+
+      expect(reader.string("key", true)).toBe(expected);
+      expect(diagnostics).toEqual([]);
+    });
+
+    it("resolves an alias to its anchored value", () => {
+      const { reader, diagnostics } = readerFor('input:\n  selector: &s "#email"\n  target: *s\n');
+
+      expect(reader.string("target")).toBe("#email");
+      expect(diagnostics).toEqual([]);
     });
 
     it("reports E007 at the value for an empty string", () => {
@@ -69,7 +87,14 @@ describe("FieldReader", () => {
       expect(diagnostics).toEqual([]);
     });
 
-    it.each(["0", "-5", "1.5", '"250"'])("reports E007 at the value for %s", (value) => {
+    it("reads the largest timer delay, 2147483647", () => {
+      const { reader, diagnostics } = readerFor("sleep:\n  ms: 2147483647\n");
+
+      expect(reader.positiveInt("ms", true)).toBe(2147483647);
+      expect(diagnostics).toEqual([]);
+    });
+
+    it.each(["0", "-5", "1.5", '"250"', "2147483648", "3000000000", "1e300"])("reports E007 at the value for %s", (value) => {
       const { reader, diagnostics } = readerFor(`sleep:\n  ms: ${value}\n`);
 
       expect(reader.positiveInt("ms", true)).toBeUndefined();

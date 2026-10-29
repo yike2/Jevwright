@@ -1,7 +1,18 @@
 import type { FieldReader } from "./fields.js";
 import type { StepBody } from "./types.js";
 
-type Parse = (fields: FieldReader) => object;
+type Parse = (fields: FieldReader, hasBaseUrl: boolean) => object;
+
+// A URL with a scheme, or one starting with a {{VARIABLE}} filled in at execution time.
+const isAbsoluteUrl = (url: string) => /^([a-z][a-z\d+.-]*:|\{\{)/i.test(url);
+
+function readUrl(fields: FieldReader, hasBaseUrl: boolean, required = false) {
+  const url = fields.string("url", required);
+  if (url !== undefined && !hasBaseUrl && !isAbsoluteUrl(url)) {
+    fields.invalid("url", `"url" is relative, so the test needs a "baseUrl"`);
+  }
+  return url;
+}
 
 function locate(fields: FieldReader) {
   if (!fields.has("selector") && !fields.has("target")) {
@@ -11,7 +22,7 @@ function locate(fields: FieldReader) {
 }
 
 const parsers: Record<string, Parse> = {
-  open: (f) => ({ url: f.string("url", true) }),
+  open: (f, hasBaseUrl) => ({ url: readUrl(f, hasBaseUrl, true) }),
   back: () => ({}),
   forward: () => ({}),
   reload: () => ({}),
@@ -26,13 +37,13 @@ const parsers: Record<string, Parse> = {
   rightClick: locate,
   hover: locate,
   input: (f) => ({ value: f.string("value", true, true), ...locate(f) }),
-  waitFor: (f) => {
+  waitFor: (f, hasBaseUrl) => {
     if (["condition", "selector", "url"].filter((key) => f.has(key)).length !== 1) {
       f.report("E008", 'Needs exactly one of "condition", "selector" and "url"');
     }
-    return { condition: f.string("condition"), selector: f.string("selector"), url: f.string("url") };
+    return { condition: f.string("condition"), selector: f.string("selector"), url: readUrl(f, hasBaseUrl) };
   },
-  assert: (f) => {
+  assert: (f, hasBaseUrl) => {
     const selector = f.has("selector");
     const url = f.has("url");
     if (selector && url) {
@@ -46,20 +57,20 @@ const parsers: Record<string, Parse> = {
       statement: f.string("statement"),
       selector: f.string("selector"),
       text: f.string("text"),
-      url: f.string("url"),
+      url: readUrl(f, hasBaseUrl),
     };
   },
 };
 
 // Parses the parameters of one action. The result is only a valid StepBody when
 // no diagnostics were recorded.
-export function parseAction(action: string, fields: FieldReader): StepBody | undefined {
+export function parseAction(action: string, fields: FieldReader, hasBaseUrl: boolean): StepBody | undefined {
   const parse = Object.hasOwn(parsers, action) ? parsers[action] : undefined;
   if (!parse) {
     fields.report("E005", `Unknown action "${action}"`);
     return undefined;
   }
-  const body = { action, ...parse(fields) } as StepBody;
+  const body = { action, ...parse(fields, hasBaseUrl) } as StepBody;
   fields.reportUnknown();
   return body;
 }
