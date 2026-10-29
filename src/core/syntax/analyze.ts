@@ -1,13 +1,4 @@
-import {
-  isMap,
-  isScalar,
-  isSeq,
-  LineCounter,
-  parseDocument,
-  type Document,
-  type Node,
-  type YAMLError,
-} from "yaml";
+import { isMap, isScalar, isSeq, LineCounter, parseDocument, type Node, type YAMLError } from "yaml";
 import { FieldReader, lineOf } from "./fields.js";
 import { parseAction } from "./steps.js";
 import type { AnalyzeResult, Diagnostic, Step } from "./types.js";
@@ -50,7 +41,7 @@ export function analyze(source: string): AnalyzeResult {
       fields.report("E002", '"steps" must be a non-empty array', stepsNode);
     } else {
       for (const item of list.items as Node[]) {
-        const step = parseStep(item, fields, fields.has("baseUrl"), lineCounter, diagnostics, doc);
+        const step = parseStep(item, fields, fields.has("baseUrl"));
         if (step) steps.push(step);
       }
     }
@@ -63,14 +54,7 @@ export function analyze(source: string): AnalyzeResult {
 }
 
 // Checks that a step is an object with exactly one action whose parameters are an object.
-function parseStep(
-  item: Node,
-  root: FieldReader,
-  hasBaseUrl: boolean,
-  lineCounter: LineCounter,
-  diagnostics: Diagnostic[],
-  doc: Document,
-) {
+function parseStep(item: Node, root: FieldReader, hasBaseUrl: boolean) {
   const step = root.resolve(item);
   if (!isMap(step)) {
     root.report("E006", "Step must be an object with exactly one action", item);
@@ -92,7 +76,6 @@ function parseStep(
     root.report("E006", "Action parameters must be an object, use {} for none", item);
     return undefined;
   }
-  const fields = new FieldReader(params, pair.key as Node, lineCounter, diagnostics, doc);
-  const body = parseAction(String(key.value), fields, hasBaseUrl);
-  return body && { line: lineOf(lineCounter, item), ...body };
+  const body = parseAction(String(key.value), root.child(params, pair.key as Node), hasBaseUrl);
+  return body && { line: root.line(item), ...body };
 }

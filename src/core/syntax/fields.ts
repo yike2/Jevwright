@@ -30,6 +30,15 @@ export class FieldReader {
     private readonly doc: Document,
   ) {}
 
+  // A reader for a nested object that shares this reader's document and diagnostics.
+  child(map: YAMLMap, owner: Node): FieldReader {
+    return new FieldReader(map, owner, this.lineCounter, this.diagnostics, this.doc);
+  }
+
+  line(node: Node): number {
+    return lineOf(this.lineCounter, node);
+  }
+
   // Follows an alias (`*name`) to its anchored node; other nodes are returned as is.
   resolve(node: unknown): unknown {
     return isAlias(node) ? node.resolve(this.doc) : node;
@@ -70,7 +79,7 @@ export class FieldReader {
   }
 
   report(code: string, message: string, node: Node = this.owner): void {
-    this.diagnostics.push({ code, message, line: lineOf(this.lineCounter, node) });
+    this.diagnostics.push({ code, message, line: this.line(node) });
   }
 
   // Reports E007 at the value of `key`.
