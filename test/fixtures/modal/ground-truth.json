@@ -1,0 +1,19 @@
+[
+  {
+    "target": "the Delete button in the confirmation dialog",
+    "selector": "button.danger",
+    "expected": "e7"
+  },
+  {
+    "target": "the Cancel button",
+    "expected": "e6"
+  },
+  {
+    "target": "the button that closes the dialog",
+    "expected": "e8"
+  },
+  {
+    "target": "the text box for typing the project name to confirm",
+    "expected": "e5"
+  }
+]

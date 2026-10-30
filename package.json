@@ -2,12 +2,23 @@
   "name": "Jevwright",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
   "scripts": {
     "prepare": "git config core.hooksPath .githooks && git config commit.template .gitmessage && git config core.editor 'nano --breaklonglines --fill=72'",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "fixtures:capture": "tsx scripts/capture-fixtures.ts",
+    "jev:eval": "tsx scripts/eval-locator.ts"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "linkedom": "^0.18.14",
+    "playwright": "^1.64.1",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  },
+  "type": "module"
 }

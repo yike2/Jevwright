@@ -1,0 +1,283 @@
+{
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  },
+  "elements": [
+    {
+      "id": "e0",
+      "tag": "a",
+      "role": "link",
+      "name": "Projects",
+      "text": "Projects",
+      "attributes": {
+        "href": "#projects"
+      },
+      "context": "header: Acme Cloud Projects Team ⚙",
+      "bbox": {
+        "x": 1056,
+        "y": 19,
+        "width": 63,
+        "height": 22
+      },
+      "obscured": false
+    },
+    {
+      "id": "e1",
+      "tag": "a",
+      "role": "link",
+      "name": "Team",
+      "text": "Team",
+      "attributes": {
+        "href": "#team"
+      },
+      "context": "header: Acme Cloud Projects Team ⚙",
+      "bbox": {
+        "x": 1144,
+        "y": 19,
+        "width": 42,
+        "height": 22
+      },
+      "obscured": false
+    },
+    {
+      "id": "e2",
+      "tag": "button",
+      "role": "button",
+      "name": "Settings",
+      "text": "⚙",
+      "attributes": {
+        "type": "button",
+        "aria-label": "Settings",
+        "title": "Settings"
+      },
+      "context": "header: Acme Cloud Projects Team ⚙",
+      "bbox": {
+        "x": 1210,
+        "y": 14,
+        "width": 38,
+        "height": 32
+      },
+      "obscured": false
+    },
+    {
+      "id": "e3",
+      "tag": "input",
+      "role": "textbox",
+      "name": "Search members",
+      "text": "",
+      "attributes": {
+        "name": "q",
+        "type": "text",
+        "placeholder": "Search members"
+      },
+      "context": "div: Team members",
+      "bbox": {
+        "x": 640,
+        "y": 120,
+        "width": 220,
+        "height": 44
+      },
+      "obscured": false
+    },
+    {
+      "id": "e4",
+      "tag": "button",
+      "role": "button",
+      "name": "Invite member",
+      "text": "Invite member",
+      "attributes": {
+        "type": "button"
+      },
+      "context": "div: Team members",
+      "bbox": {
+        "x": 872,
+        "y": 121,
+        "width": 152,
+        "height": 42
+      },
+      "obscured": false
+    },
+    {
+      "id": "e5",
+      "tag": "button",
+      "role": "button",
+      "name": "Edit",
+      "text": "Edit",
+      "attributes": {
+        "type": "button"
+      },
+      "context": "tr: Alice Chen Owner Edit Remove",
+      "bbox": {
+        "x": 686,
+        "y": 224,
+        "width": 65,
+        "height": 42
+      },
+      "obscured": false
+    },
+    {
+      "id": "e6",
+      "tag": "button",
+      "role": "button",
+      "name": "Remove",
+      "text": "Remove",
+      "attributes": {
+        "type": "button"
+      },
+      "context": "tr: Alice Chen Owner Edit Remove",
+      "bbox": {
+        "x": 756,
+        "y": 224,
+        "width": 99,
+        "height": 42
+      },
+      "obscured": false
+    },
+    {
+      "id": "e7",
+      "tag": "button",
+      "role": "button",
+      "name": "Edit",
+      "text": "Edit",
+      "attributes": {
+        "type": "button"
+      },
+      "context": "tr: Bob Martinez Developer Edit Remove",
+      "bbox": {
+        "x": 686,
+        "y": 292,
+        "width": 65,
+        "height": 42
+      },
+      "obscured": false
+    },
+    {
+      "id": "e8",
+      "tag": "button",
+      "role": "button",
+      "name": "Remove",
+      "text": "Remove",
+      "attributes": {
+        "type": "button"
+      },
+      "context": "tr: Bob Martinez Developer Edit Remove",
+      "bbox": {
+        "x": 756,
+        "y": 292,
+        "width": 99,
+        "height": 42
+      },
+      "obscured": false
+    },
+    {
+      "id": "e9",
+      "tag": "button",
+      "role": "button",
+      "name": "Edit",
+      "text": "Edit",
+      "attributes": {
+        "type": "button"
+      },
+      "context": "tr: Carol Okafor Designer Edit Remove",
+      "bbox": {
+        "x": 686,
+        "y": 359,
+        "width": 65,
+        "height": 42
+      },
+      "obscured": false
+    },
+    {
+      "id": "e10",
+      "tag": "button",
+      "role": "button",
+      "name": "Remove",
+      "text": "Remove",
+      "attributes": {
+        "type": "button"
+      },
+      "context": "tr: Carol Okafor Designer Edit Remove",
+      "bbox": {
+        "x": 756,
+        "y": 359,
+        "width": 99,
+        "height": 42
+      },
+      "obscured": false
+    },
+    {
+      "id": "e11",
+      "tag": "button",
+      "role": "button",
+      "name": "Edit",
+      "text": "Edit",
+      "attributes": {
+        "type": "button"
+      },
+      "context": "tr: Dan Weiss Viewer Edit Remove",
+      "bbox": {
+        "x": 686,
+        "y": 426,
+        "width": 65,
+        "height": 42
+      },
+      "obscured": false
+    },
+    {
+      "id": "e12",
+      "tag": "button",
+      "role": "button",
+      "name": "Remove",
+      "text": "Remove",
+      "attributes": {
+        "type": "button"
+      },
+      "context": "tr: Dan Weiss Viewer Edit Remove",
+      "bbox": {
+        "x": 756,
+        "y": 426,
+        "width": 99,
+        "height": 42
+      },
+      "obscured": false
+    },
+    {
+      "id": "e13",
+      "tag": "button",
+      "role": "button",
+      "name": "Previous",
+      "text": "Previous",
+      "attributes": {
+        "type": "button",
+        "disabled": ""
+      },
+      "context": "div: Team members",
+      "bbox": {
+        "x": 256,
+        "y": 498,
+        "width": 102,
+        "height": 42
+      },
+      "obscured": false
+    },
+    {
+      "id": "e14",
+      "tag": "button",
+      "role": "button",
+      "name": "Next",
+      "text": "Next",
+      "attributes": {
+        "type": "button"
+      },
+      "context": "div: Team members",
+      "bbox": {
+        "x": 460,
+        "y": 498,
+        "width": 71,
+        "height": 42
+      },
+      "obscured": false
+    }
+  ]
+}

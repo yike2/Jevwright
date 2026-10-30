@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Acme — Team members</title><link rel="stylesheet" href="style.css"></head>
+<body>
+  <header>
+    <span class="brand">Acme Cloud</span>
+    <a href="#projects">Projects</a>
+    <a href="#team">Team</a>
+    <button type="button" class="icon" aria-label="Settings" title="Settings">⚙</button>
+  </header>
+  <main>
+    <div class="card">
+      <div class="row" style="margin-top:0">
+        <h1 style="margin:0;margin-right:auto">Team members</h1>
+        <input type="text" name="q" placeholder="Search members" style="width:220px">
+        <button type="button" class="primary">Invite member</button>
+      </div>
+      <table>
+        <thead><tr><th>Name</th><th>Role</th><th></th></tr></thead>
+        <tbody>
+          <tr data-user="alice"><td>Alice Chen</td><td>Owner</td>
+            <td><button type="button">Edit</button> <button type="button" class="danger">Remove</button></td></tr>
+          <tr data-user="bob"><td>Bob Martinez</td><td>Developer</td>
+            <td><button type="button">Edit</button> <button type="button" class="danger">Remove</button></td></tr>
+          <tr data-user="carol"><td>Carol Okafor</td><td>Designer</td>
+            <td><button type="button">Edit</button> <button type="button" class="danger">Remove</button></td></tr>
+          <tr data-user="dan"><td>Dan Weiss</td><td>Viewer</td>
+            <td><button type="button">Edit</button> <button type="button" class="danger">Remove</button></td></tr>
+        </tbody>
+      </table>
+      <div class="row">
+        <button type="button" disabled>Previous</button>
+        <span class="muted">Page 1 of 3</span>
+        <button type="button">Next</button>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

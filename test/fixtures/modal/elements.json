@@ -1,0 +1,178 @@
+{
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  },
+  "elements": [
+    {
+      "id": "e0",
+      "tag": "a",
+      "role": "link",
+      "name": "Projects",
+      "text": "Projects",
+      "attributes": {
+        "href": "#projects"
+      },
+      "context": "header: Acme Cloud Projects Billing",
+      "bbox": {
+        "x": 1112,
+        "y": 17,
+        "width": 63,
+        "height": 22
+      },
+      "obscured": true
+    },
+    {
+      "id": "e1",
+      "tag": "a",
+      "role": "link",
+      "name": "Billing",
+      "text": "Billing",
+      "attributes": {
+        "href": "#billing"
+      },
+      "context": "header: Acme Cloud Projects Billing",
+      "bbox": {
+        "x": 1199,
+        "y": 17,
+        "width": 49,
+        "height": 22
+      },
+      "obscured": true
+    },
+    {
+      "id": "e2",
+      "tag": "input",
+      "role": "textbox",
+      "name": "Project name",
+      "text": "",
+      "attributes": {
+        "id": "project-name",
+        "type": "text",
+        "value": "falcon-api"
+      },
+      "context": "div: Project settings",
+      "bbox": {
+        "x": 256,
+        "y": 232,
+        "width": 768,
+        "height": 44
+      },
+      "obscured": true
+    },
+    {
+      "id": "e3",
+      "tag": "button",
+      "role": "button",
+      "name": "Save changes",
+      "text": "Save changes",
+      "attributes": {
+        "type": "button"
+      },
+      "context": "div: Project settings",
+      "bbox": {
+        "x": 256,
+        "y": 292,
+        "width": 146,
+        "height": 42
+      },
+      "obscured": true
+    },
+    {
+      "id": "e4",
+      "tag": "button",
+      "role": "button",
+      "name": "Delete project",
+      "text": "Delete project",
+      "attributes": {
+        "id": "open-delete",
+        "type": "button"
+      },
+      "context": "div: Project settings",
+      "bbox": {
+        "x": 414,
+        "y": 292,
+        "width": 147,
+        "height": 42
+      },
+      "obscured": true
+    },
+    {
+      "id": "e5",
+      "tag": "input",
+      "role": "textbox",
+      "name": "Type the project name to confirm",
+      "text": "",
+      "attributes": {
+        "id": "confirm-input",
+        "type": "text",
+        "placeholder": "falcon-api"
+      },
+      "context": "dialog: Delete project?",
+      "bbox": {
+        "x": 442,
+        "y": 420,
+        "width": 396,
+        "height": 44
+      },
+      "obscured": false
+    },
+    {
+      "id": "e6",
+      "tag": "button",
+      "role": "button",
+      "name": "Cancel",
+      "text": "Cancel",
+      "attributes": {
+        "type": "button",
+        "value": "cancel"
+      },
+      "context": "dialog: Delete project?",
+      "bbox": {
+        "x": 651,
+        "y": 480,
+        "width": 88,
+        "height": 42
+      },
+      "obscured": false
+    },
+    {
+      "id": "e7",
+      "tag": "button",
+      "role": "button",
+      "name": "Delete",
+      "text": "Delete",
+      "attributes": {
+        "type": "button",
+        "value": "confirm"
+      },
+      "context": "dialog: Delete project?",
+      "bbox": {
+        "x": 751,
+        "y": 480,
+        "width": 87,
+        "height": 42
+      },
+      "obscured": false
+    },
+    {
+      "id": "e8",
+      "tag": "button",
+      "role": "button",
+      "name": "Close dialog",
+      "text": "✕",
+      "attributes": {
+        "type": "button",
+        "aria-label": "Close dialog"
+      },
+      "context": "dialog: Delete project?",
+      "bbox": {
+        "x": 823,
+        "y": 261,
+        "width": 35,
+        "height": 30
+      },
+      "obscured": false
+    }
+  ]
+}

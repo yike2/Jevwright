@@ -1,0 +1,197 @@
+{
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  },
+  "elements": [
+    {
+      "id": "e0",
+      "tag": "a",
+      "role": "link",
+      "name": "Pricing",
+      "text": "Pricing",
+      "attributes": {
+        "href": "#pricing"
+      },
+      "context": "header: Acme Cloud Pricing Docs Create account",
+      "bbox": {
+        "x": 985,
+        "y": 17,
+        "width": 54,
+        "height": 22
+      },
+      "obscured": false
+    },
+    {
+      "id": "e1",
+      "tag": "a",
+      "role": "link",
+      "name": "Docs",
+      "text": "Docs",
+      "attributes": {
+        "href": "#docs"
+      },
+      "context": "header: Acme Cloud Pricing Docs Create account",
+      "bbox": {
+        "x": 1063,
+        "y": 17,
+        "width": 39,
+        "height": 22
+      },
+      "obscured": false
+    },
+    {
+      "id": "e2",
+      "tag": "a",
+      "role": "link",
+      "name": "Create account",
+      "text": "Create account",
+      "attributes": {
+        "href": "#signup"
+      },
+      "context": "header: Acme Cloud Pricing Docs Create account",
+      "bbox": {
+        "x": 1126,
+        "y": 17,
+        "width": 122,
+        "height": 22
+      },
+      "obscured": false
+    },
+    {
+      "id": "e3",
+      "tag": "input",
+      "role": "textbox",
+      "name": "Email address",
+      "text": "",
+      "attributes": {
+        "id": "email",
+        "name": "email",
+        "type": "email",
+        "placeholder": "you@example.com"
+      },
+      "context": "form: Sign in",
+      "bbox": {
+        "x": 256,
+        "y": 232,
+        "width": 768,
+        "height": 44
+      },
+      "obscured": false
+    },
+    {
+      "id": "e4",
+      "tag": "input",
+      "role": "textbox",
+      "name": "Password",
+      "text": "",
+      "attributes": {
+        "id": "password",
+        "name": "password",
+        "type": "password"
+      },
+      "context": "form: Sign in",
+      "bbox": {
+        "x": 256,
+        "y": 321,
+        "width": 768,
+        "height": 44
+      },
+      "obscured": false
+    },
+    {
+      "id": "e5",
+      "tag": "input",
+      "role": "checkbox",
+      "name": "Keep me signed in",
+      "text": "",
+      "attributes": {
+        "id": "remember",
+        "name": "remember",
+        "type": "checkbox"
+      },
+      "context": "form: Sign in",
+      "bbox": {
+        "x": 260,
+        "y": 386,
+        "width": 13,
+        "height": 13
+      },
+      "obscured": false
+    },
+    {
+      "id": "e6",
+      "tag": "button",
+      "role": "button",
+      "name": "Sign in",
+      "text": "Sign in",
+      "attributes": {
+        "type": "submit"
+      },
+      "context": "form: Sign in",
+      "bbox": {
+        "x": 256,
+        "y": 420,
+        "width": 89,
+        "height": 42
+      },
+      "obscured": false
+    },
+    {
+      "id": "e7",
+      "tag": "a",
+      "role": "link",
+      "name": "Forgot your password?",
+      "text": "Forgot your password?",
+      "attributes": {
+        "href": "#forgot"
+      },
+      "context": "form: Sign in",
+      "bbox": {
+        "x": 357,
+        "y": 430,
+        "width": 182,
+        "height": 22
+      },
+      "obscured": false
+    },
+    {
+      "id": "e8",
+      "tag": "button",
+      "role": "button",
+      "name": "Google",
+      "text": "Google",
+      "attributes": {
+        "name": "sso-google",
+        "type": "button"
+      },
+      "context": "form: Sign in",
+      "bbox": {
+        "x": 256,
+        "y": 512,
+        "width": 90,
+        "height": 42
+      },
+      "obscured": false
+    },
+    {
+      "id": "e9",
+      "tag": "button",
+      "role": "button",
+      "name": "GitHub",
+      "text": "GitHub",
+      "attributes": {
+        "name": "sso-github",
+        "type": "button"
+      },
+      "context": "form: Sign in",
+      "bbox": {
+        "x": 358,
+        "y": 512,
+        "width": 89,
+        "height": 42
+      },
+      "obscured": false
+    }
+  ]
+}

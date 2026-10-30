@@ -1,0 +1,20 @@
+* { box-sizing: border-box; }
+body { margin: 0; font: 16px/1.4 system-ui, sans-serif; color: #1d2330; background: #f4f6fa; }
+header { display: flex; align-items: center; gap: 24px; padding: 14px 32px; background: #1d2330; color: #fff; }
+header .brand { font-weight: 700; font-size: 20px; margin-right: auto; }
+header a { color: #c9d4ff; text-decoration: none; }
+main { max-width: 880px; margin: 32px auto; padding: 0 24px; }
+.card { background: #fff; border-radius: 10px; padding: 28px 32px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+label { display: block; font-weight: 600; margin: 16px 0 6px; }
+input[type=text], input[type=email], input[type=password] { width: 100%; padding: 10px 12px; border: 1px solid #c3cad6; border-radius: 6px; font: inherit; }
+.row { display: flex; align-items: center; gap: 12px; margin-top: 16px; }
+button { font: inherit; padding: 9px 16px; border-radius: 6px; border: 1px solid #c3cad6; background: #fff; cursor: pointer; }
+button.primary { background: #2f5cf5; border-color: #2f5cf5; color: #fff; }
+button.danger { color: #b42318; border-color: #f0b4ae; }
+button.icon { padding: 6px 10px; font-size: 18px; line-height: 1; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 12px 10px; border-bottom: 1px solid #e3e7ee; }
+.muted { color: #687185; font-size: 14px; }
+dialog { border: none; border-radius: 12px; padding: 28px 32px; width: 460px; box-shadow: 0 12px 40px rgba(0,0,0,.25); }
+dialog::backdrop { background: rgba(20, 24, 33, .55); }
+dialog h2 { margin-top: 0; }

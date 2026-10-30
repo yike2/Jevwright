@@ -1,0 +1,32 @@
+[
+  {
+    "target": "the settings gear icon in the header",
+    "expected": "e2"
+  },
+  {
+    "target": "the Remove button for Bob Martinez",
+    "expected": "e8"
+  },
+  {
+    "target": "the Edit button in Carol Okafor's row",
+    "expected": "e9"
+  },
+  {
+    "target": "the member search box",
+    "selector": "input[name='q']",
+    "expected": "e3"
+  },
+  {
+    "target": "the Invite member button",
+    "expected": "e4"
+  },
+  {
+    "target": "the Next page button",
+    "expected": "e14"
+  },
+  {
+    "target": "the Remove button for Dan Weiss",
+    "selector": "tr[data-user=dan] button.danger",
+    "expected": "e12"
+  }
+]

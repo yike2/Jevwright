@@ -1,0 +1,32 @@
+[
+  {
+    "target": "the email address field",
+    "selector": "#email",
+    "expected": "e3"
+  },
+  {
+    "target": "the password input",
+    "expected": "e4"
+  },
+  {
+    "target": "the 'Keep me signed in' checkbox",
+    "expected": "e5"
+  },
+  {
+    "target": "the Sign in button",
+    "selector": "#login-btn",
+    "expected": "e6"
+  },
+  {
+    "target": "the 'Forgot your password?' link",
+    "expected": "e7"
+  },
+  {
+    "target": "the GitHub sign-in button",
+    "expected": "e9"
+  },
+  {
+    "target": "the Create account link in the header",
+    "expected": "e2"
+  }
+]

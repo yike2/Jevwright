@@ -1,0 +1,33 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Acme — Project settings</title><link rel="stylesheet" href="style.css"></head>
+<body>
+  <header>
+    <span class="brand">Acme Cloud</span>
+    <a href="#projects" data-jev-id="e0">Projects</a>
+    <a href="#billing" data-jev-id="e1">Billing</a>
+  </header>
+  <main>
+    <div class="card">
+      <h1>Project settings</h1>
+      <label for="project-name">Project name</label>
+      <input id="project-name" type="text" value="falcon-api" data-jev-id="e2" style="">
+      <div class="row">
+        <button type="button" data-jev-id="e3">Save changes</button>
+        <button type="button" class="danger" id="open-delete" data-jev-id="e4">Delete project</button>
+      </div>
+    </div>
+  </main>
+  <dialog id="confirm-delete" aria-labelledby="confirm-title" open="">
+    <h2 id="confirm-title">Delete project?</h2>
+    <p>This permanently deletes <strong>falcon-api</strong> and all of its deployments.</p>
+    <label for="confirm-input">Type the project name to confirm</label>
+    <input id="confirm-input" type="text" placeholder="falcon-api" data-jev-id="e5" style="">
+    <div class="row" style="justify-content:flex-end">
+      <button type="button" value="cancel" data-jev-id="e6">Cancel</button>
+      <button type="button" class="danger primary" value="confirm" style="background:#b42318;border-color:#b42318;color:#fff" data-jev-id="e7">Delete</button>
+    </div>
+    <button type="button" class="icon" aria-label="Close dialog" style="position:absolute;top:12px;right:12px;border:none" data-jev-id="e8">✕</button>
+  </dialog>
+  <script>document.getElementById('confirm-delete').showModal();</script>
+
+
+</body></html>
