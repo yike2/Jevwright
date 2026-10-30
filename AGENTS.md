@@ -67,6 +67,7 @@ jevwright/
 │       └── benchmark/        # demo-app/ (target app) + benchmark .yaml suite run against it
 └── docs/
     ├── PRD.md
+    ├── archify/              # architecture + run sequence diagrams (one folder per diagram)
     ├── references/           # workspace.svg, dashboard.svg, arch.svg, ui-prototype.html
     └── tech/                 # TEMPLATE.md, one <module>.md per Core module
 ```
@@ -122,6 +123,9 @@ Coding standards:
 - Prefer discriminated unions (like `Step`) over optional-field soup; handle every case with an
   exhaustive `switch` and a `never` check.
 - Small modules with one responsibility, matching the module table in each design doc.
+- **KISS and YAGNI.** Pick the simplest design that meets the current issue and its design doc. Don't
+  add abstractions, options, extension points, or layers for needs that don't exist yet; extract a
+  helper or interface only when a second real caller appears.
 - Errors: return typed results (`Diagnostic[]`, step result objects) for expected failures; throw only
   for programmer errors or infrastructure failures. Never swallow errors silently.
 - All code, comments, docs, commit messages, and UI text are in **English**.
@@ -153,6 +157,11 @@ Useful commands: `pnpm install`, `pnpm dev`, `pnpm --filter core test`, `pnpm te
 - PRD: [`docs/PRD.md`](docs/PRD.md). Check user story acceptance criteria (Section 4.3) and the
   MoSCoW table (Section 6) before building a feature. Do not build `Won't` items (server-side sandboxing).
 - Architecture diagram: [`docs/references/arch.svg`](docs/references/arch.svg).
+- Architecture and run sequence diagrams: `docs/archify/<diagram>/index.html`, generated from each
+  folder's `candidate.json`. Follow [`docs/archify/rule.md`](docs/archify/rule.md) when editing them.
+- **Keep the PRD, `docs/tech/`, and diagrams in sync.** When a change affects product scope, a module's
+  behavior or interface, or the architecture or run flow, update every affected doc and diagram in the
+  same PR. If they disagree, follow the priority in Section 1.1 and fix the lower-priority one.
 - Module docs: `docs/tech/<module>.md`, written from [`docs/tech/TEMPLATE.md`](docs/tech/TEMPLATE.md).
   If you implement a Core module that has no doc yet, write the doc from the template first and get it
   reviewed in a separate PR.
