@@ -18,6 +18,7 @@ This document describes what the product must do and how users interact with it.
 | 0.2     | 2026-10-27 | Zhimin Gan, Yike Li | Added MoSCoW Prioritization |
 | 0.3     | 2026-10-29 | Zhimin Gan          | Moved syntax technical details to the Syntax Analyzer technical design |
 | 0.3.1   | 2026-10-29 | Zhimin Gan          | Linked the interactive UI prototype |
+| 0.3.2   | 2026-10-30 | Zhimin Gan          | Linked the architecture and run sequence diagrams; moved the UI prototype link to GitHub Pages |
 
 ### 1.4 Key Concepts
 
@@ -163,6 +164,8 @@ However, existing AI testing tools (such as Midscene) rely on heavy general-purp
 
 ## 5. Functional Requirements
 
+The modules below and how they connect are shown in the architecture diagram ([online](https://yike2.github.io/Jevwright/archify/jevwright-architecture/), [source](archify/jevwright-architecture/index.html)). The run sequence diagram ([online](https://yike2.github.io/Jevwright/archify/jevwright-sequence/), [source](archify/jevwright-sequence/index.html)) shows how a queued run executes, from parsing the file through locating, assertions, and the report.
+
 ### 5.1 Core Module (Test Runner)
 
 The Core Module is the shared execution engine used by both the local CLI and the Backend. It parses a `.yaml` Test Case, launches a browser instance, uses the Jev Harness for element locating and assertions, and produces a test report.
@@ -284,7 +287,7 @@ The Core Module is the shared execution engine used by both the local CLI and th
 
 ### 7.1 Web Pages
 
-The Web UI uses a consistent workspace layout illustrated by the wireframes in [`workspace.svg`](references/workspace.svg) and [`dashboard.svg`](references/dashboard.svg), paired with an authentication screen. An interactive UI prototype ([online](https://claude.ai/artifact/9FT2gh18vkLYJsJKYtR499?sk=IOULsiImjRr2Cq0dwfEnVQ), [source](references/ui-prototype.html)) shows the full flow, from login to the editor and dashboard.
+The Web UI uses a consistent workspace layout illustrated by the wireframes in [`workspace.svg`](references/workspace.svg) and [`dashboard.svg`](references/dashboard.svg), paired with an authentication screen. An interactive UI prototype ([online](https://yike2.github.io/Jevwright/references/ui-prototype.html), [source](references/ui-prototype.html)) shows the full flow, from login to the editor and dashboard.
 
 #### 7.1.1 Login and Register
 ```text

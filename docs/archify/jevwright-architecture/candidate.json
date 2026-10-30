@@ -1,0 +1,405 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Jevwright Layered Architecture",
+    "locale": "en",
+    "output": "docs/archify/jevwright-architecture/index.html",
+    "quality_profile": "showcase",
+    "visual_preset": "editorial"
+  },
+  "components": [
+    {
+      "id": "user",
+      "type": "external",
+      "label": "User",
+      "sublabel": "Dev / QA / Agent / CI",
+      "icon": "person",
+      "pos": [
+        560,
+        40
+      ],
+      "size": [
+        140,
+        64
+      ]
+    },
+    {
+      "id": "webui",
+      "type": "frontend",
+      "label": "Web UI",
+      "sublabel": "Editor · Dashboard · live progress",
+      "pos": [
+        240,
+        200
+      ],
+      "size": [
+        200,
+        64
+      ]
+    },
+    {
+      "id": "cli",
+      "type": "frontend",
+      "label": "jevwright CLI",
+      "sublabel": "validate / run · local reports",
+      "pos": [
+        880,
+        200
+      ],
+      "size": [
+        200,
+        64
+      ]
+    },
+    {
+      "id": "api",
+      "type": "backend",
+      "label": "Backend API + Worker",
+      "sublabel": "Auth · rate limit · queue · push",
+      "pos": [
+        240,
+        360
+      ],
+      "size": [
+        200,
+        64
+      ]
+    },
+    {
+      "id": "store",
+      "type": "database",
+      "label": "Data Store",
+      "sublabel": "Tests · history · reports",
+      "pos": [
+        600,
+        360
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "pipeline",
+      "type": "backend",
+      "label": "Run Pipeline",
+      "sublabel": "Orchestrates in order · stops on failure · relays step events",
+      "pos": [
+        40,
+        520
+      ],
+      "size": [
+        1120,
+        64
+      ]
+    },
+    {
+      "id": "syntax",
+      "type": "backend",
+      "label": "Syntax Analyzer",
+      "sublabel": "YAML → TestCase",
+      "pos": [
+        40,
+        680
+      ],
+      "size": [
+        140,
+        64
+      ]
+    },
+    {
+      "id": "executor",
+      "type": "backend",
+      "label": "Step Executor",
+      "sublabel": "Opens/closes browser · runs Actions / Asserts · collects trace",
+      "pos": [
+        300,
+        680
+      ],
+      "size": [
+        600,
+        64
+      ]
+    },
+    {
+      "id": "report",
+      "type": "backend",
+      "label": "Report Builder",
+      "sublabel": ".json · trace · screenshots",
+      "pos": [
+        1020,
+        680
+      ],
+      "size": [
+        140,
+        64
+      ]
+    },
+    {
+      "id": "locator",
+      "type": "backend",
+      "label": "Element Locator",
+      "sublabel": "selector → Jev visual → Jev DOM",
+      "pos": [
+        340,
+        840
+      ],
+      "size": [
+        240,
+        64
+      ]
+    },
+    {
+      "id": "asserter",
+      "type": "backend",
+      "label": "Asserter",
+      "sublabel": "Playwright check → Jev visual → Jev DOM text",
+      "pos": [
+        680,
+        840
+      ],
+      "size": [
+        240,
+        64
+      ]
+    },
+    {
+      "id": "driver",
+      "type": "backend",
+      "label": "Browser Driver",
+      "sublabel": "Wraps Playwright · drives the browser (site under test)",
+      "pos": [
+        380,
+        1000
+      ],
+      "size": [
+        500,
+        64
+      ]
+    },
+    {
+      "id": "harness",
+      "type": "backend",
+      "label": "Jev Harness",
+      "sublabel": "Builds prompt · calls Jev model API · parses structured output + confidence",
+      "pos": [
+        200,
+        1160
+      ],
+      "size": [
+        880,
+        64
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Access",
+      "wraps": [
+        "webui",
+        "cli"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "Service",
+      "wraps": [
+        "api",
+        "store"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "Core · Orchestration",
+      "wraps": [
+        "pipeline"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "Core · Domain",
+      "wraps": [
+        "syntax",
+        "executor",
+        "report",
+        "locator",
+        "asserter"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "Core · Adapters",
+      "wraps": [
+        "driver",
+        "harness"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "user-webui",
+      "from": "user",
+      "to": "webui",
+      "label": "YAML · Run",
+      "variant": "emphasis"
+    },
+    {
+      "id": "user-cli",
+      "from": "user",
+      "to": "cli",
+      "label": "YAML file"
+    },
+    {
+      "id": "webui-api",
+      "from": "webui",
+      "to": "api",
+      "label": "YAML · Run request",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "api-store",
+      "from": "api",
+      "to": "store",
+      "label": "tests · reports · shots"
+    },
+    {
+      "id": "api-pipeline",
+      "from": "api",
+      "to": "pipeline",
+      "label": "YAML",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "pipeline-api",
+      "from": "pipeline",
+      "to": "api",
+      "label": "step events · Report",
+      "variant": "dashed",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "cli-pipeline",
+      "from": "cli",
+      "to": "pipeline",
+      "label": "YAML",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "pipeline-cli",
+      "from": "pipeline",
+      "to": "cli",
+      "label": "Report",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "pipeline-syntax",
+      "from": "pipeline",
+      "to": "syntax",
+      "label": "YAML text",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "syntax-executor",
+      "from": "syntax",
+      "to": "executor",
+      "label": "TestCase",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "executor-report",
+      "from": "executor",
+      "to": "report",
+      "label": "step results",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "report-pipeline",
+      "from": "report",
+      "to": "pipeline",
+      "label": "Report",
+      "variant": "emphasis",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "executor-pipeline",
+      "from": "executor",
+      "to": "pipeline",
+      "label": "step events",
+      "variant": "dashed",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "locator-executor",
+      "from": "locator",
+      "to": "executor",
+      "label": "element position",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "executor-driver",
+      "from": "executor",
+      "to": "driver",
+      "label": "actions",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "driver-locator",
+      "from": "driver",
+      "to": "locator",
+      "label": "screenshot · DOM",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "asserter-executor",
+      "from": "asserter",
+      "to": "executor",
+      "label": "verdict",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "driver-asserter",
+      "from": "driver",
+      "to": "asserter",
+      "label": "page state · shot · DOM",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "harness-locator",
+      "from": "harness",
+      "to": "locator",
+      "label": "bbox",
+      "fromSide": "top",
+      "toSide": "left"
+    },
+    {
+      "id": "harness-asserter",
+      "from": "harness",
+      "to": "asserter",
+      "label": "true / false",
+      "fromSide": "top",
+      "toSide": "right"
+    }
+  ]
+}

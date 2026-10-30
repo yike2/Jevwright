@@ -274,7 +274,7 @@ To add an action, add a parse function in `steps.ts` and register it in the map.
 ### 4.2 Directory Layout
 
 ```text
-core/src/core/syntax/
+src/core/syntax/
 ├── index.ts     # exports analyze and types
 ├── types.ts     # TestCase, Step, Diagnostic
 ├── analyze.ts
@@ -286,9 +286,9 @@ core/src/core/syntax/
 
 | Type        | Coverage | Location |
 | ----------- | -------- | -------- |
-| Unit        | `FieldReader`: reading fields by type, line/column conversion | `core/test/syntax/fields.test.ts` |
-| Integration | `analyze()` valid fixtures: at least one per action; the output `TestCase` matches the expected one | `core/test/syntax/fixtures/valid/` |
-| Integration | `analyze()` invalid fixtures: at least one per error code; assert `code`, `line`, `column` | `core/test/syntax/fixtures/invalid/` |
-| Integration | CLI `validate`: output format, `--json`, exit code | `cli/test/` |
+| Unit        | `FieldReader`: reading fields by type, line/column conversion | `src/tests/unit/core/syntax/fields.test.ts` |
+| Integration | `analyze()` valid fixtures: at least one per action; the output `TestCase` matches the expected one | `src/tests/integration/syntax/fixtures/valid/` |
+| Integration | `analyze()` invalid fixtures: at least one per error code; assert `code`, `line`, `column` | `src/tests/integration/syntax/fixtures/invalid/` |
+| Integration | CLI `validate`: output format, `--json`, exit code | `src/tests/integration/cli/` |
 
 Invalid fixtures are named after the error code, e.g. `E003-missing-value.yaml`, with a `.json` file of the same name next to it containing the expected `diagnostics`.
