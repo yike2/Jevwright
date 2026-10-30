@@ -159,6 +159,8 @@ Useful commands: `pnpm install`, `pnpm dev`, `pnpm --filter core test`, `pnpm te
 - Architecture diagram: [`docs/references/arch.svg`](docs/references/arch.svg).
 - Architecture and run sequence diagrams: `docs/archify/<diagram>/index.html`, generated from each
   folder's `candidate.json`. Follow [`docs/archify/rule.md`](docs/archify/rule.md) when editing them.
+  Online: [architecture](https://yike2.github.io/Jevwright/archify/jevwright-architecture/),
+  [run sequence](https://yike2.github.io/Jevwright/archify/jevwright-sequence/).
 - **Keep the PRD, `docs/tech/`, and diagrams in sync.** When a change affects product scope, a module's
   behavior or interface, or the architecture or run flow, update every affected doc and diagram in the
   same PR. If they disagree, follow the priority in Section 1.1 and fix the lower-priority one.
@@ -166,6 +168,8 @@ Useful commands: `pnpm install`, `pnpm dev`, `pnpm --filter core test`, `pnpm te
   If you implement a Core module that has no doc yet, write the doc from the template first and get it
   reviewed in a separate PR.
 - Wireframes: `docs/references/workspace.svg` and `docs/references/dashboard.svg`.
+- Interactive UI prototype: [online](https://yike2.github.io/Jevwright/references/ui-prototype.html),
+  [source](docs/references/ui-prototype.html).
 
 ### 5.1 Mockup Descriptions
 
