@@ -1,6 +1,6 @@
 """Make an Archify HTML open in light theme by default instead of following the OS.
 
-Usage: python3 .archify/default-light.py <diagram.html>
+Usage: python3 docs/archify/default-light.py <diagram.html>
 
 A ?theme= URL parameter and the reader's saved toggle still win.
 """

@@ -8,7 +8,7 @@
   "provenance": "current",
   "deliveryReceiptId": "345f0a49-a437-4fa4-87a5-59d2d7b5a7be",
   "artifact": {
-    "path": "/home/dev/workspace/6983/Jevwright/.archify/jevwright-sequence/index.html",
+    "path": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/index.html",
     "sha256": "3b393e0b2ddb87d33b963c22c9522cad24cda436c6c61e7fbe95dbc3b911977b",
     "bytes": 873251
   },
@@ -26,7 +26,7 @@
       "severity": "warning",
       "message": "No supported browser found. Install Chrome/Chromium (or Microsoft Edge), or set ARCHIFY_CHROME to its executable path.",
       "subject": {
-        "artifact": "/home/dev/workspace/6983/Jevwright/.archify/jevwright-sequence/index.html"
+        "artifact": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/index.html"
       },
       "evidence": {
         "executable": null

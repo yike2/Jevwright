@@ -6,12 +6,12 @@
   "type": "architecture",
   "quality": "showcase",
   "specification": {
-    "path": "/home/dev/workspace/6983/Jevwright/.archify/jevwright-architecture/candidate.json",
+    "path": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-architecture/candidate.json",
     "sha256": "14d143977b92856f77f3790feb003317e97448ac626ee2965abaf72b2b4187e5",
     "bytes": 7839
   },
   "artifact": {
-    "path": "/home/dev/workspace/6983/Jevwright/.archify/jevwright-architecture/index.html",
+    "path": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-architecture/index.html",
     "sha256": "29c2d4969e387f5f562ca61d65faeb382bbb68da2137a84333a09addb7b781e1",
     "bytes": 864506
   },
@@ -28,7 +28,7 @@
       "severity": "warning",
       "message": "No supported browser found. Install Chrome/Chromium (or Microsoft Edge), or set ARCHIFY_CHROME to its executable path.",
       "subject": {
-        "artifact": "/home/dev/workspace/6983/Jevwright/.archify/jevwright-architecture/index.html"
+        "artifact": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-architecture/index.html"
       },
       "evidence": {
         "executable": null
@@ -44,9 +44,9 @@
     "truncated": false
   },
   "evidence": {
-    "receipt": "/home/dev/workspace/6983/Jevwright/.archify/jevwright-architecture/index.finalize.json",
-    "summaryReceipt": "/home/dev/workspace/6983/Jevwright/.archify/jevwright-architecture/index.finalize-summary.json",
-    "browserCheckReceipt": "/home/dev/workspace/6983/Jevwright/.archify/jevwright-architecture/index.browser-check.json"
+    "receipt": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-architecture/index.finalize.json",
+    "summaryReceipt": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-architecture/index.finalize-summary.json",
+    "browserCheckReceipt": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-architecture/index.browser-check.json"
   },
   "update": {
     "status": "current",

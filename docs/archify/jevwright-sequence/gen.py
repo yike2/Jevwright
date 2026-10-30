@@ -1,7 +1,7 @@
 """Generate candidate.json for the Jevwright Run sequence diagram.
 
 Edit P (lanes) or M (stages and messages), then run:
-  python3 .archify/jevwright-sequence/gen.py
+  python3 docs/archify/jevwright-sequence/gen.py
 y coordinates, stage bands and activation bars are derived from M.
 """
 import json
@@ -112,7 +112,7 @@ doc = {
     "meta": {
         "title": "Jevwright Run Sequence",
         "locale": "en",
-        "output": ".archify/jevwright-sequence/index.html",
+        "output": "docs/archify/jevwright-sequence/index.html",
         "quality_profile": "showcase",
         "visual_preset": "editorial",
     },

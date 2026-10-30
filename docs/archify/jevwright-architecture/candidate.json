@@ -4,7 +4,7 @@
   "meta": {
     "title": "Jevwright Layered Architecture",
     "locale": "en",
-    "output": ".archify/jevwright-architecture/index.html",
+    "output": "docs/archify/jevwright-architecture/index.html",
     "quality_profile": "showcase",
     "visual_preset": "editorial"
   },

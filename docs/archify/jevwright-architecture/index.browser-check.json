@@ -8,7 +8,7 @@
   "provenance": "current",
   "deliveryReceiptId": "55b067c0-e39f-41a7-94af-e0bb281a2f81",
   "artifact": {
-    "path": "/home/dev/workspace/6983/Jevwright/.archify/jevwright-architecture/index.html",
+    "path": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-architecture/index.html",
     "sha256": "29c2d4969e387f5f562ca61d65faeb382bbb68da2137a84333a09addb7b781e1",
     "bytes": 864506
   },
@@ -26,7 +26,7 @@
       "severity": "warning",
       "message": "No supported browser found. Install Chrome/Chromium (or Microsoft Edge), or set ARCHIFY_CHROME to its executable path.",
       "subject": {
-        "artifact": "/home/dev/workspace/6983/Jevwright/.archify/jevwright-architecture/index.html"
+        "artifact": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-architecture/index.html"
       },
       "evidence": {
         "executable": null

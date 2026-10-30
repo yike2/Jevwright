@@ -7,12 +7,12 @@
   "quality": "showcase",
   "startedAt": "2026-10-29T05:01:46.089Z",
   "specification": {
-    "path": "/home/dev/workspace/6983/Jevwright/.archify/jevwright-sequence/candidate.json",
+    "path": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/candidate.json",
     "sha256": "b5ac99a0eb0c16a96163667c58acc0171e3cac3bb11f203c5fbf2222a87705eb",
     "bytes": 11544
   },
   "artifact": {
-    "path": "/home/dev/workspace/6983/Jevwright/.archify/jevwright-sequence/index.html",
+    "path": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/index.html",
     "sha256": "3b393e0b2ddb87d33b963c22c9522cad24cda436c6c61e7fbe95dbc3b911977b",
     "bytes": 873251
   },
@@ -27,8 +27,8 @@
         "/home/dev/.claude/skills/archify/bin/archify.mjs",
         "deliver",
         "sequence",
-        "/home/dev/workspace/6983/Jevwright/.archify/jevwright-sequence/candidate.json",
-        "/home/dev/workspace/6983/Jevwright/.archify/jevwright-sequence/index.html",
+        "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/candidate.json",
+        "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/index.html",
         "--quality",
         "showcase",
         "--json"
@@ -60,8 +60,8 @@
         "/home/dev/.claude/skills/archify/bin/archify.mjs",
         "deliver",
         "sequence",
-        "/home/dev/workspace/6983/Jevwright/.archify/jevwright-sequence/candidate.json",
-        "/home/dev/workspace/6983/Jevwright/.archify/jevwright-sequence/index.html",
+        "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/candidate.json",
+        "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/index.html",
         "--quality",
         "showcase",
         "--json"
@@ -72,8 +72,8 @@
         "ok": true,
         "command": "deliver",
         "type": "sequence",
-        "input": "/home/dev/workspace/6983/Jevwright/.archify/jevwright-sequence/candidate.json",
-        "output": "/home/dev/workspace/6983/Jevwright/.archify/jevwright-sequence/index.html",
+        "input": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/candidate.json",
+        "output": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/index.html",
         "specification": {
           "sha256": "b5ac99a0eb0c16a96163667c58acc0171e3cac3bb11f203c5fbf2222a87705eb",
           "bytes": 11544
@@ -111,12 +111,12 @@
         "/home/dev/.nvm/versions/node/v22.23.2/bin/node",
         "/home/dev/.claude/skills/archify/bin/archify.mjs",
         "check",
-        "/home/dev/workspace/6983/Jevwright/.archify/jevwright-sequence/index.html",
+        "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/index.html",
         "--require-provenance"
       ],
       "receipt": {
         "ok": true,
-        "file": "/home/dev/workspace/6983/Jevwright/.archify/jevwright-sequence/index.html",
+        "file": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/index.html",
         "artifact": {
           "sha256": "3b393e0b2ddb87d33b963c22c9522cad24cda436c6c61e7fbe95dbc3b911977b",
           "bytes": 873251
@@ -261,7 +261,7 @@
         "/home/dev/.nvm/versions/node/v22.23.2/bin/node",
         "/home/dev/.claude/skills/archify/bin/archify.mjs",
         "browser-check",
-        "/home/dev/workspace/6983/Jevwright/.archify/jevwright-sequence/index.html",
+        "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/index.html",
         "--json",
         "--require-provenance"
       ],
@@ -276,7 +276,7 @@
         "provenance": "current",
         "deliveryReceiptId": "345f0a49-a437-4fa4-87a5-59d2d7b5a7be",
         "artifact": {
-          "path": "/home/dev/workspace/6983/Jevwright/.archify/jevwright-sequence/index.html",
+          "path": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/index.html",
           "sha256": "3b393e0b2ddb87d33b963c22c9522cad24cda436c6c61e7fbe95dbc3b911977b",
           "bytes": 873251
         },
@@ -294,7 +294,7 @@
             "severity": "warning",
             "message": "No supported browser found. Install Chrome/Chromium (or Microsoft Edge), or set ARCHIFY_CHROME to its executable path.",
             "subject": {
-              "artifact": "/home/dev/workspace/6983/Jevwright/.archify/jevwright-sequence/index.html"
+              "artifact": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/index.html"
             },
             "evidence": {
               "executable": null
@@ -345,7 +345,7 @@
       "severity": "warning",
       "message": "No supported browser found. Install Chrome/Chromium (or Microsoft Edge), or set ARCHIFY_CHROME to its executable path.",
       "subject": {
-        "artifact": "/home/dev/workspace/6983/Jevwright/.archify/jevwright-sequence/index.html"
+        "artifact": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/index.html"
       },
       "evidence": {
         "executable": null
@@ -356,9 +356,9 @@
     }
   ],
   "evidence": {
-    "receipt": "/home/dev/workspace/6983/Jevwright/.archify/jevwright-sequence/index.finalize.json",
-    "summaryReceipt": "/home/dev/workspace/6983/Jevwright/.archify/jevwright-sequence/index.finalize-summary.json",
-    "browserCheckReceipt": "/home/dev/workspace/6983/Jevwright/.archify/jevwright-sequence/index.browser-check.json"
+    "receipt": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/index.finalize.json",
+    "summaryReceipt": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/index.finalize-summary.json",
+    "browserCheckReceipt": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/index.browser-check.json"
   },
   "visualReview": "not-requested",
   "failedStage": "browser-check",

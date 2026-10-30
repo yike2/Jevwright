@@ -4,7 +4,7 @@
   "meta": {
     "title": "Jevwright Run Sequence",
     "locale": "en",
-    "output": ".archify/jevwright-sequence/index.html",
+    "output": "docs/archify/jevwright-sequence/index.html",
     "quality_profile": "showcase",
     "visual_preset": "editorial"
   },

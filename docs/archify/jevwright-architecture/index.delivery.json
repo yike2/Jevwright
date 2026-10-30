@@ -4,8 +4,8 @@
   "status": "current",
   "command": "deliver",
   "type": "architecture",
-  "input": "/home/dev/workspace/6983/Jevwright/.archify/jevwright-architecture/candidate.json",
-  "output": "/home/dev/workspace/6983/Jevwright/.archify/jevwright-architecture/index.html",
+  "input": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-architecture/candidate.json",
+  "output": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-architecture/index.html",
   "specification": {
     "sha256": "14d143977b92856f77f3790feb003317e97448ac626ee2965abaf72b2b4187e5",
     "bytes": 7839
