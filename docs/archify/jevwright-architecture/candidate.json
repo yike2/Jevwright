@@ -71,7 +71,6 @@
       "type": "database",
       "label": "Data Store",
       "sublabel": "Tests · history · reports",
-      "tag": "TBD",
       "pos": [
         600,
         360
@@ -169,7 +168,7 @@
       "id": "driver",
       "type": "backend",
       "label": "Browser Driver",
-      "sublabel": "Wraps Playwright · drives Chromium (site under test)",
+      "sublabel": "Wraps Playwright · drives the browser (site under test)",
       "pos": [
         380,
         1000
@@ -205,7 +204,7 @@
     },
     {
       "kind": "region",
-      "label": "Service (deployment TBD)",
+      "label": "Service",
       "wraps": [
         "api",
         "store"
