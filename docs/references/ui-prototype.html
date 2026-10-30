@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Jevwright — UI prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E8ECF0; --side:#DDE3E9; --surface:#FFFFFF; --surface-2:#F4F6F8; --code-bg:#FBFCFD;
+  --ink:#16202A; --muted:#5A6774; --faint:#9AA6B2; --line:#CDD5DD;
+  --accent:#2F43C4; --accent-ink:#FFFFFF;
+  --pass:#1E7A4C; --fail:#B5372F; --run:#A86E00; --queue:#66727E;
+  --mono:"IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --sans:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E141A; --side:#121A21; --surface:#18212A; --surface-2:#1D2731; --code-bg:#141C24;
+    --ink:#E3E9EF; --muted:#94A2AF; --faint:#5E6C79; --line:#2A3641;
+    --accent:#8D9BFF; --accent-ink:#0E141A;
+    --pass:#4CC08A; --fail:#F0716A; --run:#E5B247; --queue:#8D99A5;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E141A; --side:#121A21; --surface:#18212A; --surface-2:#1D2731; --code-bg:#141C24;
+  --ink:#E3E9EF; --muted:#94A2AF; --faint:#5E6C79; --line:#2A3641;
+  --accent:#8D9BFF; --accent-ink:#0E141A;
+  --pass:#4CC08A; --fail:#F0716A; --run:#E5B247; --queue:#8D99A5;
+  color-scheme: dark;
+}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{height:100%;margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 var(--sans);-webkit-font-smoothing:antialiased}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+[hidden]{display:none!important}
+
+/* ---------- buttons ---------- */
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:6px 12px;font-weight:500;font-size:13px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn:hover{background:var(--surface-2)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.ghost{border-color:transparent;background:transparent}
+.btn.ghost:hover{background:color-mix(in srgb,var(--ink) 7%,transparent)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.icon-btn{border:0;background:transparent;border-radius:5px;width:24px;height:24px;display:inline-grid;place-items:center;color:var(--muted)}
+.icon-btn:hover{background:color-mix(in srgb,var(--ink) 8%,transparent);color:var(--ink)}
+
+/* ---------- auth ---------- */
+.auth{min-height:100%;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(320px,1fr)}
+.auth-intro{padding:56px clamp(24px,6vw,80px);display:flex;flex-direction:column;justify-content:center;gap:28px;border-right:1px solid var(--line)}
+.auth-intro h1{font-size:clamp(30px,4vw,44px);line-height:1.1;margin:0;font-weight:600;letter-spacing:-.02em;max-width:16ch}
+.auth-intro p{color:var(--muted);max-width:52ch;margin:0;font-size:15px}
+.sample{font:13px/1.65 var(--mono);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px 18px;max-width:520px;overflow-x:auto;white-space:pre}
+.sample .k{color:var(--accent)} .sample .s{color:var(--pass)} .sample .c{color:var(--faint)}
+.auth-card-wrap{display:grid;place-items:center;padding:32px 24px}
+.auth-card{width:100%;max-width:360px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:7px;padding:2px;background:var(--surface-2)}
+.seg button{border:0;background:transparent;padding:6px 14px;border-radius:5px;font-weight:500;font-size:13px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 0 0 1px var(--line)}
+.field{display:flex;flex-direction:column;gap:6px;margin-top:16px}
+.field label{font-weight:500;font-size:13px}
+.input{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:9px 11px;width:100%}
+.input:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:transparent}
+.hint{color:var(--muted);font-size:12.5px;margin-top:14px}
+.form-err{color:var(--fail);font-size:13px;margin-top:10px;min-height:1.2em}
+
+/* ---------- app shell ---------- */
+.app{display:grid;grid-template-columns:268px minmax(0,1fr);height:100%}
+.side{background:var(--side);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+.brand{display:flex;align-items:center;gap:10px;padding:16px 16px 12px;font-weight:600;font-size:15px}
+.mark{width:22px;height:22px;flex:none}
+.tree-head{display:flex;align-items:center;justify-content:space-between;padding:8px 16px 4px;color:var(--muted);font-size:12.5px;font-weight:500}
+.tree{flex:1;overflow:auto;padding:4px 8px 12px}
+.row{display:flex;align-items:center;gap:6px;border-radius:5px;padding:4px 6px;min-height:28px;cursor:pointer;user-select:none}
+.row:hover{background:color-mix(in srgb,var(--ink) 6%,transparent)}
+.row .name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .acts{opacity:0;display:flex}
+.row:hover .acts,.row:focus-within .acts{opacity:1}
+.row.proj{font-weight:600}
+.row.mod{padding-left:20px;color:var(--muted);font-weight:500}
+.row.file{padding-left:38px;font-family:var(--mono);font-size:12.5px}
+.row.sel{background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--ink)}
+.caret{width:12px;transition:transform .15s;color:var(--faint);flex:none}
+.caret.open{transform:rotate(90deg)}
+.dot{width:8px;height:8px;border-radius:50%;flex:none;background:var(--faint);opacity:.5}
+.dot.passed{background:var(--pass);opacity:1}.dot.failed{background:var(--fail);opacity:1}
+.dot.running{background:var(--run);opacity:1;animation:pulse 1s infinite}.dot.queued{background:var(--queue);opacity:1}
+@keyframes pulse{50%{opacity:.35}}
+.account{border-top:1px solid var(--line);padding:12px 14px;display:flex;align-items:center;gap:10px}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:600;font-size:12px;flex:none}
+.account .who{flex:1;min-width:0;font-size:13px}
+.account .who div:last-child{color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+main{display:flex;flex-direction:column;min-width:0;min-height:0}
+.topbar{display:flex;align-items:center;gap:12px;padding:10px 20px;border-bottom:1px solid var(--line);background:var(--surface);min-height:52px}
+.crumbs{flex:1;min-width:0;display:flex;gap:6px;align-items:center;color:var(--muted);font-size:13px;overflow:hidden;white-space:nowrap}
+.crumbs b{color:var(--ink);font-weight:500;font-family:var(--mono);font-size:12.5px}
+.crumbs .sep{color:var(--faint)}
+.menu-btn{display:none}
+#view{flex:1;min-height:0;overflow:auto}
+
+/* ---------- editor ---------- */
+.editor{display:flex;flex-direction:column;height:100%}
+.ed-bar{display:flex;align-items:center;gap:8px;padding:10px 20px;flex-wrap:wrap}
+.ed-title{flex:1;min-width:160px;display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:13px}
+.dirty{width:7px;height:7px;border-radius:50%;background:var(--run)}
+.ed-body{flex:1;min-height:200px;display:flex;margin:0 20px;border:1px solid var(--line);border-radius:8px;background:var(--code-bg);overflow:hidden}
+.gutter{width:52px;flex:none;overflow:hidden;border-right:1px solid var(--line);padding:12px 0;font:12px/20px var(--mono);color:var(--faint);text-align:right;user-select:none}
+.gutter div{padding-right:10px;height:20px;position:relative}
+.gutter div.err{color:var(--fail);font-weight:500}
+.gutter div.err::before{content:"";position:absolute;left:6px;top:6px;width:8px;height:8px;border-radius:50%;background:var(--fail)}
+.code{flex:1;border:0;resize:none;background:transparent;padding:12px 14px;font:13px/20px var(--mono);white-space:pre;overflow:auto;tab-size:2}
+.code:focus{outline:none}
+.diag{margin:12px 20px 20px;border:1px solid var(--line);border-radius:8px;background:var(--surface);max-height:32%;overflow:auto;flex:none}
+.diag-head{display:flex;align-items:center;gap:8px;padding:9px 14px;font-weight:500;font-size:13px;border-bottom:1px solid var(--line)}
+.diag-head.ok{border-bottom:0;color:var(--pass)}
+.diag-item{display:flex;gap:12px;padding:8px 14px;border:0;border-bottom:1px solid var(--line);background:transparent;width:100%;text-align:left;font-size:13px}
+.diag-item:last-child{border-bottom:0}
+.diag-item:hover{background:var(--surface-2)}
+.diag-item .loc{font-family:var(--mono);color:var(--fail);flex:none;min-width:56px}
+
+/* ---------- dashboard ---------- */
+.dash{padding:16px 20px 28px}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin-bottom:18px}
+.tab{border:0;background:transparent;padding:9px 14px;font-weight:500;font-size:13.5px;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tab .count{font-size:11.5px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:0 6px;margin-left:6px;color:var(--muted)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px}
+.tbl-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{text-align:left;font-weight:500;color:var(--muted);padding:9px 14px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+tbody tr.click{cursor:pointer}
+tbody tr.click:hover td{background:var(--surface-2)}
+tbody tr.sel td{background:color-mix(in srgb,var(--accent) 9%,transparent)}
+.mono{font-family:var(--mono);font-size:12.5px}
+.muted{color:var(--muted)}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:2px 9px 2px 7px;border-radius:999px;font-size:12px;font-weight:500;white-space:nowrap;background:color-mix(in srgb,var(--queue) 14%,transparent);color:var(--queue)}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.passed{background:color-mix(in srgb,var(--pass) 14%,transparent);color:var(--pass)}
+.pill.failed{background:color-mix(in srgb,var(--fail) 14%,transparent);color:var(--fail)}
+.pill.running{background:color-mix(in srgb,var(--run) 16%,transparent);color:var(--run)}
+.pill.none{background:transparent;color:var(--faint);padding-left:0}.pill.none::before{display:none}
+.empty{padding:40px 24px;text-align:center;color:var(--muted)}
+.empty strong{display:block;color:var(--ink);font-weight:500;margin-bottom:4px}
+
+/* live run */
+.run-head{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+.run-head h2{margin:0;font-size:18px;font-weight:600}
+.run-head .stat{color:var(--muted);font-size:13px}
+.run-head .stat b{color:var(--ink);font-weight:500;font-variant-numeric:tabular-nums}
+.active-runs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:3px 10px;font-size:12.5px;display:inline-flex;gap:6px;align-items:center}
+.chip[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.live{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:16px;align-items:start}
+.steps{list-style:none;margin:0;padding:0}
+.step{display:grid;grid-template-columns:22px 18px minmax(0,1fr) auto;gap:10px;align-items:start;padding:11px 14px;border-bottom:1px solid var(--line)}
+.step:last-child{border-bottom:0}
+.step .n{color:var(--faint);font:12px/20px var(--mono);text-align:right}
+.step .ico{width:16px;height:16px;margin-top:2px}
+.step .lbl{font-size:13.5px;overflow-wrap:anywhere}
+.step.pending .lbl,.step.skipped .lbl{color:var(--muted)}
+.step.running{background:color-mix(in srgb,var(--run) 7%,transparent)}
+.step .meta{text-align:right;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.step .reason{grid-column:3/5;color:var(--fail);font-size:12.5px}
+.chain{display:flex;gap:3px;margin-top:6px;flex-wrap:wrap}
+.seg-c{font-size:11.5px;padding:1px 7px;border-radius:3px;border:1px solid var(--line);color:var(--faint);white-space:nowrap}
+.seg-c.ok{border-color:color-mix(in srgb,var(--pass) 45%,transparent);color:var(--pass);background:color-mix(in srgb,var(--pass) 9%,transparent)}
+.seg-c.miss{border-color:color-mix(in srgb,var(--fail) 40%,transparent);color:var(--fail);text-decoration:line-through;text-decoration-thickness:1px}
+.seg-c.mid{border-color:color-mix(in srgb,var(--run) 45%,transparent);color:var(--run);background:color-mix(in srgb,var(--run) 9%,transparent)}
+.seg-c.try{border-color:var(--run);color:var(--run)}
+.browser{overflow:hidden}
+.browser-bar{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line);background:var(--surface-2)}
+.browser-bar i{width:9px;height:9px;border-radius:50%;background:var(--line);display:block}
+.url{flex:1;min-width:0;font:12px var(--mono);color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:5px;padding:3px 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.page{position:relative;aspect-ratio:16/11;background:var(--surface)}
+.pe{position:absolute;border-radius:4px;background:var(--surface-2);border:1px solid var(--line)}
+.pe.hdr{border-radius:0;border-width:0 0 1px;background:var(--surface-2)}
+.pe.bar{border:0;background:color-mix(in srgb,var(--ink) 12%,transparent);height:3%!important}
+.pe.btn-m{background:color-mix(in srgb,var(--ink) 75%,transparent);border:0}
+.bbox{position:absolute;border:2px solid var(--pass);border-radius:4px;transition:all .25s ease}
+.bbox.miss{border-color:var(--fail);border-style:dashed}
+.bbox.mid{border-color:var(--run)}
+.bbox.assert{border-style:dashed;border-color:var(--accent)}
+.bbox span{position:absolute;left:-2px;bottom:100%;margin-bottom:3px;background:inherit;font-size:11px;white-space:nowrap;padding:1px 6px;border-radius:3px;color:#fff;background:var(--pass)}
+.bbox.miss span{background:var(--fail)}.bbox.mid span{background:var(--run)}.bbox.assert span{background:var(--accent);color:var(--accent-ink)}
+.scan{position:absolute;inset:0;pointer-events:none;background:linear-gradient(to bottom,transparent,color-mix(in srgb,var(--accent) 22%,transparent) 50%,transparent);height:18%;animation:scan 1.3s linear infinite}
+@keyframes scan{from{transform:translateY(-20%)}to{transform:translateY(560%)}}
+@media (prefers-reduced-motion: reduce){.scan,.dot.running{animation:none}.bbox{transition:none}}
+.caption{padding:9px 12px;font-size:12.5px;color:var(--muted);border-top:1px solid var(--line)}
+.logs{margin-top:16px}
+.logs pre{margin:0;padding:12px 14px;font:12px/1.65 var(--mono);max-height:220px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere}
+.logs .lh{padding:9px 14px;border-bottom:1px solid var(--line);font-weight:500;font-size:13px;display:flex;justify-content:space-between;gap:8px}
+.queued-note{padding:12px 14px;border-bottom:1px solid var(--line);color:var(--muted);font-size:13px}
+
+.detail{margin-top:18px}
+.detail-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 14px;border-bottom:1px solid var(--line)}
+.detail-head h3{margin:0;font-size:15px;font-weight:600;flex:1}
+
+/* overlays */
+.overlay{position:fixed;inset:0;background:color-mix(in srgb,#000 40%,transparent);display:grid;place-items:center;padding:20px;z-index:50}
+.modal{background:var(--surface);border:1px solid var(--line);border-radius:10px;width:min(640px,100%);max-height:85vh;display:flex;flex-direction:column}
+.modal.small{width:min(380px,100%)}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line);font-weight:600}
+.modal-body{padding:16px;overflow:auto}
+.modal-foot{display:flex;justify-content:flex-end;gap:8px;padding:12px 16px;border-top:1px solid var(--line)}
+.modal pre{margin:0;font:12px/1.6 var(--mono);white-space:pre}
+#toasts{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:8px;z-index:60}
+.toast{background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:7px;font-size:13px;max-width:340px;box-shadow:0 6px 24px rgba(0,0,0,.18)}
+.toast.err{background:var(--fail);color:#fff}
+
+@media (max-width: 900px){
+  .live{grid-template-columns:1fr}
+  .auth{grid-template-columns:1fr}
+  .auth-intro{border-right:0;border-bottom:1px solid var(--line);padding:36px 24px}
+}
+@media (max-width: 760px){
+  .app{grid-template-columns:1fr}
+  .side{position:fixed;top:0;bottom:0;left:0;width:280px;z-index:40;transform:translateX(-100%);transition:transform .2s;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+  .app.side-open .side{transform:none;box-shadow:0 0 0 100vmax color-mix(in srgb,#000 35%,transparent)}
+  .menu-btn{display:inline-grid}
+  .topbar{padding:10px 12px}
+  .ed-bar,.dash{padding-left:12px;padding-right:12px}
+  .ed-body,.diag{margin-left:12px;margin-right:12px}
+  .view-switch .lbl-long{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ AUTH ============ -->
+<div id="auth" class="auth">
+  <section class="auth-intro">
+    <div class="brand" style="padding:0">
+      <svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" fill="var(--accent)"/><rect x="6.5" y="7" width="11" height="8" rx="1.5" fill="none" stroke="var(--accent-ink)" stroke-width="1.8"/><path d="M9 18.5h6" stroke="var(--accent-ink)" stroke-width="1.8" stroke-linecap="round"/></svg>
+      Jevwright
+    </div>
+    <h1>Browser tests your agent can write in plain steps.</h1>
+    <p>Each step is one action or one assertion. Jev finds the element from a screenshot or the page’s DOM, so a layout change doesn’t break the test.</p>
+<div class="sample" aria-label="Example test file"><span class="k">name</span>: <span class="s">"User login"</span>
+<span class="k">steps</span>:
+  - <span class="k">open</span>: <span class="s">"https://demo-shop.jevwright.dev/login"</span>
+  - <span class="k">input</span>:
+      <span class="k">target</span>: <span class="s">"Password field"</span>
+      <span class="k">value</span>: <span class="s">"{{DEMO_PASSWORD}}"</span>   <span class="c"># never sent to Jev</span>
+  - <span class="k">click</span>: <span class="s">"Sign in button"</span>
+  - <span class="k">assert</span>: <span class="s">"The page greets the user by name"</span></div>
+  </section>
+  <section class="auth-card-wrap">
+    <form class="auth-card" id="authForm" novalidate>
+      <div class="seg" role="group" aria-label="Account mode">
+        <button type="button" data-mode="login" aria-pressed="true">Log in</button>
+        <button type="button" data-mode="register" aria-pressed="false">Register</button>
+      </div>
+      <div class="field"><label for="email">Email</label><input class="input" id="email" type="email" autocomplete="email" placeholder="you@example.com" value="zhimin@example.com"></div>
+      <div class="field"><label for="pw">Password</label><input class="input" id="pw" type="password" autocomplete="current-password" placeholder="At least 8 characters" value="demo-pass-123"></div>
+      <div class="form-err" id="authErr" role="alert"></div>
+      <button class="btn primary" type="submit" id="authSubmit" style="width:100%;justify-content:center;padding:9px">Log in</button>
+      <p class="hint">Prototype: any email and an 8+ character password work. Nothing is sent to a server.</p>
+    </form>
+  </section>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="app" class="app" hidden>
+  <aside class="side" id="side">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" fill="var(--accent)"/><rect x="6.5" y="7" width="11" height="8" rx="1.5" fill="none" stroke="var(--accent-ink)" stroke-width="1.8"/><path d="M9 18.5h6" stroke="var(--accent-ink)" stroke-width="1.8" stroke-linecap="round"/></svg>
+      Jevwright
+    </div>
+    <div class="tree-head"><span>Projects</span><button class="icon-btn" id="newProject" title="New project" aria-label="New project">＋</button></div>
+    <nav class="tree" id="tree" aria-label="Projects, modules and test files"></nav>
+    <div class="account">
+      <div class="avatar" id="avatar">ZG</div>
+      <div class="who"><div>Account</div><div id="whoEmail"></div></div>
+      <button class="btn ghost" id="logout" style="padding:4px 8px">Log out</button>
+    </div>
+  </aside>
+  <main>
+    <header class="topbar">
+      <button class="icon-btn menu-btn" id="menuBtn" aria-label="Open sidebar">☰</button>
+      <div class="crumbs" id="crumbs"></div>
+      <div class="seg view-switch" role="group" aria-label="View">
+        <button type="button" data-view="editor" aria-pressed="true">Editor</button>
+        <button type="button" data-view="dashboard" aria-pressed="false">Dashboard</button>
+      </div>
+    </header>
+    <section id="view"></section>
+  </main>
+</div>
+
+<input type="file" id="fileInput" accept=".yaml,.yml,text/yaml" hidden>
+<div id="overlayRoot"></div>
+<div id="toasts" aria-live="polite"></div>
+
+<script>
+/* =========================================================
+   Utilities
+   ========================================================= */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const wait = ms => new Promise(r => setTimeout(r, ms));
+let uid = 100; const nid = p => p + (++uid);
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const fmtMs = ms => ms == null ? '' : ms < 1000 ? `${Math.round(ms)} ms` : `${(ms/1000).toFixed(2)} s`;
+const fmtTime = d => d ? d.toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'}) : '—';
+const clock = d => d.toTimeString().slice(0,8) + '.' + String(d.getMilliseconds()).padStart(3,'0');
+
+function toast(msg, err){
+  const t = document.createElement('div'); t.className = 'toast' + (err ? ' err' : ''); t.textContent = msg;
+  $('#toasts').appendChild(t); setTimeout(() => t.remove(), 4200);
+}
+
+/* =========================================================
+   Test Case validator (mirrors `jevwright validate`)
+   ========================================================= */
+const ACTIONS = ['open','click','input','press','scroll','sleep','waitFor','assert'];
+const PLANNING = ['ai','aiAct','aiAction','aiTap','aiInput','aiQuery','aiAssert','aiHover','aiKeyboardPress','aiScroll','aiWaitFor','aiLocate','flow','tasks'];
+const TOP = ['name','description','baseUrl','timeoutMs','steps'];
+const FIELDS = {open:['url'], click:['target','xpath'], input:['target','xpath','value'], press:['key','target','xpath'],
+  scroll:['direction','amount','target','xpath'], sleep:['ms'], waitFor:['condition','timeoutMs'], assert:['statement']};
+const REQ = {open:['url'], click:['target'], input:['target','value'], press:['key'], scroll:['direction'], sleep:['ms'], waitFor:['condition'], assert:['statement']};
+const SHORT = {open:'url', click:'target', press:'key', scroll:'direction', sleep:'ms', waitFor:'condition', assert:'statement'};
+
+function stripComment(line){
+  let q = null;
+  for (let i = 0; i < line.length; i++){
+    const c = line[i];
+    if (q){ if (c === q) q = null; }
+    else if (c === '"' || c === "'") q = c;
+    else if (c === '#' && (i === 0 || /\s/.test(line[i-1]))) return line.slice(0, i).replace(/\s+$/, '');
+  }
+  return line.replace(/\s+$/, '');
+}
+const unq = v => { v = v.trim(); if (v.length >= 2 && ((v[0]==='"' && v.at(-1)==='"') || (v[0]==="'" && v.at(-1)==="'"))) return v.slice(1,-1); return v; };
+
+function validate(text){
+  const errors = [], steps = [], meta = {};
+  const err = (line, col, msg) => errors.push({line, col, msg});
+  let inSteps = false, stepIndent = -1, cur = null, curIndent = -1, sawSteps = false;
+
+  function handleKey(key, val, ln, col){
+    if (PLANNING.includes(key)) return err(ln, col, `Unknown action key “${key}” (LLM planning keys are not supported).`);
+    if (!ACTIONS.includes(key)) return err(ln, col, `Unknown action key “${key}”. Use one of: ${ACTIONS.join(', ')}.`);
+    if (cur.kind) return err(ln, col, `Step must contain exactly one Action or Assertion, found both “${cur.kind}” and “${key}”.`);
+    cur.kind = key;
+    if (val) cur.scalar = unq(val);
+  }
+
+  text.split('\n').forEach((raw, i) => {
+    const ln = i + 1;
+    const lead = raw.match(/^\s*/)[0];
+    if (lead.includes('\t')) return err(ln, 1, 'Use spaces for indentation, not tabs.');
+    const t = stripComment(raw);
+    if (!t.trim()) return;
+    const indent = lead.length;
+
+    if (indent === 0){
+      inSteps = false; cur = null;
+      const m = /^([A-Za-z_]\w*):\s*(.*)$/.exec(t);
+      if (!m) return err(ln, 1, 'Expected a “key: value” pair.');
+      const [, key, val] = m;
+      if (PLANNING.includes(key)) return err(ln, 1, `Unknown key “${key}” (LLM planning keys are not supported).`);
+      if (!TOP.includes(key)) return err(ln, 1, `Unknown top-level key “${key}”.`);
+      if (key === 'steps'){ inSteps = true; sawSteps = true; if (val) err(ln, 8, '“steps” must be a list of steps on the following lines.'); return; }
+      meta[key] = unq(val);
+      if (key === 'timeoutMs' && isNaN(+meta[key])) err(ln, 12, '“timeoutMs” must be a number.');
+      return;
+    }
+    if (!inSteps) return err(ln, indent + 1, 'Unexpected indentation outside “steps”.');
+
+    const dash = /^(\s*)-\s+([A-Za-z_]\w*):\s*(.*)$/.exec(t);
+    if (dash){
+      const di = dash[1].length;
+      if (stepIndent < 0) stepIndent = di;
+      if (di !== stepIndent) err(ln, di + 1, 'This step is indented differently from the steps above it.');
+      cur = {line: ln, kind: null, fields: {}};
+      steps.push(cur); curIndent = di + 2;
+      handleKey(dash[2], dash[3], ln, di + 3);
+      return;
+    }
+    if (/^\s*-/.test(t)) return err(ln, indent + 1, 'Each step must start with an action key, like “- click:”.');
+    const kv = /^(\s*)([A-Za-z_]\w*):\s*(.*)$/.exec(t);
+    if (!kv) return err(ln, indent + 1, 'Expected a “key: value” pair.');
+    if (!cur) return err(ln, indent + 1, 'This field appears before any step.');
+    const ind = kv[1].length, key = kv[2], val = kv[3];
+    if (ind === curIndent) return handleKey(key, val, ln, ind + 1);
+    if (ind > curIndent){
+      if (!cur.kind) return;
+      if (!FIELDS[cur.kind].includes(key)) return err(ln, ind + 1, `“${key}” is not a field of ${cur.kind}. Allowed: ${FIELDS[cur.kind].join(', ')}.`);
+      cur.fields[key] = unq(val);
+      return;
+    }
+    err(ln, ind + 1, 'Indentation doesn’t match the step it belongs to.');
+  });
+
+  if (!meta.name) err(1, 1, 'Missing required key “name”.');
+  if (!sawSteps) err(1, 1, 'Missing required key “steps”.');
+  else if (!steps.length) err(1, 1, '“steps” is empty. Add at least one step.');
+
+  for (const s of steps){
+    if (!s.kind) continue;
+    if (s.scalar != null){
+      if (SHORT[s.kind]) s.fields[SHORT[s.kind]] = s.scalar;
+      else err(s.line, 1, `“${s.kind}” needs “target” and “value” fields, not a single value.`);
+    }
+    for (const r of REQ[s.kind]) if (s.fields[r] == null || s.fields[r] === '') err(s.line, 1, `“${s.kind}” is missing its “${r}” field.`);
+    if (s.kind === 'sleep' && s.fields.ms != null && isNaN(+s.fields.ms)) err(s.line, 1, '“sleep” takes a number of milliseconds.');
+  }
+  errors.sort((a,b) => a.line - b.line || a.col - b.col);
+  return {errors, steps: steps.filter(s => s.kind), meta};
+}
+
+function stepLabel(s){
+  const f = s.fields;
+  switch (s.kind){
+    case 'open': return `open ${f.url}`;
+    case 'click': return `click “${f.target}”`;
+    case 'input': return `input “${f.target}”`;
+    case 'press': return `press ${f.key}` + (f.target ? ` in “${f.target}”` : '');
+    case 'scroll': return `scroll ${f.direction}` + (f.target ? ` in “${f.target}”` : '');
+    case 'sleep': return `sleep ${f.ms} ms`;
+    case 'waitFor': return `waitFor “${f.condition}”`;
+    case 'assert': return `assert “${f.statement}”`;
+  }
+}
+const locatable = s => ['click','input'].includes(s.kind) || (['press','scroll'].includes(s.kind) && s.fields.target);
+
+/* =========================================================
+   Simulated Harness outcomes (stand-in for the worker)
+   ========================================================= */
+function planStep(s, rnd, opts){
+  const f = s.fields, r = (a,b) => Math.round(a + rnd()*(b-a)), r2 = (a,b) => Math.round((a + rnd()*(b-a))*100)/100;
+  const text = (f.target || f.statement || f.condition || '').toLowerCase();
+  const broken = text.includes('promo') && !opts.prePass;
+  if (s.kind === 'open') return {status:'passed', ms:r(350,700), attempts:[]};
+  if (s.kind === 'sleep') return {status:'passed', ms:+f.ms, attempts:[]};
+  if (s.kind === 'assert' || s.kind === 'waitFor'){
+    if (broken) return {status:'failed', ms:r(1800,2300), method:'noul', conf:.53,
+      attempts:[{m:'noul', ok:false, conf:.46, note:'uncertain, re-asking'},{m:'noul', ok:false, conf:.53, note:'still uncertain'}],
+      reason:'Assertion stayed uncertain after one re-ask (Noul 0.53).'};
+    const c = r2(.86,.98); return {status:'passed', ms:r(700,1200), method:'noul', conf:c, attempts:[{m:'noul', ok:true, conf:c}]};
+  }
+  if (!locatable(s)) return {status:'passed', ms:r(60,120), attempts:[]};
+  const attempts = []; let ms = 0;
+  if (f.xpath){
+    if (!f.xpath.includes('legacy')){ attempts.push({m:'xpath', ok:true}); return {status:'passed', ms:r(60,140), method:'xpath', attempts}; }
+    attempts.push({m:'xpath', ok:false, note:'no match'}); ms += 40;
+  }
+  if (broken){
+    attempts.push({m:'visual', ok:false, conf:.31, note:'low confidence'});
+    attempts.push({m:'dom', ok:false, conf:.74, note:'chose “none of the above”'});
+    return {status:'failed', ms:ms + r(1900,2300), method:'dom', attempts,
+      reason:`Couldn’t locate “${f.target}”: Visual Locate 0.31, DOM Locate chose “none of the above”.`};
+  }
+  const x = rnd();
+  if (x < .18){ const c = r2(.55,.7); attempts.push({m:'visual', ok:true, mid:true, conf:c, note:'mid confidence, confirmed on padded crop'}); return {status:'passed', ms:ms + r(1600,2100), method:'visual', conf:c, attempts}; }
+  if (x < .3){ attempts.push({m:'visual', ok:false, conf:r2(.2,.4), note:'low confidence'}); const c = r2(.84,.95); attempts.push({m:'dom', ok:true, conf:c}); return {status:'passed', ms:ms + r(1800,2400), method:'dom', conf:c, attempts}; }
+  const c = r2(.86,.97); attempts.push({m:'visual', ok:true, conf:c});
+  return {status:'passed', ms:ms + r(1000,1500), method:'visual', conf:c, attempts};
+}
+
+const METHOD = {xpath:'XPath', visual:'Visual Locate', dom:'DOM Locate', noul:'Noul'};
+let runSeq = 40;
+
+function buildRun(file, opts = {}){
+  const parsed = validate(file.content);
+  const rnd = mulberry32(opts.seed ?? Math.floor(Math.random()*1e9));
+  return {
+    id: ++runSeq, fileId: file.id, fileName: file.name, baseUrl: parsed.meta.baseUrl, trigger: opts.trigger || 'Web UI',
+    status: 'queued', createdAt: opts.at || new Date(), startedAt: null, durationMs: null, logs: [],
+    steps: parsed.steps.map((s, i) => ({
+      idx: i + 1, kind: s.kind, label: stepLabel(s), fields: s.fields, hasXpath: !!s.fields.xpath, locate: !!locatable(s),
+      plan: planStep(s, rnd, opts), status: 'pending', attempts: [], ms: null
+    }))
+  };
+}
+function finalize(run){
+  let failed = false;
+  for (const st of run.steps){
+    if (failed){ st.status = 'skipped'; continue; }
+    Object.assign(st, {status: st.plan.status, attempts: st.plan.attempts, ms: st.plan.ms, method: st.plan.method, conf: st.plan.conf, reason: st.plan.reason});
+    if (st.status === 'failed') failed = true;
+  }
+  run.status = failed ? 'failed' : 'passed';
+  run.startedAt = run.createdAt;
+  run.durationMs = run.steps.reduce((a, s) => a + (s.ms || 0), 0) + 900;
+  return run;
+}
+
+/* =========================================================
+   Seed data
+   ========================================================= */
+const BASE = 'https://demo-shop.jevwright.dev';
+const files = {
+login: `name: "User login"
+description: "A registered shopper can sign in and reach their account"
+baseUrl: "${BASE}"
+timeoutMs: 15000
+steps:
+  - open: "${BASE}/login"
+  - input:
+      target: "Email address field"
+      xpath: "//input[@name='email']"
+      value: "student@example.com"
+  - input:
+      target: "Password field"
+      value: "{{DEMO_PASSWORD}}"
+  - click:
+      target: "Sign in button"
+  - waitFor:
+      condition: "The account menu is visible in the header"
+      timeoutMs: 5000
+  - assert:
+      statement: "The page greets the user by name"
+`,
+register: `name: "Create an account"
+description: "A new visitor can register with email and password"
+baseUrl: "${BASE}"
+steps:
+  - open: "${BASE}/register"
+  - input:
+      target: "Full name field"
+      value: "Test Shopper"
+  - input:
+      target: "Email address field"
+      value: "new-shopper@example.com"
+  - input:
+      target: "Password field"
+      value: "{{NEW_USER_PASSWORD}}"
+  - click: "Create account button"
+  - assert: "A welcome message confirms the account was created"
+`,
+cart: `name: "Add a product to the cart"
+description: "Adding the first product updates the cart count"
+baseUrl: "${BASE}"
+steps:
+  - open: "${BASE}/products"
+  - scroll:
+      direction: down
+      target: "Product grid"
+  - click:
+      target: "Add to cart button on the first product card"
+  - sleep: 500
+  - click:
+      target: "Cart icon in the header"
+  - assert:
+      statement: "The cart lists exactly one item"
+`,
+promo: `name: "Apply a promo code"
+description: "A valid promo code reduces the order total"
+baseUrl: "${BASE}"
+steps:
+  - open: "${BASE}/cart"
+  - click:
+      target: "Checkout button"
+  - input:
+      target: "Promo code field"
+      value: "FALL25"
+  - press:
+      key: Enter
+  - assert:
+      statement: "The order summary shows a promo discount line"
+`,
+draft: `name: "Guest checkout (draft)"
+baseUrl: "${BASE}"
+steps:
+  - open: "${BASE}/cart"
+  - aiAct: "Check out as a guest and pay with the test card"
+  - click:
+      target: "Continue as guest link"
+    input:
+      target: "Email field"
+      value: "guest@example.com"
+  - waitFor:
+      selector: "#order-confirmation"
+`,
+invite: `name: "Invite a teammate"
+description: "An admin can send an invite and see it pending"
+baseUrl: "https://admin.jevwright.dev"
+steps:
+  - open: "https://admin.jevwright.dev/users"
+  - click:
+      target: "Invite user button"
+  - input:
+      target: "Email field in the invite dialog"
+      value: "teammate@example.com"
+  - press:
+      key: Enter
+      target: "Email field in the invite dialog"
+  - assert:
+      statement: "A pending invite row appears in the users table"
+`};
+const mk = (name, content) => ({id: nid('f'), name, content, draft: content});
+
+const S = {
+  user: null,
+  projects: [
+    {id:'p1', name:'Demo Shop', open:true, modules:[
+      {id:'m1', name:'Auth', open:true, files:[mk('login.yaml', files.login), mk('register.yaml', files.register)]},
+      {id:'m2', name:'Checkout', open:true, files:[mk('add-to-cart.yaml', files.cart), mk('apply-promo.yaml', files.promo), mk('guest-checkout.yaml', files.draft)]}
+    ]},
+    {id:'p2', name:'Admin Console', open:false, modules:[
+      {id:'m3', name:'Users', open:true, files:[mk('invite-user.yaml', files.invite)]}
+    ]}
+  ],
+  sel: {pid:'p1', mid:'m1', fid:null},
+  mode: 'editor', tab: 'history',
+  runs: [], queue: [], busy: false, liveRunId: null, historyRunId: null,
+  runTimes: []
+};
+S.sel.fid = S.projects[0].modules[0].files[0].id;
+
+// history
+(() => {
+  const now = Date.now(); let seed = 7;
+  const all = S.projects.flatMap(p => p.modules.flatMap(m => m.files));
+  for (const f of all){
+    if (validate(f.content).errors.length) continue;
+    const n = 3 + (seed % 3);
+    for (let i = n; i >= 1; i--){
+      const at = new Date(now - i * 5.3 * 3600e3 - seed * 61e3);
+      const prePass = f.name === 'apply-promo.yaml' && i > 2;
+      S.runs.unshift(finalize(buildRun(f, {seed: seed++ * 977, at, prePass, trigger: i % 3 === 0 ? 'API' : 'Web UI'})));
+    }
+  }
+})();
+
+/* =========================================================
+   Lookups
+   ========================================================= */
+const findFile = fid => { for (const p of S.projects) for (const m of p.modules) for (const f of m.files) if (f.id === fid) return {p, m, f}; return null; };
+const curProject = () => S.projects.find(p => p.id === S.sel.pid);
+const curModule = () => curProject()?.modules.find(m => m.id === S.sel.mid);
+const curFile = () => S.sel.fid ? findFile(S.sel.fid)?.f : null;
+const latestRun = fid => S.runs.find(r => r.fileId === fid);
+const runById = id => S.runs.find(r => r.id === id);
+
+/* =========================================================
+   Auth
+   ========================================================= */
+let authMode = 'login';
+document.querySelectorAll('#authForm [data-mode]').forEach(b => b.onclick = () => {
+  authMode = b.dataset.mode;
+  document.querySelectorAll('#authForm [data-mode]').forEach(x => x.setAttribute('aria-pressed', x === b));
+  $('#authSubmit').textContent = authMode === 'login' ? 'Log in' : 'Create account';
+  $('#pw').autocomplete = authMode === 'login' ? 'current-password' : 'new-password';
+  $('#authErr').textContent = '';
+});
+$('#authForm').onsubmit = e => {
+  e.preventDefault();
+  const email = $('#email').value.trim(), pw = $('#pw').value;
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return $('#authErr').textContent = 'Enter a valid email address.';
+  if (pw.length < 8) return $('#authErr').textContent = 'Password must be at least 8 characters.';
+  S.user = {email};
+  $('#whoEmail').textContent = email;
+  $('#avatar').textContent = email.slice(0,2).toUpperCase();
+  $('#auth').hidden = true; $('#app').hidden = false;
+  if (authMode === 'register') toast('Account created. You’re signed in.');
+  renderAll();
+};
+$('#logout').onclick = () => { S.user = null; $('#app').hidden = true; $('#auth').hidden = false; $('#authErr').textContent = ''; };
+
+/* =========================================================
+   Sidebar
+   ========================================================= */
+const CARET = '<svg class="caret {o}" viewBox="0 0 12 12" aria-hidden="true"><path d="M4 2.5 7.5 6 4 9.5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>';
+function renderTree(){
+  $('#tree').innerHTML = S.projects.map(p => `
+    <div class="row proj ${S.sel.pid === p.id && !S.sel.mid && !S.sel.fid ? 'sel' : ''}" data-act="toggle-p" data-id="${p.id}" tabindex="0">
+      ${CARET.replace('{o}', p.open ? 'open' : '')}<span class="name">${esc(p.name)}</span>
+      <span class="acts"><button class="icon-btn" data-act="add-m" data-id="${p.id}" title="New module" aria-label="New module in ${esc(p.name)}">＋</button></span>
+    </div>
+    ${p.open ? p.modules.map(m => `
+      <div class="row mod ${S.sel.mid === m.id && !S.sel.fid ? 'sel' : ''}" data-act="toggle-m" data-pid="${p.id}" data-id="${m.id}" tabindex="0">
+        ${CARET.replace('{o}', m.open ? 'open' : '')}<span class="name">${esc(m.name)}</span>
+        <span class="acts"><button class="icon-btn" data-act="add-f" data-pid="${p.id}" data-id="${m.id}" title="New test file" aria-label="New test file in ${esc(m.name)}">＋</button></span>
+      </div>
+      ${m.open ? m.files.map(f => {
+        const r = latestRun(f.id);
+        return `<div class="row file ${f.id === S.sel.fid ? 'sel' : ''}" data-act="open-f" data-pid="${p.id}" data-mid="${m.id}" data-id="${f.id}" tabindex="0">
+          <span class="dot ${r ? r.status : ''}" title="${r ? 'Latest run: ' + r.status : 'Not run yet'}"></span><span class="name">${esc(f.name)}</span></div>`;
+      }).join('') : ''}
+    `).join('') : ''}
+  `).join('');
+}
+$('#tree').addEventListener('click', async e => {
+  const el = e.target.closest('[data-act]'); if (!el) return;
+  e.stopPropagation();
+  const {act, id, pid, mid} = el.dataset;
+  if (act === 'toggle-p'){
+    const p = S.projects.find(x => x.id === id);
+    p.open = (S.sel.pid === id && !S.sel.mid && !S.sel.fid) ? !p.open : true;
+    S.sel = {pid: id, mid: null, fid: null}; S.mode = 'dashboard'; S.historyRunId = null;
+    $('#app').classList.remove('side-open');
+  }
+  if (act === 'toggle-m'){
+    const m = S.projects.find(x => x.id === pid).modules.find(x => x.id === id);
+    m.open = (S.sel.mid === id && !S.sel.fid) ? !m.open : true;
+    S.sel = {pid, mid: id, fid: null}; S.mode = 'dashboard'; S.historyRunId = null;
+    $('#app').classList.remove('side-open');
+  }
+  if (act === 'open-f'){ S.sel = {pid, mid, fid: id}; if (S.mode === 'dashboard' && S.tab === 'files') S.tab = 'history'; S.historyRunId = null; $('#app').classList.remove('side-open'); }
+  if (act === 'add-m'){
+    const name = await ask('New module', 'Module name', 'Payments'); if (!name) return;
+    const p = S.projects.find(x => x.id === id); const m = {id: nid('m'), name, open: true, files: []};
+    p.modules.push(m); p.open = true; S.sel = {pid: id, mid: m.id, fid: null};
+  }
+  if (act === 'add-f'){
+    let name = await ask('New test file', 'File name', 'new-test.yaml'); if (!name) return;
+    if (!/\.ya?ml$/.test(name)) name += '.yaml';
+    const m = S.projects.find(x => x.id === pid).modules.find(x => x.id === id);
+    const f = mk(name, `name: "${name.replace(/\.ya?ml$/, '').replace(/-/g, ' ')}"\ndescription: ""\nbaseUrl: "https://"\nsteps:\n  - open: "https://"\n`);
+    m.files.push(f); m.open = true; S.sel = {pid, mid: id, fid: f.id}; S.mode = 'editor';
+  }
+  renderAll();
+});
+$('#tree').addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.row')){ e.preventDefault(); e.target.click(); }});
+$('#newProject').onclick = async () => {
+  const name = await ask('New project', 'Project name', 'Marketing Site'); if (!name) return;
+  const p = {id: nid('p'), name, open: true, modules: [{id: nid('m'), name: 'General', open: true, files: []}]};
+  S.projects.push(p); S.sel = {pid: p.id, mid: p.modules[0].id, fid: null}; renderAll();
+};
+$('#menuBtn').onclick = () => $('#app').classList.toggle('side-open');
+document.addEventListener('click', e => {
+  const app = $('#app');
+  if (app.classList.contains('side-open') && !e.target.closest('#side') && !e.target.closest('#menuBtn')) app.classList.remove('side-open');
+});
+
+/* =========================================================
+   Top bar
+   ========================================================= */
+function renderTop(){
+  const p = curProject(), m = curModule(), f = curFile();
+  $('#crumbs').innerHTML = [p && esc(p.name), m && esc(m.name), f && `<b>${esc(f.name)}</b>`].filter(Boolean).join('<span class="sep">/</span>');
+  document.querySelectorAll('[data-view]').forEach(b => {
+    b.setAttribute('aria-pressed', b.dataset.view === S.mode);
+    b.disabled = b.dataset.view === 'editor' && !f;
+  });
+}
+document.querySelectorAll('[data-view]').forEach(b => b.onclick = () => { S.mode = b.dataset.view; renderAll(); });
+
+/* =========================================================
+   Editor
+   ========================================================= */
+let vTimer = null;
+function renderEditor(){
+  const f = curFile();
+  if (!f){
+    $('#view').innerHTML = `<div class="empty" style="padding-top:80px"><strong>Pick a test file to edit</strong>Choose one in the sidebar, or add a file to a module with ＋.</div>`;
+    return;
+  }
+  const dirty = f.draft !== f.content;
+  $('#view').innerHTML = `
+  <div class="editor">
+    <div class="ed-bar">
+      <div class="ed-title">${esc(f.name)} ${dirty ? '<span class="dirty" title="Unsaved changes"></span>' : ''}</div>
+      <button class="btn" id="upBtn">Upload file</button>
+      <button class="btn" id="valBtn">Validate</button>
+      <button class="btn" id="saveBtn" ${dirty ? '' : 'disabled'}>Save</button>
+      <button class="btn primary" id="runBtn">▶ Run</button>
+    </div>
+    <div class="ed-body">
+      <div class="gutter" id="gutter" aria-hidden="true"></div>
+      <textarea class="code" id="code" spellcheck="false" wrap="off" aria-label="Test file YAML">${esc(f.draft)}</textarea>
+    </div>
+    <div class="diag" id="diag"></div>
+  </div>`;
+  const ta = $('#code');
+  ta.addEventListener('input', () => {
+    f.draft = ta.value; updateGutter();
+    $('#saveBtn').disabled = f.draft === f.content;
+    const t = $('.ed-title'); if (!t.querySelector('.dirty') && f.draft !== f.content) t.insertAdjacentHTML('beforeend', '<span class="dirty" title="Unsaved changes"></span>');
+    if (f.draft === f.content) t.querySelector('.dirty')?.remove();
+    clearTimeout(vTimer); vTimer = setTimeout(runValidation, 350);
+  });
+  ta.addEventListener('scroll', () => { $('#gutter').scrollTop = ta.scrollTop; });
+  ta.addEventListener('keydown', e => {
+    if (e.key === 'Tab'){ e.preventDefault(); const s = ta.selectionStart; ta.setRangeText('  ', s, ta.selectionEnd, 'end'); ta.dispatchEvent(new Event('input')); }
+    if ((e.metaKey || e.ctrlKey) && e.key === 's'){ e.preventDefault(); save(); }
+  });
+  $('#upBtn').onclick = () => $('#fileInput').click();
+  $('#valBtn').onclick = () => { const n = runValidation(); toast(n ? `Validation failed: ${n} error${n > 1 ? 's' : ''}.` : 'Valid. This file matches the schema.', !!n); };
+  $('#saveBtn').onclick = save;
+  $('#runBtn').onclick = () => startRun(f);
+  runValidation();
+}
+let lastErrors = [];
+function updateGutter(){
+  const ta = $('#code'); if (!ta) return;
+  const n = ta.value.split('\n').length, bad = new Set(lastErrors.map(e => e.line));
+  $('#gutter').innerHTML = Array.from({length: n}, (_, i) => `<div class="${bad.has(i+1) ? 'err' : ''}">${i+1}</div>`).join('') + '<div></div>';
+  $('#gutter').scrollTop = ta.scrollTop;
+}
+function runValidation(){
+  const f = curFile(); if (!f || !$('#diag')) return 0;
+  const {errors, steps} = validate(f.draft);
+  lastErrors = errors; updateGutter();
+  $('#diag').innerHTML = errors.length
+    ? `<div class="diag-head" style="color:var(--fail)">✖ ${errors.length} validation error${errors.length > 1 ? 's' : ''}. Fix ${errors.length > 1 ? 'them' : 'it'} before running.</div>` +
+      errors.map(e => `<button class="diag-item" data-line="${e.line}"><span class="loc">${e.line}:${e.col}</span><span>${esc(e.msg)}</span></button>`).join('')
+    : `<div class="diag-head ok">✔ Valid. ${steps.length} step${steps.length !== 1 ? 's' : ''}, ready to run.</div>`;
+  $('#diag').querySelectorAll('[data-line]').forEach(b => b.onclick = () => jumpTo(+b.dataset.line));
+  return errors.length;
+}
+function jumpTo(line){
+  const ta = $('#code'), lines = ta.value.split('\n');
+  const start = lines.slice(0, line - 1).reduce((a, l) => a + l.length + 1, 0);
+  ta.focus(); ta.setSelectionRange(start, start + lines[line - 1].length);
+  ta.scrollTop = Math.max(0, (line - 4) * 20);
+}
+function save(){
+  const f = curFile(); if (!f || f.draft === f.content) return;
+  f.content = f.draft; toast(`Saved ${f.name}.`); renderEditor();
+}
+$('#fileInput').onchange = e => {
+  const file = e.target.files[0]; e.target.value = ''; if (!file) return;
+  const m = curModule() || curProject()?.modules[0];
+  if (!m) return toast('Create a module first, then upload into it.', true);
+  const reader = new FileReader();
+  reader.onload = () => {
+    let name = file.name; const taken = new Set(m.files.map(x => x.name));
+    for (let i = 2; taken.has(name); i++) name = file.name.replace(/(\.ya?ml)?$/, `-${i}$1`);
+    const f = mk(name, String(reader.result)); m.files.push(f); m.open = true;
+    S.sel.fid = f.id; S.sel.mid = m.id; S.mode = 'editor';
+    const n = validate(f.content).errors.length;
+    toast(n ? `Uploaded ${name} with ${n} validation error${n > 1 ? 's' : ''}.` : `Uploaded ${name}.`, !!n);
+    renderAll();
+  };
+  reader.readAsText(file);
+};
+
+/* =========================================================
+   Running (simulated worker + live stream)
+   ========================================================= */
+function startRun(f){
+  if (f.draft !== f.content){ f.content = f.draft; }
+  const {errors} = validate(f.content);
+  if (errors.length){ toast(`Can’t run ${f.name}: fix ${errors.length} validation error${errors.length > 1 ? 's' : ''} first.`, true); S.mode = 'editor'; renderAll(); return; }
+  const now = Date.now(); S.runTimes = S.runTimes.filter(t => now - t < 60e3);
+  if (S.runTimes.length >= 5){
+    const wait = Math.ceil((60e3 - (now - S.runTimes[0])) / 1000);
+    toast(`429 Too many runs: the limit is 5 per minute. Try again in ${wait} s.`, true); return;
+  }
+  S.runTimes.push(now);
+  const run = buildRun(f); S.runs.unshift(run); S.queue.push(run);
+  log(run, `Run #${run.id} queued (${run.steps.length} steps)`);
+  if (S.busy) toast(`Run #${run.id} queued. The worker will start it after the current run.`);
+  S.liveRunId = run.id; S.mode = 'dashboard'; S.tab = 'process';
+  renderAll(); nextRun();
+}
+async function nextRun(){
+  if (S.busy) return; const run = S.queue.shift(); if (!run) return;
+  S.busy = true; await playRun(run); S.busy = false; nextRun();
+}
+function log(run, msg){ run.logs.push(`[${clock(new Date())}] ${msg}`); }
+function valueForLog(v){ return /\{\{\s*\w+\s*\}\}/.test(v) ? `${v.match(/\{\{\s*\w+\s*\}\}/)[0]} (masked)` : `"${v}"`; }
+
+async function playRun(run){
+  run.status = 'running'; run.startedAt = new Date(); run.t0 = performance.now();
+  log(run, `Worker picked up run #${run.id}; launching Chromium`);
+  refreshLive(true);
+  for (const st of run.steps){
+    st.status = 'running'; run.current = st; refreshLive();
+    const p = st.plan;
+    for (const a of p.attempts){
+      await wait(Math.min(1300, Math.max(350, p.ms / p.attempts.length * .55)));
+      st.attempts.push(a);
+      log(run, `step ${st.idx} ${METHOD[a.m]}${a.conf != null ? ' ' + a.conf.toFixed(2) : ''}: ${a.ok ? (a.note || 'ok') : a.note}`);
+      refreshLive();
+    }
+    await wait(Math.min(800, Math.max(250, p.ms * (p.attempts.length ? .15 : .5))));
+    Object.assign(st, {status: p.status, ms: p.ms, method: p.method, conf: p.conf, reason: p.reason});
+    const extra = st.kind === 'input' ? ` value=${valueForLog(st.fields.value)}` : '';
+    log(run, `step ${st.idx} ${st.status.toUpperCase()} ${st.label}${extra} (${fmtMs(st.ms)})`);
+    refreshLive();
+    if (st.status === 'failed'){ run.steps.forEach(x => { if (x.status === 'pending') x.status = 'skipped'; }); break; }
+  }
+  run.current = null;
+  run.status = run.steps.some(s => s.status === 'failed') ? 'failed' : 'passed';
+  run.durationMs = Math.round(performance.now() - run.t0);
+  const passed = run.steps.filter(s => s.status === 'passed').length;
+  log(run, `Run ${run.status.toUpperCase()} (${passed}/${run.steps.length} steps); report saved`);
+  toast(`Run #${run.id} ${run.status}: ${run.fileName} (${passed}/${run.steps.length} steps).`, run.status === 'failed');
+  refreshLive(true);
+}
+function refreshLive(treeToo){
+  if (treeToo) renderTree();
+  if (S.mode === 'dashboard') renderDashboard();
+}
+setInterval(() => {
+  const el = document.getElementById('elapsed'); if (!el) return;
+  const r = runById(+el.dataset.run); if (r?.status === 'running') el.textContent = fmtMs(performance.now() - r.t0);
+}, 200);
+
+/* =========================================================
+   Dashboard
+   ========================================================= */
+function renderDashboard(){
+  const p = curProject(); if (!p){ $('#view').innerHTML = '<div class="empty"><strong>No project selected</strong>Create one with ＋ in the sidebar.</div>'; return; }
+  const mod = curModule();
+  const scopeName = mod ? `${p.name} / ${mod.name}` : p.name;
+  const projFiles = (mod ? [mod] : p.modules).flatMap(m => m.files.map(f => ({m, f})));
+  const ids = new Set(projFiles.map(x => x.f.id));
+  const f = curFile();
+  const histRuns = S.runs.filter(r => f ? r.fileId === f.id : ids.has(r.fileId));
+  const active = S.runs.filter(r => r.status === 'running' || r.status === 'queued');
+  const scroll = $('#view').scrollTop;
+  $('#view').innerHTML = `
+  <div class="dash">
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" data-tab="history" aria-selected="${S.tab === 'history'}">Test history<span class="count">${histRuns.length}</span></button>
+      <button class="tab" role="tab" data-tab="process" aria-selected="${S.tab === 'process'}">Test process${active.length ? `<span class="count">${active.length}</span>` : ''}</button>
+      <button class="tab" role="tab" data-tab="files" aria-selected="${S.tab === 'files'}">Test files<span class="count">${projFiles.length}</span></button>
+    </div>
+    <div id="tabBody">${S.tab === 'files' ? filesTab(scopeName, projFiles) : S.tab === 'process' ? processTab(active) : historyTab(histRuns, f, scopeName)}</div>
+  </div>`;
+  $('#view').scrollTop = scroll;
+  document.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { S.tab = b.dataset.tab; renderDashboard(); });
+  bindDash();
+}
+
+function filesTab(scopeName, list){
+  if (!list.length) return `<div class="panel empty"><strong>${esc(scopeName)} has no test files yet</strong>Add one to a module with ＋ in the sidebar, or upload a YAML file from the editor.</div>`;
+  return `<div class="panel tbl-wrap"><table>
+    <thead><tr><th>File</th><th>Module</th><th>Steps</th><th>Latest run</th><th>Last run</th><th>Runs</th><th></th></tr></thead>
+    <tbody>${list.map(({m, f}) => {
+      const r = latestRun(f.id), v = validate(f.content), n = S.runs.filter(x => x.fileId === f.id).length;
+      return `<tr>
+        <td class="mono">${esc(f.name)}</td><td>${esc(m.name)}</td>
+        <td>${v.errors.length ? `<span style="color:var(--fail)">${v.errors.length} error${v.errors.length > 1 ? 's' : ''}</span>` : v.steps.length}</td>
+        <td>${r ? `<span class="pill ${r.status}">${r.status}</span>` : '<span class="pill none">Not run yet</span>'}</td>
+        <td class="muted">${r ? fmtTime(r.startedAt || r.createdAt) : '—'}</td><td>${n}</td>
+        <td style="text-align:right;white-space:nowrap">
+          <button class="btn ghost" data-open="${f.id}" data-mid="${m.id}">Edit</button>
+          <button class="btn" data-run="${f.id}" ${v.errors.length ? 'disabled title="Fix validation errors first"' : ''}>▶ Run</button>
+        </td></tr>`;
+    }).join('')}</tbody></table></div>`;
+}
+
+function chain(st){
+  if (st.kind === 'assert' || st.kind === 'waitFor'){
+    if (!st.attempts.length) return st.status === 'running' ? '<div class="chain"><span class="seg-c try">Noul…</span></div>' : '';
+    return `<div class="chain">${st.attempts.map(a => `<span class="seg-c ${a.ok ? 'ok' : 'miss'}">Noul ${a.conf.toFixed(2)}</span>`).join('')}</div>`;
+  }
+  if (!st.locate) return '';
+  const order = (st.hasXpath ? ['xpath'] : []).concat(['visual', 'dom']);
+  const done = st.status === 'passed' || st.status === 'failed';
+  let tryingSet = false;
+  return `<div class="chain">${order.map(m => {
+    const a = st.attempts.find(x => x.m === m);
+    if (a) return `<span class="seg-c ${a.ok ? (a.mid ? 'mid' : 'ok') : 'miss'}" title="${esc(a.note || '')}">${METHOD[m]}${a.conf != null ? ' ' + a.conf.toFixed(2) : ''}</span>`;
+    const succeeded = st.attempts.some(x => x.ok);
+    if (st.status === 'running' && !succeeded && !tryingSet){ tryingSet = true; return `<span class="seg-c try">${METHOD[m]}…</span>`; }
+    return `<span class="seg-c" title="${done || succeeded ? 'Not needed' : 'Waiting'}">${METHOD[m]}</span>`;
+  }).join('')}</div>`;
+}
+const ICONS = {
+  passed: '<svg class="ico" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="var(--pass)"/><path d="m4.8 8.2 2.1 2.1 4.3-4.4" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  failed: '<svg class="ico" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="var(--fail)"/><path d="m5.5 5.5 5 5m0-5-5 5" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/></svg>',
+  running: '<svg class="ico" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2" fill="none" stroke="var(--run)" stroke-width="1.8" stroke-dasharray="26 13"><animateTransform attributeName="transform" type="rotate" from="0 8 8" to="360 8 8" dur="1s" repeatCount="indefinite"/></circle></svg>',
+  pending: '<svg class="ico" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2" fill="none" stroke="var(--faint)" stroke-width="1.6"/></svg>',
+  skipped: '<svg class="ico" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2" fill="none" stroke="var(--faint)" stroke-width="1.6" stroke-dasharray="2 2.5"/></svg>'
+};
+function stepList(run){
+  return `<ol class="steps">${run.steps.map(st => `
+    <li class="step ${st.status}">
+      <span class="n">${st.idx}</span>${ICONS[st.status]}
+      <div class="lbl">${esc(st.label)}${chain(st)}</div>
+      <div class="meta">${st.ms != null ? fmtMs(st.ms) : st.status === 'skipped' ? 'skipped' : ''}</div>
+      ${st.reason ? `<div class="reason">${esc(st.reason)}</div>` : ''}
+    </li>`).join('')}</ol>`;
+}
+
+// mock page geometry (percent of the screenshot)
+const RECT = {hdr:[0,0,100,11], icon:[80,2.5,16,6], title:[7,17,46,4], in1:[7,30,54,9], in2:[7,44,54,9], btn:[7,59,25,9], card:[67,28,27,44], body:[4,14,92,80]};
+function rectFor(st){
+  const t = (st.fields.target || '').toLowerCase();
+  if (st.kind === 'assert' || st.kind === 'waitFor') return /header|menu|greet/.test((st.fields.statement || st.fields.condition || '').toLowerCase()) ? RECT.hdr : RECT.body;
+  if (/header|cart icon|menu/.test(t)) return RECT.icon;
+  if (/email|name field|promo/.test(t)) return RECT.in1;
+  if (/password/.test(t)) return RECT.in2;
+  if (/card|grid|product/.test(t)) return RECT.card;
+  return RECT.btn;
+}
+function browserPreview(run){
+  const focus = run.current || [...run.steps].reverse().find(s => s.status === 'passed' || s.status === 'failed');
+  let url = run.baseUrl || '';
+  for (const s of run.steps){ if (s.kind === 'open' && (s.status === 'passed' || s.status === 'running')) url = s.fields.url; if (s === focus) break; }
+  let overlay = '', caption = 'Waiting for the first screenshot.';
+  if (run.status === 'queued') caption = 'Queued. The worker runs one test at a time.';
+  if (focus){
+    const last = focus.attempts.at(-1);
+    const isAssert = focus.kind === 'assert' || focus.kind === 'waitFor';
+    if (focus.status === 'running' && (!last || !last.ok) && (focus.locate || isAssert)){
+      overlay += '<div class="scan"></div>';
+      caption = isAssert ? `Asking Jev whether: ${focus.fields.statement || focus.fields.condition}` : `Locating “${focus.fields.target}”…`;
+    }
+    if (last && (focus.locate || isAssert)){
+      const [x, y, w, h] = rectFor(focus);
+      const cls = isAssert ? 'assert' : !last.ok ? 'miss' : last.mid ? 'mid' : '';
+      const lbl = `${METHOD[last.m]}${last.conf != null ? ' ' + last.conf.toFixed(2) : ''}`;
+      overlay += `<div class="bbox ${cls}" style="left:${x-1}%;top:${y-1.2}%;width:${w+2}%;height:${h+2.4}%"><span>${esc(lbl)}</span></div>`;
+      caption = `Step ${focus.idx}: ${focus.label}` + (last.note ? ` (${last.note})` : '');
+    } else if (focus.status !== 'running'){ caption = `Step ${focus.idx}: ${focus.label}`; }
+  }
+  const pe = (k, cls = '') => { const [x,y,w,h] = RECT[k]; return `<div class="pe ${cls}" style="left:${x}%;top:${y}%;width:${w}%;height:${h}%"></div>`; };
+  return `<div class="panel browser">
+    <div class="browser-bar"><i></i><i></i><i></i><div class="url">${esc(url || 'about:blank')}</div></div>
+    <div class="page" aria-label="Simulated page screenshot">
+      ${run.status === 'queued' ? '' : pe('hdr','hdr') + pe('icon') + pe('title','bar') + pe('in1') + pe('in2') + pe('btn','btn-m') + pe('card')}
+      ${overlay}
+    </div>
+    <div class="caption">${esc(caption)}</div>
+  </div>`;
+}
+
+function processTab(active){
+  const run = runById(S.liveRunId) || active[0] || (curFile() && latestRun(curFile().id));
+  if (!run) return `<div class="panel empty"><strong>Nothing is running</strong>Open a test file and select Run to watch it step by step.</div>`;
+  const pass = run.steps.filter(s => s.status === 'passed').length;
+  const ahead = run.status === 'queued' ? S.runs.filter(r => r.status === 'running') : [];
+  return `
+    ${active.length > 1 || (active.length && !active.includes(run)) ? `<div class="active-runs">${active.map(r => `<button class="chip" data-live="${r.id}" aria-pressed="${r.id === run.id}"><span class="dot ${r.status}"></span>#${r.id} ${esc(r.fileName)}</button>`).join('')}</div>` : ''}
+    <div class="run-head">
+      <h2>Run #${run.id}</h2><span class="pill ${run.status}">${run.status}</span>
+      <span class="stat mono">${esc(run.fileName)}</span>
+      <span class="stat">Elapsed <b id="elapsed" data-run="${run.id}">${run.status === 'running' ? fmtMs(performance.now() - run.t0) : run.durationMs ? fmtMs(run.durationMs) : '—'}</b></span>
+      <span class="stat">Steps <b>${pass}/${run.steps.length}</b></span>
+      <span style="flex:1"></span>
+      ${run.status === 'passed' || run.status === 'failed' ? `<button class="btn" data-report="${run.id}">View JSON report</button><button class="btn primary" data-run="${run.fileId}">▶ Run again</button>` : ''}
+    </div>
+    <div class="live">
+      <div class="panel">
+        ${ahead.length ? `<div class="queued-note">Waiting for run #${ahead[0].id} (${esc(ahead[0].fileName)}) to finish.</div>` : ''}
+        ${stepList(run)}
+      </div>
+      ${browserPreview(run)}
+    </div>
+    <div class="panel logs"><div class="lh"><span>Run log</span><span class="muted" style="font-weight:400">Variable values are masked in logs and never sent to Jev</span></div>
+      <pre id="logPre">${esc(run.logs.join('\n') || 'Logs from runs before this session aren’t kept in the prototype.')}</pre></div>`;
+}
+
+function historyTab(runs, f, scopeName){
+  const title = f ? f.name : `all files in ${scopeName}`;
+  if (!runs.length) return `<div class="panel empty"><strong>No runs for ${esc(title)} yet</strong>Select Run in the editor to start the first one.</div>`;
+  const sel = runById(S.historyRunId);
+  const rows = runs.map(r => {
+    const pass = r.steps.filter(s => s.status === 'passed').length, fail = r.steps.filter(s => s.status === 'failed').length;
+    return `<tr class="click ${sel?.id === r.id ? 'sel' : ''}" data-hist="${r.id}" tabindex="0">
+      <td class="mono">#${r.id}</td>${f ? '' : `<td class="mono">${esc(r.fileName)}</td>`}
+      <td><span class="pill ${r.status}">${r.status}</span></td>
+      <td class="muted">${fmtTime(r.startedAt || r.createdAt)}</td>
+      <td>${r.durationMs ? fmtMs(r.durationMs) : '—'}</td>
+      <td><span style="color:var(--pass)">${pass} passed</span>${fail ? `, <span style="color:var(--fail)">${fail} failed</span>` : ''} <span class="muted">of ${r.steps.length}</span></td>
+      <td class="muted">${r.trigger}</td></tr>`;
+  }).join('');
+  return `
+    <p class="muted" style="margin:0 0 12px">Runs for <span class="mono" style="color:var(--ink)">${esc(title)}</span>. Select a run to inspect its steps.</p>
+    <div class="panel tbl-wrap"><table>
+      <thead><tr><th>Run</th>${f ? '' : '<th>File</th>'}<th>Status</th><th>Started</th><th>Duration</th><th>Steps</th><th>Triggered from</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>
+    ${sel ? runDetail(sel) : ''}`;
+}
+function runDetail(r){
+  const rows = r.steps.map(st => `<tr>
+    <td class="mono muted">${st.idx}</td><td style="overflow-wrap:anywhere">${esc(st.label)}${st.reason ? `<div style="color:var(--fail);font-size:12.5px;margin-top:3px">${esc(st.reason)}</div>` : ''}</td>
+    <td>${st.status === 'skipped' ? '<span class="muted">skipped</span>' : st.status === 'pending' || st.status === 'running' ? `<span class="pill running">${st.status}</span>` : `<span class="pill ${st.status}">${st.status}</span>`}</td>
+    <td>${st.method ? METHOD[st.method] + (st.attempts.length > 1 ? ` <span class="muted">after ${st.attempts.length - 1} fallback${st.attempts.length > 2 ? 's' : ''}</span>` : '') : st.status === 'passed' ? '<span class="muted">Playwright</span>' : ''}</td>
+    <td>${st.conf != null ? st.conf.toFixed(2) : ''}</td><td style="white-space:nowrap">${fmtMs(st.ms)}</td></tr>`).join('');
+  return `<div class="panel detail">
+    <div class="detail-head"><h3>Run #${r.id} <span class="mono muted" style="font-weight:400;font-size:13px">${esc(r.fileName)}</span></h3>
+      ${r.status === 'running' || r.status === 'queued' ? `<button class="btn" data-live="${r.id}">Watch live</button>` : `<button class="btn" data-report="${r.id}">View JSON report</button>`}
+      <button class="btn primary" data-run="${r.fileId}">▶ Run again</button></div>
+    <div class="tbl-wrap"><table><thead><tr><th>#</th><th>Step</th><th>Status</th><th>Locate method</th><th>Confidence</th><th>Time</th></tr></thead><tbody>${rows}</tbody></table></div>
+  </div>`;
+}
+
+function bindDash(){
+  const v = $('#view');
+  v.querySelectorAll('[data-run]').forEach(b => b.onclick = () => { const x = findFile(b.dataset.run); if (x){ S.sel = {pid: x.p.id, mid: x.m.id, fid: x.f.id}; startRun(x.f); } });
+  v.querySelectorAll('[data-open]').forEach(b => b.onclick = () => { S.sel.fid = b.dataset.open; S.sel.mid = b.dataset.mid; S.mode = 'editor'; renderAll(); });
+  v.querySelectorAll('[data-live]').forEach(b => b.onclick = () => { S.liveRunId = +b.dataset.live; S.tab = 'process'; renderDashboard(); });
+  v.querySelectorAll('[data-report]').forEach(b => b.onclick = () => showReport(runById(+b.dataset.report)));
+  v.querySelectorAll('[data-hist]').forEach(tr => {
+    const go = () => { S.historyRunId = S.historyRunId === +tr.dataset.hist ? null : +tr.dataset.hist; renderDashboard(); };
+    tr.onclick = go; tr.onkeydown = e => { if (e.key === 'Enter') go(); };
+  });
+  const lp = $('#logPre'); if (lp) lp.scrollTop = lp.scrollHeight;
+}
+
+/* =========================================================
+   Modals
+   ========================================================= */
+function overlay(html){
+  const root = $('#overlayRoot'); root.innerHTML = `<div class="overlay">${html}</div>`;
+  const close = () => root.innerHTML = '';
+  root.querySelector('.overlay').addEventListener('click', e => { if (e.target.classList.contains('overlay') || e.target.closest('[data-close]')) close(); });
+  root.querySelector('.overlay').addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+  return {root, close};
+}
+function ask(title, label, placeholder){
+  return new Promise(resolve => {
+    const {root, close} = overlay(`<form class="modal small" role="dialog" aria-label="${esc(title)}">
+      <div class="modal-head">${esc(title)}<button type="button" class="icon-btn" data-close aria-label="Close">✕</button></div>
+      <div class="modal-body"><label class="field" style="margin:0"><span style="font-weight:500;font-size:13px">${esc(label)}</span><input class="input" id="askIn" placeholder="${esc(placeholder)}" required></label></div>
+      <div class="modal-foot"><button type="button" class="btn" data-close>Cancel</button><button class="btn primary">Create</button></div></form>`);
+    const inp = root.querySelector('#askIn'); inp.focus();
+    root.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => resolve(null)));
+    root.querySelector('form').onsubmit = e => { e.preventDefault(); const v = inp.value.trim(); if (!v) return; close(); resolve(v); };
+  });
+}
+function showReport(r){
+  const report = {
+    runId: r.id, testCase: r.fileName, status: r.status, trigger: r.trigger,
+    startedAt: (r.startedAt || r.createdAt).toISOString(), durationMs: r.durationMs,
+    summary: {passed: r.steps.filter(s => s.status === 'passed').length, failed: r.steps.filter(s => s.status === 'failed').length, skipped: r.steps.filter(s => s.status === 'skipped').length, total: r.steps.length},
+    steps: r.steps.map(s => ({index: s.idx, step: s.label, status: s.status, locateMethod: s.method ? METHOD[s.method] : null, confidence: s.conf ?? null,
+      attempts: s.attempts.map(a => ({method: METHOD[a.m], ok: a.ok, confidence: a.conf ?? null})), durationMs: s.ms, error: s.reason || null})),
+    trace: `reports/run-${r.id}/trace.zip`
+  };
+  const json = JSON.stringify(report, null, 2);
+  const {root} = overlay(`<div class="modal" role="dialog" aria-label="JSON report">
+    <div class="modal-head">report.json for run #${r.id}<button class="icon-btn" data-close aria-label="Close">✕</button></div>
+    <div class="modal-body"><pre>${esc(json)}</pre></div>
+    <div class="modal-foot"><button class="btn" data-close>Close</button><button class="btn primary" id="copyJson">Copy JSON</button></div></div>`);
+  root.querySelector('#copyJson').onclick = async () => { try { await navigator.clipboard.writeText(json); toast('Copied report JSON.'); } catch { toast('Couldn’t copy. Select the text and copy it manually.', true); } };
+  root.querySelector('[data-close]').focus();
+}
+
+/* =========================================================
+   Render
+   ========================================================= */
+function renderAll(){
+  renderTree(); renderTop();
+  if (S.mode === 'editor' && !curFile()) S.mode = 'dashboard';
+  renderTop();
+  S.mode === 'editor' ? renderEditor() : renderDashboard();
+}
+</script>
+</body>
+</html>
