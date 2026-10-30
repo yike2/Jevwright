@@ -1,0 +1,118 @@
+{
+  "url": "https://demo.jevwright.local/login",
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "elements": [
+    {
+      "id": 1,
+      "role": "textbox",
+      "name": "Email",
+      "text": "",
+      "attrs": {
+        "type": "email",
+        "placeholder": "you@example.com"
+      },
+      "bbox": {
+        "x": 467,
+        "y": 283,
+        "width": 346,
+        "height": 40
+      },
+      "hittable": true
+    },
+    {
+      "id": 2,
+      "role": "textbox",
+      "name": "Password",
+      "text": "",
+      "attrs": {
+        "type": "password",
+        "placeholder": "Enter your password"
+      },
+      "bbox": {
+        "x": 467,
+        "y": 363,
+        "width": 207,
+        "height": 40
+      },
+      "hittable": true
+    },
+    {
+      "id": 3,
+      "role": "button",
+      "name": "Show password",
+      "text": "Show password",
+      "attrs": {},
+      "bbox": {
+        "x": 682,
+        "y": 363,
+        "width": 131,
+        "height": 40
+      },
+      "hittable": true
+    },
+    {
+      "id": 4,
+      "role": "checkbox",
+      "name": "Remember me",
+      "text": "",
+      "attrs": {
+        "type": "checkbox",
+        "checked": false
+      },
+      "bbox": {
+        "x": 471,
+        "y": 424,
+        "width": 13,
+        "height": 13
+      },
+      "hittable": true
+    },
+    {
+      "id": 5,
+      "role": "link",
+      "name": "Forgot password?",
+      "text": "Forgot password?",
+      "attrs": {},
+      "bbox": {
+        "x": 690,
+        "y": 423,
+        "width": 123,
+        "height": 16
+      },
+      "hittable": true
+    },
+    {
+      "id": 6,
+      "role": "button",
+      "name": "Sign in",
+      "text": "Sign in",
+      "attrs": {},
+      "bbox": {
+        "x": 467,
+        "y": 462,
+        "width": 346,
+        "height": 42
+      },
+      "hittable": true
+    },
+    {
+      "id": 7,
+      "role": "button",
+      "name": "SSO Login (Coming Soon)",
+      "text": "SSO Login (Coming Soon)",
+      "attrs": {
+        "disabled": true
+      },
+      "bbox": {
+        "x": 467,
+        "y": 516,
+        "width": 346,
+        "height": 38
+      },
+      "hittable": true
+    }
+  ]
+}

@@ -1,0 +1,75 @@
+{
+  "page": "tasks",
+  "targets": [
+    {
+      "id": "tasks-add-btn",
+      "target": "Green Add new task button in the top-right header",
+      "action": "click",
+      "selector": "#add-task-btn",
+      "present": true,
+      "elementId": 1,
+      "bbox": {
+        "x": 1057,
+        "y": 40,
+        "width": 143,
+        "height": 40
+      }
+    },
+    {
+      "id": "tasks-search",
+      "target": "Search tasks input box with placeholder Filter tasks by title",
+      "action": "input",
+      "selector": "#search-tasks",
+      "present": true,
+      "elementId": 2,
+      "bbox": {
+        "x": 101,
+        "y": 121,
+        "width": 360,
+        "height": 38
+      }
+    },
+    {
+      "id": "tasks-weekly-switch",
+      "target": "Send a weekly summary toggle switch",
+      "action": "click",
+      "selector": "#weekly-summary-switch",
+      "present": true,
+      "elementId": 3,
+      "bbox": {
+        "x": 1131,
+        "y": 127,
+        "width": 48,
+        "height": 26
+      }
+    },
+    {
+      "id": "tasks-delete-row-1",
+      "target": "Delete button in the first row next to Write unit tests for Locator",
+      "action": "click",
+      "selector": "#delete-task-1",
+      "present": true,
+      "elementId": 4,
+      "bbox": {
+        "x": 1097,
+        "y": 215,
+        "width": 78,
+        "height": 34
+      }
+    },
+    {
+      "id": "tasks-delete-row-3",
+      "target": "Delete button in the third row next to Deploy staging preview",
+      "action": "click",
+      "selector": "#delete-task-3",
+      "present": true,
+      "elementId": 6,
+      "bbox": {
+        "x": 1097,
+        "y": 357,
+        "width": 78,
+        "height": 34
+      }
+    }
+  ]
+}

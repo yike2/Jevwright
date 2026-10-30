@@ -1,0 +1,69 @@
+{
+  "page": "modal",
+  "targets": [
+    {
+      "id": "modal-close",
+      "target": "Close dialog × button in the top-right corner of the Delete Project modal",
+      "action": "click",
+      "selector": "#modal-close-btn",
+      "present": true,
+      "elementId": 3,
+      "bbox": {
+        "x": 810,
+        "y": 248,
+        "width": 32,
+        "height": 32
+      }
+    },
+    {
+      "id": "modal-confirm-input",
+      "target": "Type DELETE to confirm text input field inside the modal dialog",
+      "action": "input",
+      "selector": "#confirm-input",
+      "present": true,
+      "elementId": 4,
+      "bbox": {
+        "x": 438,
+        "y": 371,
+        "width": 404,
+        "height": 40
+      }
+    },
+    {
+      "id": "modal-cancel",
+      "target": "Cancel button inside the Delete Project modal dialog",
+      "action": "click",
+      "selector": "#modal-cancel-btn",
+      "present": true,
+      "elementId": 5,
+      "bbox": {
+        "x": 586,
+        "y": 433,
+        "width": 90,
+        "height": 40
+      }
+    },
+    {
+      "id": "modal-confirm-delete",
+      "target": "Red Confirm Delete button at the bottom-right of the modal dialog",
+      "action": "click",
+      "selector": "#modal-confirm-btn",
+      "present": true,
+      "elementId": 6,
+      "bbox": {
+        "x": 688,
+        "y": 433,
+        "width": 154,
+        "height": 40
+      }
+    },
+    {
+      "id": "modal-covered-save",
+      "target": "Covered Save Changes button behind the modal backdrop",
+      "action": "click",
+      "present": false,
+      "elementId": null,
+      "bbox": null
+    }
+  ]
+}

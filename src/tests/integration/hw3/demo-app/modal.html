@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Jevwright Demo — Delete Project Modal</title>
+  <style>
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+    body {
+      margin: 0;
+      background: #f9fafb;
+      color: #111827;
+      padding: 40px 80px;
+      width: 1280px;
+      height: 720px;
+      position: relative;
+      overflow: hidden;
+    }
+    .bg-panel {
+      background: #ffffff;
+      padding: 32px;
+      border-radius: 10px;
+      border: 1px solid #e5e7eb;
+      max-width: 600px;
+    }
+    .bg-panel h1 { margin: 0 0 20px; font-size: 22px; }
+    .bg-panel label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 14px; }
+    .bg-panel input {
+      width: 100%;
+      height: 38px;
+      padding: 6px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      margin-bottom: 16px;
+    }
+    .bg-panel button {
+      height: 38px;
+      padding: 0 16px;
+      background: #2563eb;
+      color: #ffffff;
+      border: none;
+      border-radius: 6px;
+    }
+    .backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(17, 24, 39, 0.6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+    }
+    .modal {
+      background: #ffffff;
+      width: 460px;
+      border-radius: 12px;
+      padding: 28px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+      position: relative;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .modal-header h2 { margin: 0; font-size: 20px; color: #b91c1c; }
+    .close-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      border: 1px solid #e5e7eb;
+      background: #f9fafb;
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+    }
+    .modal p {
+      margin: 0 0 16px;
+      font-size: 14px;
+      color: #4b5563;
+      line-height: 1.5;
+    }
+    .modal label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #374151;
+    }
+    .modal input {
+      width: 100%;
+      height: 40px;
+      padding: 8px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px;
+      margin-bottom: 22px;
+    }
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+    .btn-cancel {
+      height: 40px;
+      padding: 0 18px;
+      background: #ffffff;
+      color: #374151;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-danger {
+      height: 40px;
+      padding: 0 18px;
+      background: #dc2626;
+      color: #ffffff;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-panel">
+    <h1>Project Settings</h1>
+    <label for="bg-project-name">Project Name</label>
+    <input id="bg-project-name" type="text" value="Jevwright Cloud" />
+    <button id="bg-save-btn" type="button">Save Changes</button>
+  </div>
+
+  <div class="backdrop">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-header">
+        <h2 id="modal-title">Delete Project?</h2>
+        <button id="modal-close-btn" type="button" class="close-btn" aria-label="Close dialog">×</button>
+      </div>
+      <p>This action cannot be undone. All test suites and historical run reports will be permanently removed.</p>
+      <label for="confirm-input">Type DELETE to confirm</label>
+      <input id="confirm-input" type="text" placeholder="DELETE" />
+      <div class="modal-actions">
+        <button id="modal-cancel-btn" type="button" class="btn-cancel">Cancel</button>
+        <button id="modal-confirm-btn" type="button" class="btn-danger">Confirm Delete</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+

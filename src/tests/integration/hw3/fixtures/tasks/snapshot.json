@@ -1,0 +1,98 @@
+{
+  "url": "https://demo.jevwright.local/tasks",
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "elements": [
+    {
+      "id": 1,
+      "role": "button",
+      "name": "Add new task",
+      "text": "Add new task",
+      "attrs": {},
+      "bbox": {
+        "x": 1057,
+        "y": 40,
+        "width": 143,
+        "height": 40
+      },
+      "hittable": true
+    },
+    {
+      "id": 2,
+      "role": "searchbox",
+      "name": "Search tasks",
+      "text": "",
+      "attrs": {
+        "type": "search",
+        "placeholder": "Filter tasks by title..."
+      },
+      "bbox": {
+        "x": 101,
+        "y": 121,
+        "width": 360,
+        "height": 38
+      },
+      "hittable": true
+    },
+    {
+      "id": 3,
+      "role": "switch",
+      "name": "Send a weekly summary",
+      "text": "",
+      "attrs": {
+        "aria-checked": "false"
+      },
+      "bbox": {
+        "x": 1131,
+        "y": 127,
+        "width": 48,
+        "height": 26
+      },
+      "hittable": true
+    },
+    {
+      "id": 4,
+      "role": "button",
+      "name": "Delete",
+      "text": "Delete",
+      "attrs": {},
+      "bbox": {
+        "x": 1097,
+        "y": 215,
+        "width": 78,
+        "height": 34
+      },
+      "hittable": true
+    },
+    {
+      "id": 5,
+      "role": "button",
+      "name": "Delete",
+      "text": "Delete",
+      "attrs": {},
+      "bbox": {
+        "x": 1097,
+        "y": 286,
+        "width": 78,
+        "height": 34
+      },
+      "hittable": true
+    },
+    {
+      "id": 6,
+      "role": "button",
+      "name": "Delete",
+      "text": "Delete",
+      "attrs": {},
+      "bbox": {
+        "x": 1097,
+        "y": 357,
+        "width": 78,
+        "height": 34
+      },
+      "hittable": true
+    }
+  ]
+}

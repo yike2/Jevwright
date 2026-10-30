@@ -1,0 +1,97 @@
+{
+  "page": "login",
+  "targets": [
+    {
+      "id": "login-email",
+      "target": "Email input field in the login form",
+      "action": "input",
+      "selector": "#email",
+      "present": true,
+      "elementId": 1,
+      "bbox": {
+        "x": 467,
+        "y": 283,
+        "width": 346,
+        "height": 40
+      }
+    },
+    {
+      "id": "login-password",
+      "target": "Password input field",
+      "action": "input",
+      "selector": "#password",
+      "present": true,
+      "elementId": 2,
+      "bbox": {
+        "x": 467,
+        "y": 363,
+        "width": 207,
+        "height": 40
+      }
+    },
+    {
+      "id": "login-toggle-password",
+      "target": "Show password button next to the password input",
+      "action": "click",
+      "selector": "#toggle-password",
+      "present": true,
+      "elementId": 3,
+      "bbox": {
+        "x": 682,
+        "y": 363,
+        "width": 131,
+        "height": 40
+      }
+    },
+    {
+      "id": "login-remember-me",
+      "target": "Remember me checkbox",
+      "action": "click",
+      "selector": "#remember-me",
+      "present": true,
+      "elementId": 4,
+      "bbox": {
+        "x": 471,
+        "y": 424,
+        "width": 13,
+        "height": 13
+      }
+    },
+    {
+      "id": "login-forgot-password",
+      "target": "Forgot password? link",
+      "action": "click",
+      "selector": "#forgot-password",
+      "present": true,
+      "elementId": 5,
+      "bbox": {
+        "x": 690,
+        "y": 423,
+        "width": 123,
+        "height": 16
+      }
+    },
+    {
+      "id": "login-submit",
+      "target": "Blue Sign in submit button",
+      "action": "click",
+      "selector": "#sign-in-btn",
+      "present": true,
+      "elementId": 6,
+      "bbox": {
+        "x": 467,
+        "y": 462,
+        "width": 346,
+        "height": 42
+      }
+    },
+    {
+      "id": "login-nonexistent",
+      "target": "Delete account button in the footer",
+      "action": "click",
+      "present": false,
+      "elementId": null,
+      "bbox": null
+    }
+  ]
+}

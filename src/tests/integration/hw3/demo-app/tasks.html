@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Jevwright Demo — Sprint Tasks</title>
+  <style>
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+    body {
+      margin: 0;
+      background: #f8fafc;
+      color: #0f172a;
+      padding: 40px 80px;
+      width: 1280px;
+      height: 720px;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    h1 { margin: 0; font-size: 26px; }
+    .add-btn {
+      height: 40px;
+      padding: 0 18px;
+      background: #16a34a;
+      color: #ffffff;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #ffffff;
+      padding: 16px 20px;
+      border-radius: 10px;
+      border: 1px solid #e2e8f0;
+      margin-bottom: 20px;
+    }
+    input[type="search"] {
+      width: 360px;
+      height: 38px;
+      padding: 6px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .switch-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    button[role="switch"] {
+      width: 48px;
+      height: 26px;
+      border-radius: 13px;
+      background: #cbd5e1;
+      border: none;
+      position: relative;
+      cursor: pointer;
+      padding: 0;
+    }
+    button[role="switch"]::after {
+      content: "";
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #ffffff;
+      position: absolute;
+      top: 3px;
+      left: 4px;
+    }
+    .task-list {
+      background: #ffffff;
+      border-radius: 10px;
+      border: 1px solid #e2e8f0;
+      overflow: hidden;
+    }
+    .task-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 24px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .task-row:last-child { border-bottom: none; }
+    .task-title { font-size: 16px; font-weight: 500; }
+    .delete-btn {
+      height: 34px;
+      padding: 0 14px;
+      background: #fee2e2;
+      color: #b91c1c;
+      border: 1px solid #fecaca;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Sprint Tasks</h1>
+    <button id="add-task-btn" type="button" class="add-btn">Add new task</button>
+  </header>
+
+  <section class="toolbar">
+    <input
+      id="search-tasks"
+      type="search"
+      aria-label="Search tasks"
+      placeholder="Filter tasks by title..."
+    />
+    <div class="switch-wrap">
+      <span>Send a weekly summary</span>
+      <button
+        id="weekly-summary-switch"
+        type="button"
+        role="switch"
+        aria-checked="false"
+        aria-label="Send a weekly summary"
+      ></button>
+    </div>
+  </section>
+
+  <section class="task-list">
+    <div class="task-row">
+      <span class="task-title">Write unit tests for Locator</span>
+      <button id="delete-task-1" type="button" class="delete-btn">Delete</button>
+    </div>
+    <div class="task-row">
+      <span class="task-title">Configure OpenRouter API key</span>
+      <button id="delete-task-2" type="button" class="delete-btn">Delete</button>
+    </div>
+    <div class="task-row">
+      <span class="task-title">Deploy staging preview</span>
+      <button id="delete-task-3" type="button" class="delete-btn">Delete</button>
+    </div>
+  </section>
+</body>
+</html>
+

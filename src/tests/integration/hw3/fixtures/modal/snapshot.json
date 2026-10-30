@@ -1,0 +1,98 @@
+{
+  "url": "https://demo.jevwright.local/modal",
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "elements": [
+    {
+      "id": 1,
+      "role": "textbox",
+      "name": "Project Name",
+      "text": "",
+      "attrs": {
+        "type": "text"
+      },
+      "bbox": {
+        "x": 113,
+        "y": 140,
+        "width": 534,
+        "height": 38
+      },
+      "hittable": false
+    },
+    {
+      "id": 2,
+      "role": "button",
+      "name": "Save Changes",
+      "text": "Save Changes",
+      "attrs": {},
+      "bbox": {
+        "x": 113,
+        "y": 194,
+        "width": 127,
+        "height": 38
+      },
+      "hittable": false
+    },
+    {
+      "id": 3,
+      "role": "button",
+      "name": "Close dialog",
+      "text": "×",
+      "attrs": {},
+      "bbox": {
+        "x": 810,
+        "y": 248,
+        "width": 32,
+        "height": 32
+      },
+      "hittable": true
+    },
+    {
+      "id": 4,
+      "role": "textbox",
+      "name": "Type DELETE to confirm",
+      "text": "",
+      "attrs": {
+        "type": "text",
+        "placeholder": "DELETE"
+      },
+      "bbox": {
+        "x": 438,
+        "y": 371,
+        "width": 404,
+        "height": 40
+      },
+      "hittable": true
+    },
+    {
+      "id": 5,
+      "role": "button",
+      "name": "Cancel",
+      "text": "Cancel",
+      "attrs": {},
+      "bbox": {
+        "x": 586,
+        "y": 433,
+        "width": 90,
+        "height": 40
+      },
+      "hittable": true
+    },
+    {
+      "id": 6,
+      "role": "button",
+      "name": "Confirm Delete",
+      "text": "Confirm Delete",
+      "attrs": {},
+      "bbox": {
+        "x": 688,
+        "y": 433,
+        "width": 154,
+        "height": 40
+      },
+      "hittable": true
+    }
+  ]
+}
