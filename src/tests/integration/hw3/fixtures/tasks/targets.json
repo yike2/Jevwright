@@ -1,0 +1,100 @@
+[
+  {
+    "id": "tasks-add-new",
+    "target": "Green + New Task button in the top right header",
+    "action": "click",
+    "present": true,
+    "elementId": 1,
+    "bbox": {
+      "x": 850,
+      "y": 32,
+      "width": 126,
+      "height": 40
+    },
+    "domId": "add-task",
+    "selector": "#add-task"
+  },
+  {
+    "id": "tasks-search",
+    "target": "Search tasks input box with placeholder Filter tasks by keyword",
+    "action": "input",
+    "present": true,
+    "elementId": 2,
+    "bbox": {
+      "x": 48,
+      "y": 96,
+      "width": 697,
+      "height": 40
+    },
+    "domId": "search-tasks",
+    "selector": "#search-tasks"
+  },
+  {
+    "id": "tasks-filter-active",
+    "target": "Active Only filter button",
+    "action": "click",
+    "present": true,
+    "elementId": 4,
+    "bbox": {
+      "x": 862,
+      "y": 96,
+      "width": 114,
+      "height": 40
+    },
+    "domId": "filter-active",
+    "selector": "#filter-active"
+  },
+  {
+    "id": "tasks-delete-row-1",
+    "target": "Delete task button on the first row for Fix login redirect bug",
+    "action": "click",
+    "present": true,
+    "elementId": 5,
+    "bbox": {
+      "x": 841,
+      "y": 178,
+      "width": 114,
+      "height": 34
+    },
+    "domId": "delete-row-1",
+    "selector": "#delete-row-1"
+  },
+  {
+    "id": "tasks-delete-row-2",
+    "target": "Delete task button on the second row for Write API documentation",
+    "action": "click",
+    "present": true,
+    "elementId": 6,
+    "bbox": {
+      "x": 841,
+      "y": 246,
+      "width": 114,
+      "height": 34
+    },
+    "domId": "delete-row-2",
+    "selector": "#delete-row-2"
+  },
+  {
+    "id": "tasks-archive-release",
+    "target": "Archive Release button inside the Release v2.0 card",
+    "action": "click",
+    "present": true,
+    "elementId": 9,
+    "bbox": {
+      "x": 801,
+      "y": 417,
+      "width": 149,
+      "height": 36
+    },
+    "domId": "archive-release",
+    "selector": "#archive-release"
+  },
+  {
+    "id": "tasks-missing-export",
+    "target": "Export tasks to CSV button",
+    "action": "click",
+    "present": false,
+    "elementId": null,
+    "bbox": null
+  }
+]

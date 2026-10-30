@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Jevwright Demo — Task List</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { background: #f8fafc; color: #0f172a; width: 1024px; height: 768px; padding: 32px 48px; }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    h1 { font-size: 24px; }
+    .btn-add { height: 40px; padding: 0 18px; background: #16a34a; color: #ffffff; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .toolbar { display: flex; gap: 12px; align-items: center; margin-bottom: 24px; }
+    .search-input { flex: 1; height: 40px; padding: 8px 14px; border: 1px solid #94a3b8; border-radius: 6px; font-size: 14px; }
+    .btn-filter { height: 40px; padding: 0 16px; background: #ffffff; border: 1px solid #94a3b8; border-radius: 6px; font-size: 14px; cursor: pointer; color: #1e293b; font-weight: 500; }
+    .task-list { background: #ffffff; border: 1px solid #cbd5e1; border-radius: 10px; overflow: hidden; margin-bottom: 28px; }
+    .task-row { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #e2e8f0; }
+    .task-row:last-child { border-bottom: none; }
+    .task-title { font-size: 15px; font-weight: 600; }
+    .task-meta { font-size: 13px; color: #64748b; margin-top: 2px; }
+    .btn-delete { height: 34px; padding: 0 14px; background: #fee2e2; color: #b91c1c; border: 1px solid #f87171; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .release-card { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; background: #eff6ff; border: 2px solid #60a5fa; border-radius: 10px; cursor: pointer; }
+    .release-info h2 { font-size: 17px; color: #1e3a8a; margin-bottom: 4px; }
+    .release-info p { font-size: 13px; color: #1d4ed8; }
+    .btn-archive { height: 36px; padding: 0 16px; background: #1e40af; color: #ffffff; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Sprint Backlog Tasks</h1>
+    <button id="add-task" type="button" class="btn-add">+ New Task</button>
+  </header>
+
+  <div class="toolbar">
+    <input id="search-tasks" type="search" role="searchbox" aria-label="Search tasks" placeholder="Filter tasks by keyword..." class="search-input" />
+    <button id="filter-all" type="button" class="btn-filter">All Tasks</button>
+    <button id="filter-active" type="button" class="btn-filter">Active Only</button>
+  </div>
+
+  <div class="task-list">
+    <div class="task-row">
+      <div>
+        <div class="task-title">Fix login redirect bug</div>
+        <div class="task-meta">Priority: High · Assigned to Alice</div>
+      </div>
+      <button id="delete-row-1" type="button" class="btn-delete">Delete task</button>
+    </div>
+
+    <div class="task-row">
+      <div>
+        <div class="task-title">Write API documentation</div>
+        <div class="task-meta">Priority: Medium · Assigned to Bob</div>
+      </div>
+      <button id="delete-row-2" type="button" class="btn-delete">Delete task</button>
+    </div>
+
+    <div class="task-row">
+      <div>
+        <div class="task-title">Upgrade database schema</div>
+        <div class="task-meta">Priority: Low · Assigned to Carol</div>
+      </div>
+      <button id="delete-row-3" type="button" class="btn-delete">Delete task</button>
+    </div>
+  </div>
+
+  <div id="featured-card" role="button" tabindex="0" aria-label="Release v2.0 card" class="release-card">
+    <div class="release-info">
+      <h2>Release v2.0 Milestone Card</h2>
+      <p>Click anywhere on this card to inspect release notes, or archive it.</p>
+    </div>
+    <button id="archive-release" type="button" class="btn-archive">Archive Release</button>
+  </div>
+</body>
+</html>

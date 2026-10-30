@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Jevwright Demo — Sign In</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { background: #f1f5f9; color: #0f172a; width: 1024px; height: 768px; display: flex; flex-direction: column; align-items: center; padding-top: 48px; }
+    .alert-banner { width: 480px; background: #fef3c7; border: 1px solid #f59e0b; color: #92400e; padding: 12px 16px; border-radius: 8px; margin-bottom: 24px; font-size: 14px; font-weight: 500; }
+    .card { width: 480px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 12px; padding: 32px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06); }
+    h1 { font-size: 24px; margin-bottom: 8px; }
+    p.subtitle { font-size: 14px; color: #475569; margin-bottom: 24px; }
+    .field { margin-bottom: 18px; }
+    label.field-label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+    input[type="email"], input[type="password"] { width: 100%; height: 42px; padding: 8px 12px; font-size: 14px; border: 1px solid #94a3b8; border-radius: 6px; }
+    .password-row { display: flex; gap: 8px; align-items: center; }
+    .password-row input { flex: 1; }
+    .btn-secondary { height: 42px; padding: 0 14px; background: #e2e8f0; border: 1px solid #94a3b8; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; color: #1e293b; white-space: nowrap; }
+    .row-between { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; font-size: 14px; }
+    .checkbox-wrap { display: flex; align-items: center; gap: 8px; }
+    .checkbox-wrap input { width: 18px; height: 18px; }
+    .switch-btn { padding: 6px 14px; border-radius: 999px; border: 1px solid #64748b; background: #f8fafc; font-size: 13px; cursor: pointer; }
+    .btn-primary { width: 100%; height: 44px; background: #2563eb; color: #ffffff; border: none; border-radius: 6px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 8px; }
+    .btn-disabled { width: 100%; height: 40px; background: #e2e8f0; color: #94a3b8; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; margin-top: 12px; cursor: not-allowed; }
+    .footer-links { margin-top: 18px; text-align: center; }
+    .footer-links a { color: #2563eb; font-size: 14px; text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div id="maintenance-alert" class="alert-banner">
+    Scheduled maintenance tonight at 11:00 PM UTC
+  </div>
+
+  <div class="card">
+    <h1>Sign in to Jevwright</h1>
+    <p class="subtitle">Enter your credentials to access your test workspace</p>
+
+    <div class="field">
+      <label class="field-label" for="email">Email</label>
+      <input id="email" type="email" aria-label="Email" placeholder="you@example.com" />
+    </div>
+
+    <div class="field">
+      <label class="field-label" for="password">Password</label>
+      <div class="password-row">
+        <input id="password" type="password" aria-label="Password" placeholder="Enter your password" />
+        <button id="show-password" type="button" class="btn-secondary">Show password</button>
+      </div>
+    </div>
+
+    <div class="row-between">
+      <label class="checkbox-wrap">
+        <input id="remember" type="checkbox" aria-label="Remember me" />
+        <span>Remember me</span>
+      </label>
+
+      <div>
+        <span>Weekly summary: </span>
+        <button id="weekly-switch" type="button" role="switch" aria-checked="false" aria-label="Send a weekly summary" class="switch-btn">
+          Send a weekly summary
+        </button>
+      </div>
+    </div>
+
+    <button id="sign-in" type="submit" class="btn-primary">Sign in</button>
+    <button id="sso-btn" type="button" class="btn-disabled" disabled>Sign in with SSO</button>
+
+    <div class="footer-links">
+      <a id="forgot-link" href="#forgot">Forgot password?</a>
+    </div>
+  </div>
+</body>
+</html>

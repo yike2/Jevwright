@@ -200,9 +200,9 @@ await locator.fill(step.value);
 
 `method`, `confidence`, and `durationMs` are passed on to the report, e.g. the CLI line `click "Sign In button" [visual, conf=0.92] (1420ms)`.
 
-### 3.2 Jev Harness Interface (Assumed)
+### 3.2 Jev Harness Interface
 
-> **Assumed interface.** `JevClient` is implemented by the Jev Harness, which calls the real Jev model through OpenRouter. The Harness design doc has not been written yet; this interface will be aligned with it.
+`JevClient` is implemented by the [Jev Harness](jev-harness.md), which calls the real Jev model (`typesafe/jev-1.14`) through OpenRouter's Decisions API.
 
 ```ts
 type BoundingBox = { x: number; y: number; width: number; height: number }; // pixels of the image

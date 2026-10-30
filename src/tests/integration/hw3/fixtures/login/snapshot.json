@@ -1,0 +1,147 @@
+{
+  "url": "https://demo.jevwright.local/login",
+  "title": "Jevwright Demo — Sign In",
+  "viewport": {
+    "width": 1024,
+    "height": 768
+  },
+  "elements": [
+    {
+      "id": 1,
+      "tag": "input",
+      "role": "textbox",
+      "name": "Email",
+      "text": "",
+      "attrs": {
+        "type": "email",
+        "placeholder": "you@example.com"
+      },
+      "bbox": {
+        "x": 305,
+        "y": 245,
+        "width": 414,
+        "height": 42
+      },
+      "hittable": true
+    },
+    {
+      "id": 2,
+      "tag": "input",
+      "role": "textbox",
+      "name": "Password",
+      "text": "",
+      "attrs": {
+        "type": "password",
+        "placeholder": "Enter your password"
+      },
+      "bbox": {
+        "x": 305,
+        "y": 327,
+        "width": 262,
+        "height": 42
+      },
+      "hittable": true
+    },
+    {
+      "id": 3,
+      "tag": "button",
+      "role": "button",
+      "name": "Show password",
+      "text": "Show password",
+      "attrs": {},
+      "bbox": {
+        "x": 575,
+        "y": 327,
+        "width": 144,
+        "height": 42
+      },
+      "hittable": true
+    },
+    {
+      "id": 4,
+      "tag": "input",
+      "role": "checkbox",
+      "name": "Remember me",
+      "text": "",
+      "attrs": {
+        "checked": "false"
+      },
+      "bbox": {
+        "x": 305,
+        "y": 401,
+        "width": 17,
+        "height": 18
+      },
+      "hittable": true
+    },
+    {
+      "id": 5,
+      "tag": "button",
+      "role": "switch",
+      "name": "Send a weekly summary",
+      "text": "Send a weekly summary",
+      "attrs": {
+        "aria-checked": "false"
+      },
+      "bbox": {
+        "x": 425,
+        "y": 403,
+        "width": 190,
+        "height": 29
+      },
+      "hittable": true
+    },
+    {
+      "id": 6,
+      "tag": "button",
+      "role": "button",
+      "name": "Sign in",
+      "text": "Sign in",
+      "attrs": {},
+      "bbox": {
+        "x": 305,
+        "y": 456,
+        "width": 414,
+        "height": 44
+      },
+      "hittable": true
+    },
+    {
+      "id": 7,
+      "tag": "button",
+      "role": "button",
+      "name": "Sign in with SSO",
+      "text": "Sign in with SSO",
+      "attrs": {
+        "disabled": "true"
+      },
+      "bbox": {
+        "x": 305,
+        "y": 512,
+        "width": 414,
+        "height": 40
+      },
+      "hittable": true
+    },
+    {
+      "id": 8,
+      "tag": "a",
+      "role": "link",
+      "name": "Forgot password?",
+      "text": "Forgot password?",
+      "attrs": {},
+      "bbox": {
+        "x": 451,
+        "y": 572,
+        "width": 123,
+        "height": 16
+      },
+      "hittable": true
+    }
+  ],
+  "texts": [
+    "Scheduled maintenance tonight at 11:00 PM UTC",
+    "Sign in to Jevwright",
+    "Enter your credentials to access your test workspace"
+  ]
+}

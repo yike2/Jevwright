@@ -1,0 +1,142 @@
+[
+  {
+    "id": "login-email",
+    "target": "Email input field with placeholder you@example.com",
+    "action": "input",
+    "present": true,
+    "elementId": 1,
+    "bbox": {
+      "x": 305,
+      "y": 245,
+      "width": 414,
+      "height": 42
+    },
+    "domId": "email",
+    "selector": "#email"
+  },
+  {
+    "id": "login-password",
+    "target": "Password input field",
+    "action": "input",
+    "present": true,
+    "elementId": 2,
+    "bbox": {
+      "x": 305,
+      "y": 327,
+      "width": 262,
+      "height": 42
+    },
+    "domId": "password",
+    "selector": "#password"
+  },
+  {
+    "id": "login-show-password",
+    "target": "Show password button next to the password input",
+    "action": "click",
+    "present": true,
+    "elementId": 3,
+    "bbox": {
+      "x": 575,
+      "y": 327,
+      "width": 144,
+      "height": 42
+    },
+    "domId": "show-password",
+    "selector": "#show-password"
+  },
+  {
+    "id": "login-remember",
+    "target": "Remember me checkbox",
+    "action": "click",
+    "present": true,
+    "elementId": 4,
+    "bbox": {
+      "x": 305,
+      "y": 401,
+      "width": 17,
+      "height": 18
+    },
+    "domId": "remember",
+    "selector": "#remember"
+  },
+  {
+    "id": "login-weekly-switch",
+    "target": "Send a weekly summary toggle switch",
+    "action": "click",
+    "present": true,
+    "elementId": 5,
+    "bbox": {
+      "x": 425,
+      "y": 403,
+      "width": 190,
+      "height": 29
+    },
+    "domId": "weekly-switch",
+    "selector": "#weekly-switch"
+  },
+  {
+    "id": "login-submit",
+    "target": "Blue Sign in submit button",
+    "action": "click",
+    "present": true,
+    "elementId": 6,
+    "bbox": {
+      "x": 305,
+      "y": 456,
+      "width": 414,
+      "height": 44
+    },
+    "domId": "sign-in",
+    "selector": "#sign-in"
+  },
+  {
+    "id": "login-forgot-link",
+    "target": "Forgot password? link at the bottom of the card",
+    "action": "click",
+    "present": true,
+    "elementId": 8,
+    "bbox": {
+      "x": 451,
+      "y": 572,
+      "width": 123,
+      "height": 16
+    },
+    "domId": "forgot-link",
+    "selector": "#forgot-link"
+  },
+  {
+    "id": "login-disabled-sso",
+    "target": "Disabled Sign in with SSO button",
+    "action": "click",
+    "present": true,
+    "elementId": null,
+    "bbox": {
+      "x": 305,
+      "y": 512,
+      "width": 414,
+      "height": 40
+    },
+    "domId": "sso-btn"
+  },
+  {
+    "id": "login-non-interactive-alert",
+    "target": "Scheduled maintenance tonight alert banner",
+    "action": "click",
+    "present": true,
+    "elementId": null,
+    "bbox": {
+      "x": 272,
+      "y": 48,
+      "width": 480,
+      "height": 42
+    }
+  },
+  {
+    "id": "login-missing-delete-account",
+    "target": "Delete account permanently button",
+    "action": "click",
+    "present": false,
+    "elementId": null,
+    "bbox": null
+  }
+]

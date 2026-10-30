@@ -1,0 +1,156 @@
+{
+  "url": "https://demo.jevwright.local/tasks",
+  "title": "Jevwright Demo — Task List",
+  "viewport": {
+    "width": 1024,
+    "height": 768
+  },
+  "elements": [
+    {
+      "id": 1,
+      "tag": "button",
+      "role": "button",
+      "name": "+ New Task",
+      "text": "+ New Task",
+      "attrs": {},
+      "bbox": {
+        "x": 850,
+        "y": 32,
+        "width": 126,
+        "height": 40
+      },
+      "hittable": true
+    },
+    {
+      "id": 2,
+      "tag": "input",
+      "role": "searchbox",
+      "name": "Search tasks",
+      "text": "",
+      "attrs": {
+        "type": "search",
+        "placeholder": "Filter tasks by keyword..."
+      },
+      "bbox": {
+        "x": 48,
+        "y": 96,
+        "width": 697,
+        "height": 40
+      },
+      "hittable": true
+    },
+    {
+      "id": 3,
+      "tag": "button",
+      "role": "button",
+      "name": "All Tasks",
+      "text": "All Tasks",
+      "attrs": {},
+      "bbox": {
+        "x": 757,
+        "y": 96,
+        "width": 93,
+        "height": 40
+      },
+      "hittable": true
+    },
+    {
+      "id": 4,
+      "tag": "button",
+      "role": "button",
+      "name": "Active Only",
+      "text": "Active Only",
+      "attrs": {},
+      "bbox": {
+        "x": 862,
+        "y": 96,
+        "width": 114,
+        "height": 40
+      },
+      "hittable": true
+    },
+    {
+      "id": 5,
+      "tag": "button",
+      "role": "button",
+      "name": "Delete task",
+      "text": "Delete task",
+      "attrs": {},
+      "bbox": {
+        "x": 841,
+        "y": 178,
+        "width": 114,
+        "height": 34
+      },
+      "hittable": true
+    },
+    {
+      "id": 6,
+      "tag": "button",
+      "role": "button",
+      "name": "Delete task",
+      "text": "Delete task",
+      "attrs": {},
+      "bbox": {
+        "x": 841,
+        "y": 246,
+        "width": 114,
+        "height": 34
+      },
+      "hittable": true
+    },
+    {
+      "id": 7,
+      "tag": "button",
+      "role": "button",
+      "name": "Delete task",
+      "text": "Delete task",
+      "attrs": {},
+      "bbox": {
+        "x": 841,
+        "y": 314,
+        "width": 114,
+        "height": 34
+      },
+      "hittable": true
+    },
+    {
+      "id": 8,
+      "tag": "div",
+      "role": "button",
+      "name": "Release v2.0 card",
+      "text": "Release v2.0 Milestone Card Click anywhere on this card to inspect release notes, or archive it. Archive Release",
+      "attrs": {},
+      "bbox": {
+        "x": 48,
+        "y": 393,
+        "width": 928,
+        "height": 83
+      },
+      "hittable": true
+    },
+    {
+      "id": 9,
+      "tag": "button",
+      "role": "button",
+      "name": "Archive Release",
+      "text": "Archive Release",
+      "attrs": {},
+      "bbox": {
+        "x": 801,
+        "y": 417,
+        "width": 149,
+        "height": 36
+      },
+      "hittable": true
+    }
+  ],
+  "texts": [
+    "Sprint Backlog Tasks",
+    "Fix login redirect bug",
+    "Write API documentation",
+    "Upgrade database schema",
+    "Release v2.0 Milestone Card",
+    "Click anywhere on this card to inspect release notes, or archive it."
+  ]
+}

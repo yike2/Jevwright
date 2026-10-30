@@ -1,13 +1,26 @@
 {
-  "name": "Jevwright",
+  "name": "jevwright",
   "version": "1.0.0",
-  "description": "",
+  "type": "module",
+  "description": "AI-assisted web testing platform built on Jev and Playwright",
   "main": "index.js",
   "scripts": {
     "prepare": "git config core.hooksPath .githooks && git config commit.template .gitmessage && git config core.editor 'nano --breaklonglines --fill=72'",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
+    "fixtures:generate": "tsx src/tests/integration/hw3/generate-fixtures.ts",
+    "eval:jev": "tsx --env-file=.env src/tests/integration/hw3/eval-jev.ts"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@vitest/coverage-v8": "^5.0.5",
+    "playwright": "^1.64.1",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.5"
+  }
 }
