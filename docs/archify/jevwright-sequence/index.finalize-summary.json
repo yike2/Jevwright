@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "ok": false,
+  "command": "finalize",
+  "status": "skipped",
+  "type": "sequence",
+  "quality": "showcase",
+  "specification": {
+    "path": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/candidate.json",
+    "sha256": "b5ac99a0eb0c16a96163667c58acc0171e3cac3bb11f203c5fbf2222a87705eb",
+    "bytes": 11544
+  },
+  "artifact": {
+    "path": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/index.html",
+    "sha256": "3b393e0b2ddb87d33b963c22c9522cad24cda436c6c61e7fbe95dbc3b911977b",
+    "bytes": 873251
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "skipped"
+  },
+  "failedStage": "browser-check",
+  "diagnostics": [
+    {
+      "code": "viewer/chrome-unavailable",
+      "severity": "warning",
+      "message": "No supported browser found. Install Chrome/Chromium (or Microsoft Edge), or set ARCHIFY_CHROME to its executable path.",
+      "subject": {
+        "artifact": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/index.html"
+      },
+      "evidence": {
+        "executable": null
+      },
+      "supportedFixes": [
+        "set ARCHIFY_CHROME to a Chrome/Chromium executable (or Microsoft Edge) and rerun browser-check"
+      ]
+    }
+  ],
+  "diagnosticSummary": {
+    "total": 1,
+    "shown": 1,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/index.finalize.json",
+    "summaryReceipt": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/index.finalize-summary.json",
+    "browserCheckReceipt": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/index.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-10-29T02:44:40.864Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 1281,
+  "browserCheck": {
+    "requested": true,
+    "ran": false
+  }
+}

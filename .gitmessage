@@ -1,0 +1,8 @@
+# <type>(<scope>): <summary> (#<issue>)   (whole line ≤ 72 chars)
+#
+# <description>           (optional: what changed and why)
+#
+# type:  feat | fix | docs | test | refactor | chore | ci
+# scope: core, syntax, jev, locator, assert, playwright, cli,
+#        backend, frontend, db, benchmark
+# e.g.   feat(locator): fall back to DOM locate on low confidence (#42)

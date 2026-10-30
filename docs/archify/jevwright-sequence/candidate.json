@@ -1,0 +1,570 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Jevwright Run Sequence",
+    "locale": "en",
+    "output": "docs/archify/jevwright-sequence/index.html",
+    "quality_profile": "showcase",
+    "visual_preset": "editorial"
+  },
+  "participants": [
+    {
+      "id": "api",
+      "type": "backend",
+      "label": "API + Worker",
+      "sublabel": "queue · WebSocket"
+    },
+    {
+      "id": "pipeline",
+      "type": "backend",
+      "label": "Run Pipeline",
+      "sublabel": "orchestration"
+    },
+    {
+      "id": "syntax",
+      "type": "backend",
+      "label": "Syntax",
+      "sublabel": "YAML parsing"
+    },
+    {
+      "id": "executor",
+      "type": "backend",
+      "label": "Step Executor",
+      "sublabel": "runs steps"
+    },
+    {
+      "id": "locator",
+      "type": "backend",
+      "label": "Locator",
+      "sublabel": "find element"
+    },
+    {
+      "id": "asserter",
+      "type": "backend",
+      "label": "Asserter",
+      "sublabel": "judge assert"
+    },
+    {
+      "id": "driver",
+      "type": "cloud",
+      "label": "Browser Driver",
+      "sublabel": "Playwright"
+    },
+    {
+      "id": "harness",
+      "type": "external",
+      "label": "Jev Harness",
+      "sublabel": "Jev model"
+    },
+    {
+      "id": "report",
+      "type": "backend",
+      "label": "Report",
+      "sublabel": "build report"
+    }
+  ],
+  "segments": [
+    {
+      "from": 150,
+      "label": "Dequeue",
+      "to": 300
+    },
+    {
+      "from": 304,
+      "label": "Alt — invalid YAML",
+      "to": 454
+    },
+    {
+      "from": 458,
+      "label": "Parse OK",
+      "to": 524
+    },
+    {
+      "from": 528,
+      "label": "Step 1: click (selector misses, visual fails)",
+      "to": 1506
+    },
+    {
+      "from": 1510,
+      "label": "Alt — DOM locate or action fails",
+      "to": 1788
+    },
+    {
+      "from": 1792,
+      "label": "Step 2: assert (Playwright fails, visual unsure, DOM text passes)",
+      "to": 2422
+    },
+    {
+      "from": 2426,
+      "label": "Alt — Jev judges false on both",
+      "to": 2620
+    },
+    {
+      "from": 2624,
+      "label": "Finish (always)",
+      "to": 2950
+    }
+  ],
+  "messages": [
+    {
+      "id": "m1",
+      "from": "api",
+      "to": "pipeline",
+      "y": 186,
+      "label": "run(yaml, onEvent)",
+      "variant": "emphasis",
+      "note": "Web UI POSTs /runs; Worker calls after dequeue"
+    },
+    {
+      "id": "m2",
+      "from": "pipeline",
+      "to": "syntax",
+      "y": 270,
+      "label": "analyze(yaml)",
+      "variant": "default"
+    },
+    {
+      "id": "m3",
+      "from": "syntax",
+      "to": "pipeline",
+      "y": 340,
+      "label": "Diagnostic[] (line, column)",
+      "variant": "return"
+    },
+    {
+      "id": "m4",
+      "from": "pipeline",
+      "to": "api",
+      "y": 384,
+      "label": "Run failed: diagnostics",
+      "variant": "return",
+      "note": "Run ends here; no browser is launched"
+    },
+    {
+      "id": "m5",
+      "from": "syntax",
+      "to": "pipeline",
+      "y": 494,
+      "label": "TestCase",
+      "variant": "return"
+    },
+    {
+      "id": "m6",
+      "from": "pipeline",
+      "to": "executor",
+      "y": 564,
+      "label": "execute(TestCase)",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m7",
+      "from": "executor",
+      "to": "driver",
+      "y": 608,
+      "label": "launch()",
+      "variant": "default"
+    },
+    {
+      "id": "m8",
+      "from": "driver",
+      "to": "executor",
+      "y": 652,
+      "label": "page",
+      "variant": "return"
+    },
+    {
+      "id": "m9",
+      "from": "executor",
+      "to": "locator",
+      "y": 696,
+      "label": "locate(page, step)",
+      "variant": "default",
+      "note": "step has selector · target"
+    },
+    {
+      "id": "m10",
+      "from": "locator",
+      "to": "driver",
+      "y": 780,
+      "label": "query(selector)",
+      "variant": "default"
+    },
+    {
+      "id": "m11",
+      "from": "driver",
+      "to": "locator",
+      "y": 824,
+      "label": "no match",
+      "variant": "return"
+    },
+    {
+      "id": "m12",
+      "from": "locator",
+      "to": "driver",
+      "y": 868,
+      "label": "screenshot()",
+      "variant": "default"
+    },
+    {
+      "id": "m13",
+      "from": "driver",
+      "to": "locator",
+      "y": 912,
+      "label": "screenshot",
+      "variant": "return"
+    },
+    {
+      "id": "m14",
+      "from": "locator",
+      "to": "harness",
+      "y": 956,
+      "label": "locate(screenshot, target)",
+      "variant": "default",
+      "note": "Retries on bad Jev output"
+    },
+    {
+      "id": "m15",
+      "from": "harness",
+      "to": "locator",
+      "y": 1040,
+      "label": "not found / low confidence",
+      "variant": "return"
+    },
+    {
+      "id": "m16",
+      "from": "locator",
+      "to": "driver",
+      "y": 1084,
+      "label": "extractDOM()",
+      "variant": "default"
+    },
+    {
+      "id": "m17",
+      "from": "driver",
+      "to": "locator",
+      "y": 1128,
+      "label": "interactive elements",
+      "variant": "return"
+    },
+    {
+      "id": "m18",
+      "from": "locator",
+      "to": "harness",
+      "y": 1172,
+      "label": "locate(DOM list, target)",
+      "variant": "default"
+    },
+    {
+      "id": "m19",
+      "from": "harness",
+      "to": "locator",
+      "y": 1216,
+      "label": "choice · confidence",
+      "variant": "return"
+    },
+    {
+      "id": "m20",
+      "from": "locator",
+      "to": "executor",
+      "y": 1260,
+      "label": "element position",
+      "variant": "return"
+    },
+    {
+      "id": "m21",
+      "from": "executor",
+      "to": "driver",
+      "y": 1304,
+      "label": "click(position)",
+      "variant": "default"
+    },
+    {
+      "id": "m22",
+      "from": "driver",
+      "to": "executor",
+      "y": 1348,
+      "label": "ok",
+      "variant": "return"
+    },
+    {
+      "id": "m23",
+      "from": "executor",
+      "to": "pipeline",
+      "y": 1392,
+      "label": "onEvent(step1 passed)",
+      "variant": "dashed"
+    },
+    {
+      "id": "m24",
+      "from": "pipeline",
+      "to": "api",
+      "y": 1436,
+      "label": "onEvent(step1 passed)",
+      "variant": "dashed",
+      "note": "Pushed to Web UI over WebSocket"
+    },
+    {
+      "id": "m25",
+      "from": "locator",
+      "to": "executor",
+      "y": 1546,
+      "label": "not found",
+      "variant": "return",
+      "note": "Or driver returns error / timeout on the action"
+    },
+    {
+      "id": "m26",
+      "from": "executor",
+      "to": "driver",
+      "y": 1630,
+      "label": "screenshot()",
+      "variant": "default"
+    },
+    {
+      "id": "m27",
+      "from": "driver",
+      "to": "executor",
+      "y": 1674,
+      "label": "screenshot (evidence)",
+      "variant": "return"
+    },
+    {
+      "id": "m28",
+      "from": "executor",
+      "to": "pipeline",
+      "y": 1718,
+      "label": "onEvent(step1 failed)",
+      "variant": "dashed",
+      "note": "Remaining steps are skipped; go to Finish"
+    },
+    {
+      "id": "m29",
+      "from": "executor",
+      "to": "asserter",
+      "y": 1828,
+      "label": "assert(page, step)",
+      "variant": "default",
+      "note": "step has selector · text · statement"
+    },
+    {
+      "id": "m30",
+      "from": "asserter",
+      "to": "driver",
+      "y": 1912,
+      "label": "toContainText(text)",
+      "variant": "default"
+    },
+    {
+      "id": "m31",
+      "from": "driver",
+      "to": "asserter",
+      "y": 1956,
+      "label": "failed",
+      "variant": "return"
+    },
+    {
+      "id": "m32",
+      "from": "asserter",
+      "to": "driver",
+      "y": 2000,
+      "label": "screenshot()",
+      "variant": "default"
+    },
+    {
+      "id": "m33",
+      "from": "driver",
+      "to": "asserter",
+      "y": 2044,
+      "label": "screenshot",
+      "variant": "return"
+    },
+    {
+      "id": "m34",
+      "from": "asserter",
+      "to": "harness",
+      "y": 2088,
+      "label": "judge(screenshot, statement)",
+      "variant": "default"
+    },
+    {
+      "id": "m35",
+      "from": "harness",
+      "to": "asserter",
+      "y": 2132,
+      "label": "unsure / low confidence",
+      "variant": "return"
+    },
+    {
+      "id": "m36",
+      "from": "asserter",
+      "to": "driver",
+      "y": 2176,
+      "label": "extractDOM()",
+      "variant": "default"
+    },
+    {
+      "id": "m37",
+      "from": "driver",
+      "to": "asserter",
+      "y": 2220,
+      "label": "DOM list (text)",
+      "variant": "return"
+    },
+    {
+      "id": "m38",
+      "from": "asserter",
+      "to": "harness",
+      "y": 2264,
+      "label": "judge(DOM list, statement)",
+      "variant": "default"
+    },
+    {
+      "id": "m39",
+      "from": "harness",
+      "to": "asserter",
+      "y": 2308,
+      "label": "true · confidence",
+      "variant": "return"
+    },
+    {
+      "id": "m40",
+      "from": "asserter",
+      "to": "executor",
+      "y": 2352,
+      "label": "passed (fallback)",
+      "variant": "return",
+      "note": "Marked as a fallback pass in the report"
+    },
+    {
+      "id": "m41",
+      "from": "harness",
+      "to": "asserter",
+      "y": 2462,
+      "label": "false · confidence",
+      "variant": "return"
+    },
+    {
+      "id": "m42",
+      "from": "asserter",
+      "to": "executor",
+      "y": 2506,
+      "label": "failed + reason",
+      "variant": "return"
+    },
+    {
+      "id": "m43",
+      "from": "executor",
+      "to": "pipeline",
+      "y": 2550,
+      "label": "onEvent(step2 failed)",
+      "variant": "dashed",
+      "note": "Remaining steps are skipped; go to Finish"
+    },
+    {
+      "id": "m44",
+      "from": "executor",
+      "to": "driver",
+      "y": 2660,
+      "label": "close()",
+      "variant": "default"
+    },
+    {
+      "id": "m45",
+      "from": "driver",
+      "to": "executor",
+      "y": 2704,
+      "label": "trace.zip",
+      "variant": "return"
+    },
+    {
+      "id": "m46",
+      "from": "executor",
+      "to": "pipeline",
+      "y": 2748,
+      "label": "StepResult[] · trace",
+      "variant": "return"
+    },
+    {
+      "id": "m47",
+      "from": "pipeline",
+      "to": "report",
+      "y": 2792,
+      "label": "build(results, trace)",
+      "variant": "default"
+    },
+    {
+      "id": "m48",
+      "from": "report",
+      "to": "pipeline",
+      "y": 2836,
+      "label": "Report .json (passed / failed)",
+      "variant": "return"
+    },
+    {
+      "id": "m49",
+      "from": "pipeline",
+      "to": "api",
+      "y": 2880,
+      "label": "Report",
+      "variant": "return",
+      "note": "Worker stores it and pushes Run passed / failed"
+    }
+  ],
+  "activations": [
+    {
+      "participant": "api",
+      "from": 181,
+      "to": 2886,
+      "type": "backend"
+    },
+    {
+      "participant": "pipeline",
+      "from": 181,
+      "to": 2886,
+      "type": "backend"
+    },
+    {
+      "participant": "syntax",
+      "from": 265,
+      "to": 500,
+      "type": "backend"
+    },
+    {
+      "participant": "executor",
+      "from": 559,
+      "to": 2754,
+      "type": "backend"
+    },
+    {
+      "participant": "locator",
+      "from": 691,
+      "to": 1552,
+      "type": "backend"
+    },
+    {
+      "participant": "asserter",
+      "from": 1823,
+      "to": 2512,
+      "type": "backend"
+    },
+    {
+      "participant": "driver",
+      "from": 603,
+      "to": 2710,
+      "type": "cloud"
+    },
+    {
+      "participant": "harness",
+      "from": 951,
+      "to": 2468,
+      "type": "external"
+    },
+    {
+      "participant": "report",
+      "from": 2787,
+      "to": 2842,
+      "type": "backend"
+    }
+  ]
+}
