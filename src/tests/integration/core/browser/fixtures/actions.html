@@ -1,0 +1,28 @@
+<!doctype html>
+<title>Actions</title>
+<style>
+  body { margin: 0; height: 3000px; width: 3000px; }
+</style>
+<div id="corner" style="position: fixed; left: 0; top: 0; width: 10px; height: 10px; overflow: auto"><div style="height: 5000px; width: 5000px"></div></div>
+<p id="log"></p>
+<p id="position">0,0</p>
+<button id="save">Save</button>
+<button id="hide-save">Hide Save</button>
+<input id="title" aria-label="Title" value="Old title">
+<script>
+  const log = (text) => (document.querySelector("#log").textContent += `[${text}]`);
+  sessionStorage.loads = Number(sessionStorage.loads ?? 0) + 1;
+  log(`load ${sessionStorage.loads}`);
+  const save = document.querySelector("#save");
+  save.addEventListener("click", () => log("click"));
+  save.addEventListener("dblclick", () => log("dblclick"));
+  save.addEventListener("contextmenu", (e) => (e.preventDefault(), log("contextmenu")));
+  save.addEventListener("mouseenter", () => log("hover"));
+  document.querySelector("#hide-save").addEventListener("click", () => (save.hidden = true));
+  document.querySelector("#title").addEventListener("input", (e) => log(`input ${e.target.value}`));
+  document.addEventListener("keydown", (e) => log(`key ${e.key}`));
+  addEventListener("scroll", () => {
+    log(`scroll ${scrollX},${scrollY}`);
+    document.querySelector("#position").textContent = `${scrollX},${scrollY}`;
+  });
+</script>

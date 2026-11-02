@@ -1,0 +1,22 @@
+<!doctype html>
+<title>Dialogs</title>
+<p id="log"></p>
+<button id="confirm">Delete</button>
+<button id="prompt">Rename</button>
+<button id="alert">Save</button>
+<button id="late">Delete later</button>
+<button id="twice">Delete twice</button>
+<button id="none">No dialog</button>
+<button id="delayed">Save soon</button>
+<button id="then-done">Finish</button>
+<script>
+  const log = (text) => (document.querySelector("#log").textContent += `[${text}]`);
+  const on = (id, run) => document.getElementById(id).addEventListener("click", run);
+  on("confirm", () => log(confirm("Delete this task?") ? "confirmed" : "cancelled"));
+  on("prompt", () => log(`prompt ${prompt("New name?", "Old name")}`));
+  on("alert", () => (alert("Saved"), log("alerted")));
+  on("late", () => setTimeout(() => log(confirm("Delete later?") ? "confirmed" : "cancelled"), 500));
+  on("delayed", () => setTimeout(() => alert("Saved in the background"), 200));
+  on("then-done", () => setTimeout(() => (alert("Heads up"), (location.hash = "done")), 200));
+  on("twice", () => (confirm("First?"), confirm("Second?")));
+</script>
