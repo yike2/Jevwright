@@ -34,6 +34,8 @@ export type BrowserResult =
   | { ok: true; dialogs: DialogRecord[] }
   | { ok: false; reason: string; dialogs: DialogRecord[] };
 
+export type ReadResult<T> = { ok: true; data: T } | { ok: false; reason: string };
+
 export type BoundingBox = { x: number; y: number; width: number; height: number };
 
 export type SnapshotElement = {
@@ -56,9 +58,9 @@ export type PageSnapshot = {
 
 export interface BrowserAdapter {
   ready(): Promise<BrowserResult>;
-  isVisible(selector: string, timeoutMs: number): Promise<boolean>;
-  screenshot(): Promise<Buffer>;
-  snapshot(): Promise<PageSnapshot>;
+  isVisible(selector: string, timeoutMs: number): Promise<ReadResult<boolean>>;
+  screenshot(): Promise<ReadResult<Buffer>>;
+  snapshot(): Promise<ReadResult<PageSnapshot>>;
   perform(action: BrowserAction): Promise<BrowserResult>;
   check(check: BrowserCheck): Promise<BrowserResult>;
   close(): Promise<Buffer>; // trace zip

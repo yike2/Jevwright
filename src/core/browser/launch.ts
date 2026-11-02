@@ -2,7 +2,7 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
-import { chromium, type Browser, type BrowserContext, type Page } from "playwright";
+import { chromium, errors, type Browser, type BrowserContext, type Page } from "playwright";
 import { runAction } from "./actions.js";
 import { runCheck } from "./checks.js";
 import { DIALOG_MIN_WAIT_MS, VIEWPORT } from "./constants.js";
@@ -10,7 +10,15 @@ import { DialogGuard } from "./dialogs.js";
 import { failureReason } from "./errors.js";
 import { takeSnapshot } from "./snapshot.js";
 import { Tabs } from "./tabs.js";
-import type { BrowserAction, BrowserAdapter, BrowserCheck, BrowserResult, LaunchOptions, PageSnapshot } from "./types.js";
+import type {
+  BrowserAction,
+  BrowserAdapter,
+  BrowserCheck,
+  BrowserResult,
+  LaunchOptions,
+  PageSnapshot,
+  ReadResult,
+} from "./types.js";
 
 /** Launches Chromium for one Run and returns its Browser Adapter. */
 export async function launchBrowser(options: LaunchOptions): Promise<BrowserAdapter> {
@@ -50,29 +58,28 @@ class PlaywrightAdapter implements BrowserAdapter {
   }
 
   ready(): Promise<BrowserResult> {
-    return this.attempt(async () => {
-      await this.page.waitForLoadState("load");
-      // Dialogs taken here opened between steps, so they fail the step that is starting.
-      return this.result(undefined);
+    // Dialogs taken here opened between steps, so they fail the step that is starting.
+    return this.attempt(async () => void (await this.page.waitForLoadState("load")));
+  }
+
+  isVisible(selector: string, timeoutMs: number): Promise<ReadResult<boolean>> {
+    return this.read(async () => {
+      try {
+        await this.page.locator(selector).first().waitFor({ state: "visible", timeout: timeoutMs });
+        return true;
+      } catch (error) {
+        if (error instanceof errors.TimeoutError) return false;
+        throw error;
+      }
     });
   }
 
-  async isVisible(selector: string, timeoutMs: number): Promise<boolean> {
-    try {
-      await this.page.locator(selector).first().waitFor({ state: "visible", timeout: timeoutMs });
-      return true;
-    } catch (error) {
-      failureReason(error, this.browser.isConnected());
-      return false;
-    }
+  screenshot(): Promise<ReadResult<Buffer>> {
+    return this.read(() => this.page.screenshot());
   }
 
-  screenshot(): Promise<Buffer> {
-    return this.page.screenshot();
-  }
-
-  snapshot(): Promise<PageSnapshot> {
-    return takeSnapshot(this.page);
+  snapshot(): Promise<ReadResult<PageSnapshot>> {
+    return this.read(() => takeSnapshot(this.page));
   }
 
   perform(action: BrowserAction): Promise<BrowserResult> {
@@ -85,7 +92,7 @@ class PlaywrightAdapter implements BrowserAdapter {
             ? await this.tabs.switchTo(action.url, this.options.baseUrl, this.timeoutMs)
             : await runAction(this.page, action);
         const missing = answered && actionFailure === undefined ? await this.waitForDialog(answered) : undefined;
-        return this.result(actionFailure ?? missing);
+        return actionFailure ?? missing;
       } finally {
         this.dialogs.disarm();
       }
@@ -93,7 +100,7 @@ class PlaywrightAdapter implements BrowserAdapter {
   }
 
   check(check: BrowserCheck): Promise<BrowserResult> {
-    return this.attempt(async () => this.result(await runCheck(this.page, check, this.timeoutMs, this.options.baseUrl)));
+    return this.attempt(() => runCheck(this.page, check, this.timeoutMs, this.options.baseUrl));
   }
 
   // Adds the dialogs answered since the last result; an unexpected one fails it.
@@ -113,15 +120,22 @@ class PlaywrightAdapter implements BrowserAdapter {
     return missing ? `The expected dialog did not appear within ${waitMs}ms` : undefined;
   }
 
-  // Expected Playwright failures become a failed result; see failureReason for what is rethrown.
+  // Runs a step's call, which returns its failure reason, and adds the dialogs answered meanwhile.
   // switchTab still runs after the current tab closed, since it is how a test moves on to another tab.
-  private async attempt(run: () => Promise<BrowserResult>, needsOpenTab = true): Promise<BrowserResult> {
+  private async attempt(run: () => Promise<string | undefined>, needsOpenTab = true): Promise<BrowserResult> {
+    const outcome = await this.read(run, needsOpenTab);
+    return this.result(outcome.ok ? outcome.data : outcome.reason);
+  }
+
+  // Expected Playwright failures become a failed result; see failureReason for what is rethrown.
+  // A read is not a step, so the dialogs stay for the result of the step's next call.
+  private async read<T>(run: () => Promise<T>, needsOpenTab = true): Promise<ReadResult<T>> {
     if (!this.browser.isConnected()) throw new Error("The browser is closed or has crashed");
-    if (needsOpenTab && this.page.isClosed()) return this.result("The current tab was closed");
+    if (needsOpenTab && this.page.isClosed()) return { ok: false, reason: "The current tab was closed" };
     try {
-      return await run();
+      return { ok: true, data: await run() };
     } catch (error) {
-      return this.result(failureReason(error, this.browser.isConnected()));
+      return { ok: false, reason: failureReason(error, this.browser.isConnected()) };
     }
   }
 
