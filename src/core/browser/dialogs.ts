@@ -45,8 +45,15 @@ export class DialogGuard {
     } else if (response.message !== undefined && !message.includes(response.message)) {
       this.failure ??= `The dialog said "${message}", which does not contain "${response.message}"`;
     }
-    if (accept) await dialog.accept(response.text);
-    else await dialog.dismiss();
-    this.answered?.();
+    try {
+      if (accept) await dialog.accept(response.text);
+      else await dialog.dismiss();
+    } catch (error) {
+      // The listener's promise is not awaited, so the error becomes the step's failure instead.
+      const detail = error instanceof Error ? error.message.split("\n")[0] : String(error);
+      this.failure ??= `Could not answer the ${type} dialog: ${detail}`;
+    } finally {
+      this.answered?.();
+    }
   }
 }
