@@ -10,10 +10,11 @@ type Parse = (fields: FieldReader, hasBaseUrl: boolean) => StepBody | undefined;
  */
 export const isAbsoluteUrl = (url: string) => /^([a-z][a-z\d+.-]*:\/\/|\{\{)/i.test(url);
 
-// `pattern` marks a Playwright URL check, where a glob with `*` matches without a baseUrl.
+// `pattern` marks a URL pattern, where a glob starting with `*` is matched as written; any other
+// relative pattern, such as `/board/*`, is resolved against baseUrl.
 function readUrl(fields: FieldReader, hasBaseUrl: boolean, required = false, pattern = false) {
   const url = fields.string("url", required);
-  if (url !== undefined && !hasBaseUrl && !isAbsoluteUrl(url) && !(pattern && url.includes("*"))) {
+  if (url !== undefined && !hasBaseUrl && !isAbsoluteUrl(url) && !(pattern && url.startsWith("*"))) {
     fields.invalid("url", `"url" is relative, so the test needs a "baseUrl"`);
   }
   return url;
