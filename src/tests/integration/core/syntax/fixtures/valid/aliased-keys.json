@@ -1,0 +1,5 @@
+{
+  "name": "selector",
+  "timeoutMs": 15000,
+  "steps": [{ "line": 3, "action": "click", "selector": "#submit" }]
+}

@@ -94,7 +94,7 @@ steps:
 | ------------- | ---------------- | -------- | ------- | ----------- |
 | `name`        | string           | ✔        | –       | Test name |
 | `description` | string           |          | –       | Test description |
-| `baseUrl`     | string           |          | –       | Base for relative paths in `open` and `url` |
+| `baseUrl`     | absolute URL     |          | –       | Base for relative URLs in `open` and `url`; see 1.5 |
 | `timeoutMs`   | positive integer |          | `15000` | Timeout for each step |
 | `steps`       | Step[]           | ✔        | –       | At least one step, executed in order |
 
@@ -102,7 +102,7 @@ steps:
 
 ### 1.4 Step Syntax
 
-Each step is an object with exactly one key. The key is the action name and the value is a parameter object. Actions without parameters use `{}`:
+Each step is an object with exactly one key. The key is the action name and the value is a parameter object. The action name is checked first, so an unknown action such as `aiAct: "log in"` is `E005` whatever its value. Actions without parameters use `{}`:
 
 ```yaml
 steps:
@@ -112,9 +112,17 @@ steps:
   - back: {}
 ```
 
+YAML anchors and aliases (`&name`, `*name`) can reuse a step, a parameter object, a key, or a value. An error inside aliased content is reported at the alias, once for each place it is used. Merge keys (`<<`) are not part of YAML 1.2, so `<<` is reported as an unknown field.
+
 ### 1.5 Action Fields
 
 `*` marks a required field. String fields must not be empty, except `input`'s `value`, where `""` clears the field.
+
+URLs are absolute when they start with `scheme://` (such as `https://`) or with a `{{NAME}}` variable; anything else is relative. `localhost:3000/login` has no `//`, so it is relative.
+
+- `baseUrl` must be absolute.
+- `open`'s `url` may be relative only when the file has a `baseUrl`.
+- `waitFor` and `assert` pass `url` to Playwright as a URL pattern. A glob containing `*` (such as `**/dashboard`) matches without a `baseUrl`; any other relative `url` needs one.
 
 | Action                                       | Fields |
 | -------------------------------------------- | ------ |
@@ -257,11 +265,11 @@ flowchart LR
 
 | Module       | Responsibility |
 | ------------ | -------------- |
-| `analyze.ts` | Entry point `analyze()`: parses YAML, validates root fields, iterates `steps`, and checks that each step has exactly one action |
-| `steps.ts`   | One parse function per action, plus a map from action name to parse function; reports `E005` when the action is not found |
+| `analyze.ts` | Entry point `analyze()`: parses YAML, validates root fields, iterates `steps`, checks that each step has exactly one action, and reports `E005` when the action is unknown |
+| `steps.ts`   | One parse function per action, plus a map from action name to parse function, typed so it must cover every action in `Step`; `isAction()` tells whether a name is in the map |
 | `fields.ts`  | `FieldReader` class: wraps a YAML object, reads fields by type, and records `E003`/`E004`/`E007` with the line number |
 
-To add an action, add a parse function in `steps.ts` and register it in the map.
+To add an action, add its variant to `Step` in `types.ts`, then add a parse function in `steps.ts` and register it in the map. The type check fails until both are done.
 
 ### 4.2 Directory Layout
 

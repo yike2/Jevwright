@@ -1,14 +1,19 @@
 import type { FieldReader } from "./fields.js";
 import type { Locate, StepBody } from "./types.js";
 
+type Action = StepBody["action"];
 type Parse = (fields: FieldReader, hasBaseUrl: boolean) => StepBody | undefined;
 
-// A URL with a scheme, or one starting with a {{VARIABLE}} filled in at execution time.
-const isAbsoluteUrl = (url: string) => /^([a-z][a-z\d+.-]*:|\{\{)/i.test(url);
+/**
+ * True for a URL with `scheme://`, or one starting with a {{VARIABLE}} filled in at execution time.
+ * Requiring `//` keeps `localhost:3000` from reading as the scheme `localhost:`.
+ */
+export const isAbsoluteUrl = (url: string) => /^([a-z][a-z\d+.-]*:\/\/|\{\{)/i.test(url);
 
-function readUrl(fields: FieldReader, hasBaseUrl: boolean, required = false) {
+// `pattern` marks a Playwright URL check, where a glob with `*` matches without a baseUrl.
+function readUrl(fields: FieldReader, hasBaseUrl: boolean, required = false, pattern = false) {
   const url = fields.string("url", required);
-  if (url !== undefined && !hasBaseUrl && !isAbsoluteUrl(url)) {
+  if (url !== undefined && !hasBaseUrl && !isAbsoluteUrl(url) && !(pattern && url.includes("*"))) {
     fields.invalid("url", `"url" is relative, so the test needs a "baseUrl"`);
   }
   return url;
@@ -32,7 +37,7 @@ const element =
   };
 
 // Every field is read before a parser returns, so reportUnknown sees them all.
-const parsers: Record<string, Parse> = {
+const parsers = {
   open: (f, hasBaseUrl) => {
     const url = readUrl(f, hasBaseUrl, true);
     return url === undefined ? undefined : { action: "open", url };
@@ -68,7 +73,7 @@ const parsers: Record<string, Parse> = {
     }
     const condition = f.string("condition");
     const selector = f.string("selector");
-    const url = readUrl(f, hasBaseUrl);
+    const url = readUrl(f, hasBaseUrl, false, true);
     return { action: "waitFor", condition, selector, url };
   },
   assert: (f, hasBaseUrl) => {
@@ -86,20 +91,17 @@ const parsers: Record<string, Parse> = {
       statement: f.string("statement"),
       selector: f.string("selector"),
       text: f.string("text"),
-      url: readUrl(f, hasBaseUrl),
+      url: readUrl(f, hasBaseUrl, false, true),
     };
   },
-};
+} satisfies Record<Action, Parse>;
 
-// Parses the parameters of one action. Returns undefined when the action is unknown
-// or a required field is missing or invalid.
-export function parseAction(action: string, fields: FieldReader, hasBaseUrl: boolean): StepBody | undefined {
-  const parse = Object.hasOwn(parsers, action) ? parsers[action] : undefined;
-  if (!parse) {
-    fields.report("E005", `Unknown action "${action}"`);
-    return undefined;
-  }
-  const body = parse(fields, hasBaseUrl);
+/** True when `name` is a supported action. */
+export const isAction = (name: string): name is Action => Object.hasOwn(parsers, name);
+
+/** Parses the parameters of one action; returns undefined when a field is missing or invalid. */
+export function parseAction(action: Action, fields: FieldReader, hasBaseUrl: boolean): StepBody | undefined {
+  const body = parsers[action](fields, hasBaseUrl);
   fields.reportUnknown();
   return body;
 }
