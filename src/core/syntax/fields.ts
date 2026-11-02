@@ -68,8 +68,9 @@ export class FieldReader {
 
   /** Reads an integer from 1 to the largest timer delay. */
   positiveInt(key: string, required = false): number | undefined {
-    const read = ({ value }: Scalar) =>
-      typeof value === "number" && Number.isSafeInteger(value) && value > 0 && value <= MAX_TIMER_MS
+    // The source check rejects 1e3, 0x10 and 1000.0, which parse to integers but are not written as one.
+    const read = ({ value, source }: Scalar) =>
+      typeof value === "number" && /^\d+$/.test(source ?? "") && value > 0 && value <= MAX_TIMER_MS
         ? value
         : undefined;
     return this.value(key, required, read, `a positive integer up to ${MAX_TIMER_MS}`);
@@ -79,6 +80,11 @@ export class FieldReader {
   oneOf<T extends string>(key: string, values: readonly T[], required = false): T | undefined {
     const read = (s: Scalar) => values.find((v) => v === s.value);
     return this.value(key, required, read, `one of ${values.join(", ")}`);
+  }
+
+  /** The value node of `key`, matching aliased keys too; undefined when the field is absent. */
+  get(key: string): Node | undefined {
+    return this.pair(key)?.value as Node | undefined;
   }
 
   /** Reports E004 for every field no read method asked for. */
@@ -96,7 +102,7 @@ export class FieldReader {
 
   /** Reports E007 at the value of `key`. */
   invalid(key: string, message: string): void {
-    this.report("E007", message, this.pair(key)?.value as Node);
+    this.report("E007", message, this.get(key) as Node);
   }
 
   // Matches keys by their resolved name, so an aliased key (`*k : value`) counts as `k`.
@@ -109,7 +115,7 @@ export class FieldReader {
       if (required) this.report("E003", `Missing required field "${key}"`);
       return undefined;
     }
-    const node = this.resolve(this.pair(key)?.value);
+    const node = this.resolve(this.get(key));
     const value = isScalar(node) ? read(node) : undefined;
     if (value === undefined) this.invalid(key, `"${key}" must be ${expected}`);
     return value;

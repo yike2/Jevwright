@@ -102,7 +102,7 @@ steps:
 
 ### 1.4 Step Syntax
 
-Each step is an object with exactly one key. The key is the action name and the value is a parameter object. The action name is checked first, so an unknown action such as `aiAct: "log in"` is `E005` whatever its value. Actions without parameters use `{}`:
+Each step is an object with exactly one key. The key is the action name and the value is a parameter object. The action name is checked first, so an unknown action such as `aiAct: "log in"`, or a bare `- aiAct`, is `E005` whatever its value. Actions without parameters use `{}`:
 
 ```yaml
 steps:
@@ -116,7 +116,7 @@ YAML anchors and aliases (`&name`, `*name`) can reuse a step, a parameter object
 
 ### 1.5 Action Fields
 
-`*` marks a required field. String fields must not be empty, except `input`'s `value`, where `""` clears the field.
+`*` marks a required field. String fields must not be empty, except `input`'s `value`, where `""` clears the field. Positive integers are written in plain decimal digits, so `1e3`, `0x10` and `1000.0` are invalid.
 
 URLs are absolute when they start with `scheme://` (such as `https://`) or with a `{{NAME}}` variable; anything else is relative. `localhost:3000/login` has no `//`, so it is relative.
 

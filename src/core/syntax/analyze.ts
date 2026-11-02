@@ -39,13 +39,14 @@ export function analyze(source: string): AnalyzeResult {
   if (!fields.has("steps")) {
     fields.report("E003", 'Missing required field "steps"');
   } else {
-    const stepsNode = root.get("steps", true) as Node;
+    const stepsNode = fields.get("steps") as Node;
     const list = fields.resolve(stepsNode);
     if (!isSeq(list) || list.items.length === 0) {
       fields.report("E002", '"steps" must be a non-empty array', stepsNode);
     } else {
+      const hasBaseUrl = fields.has("baseUrl");
       for (const item of list.items as Node[]) {
-        const step = parseStep(item, fields, fields.has("baseUrl"));
+        const step = parseStep(item, fields, hasBaseUrl);
         if (step) steps.push(step);
       }
     }
@@ -60,6 +61,11 @@ export function analyze(source: string): AnalyzeResult {
 // Checks that a step is an object with exactly one known action whose parameters are an object.
 function parseStep(item: Node, root: FieldReader, hasBaseUrl: boolean) {
   const step = root.resolve(item);
+  // A bare name (`- aiAct`) is still an action name, so an unknown one is E005 like `aiAct: ...`.
+  if (isScalar(step) && typeof step.value === "string" && !isAction(step.value)) {
+    root.report("E005", `Unknown action "${step.value}"`, item);
+    return undefined;
+  }
   if (!isMap(step)) {
     root.report("E006", "Step must be an object with exactly one action", item);
     return undefined;
