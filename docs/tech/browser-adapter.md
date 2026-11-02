@@ -361,7 +361,7 @@ Browser tests launch real headless Chromium against local HTML pages served by `
 
 | Type | Coverage | Location |
 | ---- | -------- | -------- |
-| Unit | `url-match`: glob `*` and `**`, exact match, relative URL resolved against `baseUrl`, `{` and `}` matched literally | `src/tests/unit/core/browser/url-match.test.ts` |
+| Unit | `url-match`: glob `*` and `**`, exact match, relative URL resolved against `baseUrl` | `src/tests/unit/core/browser/url-match.test.ts` |
 | Unit | `errors`: `TimeoutError` and selector errors become results; errors after disconnect are thrown | `src/tests/unit/core/browser/errors.test.ts` |
 | Unit | `dialogs`: a dialog that cannot be answered fails the step and still releases the waiting action | `src/tests/unit/core/browser/dialogs.test.ts` |
 | Integration | Lifecycle: screenshot size equals the viewport, trace zip returned by `close()`, `ready()` waiting for `load` after a click, calls after the browser is gone throw, Chromium closed when launching fails | `src/tests/integration/core/browser/launch.test.ts` |
