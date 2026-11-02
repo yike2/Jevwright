@@ -1,5 +1,5 @@
 import type { FieldReader } from "./fields.js";
-import type { Locate, StepBody } from "./types.js";
+import type { DialogResponse, Locate, StepBody } from "./types.js";
 
 type Action = StepBody["action"];
 type Parse = (fields: FieldReader, hasBaseUrl: boolean) => StepBody | undefined;
@@ -29,25 +29,40 @@ function locate(fields: FieldReader): Locate | undefined {
   return selector === undefined && target === undefined ? undefined : { selector, target };
 }
 
+// Returns undefined when the step has no "dialog" or it is invalid.
+function dialog(fields: FieldReader): DialogResponse | undefined {
+  const response = fields.object("dialog");
+  if (!response) return undefined;
+  const accept = response.boolean("accept", true);
+  const text = response.string("text", false, true);
+  const message = response.string("message");
+  if (text !== undefined && accept === false) response.report("E008", '"text" needs "accept: true"');
+  response.reportUnknown();
+  return accept === undefined ? undefined : { accept, text, message };
+}
+
 const element =
   (action: "click" | "doubleClick" | "rightClick" | "hover"): Parse =>
   (f) => {
     const locator = locate(f);
-    return locator && { action, ...locator };
+    const response = dialog(f);
+    return locator && { action, ...locator, dialog: response };
   };
 
 // Every field is read before a parser returns, so reportUnknown sees them all.
 const parsers = {
   open: (f, hasBaseUrl) => {
     const url = readUrl(f, hasBaseUrl, true);
-    return url === undefined ? undefined : { action: "open", url };
+    const response = dialog(f);
+    return url === undefined ? undefined : { action: "open", url, dialog: response };
   },
-  back: () => ({ action: "back" }),
-  forward: () => ({ action: "forward" }),
-  reload: () => ({ action: "reload" }),
+  back: (f) => ({ action: "back", dialog: dialog(f) }),
+  forward: (f) => ({ action: "forward", dialog: dialog(f) }),
+  reload: (f) => ({ action: "reload", dialog: dialog(f) }),
   press: (f) => {
     const key = f.string("key", true);
-    return key === undefined ? undefined : { action: "press", key };
+    const response = dialog(f);
+    return key === undefined ? undefined : { action: "press", key, dialog: response };
   },
   scroll: (f) => {
     const direction = f.oneOf("direction", ["up", "down", "left", "right"], true);
@@ -58,6 +73,10 @@ const parsers = {
     const ms = f.positiveInt("ms", true);
     return ms === undefined ? undefined : { action: "sleep", ms };
   },
+  switchTab: (f, hasBaseUrl) => {
+    const url = readUrl(f, hasBaseUrl, true, true);
+    return url === undefined ? undefined : { action: "switchTab", url };
+  },
   click: element("click"),
   doubleClick: element("doubleClick"),
   rightClick: element("rightClick"),
@@ -65,7 +84,8 @@ const parsers = {
   input: (f) => {
     const value = f.string("value", true, true);
     const locator = locate(f);
-    return value === undefined || !locator ? undefined : { action: "input", value, ...locator };
+    const response = dialog(f);
+    return value === undefined || !locator ? undefined : { action: "input", value, ...locator, dialog: response };
   },
   waitFor: (f, hasBaseUrl) => {
     if (["condition", "selector", "url"].filter((key) => f.has(key)).length !== 1) {

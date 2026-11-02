@@ -6,14 +6,18 @@ export type Diagnostic = {
 
 export type Locate = { selector?: string; target?: string };
 
+export type DialogResponse = { accept: boolean; text?: string; message?: string };
+type Dialog = { dialog?: DialogResponse };
+
 export type StepBody =
-  | { action: "open"; url: string }
-  | { action: "back" | "forward" | "reload" }
-  | { action: "press"; key: string }
+  | ({ action: "open"; url: string } & Dialog)
+  | ({ action: "back" | "forward" | "reload" } & Dialog)
+  | ({ action: "press"; key: string } & Dialog)
   | { action: "scroll"; direction: "up" | "down" | "left" | "right"; distance: number }
   | { action: "sleep"; ms: number }
-  | ({ action: "click" | "doubleClick" | "rightClick" | "hover" } & Locate)
-  | ({ action: "input"; value: string } & Locate)
+  | { action: "switchTab"; url: string }
+  | ({ action: "click" | "doubleClick" | "rightClick" | "hover" } & Locate & Dialog)
+  | ({ action: "input"; value: string } & Locate & Dialog)
   | { action: "waitFor"; condition?: string; selector?: string; url?: string }
   | { action: "assert"; statement?: string; selector?: string; text?: string; url?: string };
 
