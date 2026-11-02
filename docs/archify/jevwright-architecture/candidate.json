@@ -167,8 +167,8 @@
     {
       "id": "driver",
       "type": "backend",
-      "label": "Browser Driver",
-      "sublabel": "Wraps Playwright · drives the browser (site under test)",
+      "label": "Browser Adapter",
+      "sublabel": "Only Playwright user · drives the browser (site under test)",
       "pos": [
         380,
         1000

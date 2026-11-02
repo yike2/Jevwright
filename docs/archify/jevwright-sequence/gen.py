@@ -14,7 +14,7 @@ P = [
     ("executor", "backend", "Step Executor", "runs steps"),
     ("locator", "backend", "Locator", "find element"),
     ("asserter", "backend", "Asserter", "judge assert"),
-    ("driver", "cloud", "Browser Driver", "Playwright"),
+    ("driver", "cloud", "Browser Adapter", "Playwright"),
     ("harness", "external", "Jev Harness", "Jev model"),
     ("report", "backend", "Report", "build report"),
 ]
@@ -51,7 +51,7 @@ M = [
     ("executor", "pipeline", "onEvent(step1 passed)", "dashed", None),
     ("pipeline", "api", "onEvent(step1 passed)", "dashed", "Pushed to Web UI over WebSocket"),
     ("Alt — DOM locate or action fails",),
-    ("locator", "executor", "not found", "return", "Or driver returns error / timeout on the action"),
+    ("locator", "executor", "not found", "return", "Or the adapter returns a timeout on the action"),
     ("executor", "driver", "screenshot()", "default", None),
     ("driver", "executor", "screenshot (evidence)", "return", None),
     ("executor", "pipeline", "onEvent(step1 failed)", "dashed", "Remaining steps are skipped; go to Finish"),
