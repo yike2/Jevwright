@@ -119,7 +119,7 @@ The Adapter keeps the open tabs in opening order. A tab opened by the page (`tar
 
 `switchTab: { url }` makes the tab whose URL matches `url` the current tab:
 
-1. Match every open tab's URL against `url` with the same rules as `waitFor`'s `url`: a pattern containing `*` is a glob (`*` matches no `/`, `**` matches anything); otherwise the URL is resolved against `baseUrl` and compared exactly.
+1. Match every open tab's URL against `url` with the same rules as `waitFor`'s `url` (Playwright's `waitForURL`): a pattern containing `*` is a glob (`*` matches no `/`, `**` matches anything), resolved against `baseUrl` first unless it starts with `*`; any other pattern is resolved against `baseUrl` and compared exactly.
 2. Exactly one match: it becomes the current tab and is brought to the front.
 3. More than one match: the step fails, listing the matching URLs.
 4. No match: poll every `TAB_POLL_MS` until the step timeout, since a new tab starts at `about:blank` before it navigates. On timeout the step fails, listing the open tab URLs.
