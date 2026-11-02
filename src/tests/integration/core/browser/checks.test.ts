@@ -23,6 +23,17 @@ describe("check url that never matches", () => {
     }));
 });
 
+describe("check url with a pattern", () => {
+  it("matches the same URLs as switchTab, with { and } taken literally", () =>
+    run(async (browser) => {
+      await browser.perform({ action: "open", url: "/plain.html" });
+
+      expect(await browser.check({ check: "url", url: "**/plain.*" })).toEqual({ ok: true, dialogs: [] });
+      expect(await browser.check({ check: "url", url: "**/{plain,checks}.html" })).toMatchObject({ ok: false });
+      expect(await browser.perform({ action: "switchTab", url: "**/{plain,checks}.html" })).toMatchObject({ ok: false });
+    }));
+});
+
 describe("check visible", () => {
   it("passes for a visible element", () =>
     run(async (browser) => {
