@@ -1,0 +1,7 @@
+name: "Switch tabs"
+baseUrl: "https://demo.example.com"
+steps:
+  - switchTab:
+      url: "**/help"
+  - switchTab:
+      url: "/board"

@@ -1,0 +1,6 @@
+name: "Dialog without accept"
+steps:
+  - click:
+      target: "Delete button"
+      dialog:
+        message: "Delete this task?"

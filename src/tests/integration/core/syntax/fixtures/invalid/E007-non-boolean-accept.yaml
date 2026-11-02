@@ -1,0 +1,6 @@
+name: "Dialog accept is not a boolean"
+steps:
+  - click:
+      target: "Delete button"
+      dialog:
+        accept: "yes"

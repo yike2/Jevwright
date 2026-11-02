@@ -1,0 +1,34 @@
+name: "Dialogs"
+steps:
+  - click:
+      target: "Delete button"
+      dialog:
+        accept: true
+        message: "Delete this task?"
+  - click:
+      selector: "#rename"
+      dialog:
+        accept: true
+        text: ""
+  - input:
+      selector: "#title"
+      value: "x"
+      dialog:
+        accept: false
+  - open:
+      url: "https://demo.example.com/welcome"
+      dialog:
+        accept: true
+  - press:
+      key: "Delete"
+      dialog:
+        accept: true
+  - reload:
+      dialog:
+        accept: false
+  - back:
+      dialog:
+        accept: true
+  - forward:
+      dialog:
+        accept: true

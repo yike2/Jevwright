@@ -1,0 +1,6 @@
+name: "Relative tab URL without baseUrl"
+steps:
+  - switchTab:
+      url: "**/help"
+  - switchTab:
+      url: "/board"

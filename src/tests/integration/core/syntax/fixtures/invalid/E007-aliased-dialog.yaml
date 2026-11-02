@@ -1,0 +1,9 @@
+name: "Aliased dialog with a bad accept"
+steps:
+  - click:
+      target: "Delete button"
+      dialog: &confirm
+        accept: "yes"
+  - click:
+      target: "Archive button"
+      dialog: *confirm
