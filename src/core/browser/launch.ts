@@ -15,10 +15,16 @@ import type { BrowserAction, BrowserAdapter, BrowserCheck, BrowserResult, Launch
 /** Launches Chromium for one Run and returns its Browser Adapter. */
 export async function launchBrowser(options: LaunchOptions): Promise<BrowserAdapter> {
   const browser = await chromium.launch({ headless: !options.headed });
-  const context = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: 1, baseURL: options.baseUrl });
-  context.setDefaultTimeout(options.timeoutMs);
-  await context.tracing.start({ screenshots: true, snapshots: true });
-  return new PlaywrightAdapter(browser, context, await context.newPage(), options);
+  try {
+    const context = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: 1, baseURL: options.baseUrl });
+    context.setDefaultTimeout(options.timeoutMs);
+    await context.tracing.start({ screenshots: true, snapshots: true });
+    return new PlaywrightAdapter(browser, context, await context.newPage(), options);
+  } catch (error) {
+    // The caller gets no Adapter to close, so Chromium would keep running.
+    await browser.close();
+    throw error;
+  }
 }
 
 class PlaywrightAdapter implements BrowserAdapter {
