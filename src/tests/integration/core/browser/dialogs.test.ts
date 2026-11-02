@@ -122,7 +122,7 @@ describe("an unexpected dialog", () => {
 
       expect(await browser.screenshot()).toMatchObject({ ok: true });
       expect(await browser.snapshot()).toMatchObject({ ok: true });
-      expect(await browser.isVisible("#log", 100)).toEqual({ ok: true, data: true });
+      expect(await browser.isVisible("#alert", 100)).toEqual({ ok: true, data: true });
       expect(await browser.ready()).toEqual({
         ok: false,
         reason: 'Unexpected alert dialog: "Saved in the background"',
