@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { BrowserAdapter } from "@/core/browser/index.js";
 import { useBrowser } from "./harness.js";
+import { serveFixtures } from "./server.js";
 
 const { run } = useBrowser();
 
@@ -148,6 +149,23 @@ describe("history actions", () => {
       expect(await browser.check({ check: "url", url: "/plain.html" })).toEqual(passed);
       expect(await browser.perform({ action: "forward" })).toEqual(passed);
       expect(await browser.check({ check: "url", url: "/actions.html" })).toEqual(passed);
+    }));
+
+  it("go back and forward across origins", () =>
+    run(async (browser) => {
+      // A second server listens on another port, so its pages have another origin.
+      const other = await serveFixtures();
+      try {
+        await browser.perform({ action: "open", url: "/plain.html" });
+        await browser.perform({ action: "open", url: `${other.baseUrl}/actions.html` });
+
+        expect(await browser.perform({ action: "back" })).toEqual(passed);
+        expect(await browser.check({ check: "url", url: "/plain.html" })).toEqual(passed);
+        expect(await browser.perform({ action: "forward" })).toEqual(passed);
+        expect(await browser.check({ check: "url", url: `${other.baseUrl}/actions.html` })).toEqual(passed);
+      } finally {
+        await other.stop();
+      }
     }));
 
   it("fail when there is no history entry to go to", () =>
