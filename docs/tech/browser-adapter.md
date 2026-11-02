@@ -81,7 +81,7 @@ Known limitations: elements inside iframes and closed shadow roots are not colle
 | Action | Playwright call | Fails when |
 | ------ | --------------- | ---------- |
 | `open` | `page.goto(url)`; relative URLs resolve against `baseURL` | Navigation error or timeout |
-| `back`, `forward` | `page.goBack()` / `page.goForward()` | The tab's history (CDP `Page.getNavigationHistory`) has no entry before / after the current one. Cross-origin entries count, unlike in the Navigation API |
+| `back`, `forward` | `page.goBack()` / `page.goForward()` | The tab's history (CDP `Page.getNavigationHistory`) has no entry before / after the current one. Cross-origin entries count, unlike in the Navigation API; the `about:blank` a new tab starts on does not |
 | `reload` | `page.reload()` | Navigation error or timeout |
 | `press` | `page.keyboard.press(key)` | Playwright rejects the key name |
 | `scroll` | `page.mouse.move()` to the viewport center, then `page.mouse.wheel(dx, dy)`; `up`/`left` are negative deltas | – |
