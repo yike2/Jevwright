@@ -48,6 +48,7 @@ steps:
 | `press`   | `keyboard.press()`      | Press a key on the focused element. Key names follow Playwright (e.g. `Enter`, `Shift+A`) and are case-sensitive |
 | `scroll`  | `mouse.wheel()`         | Scroll the page; `direction` is the side of the off-screen content to reveal |
 | `sleep`   | `page.waitForTimeout()` | Wait for a fixed time |
+| `switchTab` | `page.bringToFront()` | Make the tab whose URL matches `url` the current tab; waits for it to appear. The step fails if no tab or more than one tab matches |
 
 **Element interaction**: at least one of `selector` and `target` is required; see 1.1.
 
@@ -88,6 +89,37 @@ steps:
       statement: "A welcome banner is shown at the top of the page"
 ```
 
+**Dialogs**: native `alert`, `confirm`, `prompt`, and `beforeunload` dialogs are answered through the `dialog` field of the action that triggers them. The answer is set up before the action runs, because Playwright must know it before the dialog opens.
+
+| Field     | Description |
+| --------- | ----------- |
+| `accept`  | `true` accepts the dialog (OK), `false` dismisses it (Cancel) |
+| `text`    | Text typed into a `prompt` before accepting; only with `accept: true` |
+| `message` | The dialog text must contain this, case-sensitive; otherwise the step fails |
+
+```yaml
+steps:
+  - click:
+      target: "Delete button in the 'Write release notes' row"
+      dialog:
+        accept: true
+        message: "Delete this task?"
+```
+
+The step fails if its dialog does not appear. A dialog on a step without `dialog`, or between steps, is dismissed and fails that step (or the next one).
+
+**Tabs**: a tab opened by the page (`target=_blank`, `window.open`) does not become the current tab by itself. `switchTab` selects a tab by URL, which also switches back:
+
+```yaml
+steps:
+  - click:
+      selector: "a[target=_blank]"
+  - switchTab:
+      url: "**/help"
+  - switchTab:
+      url: "/board"
+```
+
 ### 1.3 File Structure
 
 | Field         | Type             | Required | Default | Description |
@@ -122,19 +154,22 @@ URLs are absolute when they start with `scheme://` (such as `https://`) or with 
 
 - `baseUrl` must be absolute.
 - `open`'s `url` may be relative only when the file has a `baseUrl`.
-- `waitFor` and `assert` pass `url` to Playwright as a URL pattern. A glob containing `*` (such as `**/dashboard`) matches without a `baseUrl`; any other relative `url` needs one.
+- `waitFor`, `assert`, and `switchTab` use `url` as a URL pattern. A glob containing `*` (such as `**/dashboard`) matches without a `baseUrl`; any other relative `url` needs one.
 
 | Action                                       | Fields |
 | -------------------------------------------- | ------ |
-| `open`                                       | `url`* string |
-| `back`, `forward`, `reload`                  | none |
-| `press`                                      | `key`* string |
+| `open`                                       | `url`* string; `dialog` |
+| `back`, `forward`, `reload`                  | `dialog` |
+| `press`                                      | `key`* string; `dialog` |
 | `scroll`                                     | `direction`* `up` \| `down` \| `left` \| `right`, `distance`* positive integer in pixels |
 | `sleep`                                      | `ms`* positive integer |
-| `click`, `doubleClick`, `rightClick`, `hover` | `selector` string, `target` string; at least one |
-| `input`                                      | `value`* string; `selector` string, `target` string, at least one |
+| `click`, `doubleClick`, `rightClick`, `hover` | `selector` string, `target` string; at least one. `dialog` |
+| `input`                                      | `value`* string; `selector` string, `target` string, at least one. `dialog` |
+| `switchTab`                                  | `url`* string |
 | `waitFor`                                    | `condition` string, `selector` string, `url` string; exactly one |
 | `assert`                                     | `statement` string; a Playwright check: `selector` string (optionally with `text` string) or `url` string. At least one of `statement` and a Playwright check |
+
+`dialog` is an object: `accept`* boolean (`true` or `false`), `text` string (may be `""`), `message` string. `text` needs `accept: true`.
 
 ### 1.6 Example
 
@@ -205,14 +240,18 @@ type Diagnostic = {
 ```ts
 type Locate = { selector?: string; target?: string };
 
+type DialogResponse = { accept: boolean; text?: string; message?: string };
+type Dialog = { dialog?: DialogResponse };
+
 type Step = { line: number } & (
-  | { action: "open"; url: string }
-  | { action: "back" | "forward" | "reload" }
-  | { action: "press"; key: string }
+  | ({ action: "open"; url: string } & Dialog)
+  | ({ action: "back" | "forward" | "reload" } & Dialog)
+  | ({ action: "press"; key: string } & Dialog)
   | { action: "scroll"; direction: "up" | "down" | "left" | "right"; distance: number }
   | { action: "sleep"; ms: number }
-  | ({ action: "click" | "doubleClick" | "rightClick" | "hover" } & Locate)
-  | ({ action: "input"; value: string } & Locate)
+  | { action: "switchTab"; url: string }
+  | ({ action: "click" | "doubleClick" | "rightClick" | "hover" } & Locate & Dialog)
+  | ({ action: "input"; value: string } & Locate & Dialog)
   | { action: "waitFor"; condition?: string; selector?: string; url?: string }
   | { action: "assert"; statement?: string; selector?: string; text?: string; url?: string }
 );
@@ -239,7 +278,7 @@ type TestCase = {
 | `E005` | Unknown action | The action's key |
 | `E006` | Invalid step: not an object, has zero or multiple actions, or its parameters are not an object | The step node |
 | `E007` | Wrong type or invalid value | The field's value |
-| `E008` | Invalid field combination, i.e. violates an "at least one" or "exactly one" rule in 1.5 | The action's key |
+| `E008` | Invalid field combination, i.e. violates an "at least one" or "exactly one" rule in 1.5, or `text` without `accept: true` | The key of the enclosing object |
 
 ### 3.4 CLI Output
 
@@ -267,7 +306,7 @@ flowchart LR
 | ------------ | -------------- |
 | `analyze.ts` | Entry point `analyze()`: parses YAML, validates root fields, iterates `steps`, checks that each step has exactly one action, and reports `E005` when the action is unknown |
 | `steps.ts`   | One parse function per action, plus a map from action name to parse function, typed so it must cover every action in `Step`; `isAction()` tells whether a name is in the map |
-| `fields.ts`  | `FieldReader` class: wraps a YAML object, reads fields by type, and records `E003`/`E004`/`E007` with the line number |
+| `fields.ts`  | `FieldReader` class: wraps a YAML object, reads fields by type (including nested objects such as `dialog`), and records `E003`/`E004`/`E007` with the line number |
 
 To add an action, add its variant to `Step` in `types.ts`, then add a parse function in `steps.ts` and register it in the map. The type check fails until both are done.
 
