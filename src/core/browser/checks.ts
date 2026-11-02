@@ -2,17 +2,24 @@ import { setTimeout as sleep } from "node:timers/promises";
 import { errors, type Page } from "playwright";
 import { TEXT_POLL_MS } from "./constants.js";
 import type { BrowserCheck } from "./types.js";
+import { matchesUrl } from "./url-match.js";
 
 /** Runs one Playwright check on `page`, waiting up to `timeoutMs`; returns a failure reason, or throws. */
-export async function runCheck(page: Page, check: BrowserCheck, timeoutMs: number): Promise<string | undefined> {
+export async function runCheck(
+  page: Page,
+  check: BrowserCheck,
+  timeoutMs: number,
+  baseUrl?: string,
+): Promise<string | undefined> {
   switch (check.check) {
     case "visible":
-      await page.locator(check.selector).first().waitFor({ state: "visible" });
+      await page.locator(check.selector).first().waitFor({ state: "visible", timeout: timeoutMs });
       break;
     case "text":
       return waitForText(page, check.selector, check.text, timeoutMs);
     case "url":
-      await page.waitForURL(check.url);
+      // switchTab's matcher, so a pattern matches the same URLs in both.
+      await page.waitForURL((url) => matchesUrl(url.href, check.url, baseUrl), { timeout: timeoutMs });
       break;
     default: {
       const unknown: never = check;

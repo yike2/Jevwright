@@ -93,7 +93,7 @@ class PlaywrightAdapter implements BrowserAdapter {
   }
 
   check(check: BrowserCheck): Promise<BrowserResult> {
-    return this.attempt(async () => this.result(await runCheck(this.page, check, this.timeoutMs)));
+    return this.attempt(async () => this.result(await runCheck(this.page, check, this.timeoutMs, this.options.baseUrl)));
   }
 
   // Adds the dialogs answered since the last result; an unexpected one fails it.
