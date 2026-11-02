@@ -16,7 +16,7 @@ describe("switchTab", () => {
       expect(await browser.check({ check: "text", selector: "h1", text: "Help center" })).toEqual(passed);
 
       expect(await browser.perform({ action: "switchTab", url: "/tabs.html" })).toEqual(passed);
-      expect(await browser.isVisible("#popup", 500)).toBe(true);
+      expect(await browser.isVisible("#popup", 500)).toEqual({ ok: true, data: true });
     }));
 
   it("fails when more than one tab matches", () =>
@@ -45,7 +45,7 @@ describe("switchTab", () => {
       });
     }));
 
-  it("fails the next step when the page closes the current tab, and forgets the closed tab", () =>
+  it("fails the next step and every read when the page closes the current tab, and forgets the closed tab", () =>
     run(async (browser) => {
       await browser.perform({ action: "open", url: "/tabs.html" });
       await browser.perform({ action: "click", element: { selector: "#help" } });
@@ -53,6 +53,10 @@ describe("switchTab", () => {
       await browser.perform({ action: "click", element: { selector: "#close" } });
 
       expect(await browser.ready()).toEqual({ ok: false, reason: "The current tab was closed", dialogs: [] });
+      const closed = { ok: false, reason: "The current tab was closed" };
+      expect(await browser.screenshot()).toEqual(closed);
+      expect(await browser.snapshot()).toEqual(closed);
+      expect(await browser.isVisible("h1", 100)).toEqual(closed);
       expect(await browser.perform({ action: "switchTab", url: "**/help.html" })).toMatchObject({
         ok: false,
         reason: `No tab matched "**/help.html" within 2000ms; open tabs: ${url("/tabs.html")}`,

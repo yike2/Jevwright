@@ -1,6 +1,7 @@
 import { chromium, type Browser } from "playwright";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { launchBrowser } from "@/core/browser/index.js";
+import { data } from "./harness.js";
 import { serveFixtures } from "./server.js";
 
 let server: Awaited<ReturnType<typeof serveFixtures>>;
@@ -18,7 +19,7 @@ describe("launchBrowser", () => {
     try {
       await browser.perform({ action: "open", url: "/plain.html" });
 
-      expect(pngSize(await browser.screenshot())).toEqual({ width: 1280, height: 800 });
+      expect(pngSize(data(await browser.screenshot()))).toEqual({ width: 1280, height: 800 });
     } finally {
       await browser.close();
     }
@@ -50,6 +51,9 @@ describe("launchBrowser", () => {
 
     await expect(browser.perform({ action: "open", url: "/plain.html" })).rejects.toThrow();
     await expect(browser.ready()).rejects.toThrow();
+    await expect(browser.screenshot()).rejects.toThrow();
+    await expect(browser.snapshot()).rejects.toThrow();
+    await expect(browser.isVisible("h1", 100)).rejects.toThrow();
   });
 
   it("closes Chromium when launching fails after it started", async () => {
@@ -76,7 +80,7 @@ describe("launchBrowser", () => {
       await browser.perform({ action: "click", element: { selector: "#slow" } });
 
       expect(await browser.ready()).toEqual({ ok: true, dialogs: [] });
-      expect((await browser.snapshot()).title).toBe("Loaded");
+      expect(data(await browser.snapshot()).title).toBe("Loaded");
     } finally {
       await browser.close();
     }

@@ -1,6 +1,12 @@
 import { afterAll, beforeAll } from "vitest";
-import { launchBrowser, type BrowserAdapter } from "@/core/browser/index.js";
+import { launchBrowser, type BrowserAdapter, type ReadResult } from "@/core/browser/index.js";
 import { serveFixtures } from "./server.js";
+
+/** The data of a successful read; fails the test with the read's reason otherwise. */
+export function data<T>(result: ReadResult<T>): T {
+  if (!result.ok) throw new Error(`The read failed: ${result.reason}`);
+  return result.data;
+}
 
 /** Serves the fixtures for one test file; `run` launches a browser, runs `body`, and always closes it. */
 export function useBrowser(timeoutMs = 2000) {

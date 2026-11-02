@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { BrowserAdapter } from "@/core/browser/index.js";
-import { useBrowser } from "./harness.js";
+import { data, useBrowser } from "./harness.js";
 import { serveFixtures } from "./server.js";
 
 const { run } = useBrowser();
@@ -22,7 +22,7 @@ describe("click by snapshot id", () => {
   it("clicks the element the snapshot marked with that id", () =>
     run(async (browser) => {
       await browser.perform({ action: "open", url: "/actions.html" });
-      const { elements } = await browser.snapshot();
+      const { elements } = data(await browser.snapshot());
       const save = elements.find((e) => e.name === "Save")!;
 
       expect(await browser.perform({ action: "click", element: { snapshotId: save.id } })).toEqual(passed);
@@ -36,7 +36,7 @@ describe("snapshot ids after a new snapshot", () => {
       await browser.perform({ action: "open", url: "/actions.html" });
       await browser.snapshot();
       await browser.perform({ action: "click", element: { selector: "#hide-save" } });
-      const { elements } = await browser.snapshot();
+      const { elements } = data(await browser.snapshot());
 
       // Save is hidden now, so id 0 is "Hide Save"; a stale mark on Save would make this click time out.
       expect(elements[0].name).toBe("Hide Save");

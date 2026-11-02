@@ -114,6 +114,22 @@ describe("an unexpected dialog", () => {
       });
     }));
 
+  it("is left by reads for the result of the next step", () =>
+    run(async (browser) => {
+      await browser.perform({ action: "open", url: "/dialogs.html" });
+      await click(browser, "#delayed");
+      await sleep(500);
+
+      expect(await browser.screenshot()).toMatchObject({ ok: true });
+      expect(await browser.snapshot()).toMatchObject({ ok: true });
+      expect(await browser.isVisible("#log", 100)).toEqual({ ok: true, data: true });
+      expect(await browser.ready()).toEqual({
+        ok: false,
+        reason: 'Unexpected alert dialog: "Saved in the background"',
+        dialogs: [{ type: "alert", message: "Saved in the background", answer: "dismissed", expected: false }],
+      });
+    }));
+
   it("fails a check it appeared during", () =>
     run(async (browser) => {
       await browser.perform({ action: "open", url: "/dialogs.html" });

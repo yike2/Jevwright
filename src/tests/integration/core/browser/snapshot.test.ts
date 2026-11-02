@@ -1,30 +1,33 @@
 import { describe, expect, it } from "vitest";
-import { useBrowser } from "./harness.js";
+import { data, useBrowser } from "./harness.js";
 
 const { run } = useBrowser();
 
 describe("isVisible", () => {
-  it("is true once the first match is visible", () =>
+  it("reads true once the first match is visible", () =>
     run(async (browser) => {
       await browser.perform({ action: "open", url: "/checks.html" });
 
-      expect(await browser.isVisible(".item", 500)).toBe(true);
+      expect(await browser.isVisible(".item", 500)).toEqual({ ok: true, data: true });
     }));
 });
 
 describe("isVisible when nothing visible matches", () => {
-  it("is false after its own timeout", () =>
+  it("reads false after its own timeout", () =>
     run(async (browser) => {
       await browser.perform({ action: "open", url: "/checks.html" });
 
-      expect(await browser.isVisible("#secret", 300)).toBe(false);
+      expect(await browser.isVisible("#secret", 300)).toEqual({ ok: true, data: false });
     }));
 
-  it("is false when Playwright rejects the selector", () =>
+  it("fails with Playwright's reason when it rejects the selector", () =>
     run(async (browser) => {
       await browser.perform({ action: "open", url: "/checks.html" });
 
-      expect(await browser.isVisible("#[", 300)).toBe(false);
+      expect(await browser.isVisible("#[", 300)).toEqual({
+        ok: false,
+        reason: expect.stringMatching(/^locator\.waitFor: /),
+      });
     }));
 });
 
@@ -33,7 +36,7 @@ describe("snapshot", () => {
     run(async (browser) => {
       await browser.perform({ action: "open", url: "/snapshot.html" });
 
-      const snapshot = await browser.snapshot();
+      const snapshot = data(await browser.snapshot());
 
       expect(snapshot).toMatchObject({
         url: expect.stringMatching(/\/snapshot\.html$/),
@@ -57,7 +60,7 @@ describe("snapshot element filter", () => {
     run(async (browser) => {
       await browser.perform({ action: "open", url: "/snapshot.html" });
 
-      const { elements } = await browser.snapshot();
+      const { elements } = data(await browser.snapshot());
 
       expect(elements.map((e) => e.name)).toEqual(["Save"]);
     }));
@@ -68,7 +71,7 @@ describe("snapshot roles", () => {
     run(async (browser) => {
       await browser.perform({ action: "open", url: "/roles.html" });
 
-      const { elements } = await browser.snapshot();
+      const { elements } = data(await browser.snapshot());
 
       expect(elements.map((e) => [e.name, e.role])).toEqual([
         ["Home", "link"],
@@ -92,7 +95,7 @@ describe("snapshot names", () => {
     run(async (browser) => {
       await browser.perform({ action: "open", url: "/names.html" });
 
-      const { elements } = await browser.snapshot();
+      const { elements } = data(await browser.snapshot());
 
       expect(elements.map((e) => e.name)).toEqual([
         "Send a weekly summary",
@@ -110,7 +113,7 @@ describe("snapshot text and attrs", () => {
     run(async (browser) => {
       await browser.perform({ action: "open", url: "/attrs.html" });
 
-      const { elements } = await browser.snapshot();
+      const { elements } = data(await browser.snapshot());
 
       expect(elements.map(({ name, text, attrs }) => ({ name, text, attrs }))).toEqual([
         { name: "Delete task", text: "Remove", attrs: {} },
@@ -134,7 +137,7 @@ describe("snapshot hittable", () => {
     run(async (browser) => {
       await browser.perform({ action: "open", url: "/hittable.html" });
 
-      const { elements } = await browser.snapshot();
+      const { elements } = data(await browser.snapshot());
 
       expect(elements.map((e) => [e.name, e.hittable])).toEqual([
         ["Open", true],
