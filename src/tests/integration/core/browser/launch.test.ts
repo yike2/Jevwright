@@ -1,4 +1,5 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { chromium, type Browser } from "playwright";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { launchBrowser } from "@/core/browser/index.js";
 import { serveFixtures } from "./server.js";
 
@@ -49,6 +50,23 @@ describe("launchBrowser", () => {
 
     await expect(browser.perform({ action: "open", url: "/plain.html" })).rejects.toThrow();
     await expect(browser.ready()).rejects.toThrow();
+  });
+
+  it("closes Chromium when launching fails after it started", async () => {
+    const realLaunch = chromium.launch.bind(chromium);
+    let started: Browser | undefined;
+    const spy = vi.spyOn(chromium, "launch").mockImplementation(async (options) => {
+      started = await realLaunch(options);
+      vi.spyOn(started, "newContext").mockRejectedValue(new Error("No context"));
+      return started;
+    });
+    try {
+      await expect(launch()).rejects.toThrow("No context");
+      expect(started?.isConnected()).toBe(false);
+    } finally {
+      spy.mockRestore();
+      await started?.close();
+    }
   });
 
   it("waits in ready() for the load event of a page a click navigated to", async () => {
