@@ -26,7 +26,7 @@ M = [
     ("api", "pipeline", "run(yaml, onEvent)", "emphasis", "Web UI POSTs /runs; Worker calls after dequeue"),
     ("pipeline", "syntax", "analyze(yaml)", "default", None),
     ("Alt — invalid YAML",),
-    ("syntax", "pipeline", "Diagnostic[] (line, column)", "return", None),
+    ("syntax", "pipeline", "Diagnostic[] (line)", "return", None),
     ("pipeline", "api", "Run failed: diagnostics", "return", "Run ends here; no browser is launched"),
     ("Parse OK",),
     ("syntax", "pipeline", "TestCase", "return", None),

@@ -129,7 +129,7 @@
       "from": "syntax",
       "to": "pipeline",
       "y": 340,
-      "label": "Diagnostic[] (line, column)",
+      "label": "Diagnostic[] (line)",
       "variant": "return"
     },
     {

@@ -7,13 +7,13 @@
   "quality": "showcase",
   "specification": {
     "path": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/candidate.json",
-    "sha256": "b5ac99a0eb0c16a96163667c58acc0171e3cac3bb11f203c5fbf2222a87705eb",
-    "bytes": 11544
+    "sha256": "b0b85c06584c9580c35d53e08ffcb508fbb0a6625ca3566b82a91f9863cbdcef",
+    "bytes": 11540
   },
   "artifact": {
     "path": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/index.html",
-    "sha256": "3b393e0b2ddb87d33b963c22c9522cad24cda436c6c61e7fbe95dbc3b911977b",
-    "bytes": 873251
+    "sha256": "940b2386850515816b53d88cb4359ad57b691d7e9e0d4e7ccc38a293482cf827",
+    "bytes": 873248
   },
   "gates": {
     "validate": "pass",
@@ -53,13 +53,13 @@
     "installedVersion": "3.2.0",
     "availableVersion": "3.2.0",
     "releaseNotes": null,
-    "checkedAt": "2026-10-29T02:44:40.864Z",
+    "checkedAt": "2026-11-02T17:44:09.227Z",
     "source": "cache",
     "noticeRequired": false,
     "noticeText": null
   },
   "visualReview": "not-requested",
-  "durationMs": 1281,
+  "durationMs": 1442,
   "browserCheck": {
     "requested": true,
     "ran": false
