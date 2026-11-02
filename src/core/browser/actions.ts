@@ -2,9 +2,6 @@ import type { Locator, Page } from "playwright";
 import { VIEWPORT } from "./constants.js";
 import type { BrowserAction, ElementRef } from "./types.js";
 
-// Chromium has the Navigation API, but TypeScript's DOM types do not include it yet.
-type NavigationWindow = { navigation: { canGoBack: boolean; canGoForward: boolean } };
-
 /** Performs one action on `page`; returns a failure reason, or throws Playwright's error. */
 export async function runAction(
   page: Page,
@@ -15,11 +12,11 @@ export async function runAction(
       await page.goto(action.url);
       break;
     case "back":
-      if (!(await canGo(page, "canGoBack"))) return "There is no previous page to go back to";
+      if (!(await canGo(page, -1))) return "There is no previous page to go back to";
       await page.goBack();
       break;
     case "forward":
-      if (!(await canGo(page, "canGoForward"))) return "There is no next page to go forward to";
+      if (!(await canGo(page, 1))) return "There is no next page to go forward to";
       await page.goForward();
       break;
     case "reload":
@@ -58,8 +55,17 @@ export async function runAction(
 }
 
 // goBack() also returns null after a same-document navigation, so it cannot tell "no history".
-function canGo(page: Page, direction: "canGoBack" | "canGoForward"): Promise<boolean> {
-  return page.evaluate((key) => (window as unknown as NavigationWindow).navigation[key], direction);
+// The tab's CDP history is used because the Navigation API leaves out cross-origin entries.
+// A new tab's first entry is the about:blank it started on, which is not a page of the test.
+async function canGo(page: Page, step: -1 | 1): Promise<boolean> {
+  const session = await page.context().newCDPSession(page);
+  try {
+    const { currentIndex, entries } = await session.send("Page.getNavigationHistory");
+    const target = currentIndex + step;
+    return entries[target] !== undefined && !(target === 0 && entries[0].url === "about:blank");
+  } finally {
+    await session.detach();
+  }
 }
 
 function locate(page: Page, element: ElementRef): Locator {
