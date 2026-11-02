@@ -62,9 +62,9 @@ Each element is described by:
 | `id` | Snapshot id |
 | `tag` | Lowercase tag name |
 | `role` | Explicit `role`, otherwise the implicit role of the tag (`a` → `link`, `input[type=checkbox]` → `checkbox`, `input[type=search]` → `searchbox`, other text inputs and `textarea` → `textbox`, `select` → `combobox`, ...) |
-| `name` | Accessible name: `aria-label`, then `aria-labelledby` text, then `<label>` text, then visible text, `title`, or `placeholder` |
+| `name` | Accessible name: `aria-label`, then `aria-labelledby` text, then `<label>` text, then visible text (a `submit`, `button`, or `reset` input's value), `title`, or `placeholder` |
 | `text` | Visible text with whitespace collapsed; omitted when empty or equal to `name` |
-| `attrs` | `type`, `placeholder`, `href`, `aria-checked`, `aria-selected`, `aria-current`, `aria-invalid` when present; `value` when non-empty; `checked` for checkboxes and radios; `disabled: true` when disabled |
+| `attrs` | `type`, `placeholder`, `href`, `aria-checked`, `aria-selected`, `aria-current`, `aria-invalid` when present; `value` of a field when non-empty (not of checkboxes, radios, or button inputs); `checked` for checkboxes and radios; `disabled: true` when disabled |
 | `bbox` | `{ x, y, width, height }` in CSS pixels relative to the viewport, rounded |
 | `hittable` | `true` when `elementFromPoint` at the box center is the element, a descendant, or a `<label>` whose control is the element; `false` when something covers it (e.g. a modal backdrop) |
 
@@ -109,7 +109,7 @@ type DialogResponse = { accept: boolean; text?: string; message?: string };
 | The action has a Dialog response and no dialog appears | After the action, wait for the dialog up to `max(timeoutMs, DIALOG_MIN_WAIT_MS)`. If none appears, the step fails |
 | A dialog appears while no response is armed (a second dialog during the same action, a dialog during a step without a response, or one between steps) | Dismissed at once so the page does not stall. The step it appeared in fails; a dialog between steps fails the next step at `ready()`. The reason names the dialog type and message |
 
-Every answered dialog is returned in the result (`DialogRecord`), so the report shows its type and message.
+Every answered dialog is returned in the result of the step it belongs to (`DialogRecord`), also when that step's action failed, so the report shows its type and message.
 
 `print` dialogs are not native dialog events and are not handled.
 
@@ -124,7 +124,7 @@ The Adapter keeps the open tabs in opening order. A tab opened by the page (`tar
 3. More than one match: the step fails, listing the matching URLs.
 4. No match: poll every `TAB_POLL_MS` until the step timeout, since a new tab starts at `about:blank` before it navigates. On timeout the step fails, listing the open tab URLs.
 
-If the current tab is closed by the page, the next step fails with the reason `current tab was closed`.
+If the page closes the current tab, every following step fails with the reason `The current tab was closed`, except `switchTab`, which can still select another tab.
 
 ### 1.9 Checks
 
@@ -133,7 +133,7 @@ If the current tab is closed by the page, the next step fails with the reason `c
 | Check | Implementation | Passes when |
 | ----- | -------------- | ----------- |
 | `visible` | `page.locator(selector).first().waitFor({ state: "visible" })` | The first match is visible |
-| `text` | Poll every `TEXT_POLL_MS`: `textContent()` of the first match, whitespace collapsed | It contains `text` (case-sensitive) |
+| `text` | Poll every `TEXT_POLL_MS`: `textContent()` of the first match, whitespace collapsed. On failure the reason quotes the last text read, even if the element disappeared afterwards | It contains `text` (case-sensitive) |
 | `url` | `page.waitForURL(url)`; relative URLs resolve against `baseURL` | The URL matches |
 
 If several elements match `selector`, the first one is used; this is not an error.
@@ -146,7 +146,7 @@ Expected failures are typed results, never exceptions:
 | ---------------- | ------ |
 | `TimeoutError` | `{ ok: false, reason }`, naming what was awaited and the timeout |
 | Any other error while the browser is still connected and the current tab is open (invalid selector, unknown key, navigation error) | `{ ok: false, reason }` with Playwright's first message line |
-| Any error after the browser disconnected or crashed | Thrown as is; the pipeline treats it as an infrastructure failure |
+| Any error after the browser disconnected or crashed, and any call made after that | Thrown; the pipeline treats it as an infrastructure failure |
 
 ### 1.11 Constants
 
@@ -345,9 +345,9 @@ Browser tests launch real headless Chromium against local HTML pages served by `
 | ---- | -------- | -------- |
 | Unit | `url-match`: glob `*` and `**`, exact match, relative URL resolved against `baseUrl` | `src/tests/unit/core/browser/url-match.test.ts` |
 | Unit | `errors`: `TimeoutError` and selector errors become results; errors after disconnect are thrown | `src/tests/unit/core/browser/errors.test.ts` |
-| Integration | Lifecycle: headless launch, viewport and scale factor, `baseURL`, trace zip returned by `close()`, `close()` after a failure | `src/tests/integration/core/browser/launch.test.ts` |
+| Integration | Lifecycle: screenshot size equals the viewport, trace zip returned by `close()`, `ready()` waiting for `load` after a click, calls after the browser is gone throw | `src/tests/integration/core/browser/launch.test.ts` |
 | Integration | Every action in 1.6, including `back` with no history, an invalid key, and a click on a covered element timing out | `src/tests/integration/core/browser/actions.test.ts` |
-| Integration | Snapshot: viewport-only, hidden elements skipped, roles and names, `hittable: false` behind a modal, ids cleared between snapshots, screenshot size equals viewport | `src/tests/integration/core/browser/snapshot.test.ts` |
+| Integration | `isVisible`: visible, hidden, invalid selector. Snapshot: viewport-only, hidden elements skipped, roles, names, text and attrs, `hittable: false` when covered, ids cleared between snapshots | `src/tests/integration/core/browser/snapshot.test.ts` |
 | Integration | Dialogs: accept, dismiss, prompt text, `message` match and mismatch, expected dialog missing, Unexpected dialog during a step and between steps | `src/tests/integration/core/browser/dialogs.test.ts` |
 | Integration | Tabs: switch to a `target=_blank` tab and back, ambiguous match, timeout, closed current tab | `src/tests/integration/core/browser/tabs.test.ts` |
 | Integration | Checks: `visible`, `text`, and `url` pass and fail; first-match rule | `src/tests/integration/core/browser/checks.test.ts` |
