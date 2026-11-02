@@ -28,7 +28,7 @@ The Browser Adapter owns the browser for one Run. It is the only module in Jevwr
 
 `deviceScaleFactor` 1 makes one screenshot pixel equal one CSS pixel, so screenshot coordinates and snapshot `bbox` values share one coordinate system.
 
-`close()` stops the trace, closes the browser, and returns the trace zip. The caller must call it in a `finally` block, including after an infrastructure error, so a crashed Run never leaves Chromium running.
+`close()` stops the trace, closes the browser, and returns the trace zip. The caller must call it in a `finally` block, including after an infrastructure error, so a crashed Run never leaves Chromium running. If `launchBrowser()` fails after Chromium started (creating the context, starting the trace, or opening the first tab), it closes the browser before rethrowing, since the caller has no Adapter to close.
 
 ### 1.3 Page Readiness
 
@@ -38,11 +38,13 @@ At the start of every step the pipeline calls `ready()`, which waits for the `lo
 
 ### 1.4 Reading the Page
 
-| Method | Returns | Used by |
-| ------ | ------- | ------- |
-| `isVisible(selector, timeoutMs)` | `true` once the first element matching `selector` is visible; `false` on timeout or when Playwright rejects the selector | Locator selector stage |
+| Method | `data` on success | Used by |
+| ------ | ----------------- | ------- |
+| `isVisible(selector, timeoutMs)` | `true` once the first element matching `selector` is visible; `false` when it is not visible within `timeoutMs` | Locator selector stage |
 | `screenshot()` | PNG of the current tab's viewport | Locator Visual Locate, Jev assertions, report evidence |
 | `snapshot()` | `PageSnapshot` of the current tab | Locator Visual and DOM Locate |
+
+Each method returns a `ReadResult`: `{ ok: true, data }`, or `{ ok: false, reason }` under the same error rules as every other method (1.10), for example when the current tab was closed or Playwright rejects the selector. A read is not a step, so it leaves the answered dialogs for the result of the step's `ready()`, `perform()`, or `check()`.
 
 `isVisible` takes its own timeout because the Locator probes a selector with a shorter timeout than the step's.
 
@@ -79,7 +81,7 @@ Known limitations: elements inside iframes and closed shadow roots are not colle
 | Action | Playwright call | Fails when |
 | ------ | --------------- | ---------- |
 | `open` | `page.goto(url)`; relative URLs resolve against `baseURL` | Navigation error or timeout |
-| `back`, `forward` | `page.goBack()` / `page.goForward()` | `navigation.canGoBack` / `canGoForward` is `false` before the call (no history entry) |
+| `back`, `forward` | `page.goBack()` / `page.goForward()` | The tab's history (CDP `Page.getNavigationHistory`) has no entry before / after the current one. Cross-origin entries count, unlike in the Navigation API |
 | `reload` | `page.reload()` | Navigation error or timeout |
 | `press` | `page.keyboard.press(key)` | Playwright rejects the key name |
 | `scroll` | `page.mouse.move()` to the viewport center, then `page.mouse.wheel(dx, dy)`; `up`/`left` are negative deltas | – |
@@ -111,7 +113,9 @@ type DialogResponse = { accept: boolean; text?: string; message?: string };
 
 Every answered dialog is returned in the result of the step it belongs to (`DialogRecord`), also when that step's action failed, so the report shows its type and message.
 
-`print` dialogs are not native dialog events and are not handled.
+If Playwright cannot answer a dialog (for example, its tab closed first), the step fails with the reason `Could not answer the <type> dialog: <error>`, unless the step already failed for another reason.
+
+Known limitations: `print` dialogs are not native dialog events and are not handled. A response is armed for the next dialog of any tab, so a dialog from an earlier step's timer that opens during the action takes the response; Playwright does not tell which action opened a dialog.
 
 ### 1.8 Tabs
 
@@ -119,12 +123,18 @@ The Adapter keeps the open tabs in opening order. A tab opened by the page (`tar
 
 `switchTab: { url }` makes the tab whose URL matches `url` the current tab:
 
-1. Match every open tab's URL against `url` with the same rules as `waitFor`'s `url` (Playwright's `waitForURL`): a pattern containing `*` is a glob (`*` matches no `/`, `**` matches anything), resolved against `baseUrl` first unless it starts with `*`; any other pattern is resolved against `baseUrl` and compared exactly.
+1. Match every open tab's URL against `url` with the URL pattern rules below.
 2. Exactly one match: it becomes the current tab and is brought to the front.
 3. More than one match: the step fails, listing the matching URLs.
 4. No match: poll every `TAB_POLL_MS` until the step timeout, since a new tab starts at `about:blank` before it navigates. On timeout the step fails, listing the open tab URLs.
 
 If the page closes the current tab, every following step fails with the reason `The current tab was closed`, except `switchTab`, which can still select another tab.
+
+URL patterns, used by `switchTab` and the `url` check (1.9) through one matcher in `url-match.ts`, so a pattern matches the same URLs in both:
+
+- A pattern containing `*` is a glob: `*` matches any characters except `/`, `**` matches any characters. It is resolved against `baseUrl` first unless it starts with `*`.
+- Any other pattern is resolved against `baseUrl` and compared exactly.
+- No other character is special: `?`, `{`, `}`, `[`, and `]` match themselves.
 
 ### 1.9 Checks
 
@@ -134,7 +144,7 @@ If the page closes the current tab, every following step fails with the reason `
 | ----- | -------------- | ----------- |
 | `visible` | `page.locator(selector).first().waitFor({ state: "visible" })` | The first match is visible |
 | `text` | Poll every `TEXT_POLL_MS`: `textContent()` of the first match, whitespace collapsed. On failure the reason quotes the last text read, even if the element disappeared afterwards | It contains `text` (case-sensitive) |
-| `url` | `page.waitForURL(url)`; relative URLs resolve against `baseURL` | The URL matches |
+| `url` | `page.waitForURL()` with a predicate that applies the URL pattern rules (1.8) | The URL matches |
 
 If several elements match `selector`, the first one is used; this is not an error.
 
@@ -142,11 +152,16 @@ If several elements match `selector`, the first one is used; this is not an erro
 
 Expected failures are typed results, never exceptions:
 
-| Playwright error | Result |
-| ---------------- | ------ |
-| `TimeoutError` | `{ ok: false, reason }`, naming what was awaited and the timeout |
-| Any other error while the browser is still connected and the current tab is open (invalid selector, unknown key, navigation error) | `{ ok: false, reason }` with Playwright's first message line |
+Every method except `close()` goes through the same handling. `ready()`, `perform()`, and `check()` return a `BrowserResult`; the reads in 1.4 return a `ReadResult`.
+
+| Situation | Result |
+| --------- | ------ |
+| The current tab was closed (except for `switchTab`) | `{ ok: false, reason: "The current tab was closed" }`, without calling Playwright |
+| `TimeoutError` | `{ ok: false, reason }`, naming what was awaited and the timeout; `isVisible` returns `{ ok: true, data: false }` instead |
+| Any other error while the browser is still connected (invalid selector, unknown key, navigation error) | `{ ok: false, reason }` with Playwright's first message line |
 | Any error after the browser disconnected or crashed, and any call made after that | Thrown; the pipeline treats it as an infrastructure failure |
+
+`close()` throws on any error, because the Run is over and only the trace is left to save.
 
 ### 1.11 Constants
 
@@ -211,9 +226,9 @@ type LaunchOptions = {
 
 interface BrowserAdapter {
   ready(): Promise<BrowserResult>;
-  isVisible(selector: string, timeoutMs: number): Promise<boolean>;
-  screenshot(): Promise<Buffer>;
-  snapshot(): Promise<PageSnapshot>;
+  isVisible(selector: string, timeoutMs: number): Promise<ReadResult<boolean>>;
+  screenshot(): Promise<ReadResult<Buffer>>;
+  snapshot(): Promise<ReadResult<PageSnapshot>>;
   perform(action: BrowserAction): Promise<BrowserResult>;
   check(check: BrowserCheck): Promise<BrowserResult>;
   close(): Promise<Buffer>; // trace zip
@@ -254,6 +269,8 @@ type DialogRecord = {
 type BrowserResult =
   | { ok: true; dialogs: DialogRecord[] }
   | { ok: false; reason: string; dialogs: DialogRecord[] };
+
+type ReadResult<T> = { ok: true; data: T } | { ok: false; reason: string };
 
 type BoundingBox = { x: number; y: number; width: number; height: number };
 
@@ -303,7 +320,8 @@ flowchart LR
   launch --> snapshot[snapshot.ts]
   actions --> errors[errors.ts]
   checks --> errors
-  tabs --> url[url-match.ts]
+  checks --> url[url-match.ts]
+  tabs --> url
 ```
 
 | Module | Responsibility |
@@ -314,7 +332,7 @@ flowchart LR
 | `actions.ts` | `perform()`: one function per action, Element reference to locator (1.6) |
 | `checks.ts` | `check()`: `visible`, `text`, `url` (1.9) |
 | `snapshot.ts` | The in-page snapshot script and `PageSnapshot` assembly (1.5) |
-| `url-match.ts` | Glob and exact URL matching for `switchTab` |
+| `url-match.ts` | URL pattern matching for `switchTab` and the `url` check (1.8) |
 | `errors.ts` | Turns Playwright errors into `BrowserResult` or rethrows them (1.10) |
 | `constants.ts` | Constants in 1.11 |
 
@@ -343,13 +361,14 @@ Browser tests launch real headless Chromium against local HTML pages served by `
 
 | Type | Coverage | Location |
 | ---- | -------- | -------- |
-| Unit | `url-match`: glob `*` and `**`, exact match, relative URL resolved against `baseUrl` | `src/tests/unit/core/browser/url-match.test.ts` |
+| Unit | `url-match`: glob `*` and `**`, exact match, relative URL resolved against `baseUrl`, `{` and `}` matched literally | `src/tests/unit/core/browser/url-match.test.ts` |
 | Unit | `errors`: `TimeoutError` and selector errors become results; errors after disconnect are thrown | `src/tests/unit/core/browser/errors.test.ts` |
-| Integration | Lifecycle: screenshot size equals the viewport, trace zip returned by `close()`, `ready()` waiting for `load` after a click, calls after the browser is gone throw | `src/tests/integration/core/browser/launch.test.ts` |
-| Integration | Every action in 1.6, including `back` with no history, an invalid key, and a click on a covered element timing out | `src/tests/integration/core/browser/actions.test.ts` |
-| Integration | `isVisible`: visible, hidden, invalid selector. Snapshot: viewport-only, hidden elements skipped, roles, names, text and attrs, `hittable: false` when covered, ids cleared between snapshots | `src/tests/integration/core/browser/snapshot.test.ts` |
+| Unit | `dialogs`: a dialog that cannot be answered fails the step and still releases the waiting action | `src/tests/unit/core/browser/dialogs.test.ts` |
+| Integration | Lifecycle: screenshot size equals the viewport, trace zip returned by `close()`, `ready()` waiting for `load` after a click, calls after the browser is gone throw, Chromium closed when launching fails | `src/tests/integration/core/browser/launch.test.ts` |
+| Integration | Every action in 1.6, including `back` with no history, `back` across origins, an invalid key, and a click on a covered element timing out | `src/tests/integration/core/browser/actions.test.ts` |
+| Integration | Reads: `isVisible` visible, hidden, invalid selector; every read after the current tab closed; reads leave dialogs for the step result. Snapshot: viewport-only, hidden elements skipped, roles, names, text and attrs, `hittable: false` when covered, ids cleared between snapshots | `src/tests/integration/core/browser/snapshot.test.ts` |
 | Integration | Dialogs: accept, dismiss, prompt text, `message` match and mismatch, expected dialog missing, Unexpected dialog during a step and between steps | `src/tests/integration/core/browser/dialogs.test.ts` |
 | Integration | Tabs: switch to a `target=_blank` tab and back, ambiguous match, timeout, closed current tab | `src/tests/integration/core/browser/tabs.test.ts` |
-| Integration | Checks: `visible`, `text`, and `url` pass and fail; first-match rule | `src/tests/integration/core/browser/checks.test.ts` |
+| Integration | Checks: `visible`, `text`, and `url` pass and fail; first-match rule; `url` matches like `switchTab` | `src/tests/integration/core/browser/checks.test.ts` |
 
 HTML pages live in `src/tests/integration/core/browser/fixtures/`, one page per scenario, named after it (e.g. `confirm-delete.html`, `open-new-tab.html`).

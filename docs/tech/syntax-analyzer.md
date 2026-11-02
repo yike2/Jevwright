@@ -154,7 +154,7 @@ URLs are absolute when they start with `scheme://` (such as `https://`) or with 
 
 - `baseUrl` must be absolute.
 - `open`'s `url` may be relative only when the file has a `baseUrl`.
-- `waitFor`, `assert`, and `switchTab` use `url` as a URL pattern. A glob containing `*` (such as `**/dashboard`) matches without a `baseUrl`; any other relative `url` needs one.
+- `waitFor`, `assert`, and `switchTab` use `url` as a URL pattern. A glob that starts with `*` (such as `**/dashboard`) matches without a `baseUrl`; any other relative `url` needs one, including a glob such as `/board/*`, which is resolved against `baseUrl`.
 
 | Action                                       | Fields |
 | -------------------------------------------- | ------ |
