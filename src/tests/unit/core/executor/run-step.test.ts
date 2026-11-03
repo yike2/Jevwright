@@ -85,11 +85,11 @@ describe("runStep mapping", () => {
     });
   });
 
-  it("adds that the target needs the Element Locator when the selector of both fails", async () => {
-    const { result } = await run(
-      { line: 2, action: "click", selector: "#old-id", target: "The Go button" },
-      { perform: () => failed("Timeout 1000ms exceeded waiting for #old-id") },
-    );
+  it.each<[string, Step]>([
+    ["click", { line: 2, action: "click", selector: "#old-id", target: "The Go button" }],
+    ["input", { line: 2, action: "input", selector: "#old-id", target: "The email field", value: "a@b.c" }],
+  ])("adds that the target needs the Element Locator when the selector of a %s with both fails", async (_action, step) => {
+    const { result } = await run(step, { perform: () => failed("Timeout 1000ms exceeded waiting for #old-id") });
 
     expect(result).toMatchObject({
       status: "failed",
