@@ -7,7 +7,7 @@ import { runAction } from "./actions.js";
 import { runCheck } from "./checks.js";
 import { DIALOG_MIN_WAIT_MS, VIEWPORT } from "./constants.js";
 import { DialogGuard } from "./dialogs.js";
-import { failureReason } from "./errors.js";
+import { failureReason, withCleanup } from "./errors.js";
 import { takeSnapshot } from "./snapshot.js";
 import { Tabs } from "./tabs.js";
 import type {
@@ -143,13 +143,16 @@ class PlaywrightAdapter implements BrowserAdapter {
   async close(): Promise<Buffer> {
     // Playwright writes the trace only to a file, so it goes through a temporary directory.
     const dir = await mkdtemp(join(tmpdir(), "jevwright-trace-"));
-    try {
-      const path = join(dir, "trace.zip");
-      await this.context.tracing.stop({ path });
-      return await readFile(path);
-    } finally {
-      await this.browser.close();
-      await rm(dir, { recursive: true, force: true });
-    }
+    const path = join(dir, "trace.zip");
+    return withCleanup(
+      async () => {
+        await this.context.tracing.stop({ path });
+        return readFile(path);
+      },
+      async () => {
+        await this.browser.close();
+        await rm(dir, { recursive: true, force: true });
+      },
+    );
   }
 }

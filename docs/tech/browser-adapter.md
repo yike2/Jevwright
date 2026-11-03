@@ -161,7 +161,7 @@ Every method except `close()` goes through the same handling. `ready()`, `perfor
 | Any other error while the browser is still connected (invalid selector, unknown key, navigation error) | `{ ok: false, reason }` with Playwright's first message line |
 | Any error after the browser disconnected or crashed, and any call made after that | Thrown; the Executor closes the browser and rethrows it as an infrastructure failure |
 
-`close()` throws on any error, because the Run is over and only the trace is left to save.
+`close()` throws on any error, because the Run is over and only the trace is left to save. When stopping the trace fails and closing the browser fails after it, both are thrown together as an `AggregateError` whose message is the first error, so the real cause is not hidden.
 
 ### 1.11 Constants
 

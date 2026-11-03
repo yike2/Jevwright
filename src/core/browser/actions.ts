@@ -1,5 +1,6 @@
 import type { Locator, Page } from "playwright";
 import { VIEWPORT } from "./constants.js";
+import { withCleanup } from "./errors.js";
 import type { BrowserAction, ElementRef } from "./types.js";
 
 /** Performs one action on `page`; returns a failure reason, or throws Playwright's error. */
@@ -59,13 +60,14 @@ export async function runAction(
 // A new tab's first entry is the about:blank it started on, which is not a page of the test.
 async function canGo(page: Page, step: -1 | 1): Promise<boolean> {
   const session = await page.context().newCDPSession(page);
-  try {
-    const { currentIndex, entries } = await session.send("Page.getNavigationHistory");
-    const target = currentIndex + step;
-    return entries[target] !== undefined && !(target === 0 && entries[0].url === "about:blank");
-  } finally {
-    await session.detach();
-  }
+  return withCleanup(
+    async () => {
+      const { currentIndex, entries } = await session.send("Page.getNavigationHistory");
+      const target = currentIndex + step;
+      return entries[target] !== undefined && !(target === 0 && entries[0].url === "about:blank");
+    },
+    () => session.detach(),
+  );
 }
 
 function locate(page: Page, element: ElementRef): Locator {

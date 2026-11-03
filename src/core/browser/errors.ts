@@ -12,9 +12,17 @@ export function firstLine(error: unknown): string {
 
 /** Runs `run`, then always `cleanup`; when both throw, both are thrown together so the first cause is kept. */
 export async function withCleanup<T>(run: () => Promise<T>, cleanup: () => Promise<unknown>): Promise<T> {
+  let result: T;
   try {
-    return await run();
-  } finally {
-    await cleanup();
+    result = await run();
+  } catch (error) {
+    try {
+      await cleanup();
+    } catch (cleanupError) {
+      throw new AggregateError([error, cleanupError], firstLine(error));
+    }
+    throw error;
   }
+  await cleanup();
+  return result;
 }
