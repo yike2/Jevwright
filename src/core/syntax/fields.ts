@@ -118,9 +118,15 @@ export class FieldReader {
     this.diagnostics.push({ code, message, line: this.line(this.alias ?? node) });
   }
 
+  /** The value node of `key`, or its key when the value is left empty (`key:` or `? key`). */
+  at(key: string): Node {
+    const pair = this.pair(key);
+    return (pair?.value ?? pair?.key ?? this.owner) as Node;
+  }
+
   /** Reports E007 at the value of `key`. */
   invalid(key: string, message: string): void {
-    this.report("E007", message, this.get(key) as Node);
+    this.report("E007", message, this.at(key));
   }
 
   // Matches keys by their resolved name, so an aliased key (`*k : value`) counts as `k`.

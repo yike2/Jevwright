@@ -294,7 +294,7 @@ Each combination of fields that 1.5 allows has its own named type, so a `switch`
 | `E004` | Unknown field | The field's key |
 | `E005` | Unknown action | The action's key |
 | `E006` | Invalid step: not an object, has zero or multiple actions, or its parameters are not an object | The step node |
-| `E007` | Wrong type or invalid value | The field's value |
+| `E007` | Wrong type or invalid value | The field's value, or its key when the value is empty (`key:` or `? key`) |
 | `E008` | Invalid field combination, i.e. violates an "at least one" or "exactly one" rule in 1.5, or `text` without `accept: true` | The key of the enclosing object |
 
 ### 3.4 CLI Output

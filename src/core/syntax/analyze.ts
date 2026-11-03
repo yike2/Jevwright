@@ -42,7 +42,7 @@ export function analyze(source: string): AnalyzeResult {
     const stepsNode = fields.get("steps") as Node;
     const list = fields.resolve(stepsNode);
     if (!isSeq(list) || list.items.length === 0) {
-      fields.report("E002", '"steps" must be a non-empty array', stepsNode);
+      fields.report("E002", '"steps" must be a non-empty array', fields.at("steps"));
     } else {
       const hasBaseUrl = fields.has("baseUrl");
       for (const item of list.items as Node[]) {
