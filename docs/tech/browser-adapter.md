@@ -46,7 +46,7 @@ At the start of every step the Executor calls `ready()`, which waits for the `lo
 
 Each method returns a `ReadResult`: `{ ok: true, data }`, or `{ ok: false, reason }` under the same error rules as every other method (1.10), for example when the current tab was closed or Playwright rejects the selector. A read is not a step, so it leaves the answered dialogs for the result of the step's `ready()`, `perform()`, or `check()`.
 
-`isVisible` takes its own timeout because the Locator probes a selector with a shorter timeout than the step's.
+`isVisible` takes its own timeout because the Locator probes a selector with a shorter timeout than the step's. A timeout of `0` or less reads once without waiting, since Playwright treats `0` as no timeout.
 
 ### 1.5 Page Snapshot
 

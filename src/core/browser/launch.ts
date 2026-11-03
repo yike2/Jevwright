@@ -65,7 +65,8 @@ class PlaywrightAdapter implements BrowserAdapter {
   isVisible(selector: string, timeoutMs: number): Promise<ReadResult<boolean>> {
     return this.read(async () => {
       try {
-        await this.page.locator(selector).first().waitFor({ state: "visible", timeout: timeoutMs });
+        // Playwright reads 0 as no timeout, so a caller with no time left would wait forever.
+        await this.page.locator(selector).first().waitFor({ state: "visible", timeout: Math.max(1, timeoutMs) });
         return true;
       } catch (error) {
         if (error instanceof errors.TimeoutError) return false;
