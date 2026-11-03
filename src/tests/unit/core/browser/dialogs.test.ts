@@ -22,7 +22,7 @@ describe("DialogGuard", () => {
     open();
     await answered;
 
-    expect(guard.take()).toEqual({
+    expect(await guard.take()).toEqual({
       dialogs: [{ type: "confirm", message: "Delete?", answer: "accepted", expected: true }],
       failure: "Could not answer the confirm dialog: Target page, context or browser has been closed",
     });

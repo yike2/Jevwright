@@ -104,8 +104,8 @@ class PlaywrightAdapter implements BrowserAdapter {
   }
 
   // Adds the dialogs answered since the last result; an unexpected one fails it.
-  private result(reason: string | undefined): BrowserResult {
-    const { dialogs, failure } = this.dialogs.take();
+  private async result(reason: string | undefined): Promise<BrowserResult> {
+    const { dialogs, failure } = await this.dialogs.take();
     const failed = reason ?? failure;
     return failed === undefined ? { ok: true, dialogs } : { ok: false, reason: failed, dialogs };
   }
