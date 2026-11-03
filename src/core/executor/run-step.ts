@@ -89,7 +89,7 @@ export async function runStep(step: Step, index: number, context: StepContext): 
     if (!ready.ok) {
       outcome = { result: ready };
     } else {
-      const acted = await act(filled.step, browser);
+      const acted = await act(filled.value, browser);
       outcome = { ...acted, result: { ...acted.result, dialogs: [...ready.dialogs, ...acted.result.dialogs] } };
     }
   }

@@ -43,7 +43,7 @@ describe("substitute", () => {
       { line: 1, action: "assert", check: { url: "https://demo.test/home" } },
     ],
   ])("fills Variables in the %s", (_field, step, expected) => {
-    expect(substitute(step, vars)).toEqual({ ok: true, step: expected });
+    expect(substitute(step, vars)).toEqual({ ok: true, value: expected });
   });
 
   it("fills several Variables and repeated ones in one string", () => {
@@ -51,14 +51,14 @@ describe("substitute", () => {
 
     expect(substitute(step, vars)).toEqual({
       ok: true,
-      step: { line: 1, action: "assert", statement: "student@x.com / s3cret / student@x.com" },
+      value: { line: 1, action: "assert", statement: "student@x.com / s3cret / student@x.com" },
     });
   });
 
   it("leaves braces that are not a Variable name as written", () => {
     const step: Step = { line: 1, action: "input", selector: "#t", value: "{{lower}} {{ EMAIL }} {EMAIL}" };
 
-    expect(substitute(step, vars)).toEqual({ ok: true, step });
+    expect(substitute(step, vars)).toEqual({ ok: true, value: step });
   });
 
   it("lists each missing Variable once, in order of first appearance", () => {

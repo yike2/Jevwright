@@ -1,6 +1,6 @@
-import type { Step, TestCase } from "../syntax/index.js";
+import type { TestCase } from "../syntax/index.js";
 
-export type Substituted = { ok: true; step: Step } | { ok: false; missing: string[] };
+export type Substituted<T> = { ok: true; value: T } | { ok: false; missing: string[] };
 
 const VARIABLE = /\{\{([A-Z_][A-Z0-9_]*)\}\}/g;
 
@@ -11,17 +11,17 @@ function mapStrings(value: unknown, map: (text: string) => string): unknown {
   return Object.fromEntries(Object.entries(value).map(([key, field]) => [key, mapStrings(field, map)]));
 }
 
-/** Fills every {{NAME}} in the string fields of `step` from `vars`; lists the names `vars` lacks. */
-export function substitute(step: Step, vars: Record<string, string>): Substituted {
+/** Fills every {{NAME}} in the strings of `value` from `vars`; lists the names `vars` lacks. */
+export function substitute<T>(value: T, vars: Record<string, string>): Substituted<T> {
   const missing: string[] = [];
-  const filled = mapStrings(step, (text) =>
+  const filled = mapStrings(value, (text) =>
     text.replace(VARIABLE, (variable, name: string) => {
       if (Object.hasOwn(vars, name)) return vars[name]!;
       if (!missing.includes(name)) missing.push(name);
       return variable;
     }),
-  ) as Step;
-  return missing.length > 0 ? { ok: false, missing } : { ok: true, step: filled };
+  ) as T;
+  return missing.length > 0 ? { ok: false, missing } : { ok: true, value: filled };
 }
 
 /** Returns a function that puts {{NAME}} back for the value of every Variable used in `testCase`. */
