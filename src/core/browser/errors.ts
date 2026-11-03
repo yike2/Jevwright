@@ -9,3 +9,12 @@ export function failureReason(error: unknown, connected: boolean): string {
 export function firstLine(error: unknown): string {
   return (error instanceof Error ? error.message : String(error)).split("\n")[0]!;
 }
+
+/** Runs `run`, then always `cleanup`; when both throw, both are thrown together so the first cause is kept. */
+export async function withCleanup<T>(run: () => Promise<T>, cleanup: () => Promise<unknown>): Promise<T> {
+  try {
+    return await run();
+  } finally {
+    await cleanup();
+  }
+}
