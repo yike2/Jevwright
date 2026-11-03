@@ -111,6 +111,7 @@ describe("runStep mapping", () => {
 describe("runStep steps that need Jev", () => {
   it.each<[string, Step, string]>([
     ["a target-only element action", { line: 2, action: "click", target: "The Go button" }, NEEDS_LOCATOR],
+    ["a target-only input", { line: 2, action: "input", target: "The email field", value: "a@b.c" }, NEEDS_LOCATOR],
     ["waitFor with a condition", { line: 2, action: "waitFor", condition: "The list has loaded" }, NEEDS_ASSERTER],
     ["assert with only a statement", { line: 2, action: "assert", statement: "The list has loaded" }, NEEDS_ASSERTER],
   ])("fails %s without acting on the page", async (_case, step, reason) => {
