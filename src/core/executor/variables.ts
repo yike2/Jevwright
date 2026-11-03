@@ -12,6 +12,13 @@ function mapStrings(value: unknown, map: (text: string) => string): unknown {
   return Object.fromEntries(Object.entries(value).map(([key, field]) => [key, mapStrings(field, map)]));
 }
 
+// Every string in `value`, in field order.
+function strings(value: unknown): string[] {
+  if (typeof value === "string") return [value];
+  if (value === null || typeof value !== "object") return [];
+  return Object.values(value).flatMap(strings);
+}
+
 /** Fills every {{NAME}} in the strings of `value` from `vars`; lists the names `vars` lacks. */
 export function substitute<T>(value: T, vars: Record<string, string>): Substituted<T> {
   const missing: string[] = [];
@@ -28,17 +35,14 @@ export function substitute<T>(value: T, vars: Record<string, string>): Substitut
 /** Returns a function that puts {{NAME}} back for the value of every Variable used in `testCase`. */
 export function createRedact(testCase: TestCase, vars: Record<string, string>): (text: string) => string {
   const names = new Map<string, string>(); // value → {{NAME}}
-  for (const value of [testCase.baseUrl, ...testCase.steps]) {
-    mapStrings(value, (text) => {
-      for (const [variable, name] of text.matchAll(VARIABLE)) {
-        const value = vars[name!];
-        if (!value) continue;
-        names.set(value, variable);
-        // Playwright quotes URLs encoded, e.g. in a waitForURL timeout.
-        names.set(encodeURIComponent(value), variable);
-      }
-      return text;
-    });
+  for (const text of strings([testCase.baseUrl, testCase.steps])) {
+    for (const [variable, name] of text.matchAll(VARIABLE)) {
+      const value = vars[name!];
+      if (!value) continue;
+      names.set(value, variable);
+      // Playwright quotes URLs encoded, e.g. in a waitForURL timeout.
+      names.set(encodeURIComponent(value), variable);
+    }
   }
   // One pass that matches a {{NAME}} already in the text first and keeps it, then the longest value first,
   // so a value is never replaced inside another value or inside a {{NAME}}.
