@@ -56,6 +56,11 @@ describe("runStep mapping", () => {
       { action: "input", element: { selector: "#email" }, value: "a@b.c" },
     ],
     [
+      "input with a dialog",
+      { line: 2, action: "input", selector: "#name", value: "x", dialog: { accept: false } },
+      { action: "input", element: { selector: "#name" }, value: "x", dialog: { accept: false } },
+    ],
+    [
       "click by selector with a target",
       { line: 2, action: "click", selector: "#go", target: "The Go button" },
       { action: "click", element: { selector: "#go" } },
@@ -77,6 +82,18 @@ describe("runStep mapping", () => {
       status: "failed",
       locateMethod: "selector",
       reason: "Timeout 1000ms exceeded waiting for #gone",
+    });
+  });
+
+  it("adds that the target needs the Element Locator when the selector of both fails", async () => {
+    const { result } = await run(
+      { line: 2, action: "click", selector: "#old-id", target: "The Go button" },
+      { perform: () => failed("Timeout 1000ms exceeded waiting for #old-id") },
+    );
+
+    expect(result).toMatchObject({
+      status: "failed",
+      reason: `Timeout 1000ms exceeded waiting for #old-id; ${NEEDS_LOCATOR}`,
     });
   });
 

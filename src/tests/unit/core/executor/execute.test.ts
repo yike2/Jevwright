@@ -133,6 +133,13 @@ describe("execute", () => {
     ]);
   });
 
+  it("returns no Step results for a TestCase without steps, even with a missing baseUrl Variable", async () => {
+    const ran = run(testCase({ baseUrl: "{{BASE}}", steps: [] }));
+
+    await expect(ran.then(({ result }) => result)).resolves.toEqual({ steps: [], trace: Buffer.alloc(0) });
+    expect((await ran).launches).toEqual([]);
+  });
+
   it("records when the first step failed for a missing baseUrl Variable", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-11-03T10:00:00.000Z"));

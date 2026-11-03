@@ -61,6 +61,10 @@ describe("substitute", () => {
     expect(substitute(step, vars)).toEqual({ ok: true, value: step });
   });
 
+  it("fills Variables inside arrays and keeps them arrays", () => {
+    expect(substitute(["{{EMAIL}}", "x"], vars)).toEqual({ ok: true, value: ["student@x.com", "x"] });
+  });
+
   it("lists each missing Variable once, in order of first appearance", () => {
     const step: Step = { line: 1, action: "input", selector: "#{{ID}}", value: "{{TOKEN}} {{EMAIL}} {{ID}}" };
 
@@ -99,6 +103,20 @@ describe("createRedact", () => {
     });
 
     expect(redact("got abcdef and abc")).toBe("got {{LONG}} and {{SHORT}}");
+  });
+
+  it("keeps a {{NAME}} already in the text when a value occurs inside it", () => {
+    const redact = createRedact(testCase({ line: 1, action: "open", url: "{{USER}}/{{PASSWORD}}" }), { USER: "PASS" });
+
+    expect(redact("Variable {{PASSWORD}} is not set; got PASS")).toBe("Variable {{PASSWORD}} is not set; got {{USER}}");
+  });
+
+  it("redacts the URL-encoded form of a value", () => {
+    const redact = createRedact(testCase({ line: 1, action: "assert", check: { url: "**/cb?t={{TOKEN}}" } }), {
+      TOKEN: "a b&c",
+    });
+
+    expect(redact("Timeout waiting for http://x.test/cb?t=a%20b%26c")).toBe("Timeout waiting for http://x.test/cb?t={{TOKEN}}");
   });
 
   it("matches values with regular expression characters literally", () => {
