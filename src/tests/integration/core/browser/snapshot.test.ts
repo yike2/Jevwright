@@ -121,6 +121,18 @@ describe("snapshot names", () => {
     }));
 });
 
+describe("snapshot of a select without a label", () => {
+  it("names it by its selected option, not by every option", () =>
+    run(async (browser) => {
+      await browser.perform({ action: "open", url: "/select.html" });
+
+      const { elements } = data(await browser.snapshot());
+
+      expect(elements).toMatchObject([{ tag: "select", role: "combobox", name: "Bravo" }]);
+      expect(elements[0]).not.toHaveProperty("text");
+    }));
+});
+
 describe("snapshot text and attrs", () => {
   it("adds text only when it differs from the name, and the state attributes", () =>
     run(async (browser) => {
@@ -156,6 +168,7 @@ describe("snapshot hittable", () => {
         ["Open", true],
         ["Covered", false],
         ["Remember me", true],
+        ["Tall", true], // its center is below the viewport, but its visible part can be clicked
       ]);
     }));
 });
