@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { LaunchOptions } from "@/core/browser/index.js";
 import { execute, type ExecuteOptions, type StepEvent } from "@/core/executor/index.js";
 import type { Step, TestCase } from "@/core/syntax/index.js";
@@ -32,6 +32,8 @@ async function run(test: TestCase, script: Parameters<typeof fakeAdapter>[0] = {
 const failOn = (action: string) => ({
   perform: (step: { action: string }) => (step.action === action ? failed(`${action} failed`) : { ok: true as const, dialogs: [] }),
 });
+
+afterEach(() => vi.useRealTimers());
 
 describe("execute", () => {
   it("launches the browser with headed and the TestCase's baseUrl and timeoutMs", async () => {
@@ -129,6 +131,14 @@ describe("execute", () => {
       { type: "started", step: { index: 0, line: 3, action: "open" } },
       { type: "finished", result: result.steps[0] },
     ]);
+  });
+
+  it("records when the first step failed for a missing baseUrl Variable", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-03T10:00:00.000Z"));
+    const { result } = await run(testCase({ baseUrl: "{{BASE}}" }));
+
+    expect(result.steps[0]).toMatchObject({ startedAt: "2026-11-03T10:00:00.000Z", durationMs: 0 });
   });
 
   it("redacts Variable values in the events it sends", async () => {
