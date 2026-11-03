@@ -64,11 +64,11 @@ Each element is described by:
 | `id` | Snapshot id |
 | `tag` | Lowercase tag name |
 | `role` | Explicit `role`, otherwise the implicit role of the tag (`a` → `link`, `input[type=checkbox]` → `checkbox`, `input[type=search]` → `searchbox`, other text inputs and `textarea` → `textbox`, `select` → `combobox`, ...) |
-| `name` | Accessible name: `aria-label`, then `aria-labelledby` text, then `<label>` text, then visible text (a `submit`, `button`, or `reset` input's value), `title`, or `placeholder` |
+| `name` | Accessible name: `aria-label`, then `aria-labelledby` text, then `<label>` text, then visible text (a `submit`, `button`, or `reset` input's value; a `select`'s selected option), `title`, or `placeholder` |
 | `text` | Visible text with whitespace collapsed; omitted when empty or equal to `name` |
 | `attrs` | `type`, `placeholder`, `href`, `aria-checked`, `aria-selected`, `aria-current`, `aria-invalid` when present; `value` of a field when non-empty (not of checkboxes, radios, or button inputs); `checked` for checkboxes and radios; `disabled: true` when disabled |
 | `bbox` | `{ x, y, width, height }` in CSS pixels relative to the viewport, rounded |
-| `hittable` | `true` when `elementFromPoint` at the box center is the element, a descendant, or a `<label>` whose control is the element; `false` when something covers it (e.g. a modal backdrop) |
+| `hittable` | `true` when `elementFromPoint` at the center of the box's part inside the viewport is the element, a descendant, or a `<label>` whose control is the element; `false` when something covers it (e.g. a modal backdrop) |
 
 Only the viewport is captured, matching the viewport screenshot. To reach an element below the fold, the test scrolls first.
 

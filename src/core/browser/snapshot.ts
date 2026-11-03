@@ -36,8 +36,13 @@ function collect(interactive: string): SnapshotElement[] {
     }
     return tag;
   };
-  // A submit or button input shows its value as its label.
-  const visibleText = (el: HTMLElement) => (isButtonInput(el) ? (el as HTMLInputElement).value : el.innerText);
+  // A submit or button input shows its value as its label; a select shows its selected option, while its
+  // innerText would list every option.
+  const visibleText = (el: HTMLElement) => {
+    if (isButtonInput(el)) return (el as HTMLInputElement).value;
+    if (el instanceof HTMLSelectElement) return [...el.selectedOptions].map((option) => option.label).join(" ");
+    return el.innerText;
+  };
   const clean = (text: string | null | undefined) => (text ?? "").replace(/\s+/g, " ").trim();
   const name = (el: HTMLElement) => {
     const labelledBy = el.getAttribute("aria-labelledby");
@@ -67,7 +72,10 @@ function collect(interactive: string): SnapshotElement[] {
     return out;
   };
   const hittable = (el: HTMLElement, r: DOMRect) => {
-    const hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+    // The center of the part inside the viewport, since elementFromPoint finds nothing outside it.
+    const x = (Math.max(r.left, 0) + Math.min(r.right, innerWidth)) / 2;
+    const y = (Math.max(r.top, 0) + Math.min(r.bottom, innerHeight)) / 2;
+    const hit = document.elementFromPoint(x, y);
     // A click on a <label> reaches its control, so a label on top still counts.
     return !!hit && (el === hit || el.contains(hit) || (hit instanceof HTMLLabelElement && hit.control === el));
   };
