@@ -77,7 +77,7 @@ describe("createRedact", () => {
 
   it("redacts Variables used in any step, not only the one that failed", () => {
     const redact = createRedact(
-      testCase({ line: 1, action: "input", selector: "#p", value: "{{PASSWORD}}" }, { line: 2, action: "back" }),
+      testCase({ line: 1, action: "back" }, { line: 2, action: "input", selector: "#p", value: "{{PASSWORD}}" }),
       vars,
     );
 
@@ -91,6 +91,14 @@ describe("createRedact", () => {
     });
 
     expect(redact("got abcdef and abc")).toBe("got {{LONG}} and {{SHORT}}");
+  });
+
+  it("matches values with regular expression characters literally", () => {
+    const redact = createRedact(testCase({ line: 1, action: "input", selector: "#p", value: "{{PASSWORD}}" }), {
+      PASSWORD: "a+b",
+    });
+
+    expect(redact("aab a+b")).toBe("aab {{PASSWORD}}");
   });
 
   it("leaves values of Variables the TestCase does not use", () => {
