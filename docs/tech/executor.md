@@ -16,10 +16,10 @@ The Executor runs one validated `TestCase`: it launches the Browser Adapter, run
 
 ### 1.2 Run Lifecycle
 
-1. Fill the Variables in `TestCase.baseUrl` (1.5), then launch the browser with `launchBrowser({ headed, baseUrl, timeoutMs })`. If a Variable in `baseUrl` is missing, the browser is not launched: the first step fails with `MISSING_VARIABLE` and no screenshot, the other steps are `pending`, and `trace` is empty.
+1. Fill the Variables in `TestCase.baseUrl` (1.5), then launch the browser with `launchBrowser({ headed, baseUrl, timeoutMs })`. If a Variable in `baseUrl` is missing, the browser is not launched: the first step, if there is one, fails with `MISSING_VARIABLE` and no screenshot, the other steps are `pending`, and `trace` is empty.
 2. Run each step in order (1.3). Send a `started` event before it and a `finished` event with its Step result after it.
 3. After the first failed step, stop. Every step after it gets `{ status: "pending" }`; no event is sent for those steps.
-4. Close the browser in a `finally` block and return the Step results with the trace from `close()`.
+4. Close the browser in a `finally` block and return the Step results with the trace from `close()`. A `TestCase` with no steps returns no Step results.
 
 An infrastructure error (the Adapter throws, see `browser-adapter.md` 1.10) ends the Run at once. The Executor still tries `close()`, then rethrows the original error. If `close()` also throws, both errors are thrown together as an `AggregateError`. The pipeline reports the Run as failed with an infrastructure error. If `launchBrowser()` throws, the Adapter has already closed Chromium, and the Executor rethrows.
 
@@ -41,7 +41,8 @@ The mapping is one exhaustive `switch` over the `Step` types defined in `syntax-
 | Step | Adapter call | Locate method |
 | ---- | ------------ | ------------- |
 | `open`, `back`, `forward`, `reload`, `press`, `scroll`, `sleep`, `switchTab` | `perform()` with the step's fields, including its Dialog response | – |
-| Element action with `LocateBySelector` or `LocateByBoth` | `perform()` with `element: { selector }`; if the selector matches nothing, the step fails with the Adapter's reason | `selector` |
+| Element action with `LocateBySelector` | `perform()` with `element: { selector }`; if the selector matches nothing, the step fails with the Adapter's reason | `selector` |
+| Element action with `LocateByBoth` | Same; on failure the reason is `<Adapter reason>; <NEEDS_LOCATOR>`, because the Jev fallback on `target` is not available yet | `selector` |
 | Element action with `LocateByTarget` | None; fails with `NEEDS_LOCATOR` | – |
 | `WaitForSelector` | `check({ check: "visible", selector })` | – |
 | `WaitForUrl` | `check({ check: "url", url })` | – |
@@ -61,7 +62,7 @@ A Variable is `{{NAME}}`, where `NAME` matches `[A-Z_][A-Z0-9_]*`. The Executor 
 
 - Values come only from the caller's `vars`; the Executor does not read `process.env`. The CLI fills `vars` from `.env`, and the backend fills it from the platform configuration.
 - If one or more Variables of a step are missing, the step fails with `MISSING_VARIABLE`, listing their names in order of first appearance.
-- Redaction replaces every non-empty value of a Variable used anywhere in the `TestCase` with its `{{NAME}}`, longest value first. It applies to the failure reason and to `DialogRecord.message` in Step results and Step events. Screenshots and the trace are not redacted.
+- Redaction replaces every non-empty value of a Variable used anywhere in the `TestCase`, and its URL-encoded form (`encodeURIComponent`), with its `{{NAME}}`, longest first. A `{{NAME}}` already in the text is kept as written. It applies to the failure reason and to `DialogRecord.message` in Step results and Step events. Screenshots and the trace are not redacted.
 
 Values are never logged.
 
