@@ -45,7 +45,7 @@ installing, check majors against this table and pin them. Don't upgrade a major 
 
 ```text
 src/
-├── core/            # engine, no HTTP/DB/UI: syntax/ jev/ browser/ locator/ assert/ report/ pipeline/
+├── core/            # engine, no HTTP/DB/UI: syntax/ jev/ browser/ locator/ assert/ executor/ report/ pipeline/
 ├── cli/             # jevwright validate | run
 ├── app/frontend/    # Next.js: auth, sidebar, editor, dashboard, REST API, OpenAPI
 ├── app/backend/     # Express runner: queue, WebSocket progress; db/ = Prisma (shared)

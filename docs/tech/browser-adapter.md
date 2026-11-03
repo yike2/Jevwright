@@ -293,9 +293,9 @@ type PageSnapshot = {
 };
 ```
 
-### 3.3 How the Pipeline Calls the Adapter
+### 3.3 How the Step Executor Calls the Adapter
 
-The Step Executor in `pipeline/` maps each `Step` to one call with an exhaustive `switch`:
+The Step Executor in `executor/` maps each `Step` to one call with an exhaustive `switch`:
 
 | Step | Adapter call |
 | ---- | ------------ |
