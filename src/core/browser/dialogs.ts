@@ -1,4 +1,5 @@
 import type { Dialog, Page } from "playwright";
+import { firstLine } from "./errors.js";
 import type { DialogRecord, DialogResponse } from "./types.js";
 
 /** Answers every native dialog of the pages it watches, using the armed Dialog response. */
@@ -58,8 +59,7 @@ export class DialogGuard {
       else await dialog.dismiss();
     } catch (error) {
       // The listener's promise is not awaited, so the error becomes the step's failure instead.
-      const detail = error instanceof Error ? error.message.split("\n")[0] : String(error);
-      this.failure ??= `Could not answer the ${type} dialog: ${detail}`;
+      this.failure ??= `Could not answer the ${type} dialog: ${firstLine(error)}`;
     } finally {
       this.answered?.();
     }
