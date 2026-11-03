@@ -143,7 +143,7 @@ URL patterns, used by `switchTab` and the `url` check (1.9) through one matcher 
 | Check | Implementation | Passes when |
 | ----- | -------------- | ----------- |
 | `visible` | `page.locator(selector).first().waitFor({ state: "visible" })` | The first match is visible |
-| `text` | Poll every `TEXT_POLL_MS`: `textContent()` of the first match, whitespace collapsed. On failure the reason quotes the last text read, even if the element disappeared afterwards | It contains `text` (case-sensitive) |
+| `text` | Poll every `TEXT_POLL_MS`: `textContent()` of the first match; whitespace is collapsed in it and in `text`. On failure the reason quotes the last text read, even if the element disappeared afterwards | It contains `text` (case-sensitive) |
 | `url` | `page.waitForURL()` with a predicate that applies the URL pattern rules (1.8) | The URL matches |
 
 If several elements match `selector`, the first one is used; this is not an error.

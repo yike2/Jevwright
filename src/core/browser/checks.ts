@@ -29,20 +29,24 @@ export async function runCheck(
   return undefined;
 }
 
-// Polls like toContainText: the first match's textContent, whitespace collapsed, case-sensitive.
+const collapse = (text: string) => text.replace(/\s+/g, " ").trim();
+
+// Polls like toContainText: the first match's textContent contains `text`, both with whitespace collapsed,
+// case-sensitive.
 async function waitForText(page: Page, selector: string, text: string, timeoutMs: number): Promise<string | undefined> {
+  const expected = collapse(text);
   const locator = page.locator(selector).first();
   const deadline = Date.now() + timeoutMs;
   let content: string | undefined;
   for (;;) {
     try {
       const read = await locator.textContent({ timeout: Math.max(1, deadline - Date.now()) });
-      content = (read ?? "").replace(/\s+/g, " ").trim();
+      content = collapse(read ?? "");
     } catch (error) {
       // Before the first read Playwright's timeout is the reason; after it, the text that was there is.
       if (content === undefined || !(error instanceof errors.TimeoutError)) throw error;
     }
-    if (content.includes(text)) return undefined;
+    if (content.includes(expected)) return undefined;
     // Stop before a poll that would start after the deadline, so the last read is never cut short.
     if (Date.now() + TEXT_POLL_MS >= deadline) {
       return `Text of "${selector}" did not contain "${text}" within ${timeoutMs}ms; it was "${content}"`;
