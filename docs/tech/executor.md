@@ -51,7 +51,7 @@ The mapping is one exhaustive `switch` over the `Step` types defined in `syntax-
 | `AssertWithCheck`, `check` has `url` | `check({ check: "url", url })` | – |
 | `AssertStatement` | None; fails with `NEEDS_ASSERTER` | – |
 
-If an `AssertWithCheck` with a `statement` fails its check, the step fails with the check's reason followed by `NEEDS_ASSERTER`, because the Jev fallback is not available yet.
+If an `AssertWithCheck` with a `statement` fails its check, the step fails with `<check reason>; <NEEDS_ASSERTER>`, because the Jev fallback is not available yet.
 
 Steps that need Jev are never marked passed. Each such branch carries a `TODO` naming the Element Locator or the Asserter issue. When those modules exist, the Element Locator gives the `ElementRef` and locate method for every element action, and the Asserter runs `waitFor` and `assert`.
 
@@ -69,7 +69,7 @@ Values are never logged.
 
 | Constant | Reason |
 | -------- | ------ |
-| `MISSING_VARIABLE` | `Variable {{NAME}} is not set` (names joined with `, ` when there are several) |
+| `MISSING_VARIABLE` | `Variable {{NAME}} is not set`, or `Variables {{A}}, {{B}} are not set` when several are missing |
 | `NEEDS_LOCATOR` | `Locating by target needs the Element Locator, which is not available yet` |
 | `NEEDS_ASSERTER` | `Judging a natural-language condition needs the Asserter, which is not available yet` |
 
