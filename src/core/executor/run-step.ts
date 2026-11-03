@@ -14,6 +14,10 @@ type Outcome = { result: BrowserResult; locateMethod?: LocateMethod };
 
 const fail = (reason: string): Outcome => ({ result: { ok: false, reason, dialogs: [] } });
 
+// With a target too, a failed selector would fall back to Jev, which the Element Locator does not offer yet.
+const withTarget = (result: BrowserResult, target: string | undefined): BrowserResult =>
+  result.ok || target === undefined ? result : { ...result, reason: `${result.reason}; ${NEEDS_LOCATOR}` };
+
 function toCheck(check: AssertCheck): BrowserCheck {
   if ("url" in check) return { check: "url", url: check.url };
   return check.text === undefined
@@ -42,19 +46,20 @@ async function act(step: Step, browser: BrowserAdapter): Promise<Outcome> {
       // TODO: locate by target through the Element Locator.
       if (step.selector === undefined) return fail(NEEDS_LOCATOR);
       return {
-        result: await browser.perform({ action: step.action, element: { selector: step.selector }, dialog: step.dialog }),
+        result: withTarget(
+          await browser.perform({ action: step.action, element: { selector: step.selector }, dialog: step.dialog }),
+          step.target,
+        ),
         locateMethod: "selector",
       };
     case "input":
       // TODO: locate by target through the Element Locator.
       if (step.selector === undefined) return fail(NEEDS_LOCATOR);
       return {
-        result: await browser.perform({
-          action: "input",
-          element: { selector: step.selector },
-          value: step.value,
-          dialog: step.dialog,
-        }),
+        result: withTarget(
+          await browser.perform({ action: "input", element: { selector: step.selector }, value: step.value, dialog: step.dialog }),
+          step.target,
+        ),
         locateMethod: "selector",
       };
     case "waitFor":

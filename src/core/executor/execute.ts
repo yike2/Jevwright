@@ -22,7 +22,8 @@ export async function execute(
   const baseUrl = substitute(testCase.baseUrl, vars);
   if (!baseUrl.ok) {
     // Without a baseUrl there is no browser to run on, so the first step carries the failure.
-    const { status: _pending, ...step } = results[0]!;
+    if (results[0] === undefined) return { steps: [], trace: Buffer.alloc(0) };
+    const { status: _pending, ...step } = results[0];
     onEvent({ type: "started", step });
     const result: StepResult = {
       ...step,
