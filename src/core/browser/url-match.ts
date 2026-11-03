@@ -1,9 +1,10 @@
 /** True when `url` matches `pattern`: a glob when it contains `*`, otherwise an exact URL. */
 export function matchesUrl(url: string, pattern: string, baseUrl?: string): boolean {
   if (!pattern.includes("*")) return url === new URL(pattern, baseUrl).href;
-  // Like Playwright's waitForURL, a glob such as "/board/*" is resolved against baseUrl
-  // (an absolute one resolves to itself); one starting with "*" is matched as written.
-  const resolved = baseUrl && !pattern.startsWith("*") ? new URL(pattern, baseUrl).href : pattern;
+  // Like Playwright's waitForURL, a glob such as "/board/*" is resolved against baseUrl, and an absolute one
+  // is normalized the way the browser writes URLs (lowercase host, encoded spaces); one starting with "*" is
+  // matched as written.
+  const resolved = pattern.startsWith("*") ? pattern : new URL(pattern, baseUrl).href;
   return globToRegExp(resolved).test(url);
 }
 

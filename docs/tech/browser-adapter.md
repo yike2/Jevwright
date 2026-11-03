@@ -132,7 +132,7 @@ If the page closes the current tab, every following step fails with the reason `
 
 URL patterns, used by `switchTab` and the `url` check (1.9) through one matcher in `url-match.ts`, so a pattern matches the same URLs in both:
 
-- A pattern containing `*` is a glob: `*` matches any characters except `/`, `**` matches any characters. It is resolved against `baseUrl` first unless it starts with `*`.
+- A pattern containing `*` is a glob: `*` matches any characters except `/`, `**` matches any characters. Unless it starts with `*`, it goes through `new URL(pattern, baseUrl)` first, which resolves a relative glob and normalizes an absolute one the way the browser writes URLs (lowercase host, encoded spaces), with or without a `baseUrl`.
 - Any other pattern is resolved against `baseUrl` and compared exactly.
 - No other character is special: `?`, `{`, `}`, `[`, and `]` match themselves.
 
