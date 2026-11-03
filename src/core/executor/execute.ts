@@ -1,7 +1,7 @@
 import { launchBrowser, type BrowserAdapter } from "../browser/index.js";
 import type { TestCase } from "../syntax/index.js";
 import { missingVariables } from "./reasons.js";
-import { runStep } from "./run-step.js";
+import { runStep, toStepResult } from "./run-step.js";
 import type { ExecuteOptions, ExecuteResult, StepResult } from "./types.js";
 import { createRedact, substitute } from "./variables.js";
 
@@ -22,17 +22,12 @@ export async function execute(
   const baseUrl = substitute(testCase.baseUrl, vars);
   if (!baseUrl.ok) {
     // Without a baseUrl there is no browser to run on, so the first step carries the failure.
-    if (results[0] === undefined) return { steps: [], trace: Buffer.alloc(0) };
-    const { status: _pending, ...step } = results[0];
-    onEvent({ type: "started", step });
-    const result: StepResult = {
-      ...step,
-      status: "failed",
-      startedAt: new Date().toISOString(),
-      durationMs: 0,
-      dialogs: [],
-      reason: missingVariables(baseUrl.missing),
-    };
+    const first = testCase.steps[0];
+    if (first === undefined) return { steps: [], trace: Buffer.alloc(0) };
+    onEvent({ type: "started", step: { index: 0, line: first.line, action: first.action } });
+    const failure = { ok: false as const, reason: missingVariables(baseUrl.missing), dialogs: [] };
+    const ran = { startedAt: new Date(), durationMs: 0, result: failure };
+    const result = toStepResult(first, 0, ran, createRedact(testCase, vars));
     results[0] = result;
     onEvent({ type: "finished", result });
     return { steps: results, trace: Buffer.alloc(0) };

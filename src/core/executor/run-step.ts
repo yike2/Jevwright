@@ -57,7 +57,12 @@ async function act(step: Step, browser: BrowserAdapter): Promise<Outcome> {
       if (step.selector === undefined) return fail(NEEDS_LOCATOR);
       return {
         result: withTarget(
-          await browser.perform({ action: "input", element: { selector: step.selector }, value: step.value, dialog: step.dialog }),
+          await browser.perform({
+            action: "input",
+            element: { selector: step.selector },
+            value: step.value,
+            dialog: step.dialog,
+          }),
           step.target,
         ),
         locateMethod: "selector",
@@ -99,22 +104,31 @@ export async function runStep(step: Step, index: number, context: StepContext): 
     }
   }
 
-  const { result, locateMethod } = outcome;
-  const ran = {
+  const durationMs = Date.now() - startedAt.getTime();
+  const screenshot = outcome.result.ok ? undefined : await browser.screenshot();
+  const ran = { startedAt, durationMs, ...outcome, screenshot: screenshot?.ok ? screenshot.data : undefined };
+  return toStepResult(step, index, ran, redact);
+}
+
+type Ran = Outcome & { startedAt: Date; durationMs: number; screenshot?: Buffer };
+
+/** The Step result of `step` once it ran, with its reason and dialog messages redacted. */
+export function toStepResult(
+  step: Step,
+  index: number,
+  ran: Ran,
+  redact: (text: string) => string,
+): PassedStep | FailedStep {
+  const { result, locateMethod, screenshot } = ran;
+  const base = {
     index,
     line: step.line,
     action: step.action,
-    startedAt: startedAt.toISOString(),
-    durationMs: Date.now() - startedAt.getTime(),
+    startedAt: ran.startedAt.toISOString(),
+    durationMs: ran.durationMs,
     ...(locateMethod ? { locateMethod } : {}),
     dialogs: result.dialogs.map((dialog) => ({ ...dialog, message: redact(dialog.message) })),
   };
-  if (result.ok) return { ...ran, status: "passed" };
-  const screenshot = await browser.screenshot();
-  return {
-    ...ran,
-    status: "failed",
-    reason: redact(result.reason),
-    ...(screenshot.ok ? { screenshot: screenshot.data } : {}),
-  };
+  if (result.ok) return { ...base, status: "passed" };
+  return { ...base, status: "failed", reason: redact(result.reason), ...(screenshot ? { screenshot } : {}) };
 }
