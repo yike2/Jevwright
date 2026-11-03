@@ -169,6 +169,7 @@ describe("snapshot hittable", () => {
         ["Covered", false],
         ["Remember me", true],
         ["Tall", true], // its center is below the viewport, but its visible part can be clicked
+        ["Wide", true], // the same past the right edge
       ]);
     }));
 });
