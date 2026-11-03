@@ -16,7 +16,7 @@ The Executor runs one validated `TestCase`: it launches the Browser Adapter, run
 
 ### 1.2 Run Lifecycle
 
-1. Launch the browser with `launchBrowser({ headed, baseUrl, timeoutMs })`, taking `baseUrl` and `timeoutMs` from the `TestCase`.
+1. Fill the Variables in `TestCase.baseUrl` (1.5), then launch the browser with `launchBrowser({ headed, baseUrl, timeoutMs })`. If a Variable in `baseUrl` is missing, the browser is not launched: the first step fails with `MISSING_VARIABLE` and no screenshot, the other steps are `pending`, and `trace` is empty.
 2. Run each step in order (1.3). Send a `started` event before it and a `finished` event with its Step result after it.
 3. After the first failed step, stop. Every step after it gets `{ status: "pending" }`; no event is sent for those steps.
 4. Close the browser in a `finally` block and return the Step results with the trace from `close()`.
@@ -57,7 +57,7 @@ Steps that need Jev are never marked passed. Each such branch carries a `TODO` n
 
 ### 1.5 Variables
 
-A Variable is `{{NAME}}`, where `NAME` matches `[A-Z_][A-Z0-9_]*`. The Executor replaces every Variable in every string field of a step: `url`, `key`, `value`, `selector`, `target`, `condition`, `statement`, `text`, and the Dialog response's `text` and `message`.
+A Variable is `{{NAME}}`, where `NAME` matches `[A-Z_][A-Z0-9_]*`. The Executor replaces every Variable in `TestCase.baseUrl` and in every string field of a step: `url`, `key`, `value`, `selector`, `target`, `condition`, `statement`, `text`, and the Dialog response's `text` and `message`.
 
 - Values come only from the caller's `vars`; the Executor does not read `process.env`. The CLI fills `vars` from `.env`, and the backend fills it from the platform configuration.
 - If one or more Variables of a step are missing, the step fails with `MISSING_VARIABLE`, listing their names in order of first appearance.
