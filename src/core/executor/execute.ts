@@ -39,13 +39,23 @@ export async function execute(
   }
 
   const browser = await launch({ headed, baseUrl: baseUrl.value, timeoutMs: testCase.timeoutMs });
+  let failure: { error: unknown } | undefined;
+  let trace: Buffer = Buffer.alloc(0);
   try {
     await runSteps(testCase, browser, options, results);
   } catch (error) {
-    await close(browser, error);
+    failure = { error };
     throw error;
+  } finally {
+    try {
+      trace = await browser.close();
+    } catch (closeError) {
+      // Thrown from finally, this replaces the error of the steps, so it carries both.
+      if (!failure) throw closeError;
+      throw new AggregateError([failure.error, closeError], "The run failed and the browser could not be closed");
+    }
   }
-  return { steps: results, trace: await browser.close() };
+  return { steps: results, trace };
 }
 
 // Fills `results` in order and stops at the first failed step, leaving the rest pending.
@@ -58,14 +68,5 @@ async function runSteps(testCase: TestCase, browser: BrowserAdapter, options: Ex
     results[index] = result;
     onEvent({ type: "finished", result });
     if (result.status === "failed") return;
-  }
-}
-
-// Closes the browser after `error`; if that fails too, both are thrown together.
-async function close(browser: BrowserAdapter, error: unknown) {
-  try {
-    await browser.close();
-  } catch (closeError) {
-    throw new AggregateError([error, closeError], "The run failed and the browser could not be closed");
   }
 }
