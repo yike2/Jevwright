@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "receiptId": "54b59934-eab5-436d-a872-e73070e81536",
+  "receiptId": "d45d3e03-b9d5-46a3-a59e-685867cab2f8",
   "status": "current",
   "command": "deliver",
   "type": "architecture",
   "input": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-architecture/candidate.json",
   "output": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-architecture/index.html",
   "specification": {
-    "sha256": "01c4ed5f94547fb18022489c402929352320369b765a163ba3effcaeb583284f",
-    "bytes": 7814
+    "sha256": "976c6bc0bb96bcf5d7c2dfd543da3bb61e1134a136ab94f0c6b9cc571bc40bc8",
+    "bytes": 7809
   },
   "artifact": {
-    "sha256": "486dd27ed1dda84c02f15e71cc49ee5d28e3805841b8965402933e71a257edcd",
-    "bytes": 864243
+    "sha256": "5bdf332e232dd8c53442114d5b7f16ec13227d2d2b59ea2460a3783d7520677f",
+    "bytes": 864223
   }
 }

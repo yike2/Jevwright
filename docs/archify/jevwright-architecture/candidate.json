@@ -111,7 +111,7 @@
     {
       "id": "executor",
       "type": "backend",
-      "label": "Step Executor",
+      "label": "Executor",
       "sublabel": "Opens/closes browser · runs Actions / Asserts · collects trace",
       "pos": [
         300,

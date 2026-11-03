@@ -32,7 +32,7 @@ The Browser Adapter owns the browser for one Run. It is the only module in Jevwr
 
 ### 1.3 Page Readiness
 
-At the start of every step the pipeline calls `ready()`, which waits for the `load` event of the current tab (`waitForLoadState("load")`). On a page that has already loaded, this returns at once. Inside a step, actions rely on Playwright's auto-waiting. `networkidle` is not used: pages with polling or WebSockets never reach it.
+At the start of every step the Executor calls `ready()`, which waits for the `load` event of the current tab (`waitForLoadState("load")`). On a page that has already loaded, this returns at once. Inside a step, actions rely on Playwright's auto-waiting. `networkidle` is not used: pages with polling or WebSockets never reach it.
 
 `ready()` also reports an Unexpected dialog that appeared between steps (see 1.7).
 
@@ -159,7 +159,7 @@ Every method except `close()` goes through the same handling. `ready()`, `perfor
 | The current tab was closed (except for `switchTab`) | `{ ok: false, reason: "The current tab was closed" }`, without calling Playwright |
 | `TimeoutError` | `{ ok: false, reason }`, naming what was awaited and the timeout; `isVisible` returns `{ ok: true, data: false }` instead |
 | Any other error while the browser is still connected (invalid selector, unknown key, navigation error) | `{ ok: false, reason }` with Playwright's first message line |
-| Any error after the browser disconnected or crashed, and any call made after that | Thrown; the pipeline treats it as an infrastructure failure |
+| Any error after the browser disconnected or crashed, and any call made after that | Thrown; the Executor closes the browser and rethrows it as an infrastructure failure |
 
 `close()` throws on any error, because the Run is over and only the trace is left to save.
 
@@ -181,7 +181,7 @@ Where the Adapter sits in one Run:
 
 ```mermaid
 flowchart LR
-  P[Pipeline] -->|launch / ready / perform / check / close| A[Browser Adapter]
+  X[Executor] -->|launch / ready / perform / check / close| A[Browser Adapter]
   L[Locator] -->|isVisible / screenshot / snapshot| A
   S[Assert] -->|check / screenshot| A
   A <-->|playwright| C[Chromium]
@@ -206,10 +206,10 @@ flowchart TD
 ```
 
 1. `launchBrowser()` starts Chromium, the context, and the trace, and opens the first tab.
-2. For each step, the pipeline calls `ready()`, then the Locator if the step is an element action, then `perform()` or `check()`.
+2. For each step, the Executor calls `ready()`, then the Locator if the step is an element action, then `perform()` or `check()`.
 3. `perform()` arms the Dialog response, runs the Playwright call, waits for an expected dialog, and disarms it.
 4. Any Unexpected dialog seen during the call turns the result into a failure.
-5. After the last step, or on the first failure or error, the pipeline calls `close()` and stores the trace.
+5. After the last step, or on the first failure or error, the Executor calls `close()` and returns the trace with the step results.
 
 ## 3. External Interface
 
@@ -235,7 +235,7 @@ interface BrowserAdapter {
 }
 ```
 
-`BrowserAdapter` is an interface so the Locator, Assert, and pipeline tests can pass a fake.
+`BrowserAdapter` is an interface so the Locator, Assert, and Executor tests can pass a fake.
 
 ### 3.2 Types
 
@@ -293,9 +293,9 @@ type PageSnapshot = {
 };
 ```
 
-### 3.3 How the Step Executor Calls the Adapter
+### 3.3 How the Executor Calls the Adapter
 
-The Step Executor in `executor/` maps each `Step` to one call with an exhaustive `switch`:
+The Executor in `executor/` maps each `Step` to one call with an exhaustive `switch`:
 
 | Step | Adapter call |
 | ---- | ------------ |

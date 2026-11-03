@@ -6,11 +6,11 @@
   "status": "pass",
   "visualReview": "not-requested",
   "provenance": "current",
-  "deliveryReceiptId": "1e5e62a7-ebe5-4c6e-b3f0-33e539a3a4b6",
+  "deliveryReceiptId": "53f7057b-778b-45d7-a396-884c9055aa6c",
   "artifact": {
     "path": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/index.html",
-    "sha256": "6cfcebeb6e82616e902697087026feee698ca652b0efcf15cc64bb2bf8a8446f",
-    "bytes": 871966
+    "sha256": "f0bcc62f2b6ecde71244e55337f3e159dd2b84744bbb38c6028fe12acfd85393",
+    "bytes": 871968
   },
   "state": {
     "detail": "read",
@@ -18,7 +18,7 @@
   },
   "chrome": {
     "status": "available",
-    "executable": "/tmp/claude-1001/-home-dev-workspace-6983-Jevwright/c4d492a9-c691-451c-8079-130b73804e15/scratchpad/chrome-nosandbox"
+    "executable": "/tmp/claude-1001/-home-dev-workspace-6983-Jevwright/12a34857-0683-4f8c-9cc9-c1050089f953/scratchpad/chrome"
   },
   "diagnostics": [],
   "containment": {
