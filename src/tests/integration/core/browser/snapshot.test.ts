@@ -17,7 +17,10 @@ describe("isVisible when nothing visible matches", () => {
     run(async (browser) => {
       await browser.perform({ action: "open", url: "/checks.html" });
 
+      const start = Date.now();
+
       expect(await browser.isVisible("#secret", 300)).toEqual({ ok: true, data: false });
+      expect(Date.now() - start).toBeLessThan(1500); // the step timeout is 2000ms
     }));
 
   it("fails with Playwright's reason when it rejects the selector", () =>
