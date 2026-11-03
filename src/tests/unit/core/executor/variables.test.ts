@@ -84,6 +84,14 @@ describe("createRedact", () => {
     expect(redact("Welcome s3cret, s3cret")).toBe("Welcome {{PASSWORD}}, {{PASSWORD}}");
   });
 
+  it("redacts Variables used in the baseUrl", () => {
+    const redact = createRedact({ ...testCase({ line: 1, action: "open", url: "/login" }), baseUrl: "{{BASE}}" }, vars);
+
+    expect(redact("net::ERR_NAME_NOT_RESOLVED at https://demo.test/login")).toBe(
+      "net::ERR_NAME_NOT_RESOLVED at {{BASE}}/login",
+    );
+  });
+
   it("replaces the longest value first when one value contains another", () => {
     const redact = createRedact(testCase({ line: 1, action: "assert", statement: "{{SHORT}} {{LONG}}" }), {
       SHORT: "abc",
