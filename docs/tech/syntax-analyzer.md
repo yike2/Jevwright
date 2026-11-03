@@ -238,10 +238,25 @@ type Diagnostic = {
 ### 3.2 TestCase
 
 ```ts
-type Locate = { selector?: string; target?: string };
+type LocateBySelector = { selector: string; target?: undefined };
+type LocateByTarget = { target: string; selector?: undefined };
+type LocateByBoth = { selector: string; target: string };
+type Locate = LocateBySelector | LocateByTarget | LocateByBoth;
 
 type DialogResponse = { accept: boolean; text?: string; message?: string };
 type Dialog = { dialog?: DialogResponse };
+
+type WaitForCondition = { action: "waitFor"; condition: string };
+type WaitForSelector = { action: "waitFor"; selector: string };
+type WaitForUrl = { action: "waitFor"; url: string };
+type WaitFor = WaitForCondition | WaitForSelector | WaitForUrl;
+
+type SelectorCheck = { selector: string; text?: string };
+type UrlCheck = { url: string };
+type AssertCheck = SelectorCheck | UrlCheck;
+type AssertWithCheck = { action: "assert"; check: AssertCheck; statement?: string };
+type AssertStatement = { action: "assert"; statement: string };
+type Assert = AssertWithCheck | AssertStatement;
 
 type Step = { line: number } & (
   | ({ action: "open"; url: string } & Dialog)
@@ -252,8 +267,8 @@ type Step = { line: number } & (
   | { action: "switchTab"; url: string }
   | ({ action: "click" | "doubleClick" | "rightClick" | "hover" } & Locate & Dialog)
   | ({ action: "input"; value: string } & Locate & Dialog)
-  | { action: "waitFor"; condition?: string; selector?: string; url?: string }
-  | { action: "assert"; statement?: string; selector?: string; text?: string; url?: string }
+  | WaitFor
+  | Assert
 );
 
 type TestCase = {
@@ -266,6 +281,8 @@ type TestCase = {
 ```
 
 `line` is the step's line number in the source file, used for errors and reports.
+
+Each combination of fields that 1.5 allows has its own named type, so a `switch` over them is exhaustive. In `assert`, the Playwright check (`selector` with optional `text`, or `url`) is grouped under `check`; the YAML keeps these fields flat.
 
 ### 3.3 Error Codes
 
