@@ -1,0 +1,7 @@
+name: "Prompt text on a dismissed dialog"
+steps:
+  - click:
+      target: "Rename button"
+      dialog:
+        accept: false
+        text: "Groceries"

@@ -1,0 +1,7 @@
+name: "Unknown dialog field"
+steps:
+  - click:
+      target: "Delete button"
+      dialog:
+        accept: true
+        answer: "yes"

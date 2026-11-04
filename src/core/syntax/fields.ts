@@ -1,4 +1,4 @@
-import { isAlias, isScalar, type Document, type LineCounter, type Node, type Pair, type Scalar, type YAMLMap } from "yaml";
+import { isAlias, isMap, isScalar, type Document, type LineCounter, type Node, type Pair, type Scalar, type YAMLMap } from "yaml";
 import type { Diagnostic } from "./types.js";
 
 // Largest delay Node timers and Playwright accept; anything above fires after 1 ms.
@@ -80,6 +80,24 @@ export class FieldReader {
   oneOf<T extends string>(key: string, values: readonly T[], required = false): T | undefined {
     const read = (s: Scalar) => values.find((v) => v === s.value);
     return this.value(key, required, read, `one of ${values.join(", ")}`);
+  }
+
+  /** Reads `true` or `false`. */
+  boolean(key: string, required = false): boolean | undefined {
+    const read = ({ value }: Scalar) => (typeof value === "boolean" ? value : undefined);
+    return this.value(key, required, read, "true or false");
+  }
+
+  /** A reader for a nested object field; undefined when the field is absent or not an object. */
+  object(key: string): FieldReader | undefined {
+    if (!this.has(key)) return undefined;
+    const node = this.get(key) as Node;
+    const map = this.resolve(node);
+    if (!isMap(map)) {
+      this.invalid(key, `"${key}" must be an object`);
+      return undefined;
+    }
+    return this.child(map, this.pair(key)!.key as Node, isAlias(node) ? node : this.alias);
   }
 
   /** The value node of `key`, matching aliased keys too; undefined when the field is absent. */

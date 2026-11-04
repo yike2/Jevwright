@@ -45,7 +45,7 @@ installing, check majors against this table and pin them. Don't upgrade a major 
 
 ```text
 src/
-├── core/            # engine, no HTTP/DB/UI: syntax/ jev/ browser/ locator/ playwright/ assert/ report/ pipeline/
+├── core/            # engine, no HTTP/DB/UI: syntax/ jev/ browser/ locator/ assert/ report/ pipeline/
 ├── cli/             # jevwright validate | run
 ├── app/frontend/    # Next.js: auth, sidebar, editor, dashboard, REST API, OpenAPI
 ├── app/backend/     # Express runner: queue, WebSocket progress; db/ = Prisma (shared)
@@ -58,6 +58,8 @@ docs/                # PRD.md, tech/ (TEMPLATE.md + one doc per module), referen
 
 - **Core is pure.** `core` never imports `frontend`, `backend`, `cli`, or `db`; it reports progress through
   an event callback and callers decide where events go.
+- **Playwright is imported only in `src/core/browser/`.** The Browser Adapter launches the browser and runs
+  every action, check, dialog, and tab switch; Locator, Assert, and pipeline call `BrowserAdapter`.
 - **Jev is called only from `src/core/jev/`.** The Harness owns the Jev types (`JevClient`, results) in
   `core/jev/types.ts`; Locator and Assert import them and never call OpenRouter.
 - **Locating order is fixed:** `selector` only → Playwright only; `target` only → Visual, then DOM Locate;
@@ -65,8 +67,9 @@ docs/                # PRD.md, tech/ (TEMPLATE.md + one doc per module), referen
 - **Assertions:** Playwright first; if it fails and `statement` exists, Jev judges it (fallback pass).
 - **Never rewrite or "self-heal" a user's test file.** The Syntax Analyzer returns *every* diagnostic.
 - **The pipeline stops on the first failed step** and still writes a complete report.
-- **Adding an action:** parser in `core/syntax/steps.ts` + map entry, executor in `playwright/`, valid +
-  invalid fixtures, and an update to `syntax-analyzer.md`.
+- **Adding an action:** parser in `core/syntax/steps.ts` + map entry, a `BrowserAction` variant and its
+  function in `core/browser/actions.ts`, valid + invalid fixtures, and updates to `syntax-analyzer.md` and
+  `browser-adapter.md`.
 
 ### 3.2 External Calls and Model Output
 
@@ -90,7 +93,7 @@ docs/                # PRD.md, tech/ (TEMPLATE.md + one doc per module), referen
 - Small single-purpose modules matching the module table in each design doc.
 - **KISS and YAGNI:** the simplest design that meets the issue and its design doc; no options, layers,
   or extension points for needs that don't exist yet. Exception: interfaces a design doc defines, or
-  that exist for dependency injection and test fakes (e.g. `JevClient`, `BrowserDriver`).
+  that exist for dependency injection and test fakes (e.g. `JevClient`, `BrowserAdapter`).
 - Return typed results for expected failures; throw only for programmer or infrastructure errors.
   Never swallow errors.
 - Everything is in English. Comments explain *why*. Public `core` functions get a one-line TSDoc.

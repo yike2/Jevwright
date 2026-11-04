@@ -1,0 +1,70 @@
+{
+  "name": "Dialogs",
+  "timeoutMs": 15000,
+  "steps": [
+    {
+      "line": 3,
+      "action": "click",
+      "target": "Delete button",
+      "dialog": {
+        "accept": true,
+        "message": "Delete this task?"
+      }
+    },
+    {
+      "line": 8,
+      "action": "click",
+      "selector": "#rename",
+      "dialog": {
+        "accept": true,
+        "text": ""
+      }
+    },
+    {
+      "line": 13,
+      "action": "input",
+      "selector": "#title",
+      "value": "x",
+      "dialog": {
+        "accept": false
+      }
+    },
+    {
+      "line": 18,
+      "action": "open",
+      "url": "https://demo.example.com/welcome",
+      "dialog": {
+        "accept": true
+      }
+    },
+    {
+      "line": 22,
+      "action": "press",
+      "key": "Delete",
+      "dialog": {
+        "accept": true
+      }
+    },
+    {
+      "line": 26,
+      "action": "reload",
+      "dialog": {
+        "accept": false
+      }
+    },
+    {
+      "line": 29,
+      "action": "back",
+      "dialog": {
+        "accept": true
+      }
+    },
+    {
+      "line": 32,
+      "action": "forward",
+      "dialog": {
+        "accept": true
+      }
+    }
+  ]
+}

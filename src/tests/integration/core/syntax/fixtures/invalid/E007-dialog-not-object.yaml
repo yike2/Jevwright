@@ -1,0 +1,5 @@
+name: "Dialog is not an object"
+steps:
+  - click:
+      target: "Delete button"
+      dialog: accept

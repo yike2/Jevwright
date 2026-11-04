@@ -1,0 +1,9 @@
+{
+  "name": "Switch tabs",
+  "baseUrl": "https://demo.example.com",
+  "timeoutMs": 15000,
+  "steps": [
+    { "line": 4, "action": "switchTab", "url": "**/help" },
+    { "line": 6, "action": "switchTab", "url": "/board" }
+  ]
+}

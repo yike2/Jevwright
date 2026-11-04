@@ -48,7 +48,7 @@
     {
       "id": "driver",
       "type": "cloud",
-      "label": "Browser Driver",
+      "label": "Browser Adapter",
       "sublabel": "Playwright"
     },
     {
@@ -311,7 +311,7 @@
       "y": 1546,
       "label": "not found",
       "variant": "return",
-      "note": "Or driver returns error / timeout on the action"
+      "note": "Or the adapter returns a timeout on the action"
     },
     {
       "id": "m26",

@@ -1,0 +1,8 @@
+name: "Relative glob without baseUrl"
+steps:
+  - switchTab:
+      url: "/board/*"
+  - waitFor:
+      url: "**/board/*"
+  - assert:
+      url: "/board/*?tab=*"

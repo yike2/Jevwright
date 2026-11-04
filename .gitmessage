@@ -3,6 +3,6 @@
 # <description>           (optional: what changed and why)
 #
 # type:  feat | fix | docs | test | refactor | chore | ci
-# scope: core, syntax, jev, locator, assert, playwright, cli,
+# scope: core, syntax, jev, locator, assert, browser, cli,
 #        backend, frontend, db, benchmark
 # e.g.   feat(locator): fall back to DOM locate on low confidence (#42)

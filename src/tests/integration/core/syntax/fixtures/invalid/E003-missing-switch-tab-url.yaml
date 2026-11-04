@@ -1,0 +1,3 @@
+name: "Tab without URL"
+steps:
+  - switchTab: {}

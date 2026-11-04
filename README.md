@@ -9,6 +9,7 @@ Requirements: Node.js 22+ and pnpm (`npm install -g pnpm`).
 git clone https://github.com/yike2/Jevwright.git
 cd Jevwright
 pnpm install
+pnpm exec playwright install --with-deps chromium   # browser for runs and tests; system libraries need sudo
 ```
 
 `pnpm install` also sets up the git commit template, the commit-msg hook, and nano (wrapping at 72 chars) as the commit editor (see below). These settings apply to this repository only.
