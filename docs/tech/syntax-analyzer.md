@@ -238,10 +238,25 @@ type Diagnostic = {
 ### 3.2 TestCase
 
 ```ts
-type Locate = { selector?: string; target?: string };
+type LocateBySelector = { selector: string; target?: undefined };
+type LocateByTarget = { target: string; selector?: undefined };
+type LocateByBoth = { selector: string; target: string };
+type Locate = LocateBySelector | LocateByTarget | LocateByBoth;
 
 type DialogResponse = { accept: boolean; text?: string; message?: string };
 type Dialog = { dialog?: DialogResponse };
+
+type WaitForCondition = { action: "waitFor"; condition: string };
+type WaitForSelector = { action: "waitFor"; selector: string };
+type WaitForUrl = { action: "waitFor"; url: string };
+type WaitFor = WaitForCondition | WaitForSelector | WaitForUrl;
+
+type SelectorCheck = { selector: string; text?: string };
+type UrlCheck = { url: string };
+type AssertCheck = SelectorCheck | UrlCheck;
+type AssertWithCheck = { action: "assert"; check: AssertCheck; statement?: string };
+type AssertStatement = { action: "assert"; statement: string };
+type Assert = AssertWithCheck | AssertStatement;
 
 type Step = { line: number } & (
   | ({ action: "open"; url: string } & Dialog)
@@ -252,8 +267,8 @@ type Step = { line: number } & (
   | { action: "switchTab"; url: string }
   | ({ action: "click" | "doubleClick" | "rightClick" | "hover" } & Locate & Dialog)
   | ({ action: "input"; value: string } & Locate & Dialog)
-  | { action: "waitFor"; condition?: string; selector?: string; url?: string }
-  | { action: "assert"; statement?: string; selector?: string; text?: string; url?: string }
+  | WaitFor
+  | Assert
 );
 
 type TestCase = {
@@ -267,6 +282,8 @@ type TestCase = {
 
 `line` is the step's line number in the source file, used for errors and reports.
 
+Each combination of fields that 1.5 allows has its own named type, so a `switch` over them is exhaustive. In `assert`, the Playwright check (`selector` with optional `text`, or `url`) is grouped under `check`; the YAML keeps these fields flat.
+
 ### 3.3 Error Codes
 
 | Code   | Meaning | Reported at |
@@ -277,7 +294,7 @@ type TestCase = {
 | `E004` | Unknown field | The field's key |
 | `E005` | Unknown action | The action's key |
 | `E006` | Invalid step: not an object, has zero or multiple actions, or its parameters are not an object | The step node |
-| `E007` | Wrong type or invalid value | The field's value |
+| `E007` | Wrong type or invalid value | The field's value, or its key when the value is empty (`key:` or `? key`) |
 | `E008` | Invalid field combination, i.e. violates an "at least one" or "exactly one" rule in 1.5, or `text` without `accept: true` | The key of the enclosing object |
 
 ### 3.4 CLI Output

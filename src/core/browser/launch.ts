@@ -7,7 +7,7 @@ import { runAction } from "./actions.js";
 import { runCheck } from "./checks.js";
 import { DIALOG_MIN_WAIT_MS, VIEWPORT } from "./constants.js";
 import { DialogGuard } from "./dialogs.js";
-import { failureReason } from "./errors.js";
+import { failureReason, withCleanup } from "./errors.js";
 import { takeSnapshot } from "./snapshot.js";
 import { Tabs } from "./tabs.js";
 import type {
@@ -65,7 +65,8 @@ class PlaywrightAdapter implements BrowserAdapter {
   isVisible(selector: string, timeoutMs: number): Promise<ReadResult<boolean>> {
     return this.read(async () => {
       try {
-        await this.page.locator(selector).first().waitFor({ state: "visible", timeout: timeoutMs });
+        // Playwright reads 0 as no timeout, so a caller with no time left would wait forever.
+        await this.page.locator(selector).first().waitFor({ state: "visible", timeout: Math.max(1, timeoutMs) });
         return true;
       } catch (error) {
         if (error instanceof errors.TimeoutError) return false;
@@ -104,8 +105,8 @@ class PlaywrightAdapter implements BrowserAdapter {
   }
 
   // Adds the dialogs answered since the last result; an unexpected one fails it.
-  private result(reason: string | undefined): BrowserResult {
-    const { dialogs, failure } = this.dialogs.take();
+  private async result(reason: string | undefined): Promise<BrowserResult> {
+    const { dialogs, failure } = await this.dialogs.take();
     const failed = reason ?? failure;
     return failed === undefined ? { ok: true, dialogs } : { ok: false, reason: failed, dialogs };
   }
@@ -142,13 +143,16 @@ class PlaywrightAdapter implements BrowserAdapter {
   async close(): Promise<Buffer> {
     // Playwright writes the trace only to a file, so it goes through a temporary directory.
     const dir = await mkdtemp(join(tmpdir(), "jevwright-trace-"));
-    try {
-      const path = join(dir, "trace.zip");
-      await this.context.tracing.stop({ path });
-      return await readFile(path);
-    } finally {
-      await this.browser.close();
-      await rm(dir, { recursive: true, force: true });
-    }
+    const path = join(dir, "trace.zip");
+    return withCleanup(
+      async () => {
+        await this.context.tracing.stop({ path });
+        return readFile(path);
+      },
+      async () => {
+        await this.browser.close();
+        await rm(dir, { recursive: true, force: true });
+      },
+    );
   }
 }

@@ -4,6 +4,6 @@
   "steps": [
     { "line": 3, "action": "open", "url": "{{BASE_URL}}/login" },
     { "line": 5, "action": "waitFor", "url": "**/dashboard" },
-    { "line": 7, "action": "assert", "url": "**/dashboard?tab=*" }
+    { "line": 7, "action": "assert", "check": { "url": "**/dashboard?tab=*" } }
   ]
 }

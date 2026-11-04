@@ -32,7 +32,7 @@ The Browser Adapter owns the browser for one Run. It is the only module in Jevwr
 
 ### 1.3 Page Readiness
 
-At the start of every step the pipeline calls `ready()`, which waits for the `load` event of the current tab (`waitForLoadState("load")`). On a page that has already loaded, this returns at once. Inside a step, actions rely on Playwright's auto-waiting. `networkidle` is not used: pages with polling or WebSockets never reach it.
+At the start of every step the Executor calls `ready()`, which waits for the `load` event of the current tab (`waitForLoadState("load")`). On a page that has already loaded, this returns at once. Inside a step, actions rely on Playwright's auto-waiting. `networkidle` is not used: pages with polling or WebSockets never reach it.
 
 `ready()` also reports an Unexpected dialog that appeared between steps (see 1.7).
 
@@ -46,7 +46,7 @@ At the start of every step the pipeline calls `ready()`, which waits for the `lo
 
 Each method returns a `ReadResult`: `{ ok: true, data }`, or `{ ok: false, reason }` under the same error rules as every other method (1.10), for example when the current tab was closed or Playwright rejects the selector. A read is not a step, so it leaves the answered dialogs for the result of the step's `ready()`, `perform()`, or `check()`.
 
-`isVisible` takes its own timeout because the Locator probes a selector with a shorter timeout than the step's.
+`isVisible` takes its own timeout because the Locator probes a selector with a shorter timeout than the step's. A timeout of `0` or less reads once without waiting, since Playwright treats `0` as no timeout.
 
 ### 1.5 Page Snapshot
 
@@ -64,11 +64,11 @@ Each element is described by:
 | `id` | Snapshot id |
 | `tag` | Lowercase tag name |
 | `role` | Explicit `role`, otherwise the implicit role of the tag (`a` → `link`, `input[type=checkbox]` → `checkbox`, `input[type=search]` → `searchbox`, other text inputs and `textarea` → `textbox`, `select` → `combobox`, ...) |
-| `name` | Accessible name: `aria-label`, then `aria-labelledby` text, then `<label>` text, then visible text (a `submit`, `button`, or `reset` input's value), `title`, or `placeholder` |
+| `name` | Accessible name: `aria-label`, then `aria-labelledby` text, then `<label>` text, then visible text (a `submit`, `button`, or `reset` input's value; a `select`'s selected option), `title`, or `placeholder` |
 | `text` | Visible text with whitespace collapsed; omitted when empty or equal to `name` |
 | `attrs` | `type`, `placeholder`, `href`, `aria-checked`, `aria-selected`, `aria-current`, `aria-invalid` when present; `value` of a field when non-empty (not of checkboxes, radios, or button inputs); `checked` for checkboxes and radios; `disabled: true` when disabled |
 | `bbox` | `{ x, y, width, height }` in CSS pixels relative to the viewport, rounded |
-| `hittable` | `true` when `elementFromPoint` at the box center is the element, a descendant, or a `<label>` whose control is the element; `false` when something covers it (e.g. a modal backdrop) |
+| `hittable` | `true` when `elementFromPoint` at the center of the box's part inside the viewport is the element, a descendant, or a `<label>` whose control is the element; `false` when something covers it (e.g. a modal backdrop) |
 
 Only the viewport is captured, matching the viewport screenshot. To reach an element below the fold, the test scrolls first.
 
@@ -132,7 +132,7 @@ If the page closes the current tab, every following step fails with the reason `
 
 URL patterns, used by `switchTab` and the `url` check (1.9) through one matcher in `url-match.ts`, so a pattern matches the same URLs in both:
 
-- A pattern containing `*` is a glob: `*` matches any characters except `/`, `**` matches any characters. It is resolved against `baseUrl` first unless it starts with `*`.
+- A pattern containing `*` is a glob: `*` matches any characters except `/`, `**` matches any characters. Unless it starts with `*`, it goes through `new URL(pattern, baseUrl)` first, which resolves a relative glob and normalizes an absolute one the way the browser writes URLs (lowercase host, encoded spaces), with or without a `baseUrl`.
 - Any other pattern is resolved against `baseUrl` and compared exactly.
 - No other character is special: `?`, `{`, `}`, `[`, and `]` match themselves.
 
@@ -143,7 +143,7 @@ URL patterns, used by `switchTab` and the `url` check (1.9) through one matcher 
 | Check | Implementation | Passes when |
 | ----- | -------------- | ----------- |
 | `visible` | `page.locator(selector).first().waitFor({ state: "visible" })` | The first match is visible |
-| `text` | Poll every `TEXT_POLL_MS`: `textContent()` of the first match, whitespace collapsed. On failure the reason quotes the last text read, even if the element disappeared afterwards | It contains `text` (case-sensitive) |
+| `text` | Poll every `TEXT_POLL_MS`: `textContent()` of the first match; whitespace is collapsed in it and in `text`. On failure the reason quotes the last text read, even if the element disappeared afterwards | It contains `text` (case-sensitive) |
 | `url` | `page.waitForURL()` with a predicate that applies the URL pattern rules (1.8) | The URL matches |
 
 If several elements match `selector`, the first one is used; this is not an error.
@@ -159,9 +159,9 @@ Every method except `close()` goes through the same handling. `ready()`, `perfor
 | The current tab was closed (except for `switchTab`) | `{ ok: false, reason: "The current tab was closed" }`, without calling Playwright |
 | `TimeoutError` | `{ ok: false, reason }`, naming what was awaited and the timeout; `isVisible` returns `{ ok: true, data: false }` instead |
 | Any other error while the browser is still connected (invalid selector, unknown key, navigation error) | `{ ok: false, reason }` with Playwright's first message line |
-| Any error after the browser disconnected or crashed, and any call made after that | Thrown; the pipeline treats it as an infrastructure failure |
+| Any error after the browser disconnected or crashed, and any call made after that | Thrown; the Executor closes the browser and rethrows it as an infrastructure failure |
 
-`close()` throws on any error, because the Run is over and only the trace is left to save.
+`close()` throws on any error, because the Run is over and only the trace is left to save. When stopping the trace fails and closing the browser fails after it, both are thrown together as an `AggregateError` whose message is the first error, so the real cause is not hidden.
 
 ### 1.11 Constants
 
@@ -181,7 +181,7 @@ Where the Adapter sits in one Run:
 
 ```mermaid
 flowchart LR
-  P[Pipeline] -->|launch / ready / perform / check / close| A[Browser Adapter]
+  X[Executor] -->|launch / ready / perform / check / close| A[Browser Adapter]
   L[Locator] -->|isVisible / screenshot / snapshot| A
   S[Assert] -->|check / screenshot| A
   A <-->|playwright| C[Chromium]
@@ -206,10 +206,10 @@ flowchart TD
 ```
 
 1. `launchBrowser()` starts Chromium, the context, and the trace, and opens the first tab.
-2. For each step, the pipeline calls `ready()`, then the Locator if the step is an element action, then `perform()` or `check()`.
+2. For each step, the Executor calls `ready()`, then the Locator if the step is an element action, then `perform()` or `check()`.
 3. `perform()` arms the Dialog response, runs the Playwright call, waits for an expected dialog, and disarms it.
 4. Any Unexpected dialog seen during the call turns the result into a failure.
-5. After the last step, or on the first failure or error, the pipeline calls `close()` and stores the trace.
+5. After the last step, or on the first failure or error, the Executor calls `close()` and returns the trace with the step results.
 
 ## 3. External Interface
 
@@ -235,7 +235,7 @@ interface BrowserAdapter {
 }
 ```
 
-`BrowserAdapter` is an interface so the Locator, Assert, and pipeline tests can pass a fake.
+`BrowserAdapter` is an interface so the Locator, Assert, and Executor tests can pass a fake.
 
 ### 3.2 Types
 
@@ -293,9 +293,9 @@ type PageSnapshot = {
 };
 ```
 
-### 3.3 How the Pipeline Calls the Adapter
+### 3.3 How the Executor Calls the Adapter
 
-The Step Executor in `pipeline/` maps each `Step` to one call with an exhaustive `switch`:
+The Executor in `executor/` maps each `Step` to one call with an exhaustive `switch`:
 
 | Step | Adapter call |
 | ---- | ------------ |

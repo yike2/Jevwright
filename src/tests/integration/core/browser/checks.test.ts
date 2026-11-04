@@ -64,6 +64,15 @@ describe("check text", () => {
       expect(result).toEqual({ ok: true, dialogs: [] });
     }));
 
+  it("collapses whitespace in the expected text too, like toContainText", () =>
+    run(async (browser) => {
+      await browser.perform({ action: "open", url: "/checks.html" });
+
+      const result = await browser.check({ check: "text", selector: "#welcome", text: " Welcome  back,\n Ada " });
+
+      expect(result).toEqual({ ok: true, dialogs: [] });
+    }));
+
   it("fails when the text never appears", () =>
     run(async (browser) => {
       await browser.perform({ action: "open", url: "/checks.html" });

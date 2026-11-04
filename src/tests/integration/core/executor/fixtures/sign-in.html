@@ -1,0 +1,14 @@
+<!doctype html>
+<title>Sign in</title>
+<label>Email <input id="email" /></label>
+<button id="go">Sign in</button>
+<p id="welcome" hidden></p>
+<a id="help" href="/help.html" target="_blank">Help</a>
+<script>
+  document.getElementById("go").addEventListener("click", () => {
+    alert("Signed in");
+    const welcome = document.getElementById("welcome");
+    welcome.textContent = `Welcome ${document.getElementById("email").value}`;
+    welcome.hidden = false;
+  });
+</script>

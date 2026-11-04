@@ -32,6 +32,7 @@ describe("analyze", () => {
   });
 
   it.each(load("invalid"))("rejects invalid/$file with the expected diagnostics", ({ source, expected }) => {
+    expect(() => analyze(source)).not.toThrow();
     const { testCase, diagnostics } = analyze(source);
 
     expect(testCase).toBeUndefined();

@@ -1,0 +1,5 @@
+name: "Dialog field without value"
+steps:
+  - click:
+      selector: "#go"
+      dialog: { accept }

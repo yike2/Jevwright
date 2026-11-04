@@ -1,5 +1,5 @@
 import type { FieldReader } from "./fields.js";
-import type { DialogResponse, Locate, StepBody } from "./types.js";
+import type { AssertCheck, DialogResponse, Locate, StepBody } from "./types.js";
 
 type Action = StepBody["action"];
 type Parse = (fields: FieldReader, hasBaseUrl: boolean) => StepBody | undefined;
@@ -27,7 +27,9 @@ function locate(fields: FieldReader): Locate | undefined {
   }
   const selector = fields.string("selector");
   const target = fields.string("target");
-  return selector === undefined && target === undefined ? undefined : { selector, target };
+  if (selector !== undefined && target !== undefined) return { selector, target };
+  if (selector !== undefined) return { selector };
+  return target === undefined ? undefined : { target };
 }
 
 // Returns undefined when the step has no "dialog" or it is invalid.
@@ -40,6 +42,11 @@ function dialog(fields: FieldReader): DialogResponse | undefined {
   if (text !== undefined && accept === false) response.report("E008", '"text" needs "accept: true"');
   response.reportUnknown();
   return accept === undefined ? undefined : { accept, text, message };
+}
+
+function assertCheck(selector?: string, text?: string, url?: string): AssertCheck | undefined {
+  if (selector !== undefined) return { selector, text };
+  return url === undefined ? undefined : { url };
 }
 
 const element =
@@ -95,7 +102,9 @@ const parsers = {
     const condition = f.string("condition");
     const selector = f.string("selector");
     const url = readUrl(f, hasBaseUrl, false, true);
-    return { action: "waitFor", condition, selector, url };
+    if (condition !== undefined) return { action: "waitFor", condition };
+    if (selector !== undefined) return { action: "waitFor", selector };
+    return url === undefined ? undefined : { action: "waitFor", url };
   },
   assert: (f, hasBaseUrl) => {
     const selector = f.has("selector");
@@ -107,13 +116,10 @@ const parsers = {
     } else if (!selector && !url && !f.has("statement")) {
       f.report("E008", 'Needs "statement" or a check: "selector" (optionally with "text") or "url"');
     }
-    return {
-      action: "assert",
-      statement: f.string("statement"),
-      selector: f.string("selector"),
-      text: f.string("text"),
-      url: readUrl(f, hasBaseUrl, false, true),
-    };
+    const statement = f.string("statement");
+    const check = assertCheck(f.string("selector"), f.string("text"), readUrl(f, hasBaseUrl, false, true));
+    if (check) return { action: "assert", check, statement };
+    return statement === undefined ? undefined : { action: "assert", statement };
   },
 } satisfies Record<Action, Parse>;
 

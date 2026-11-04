@@ -1,0 +1,4 @@
+name: "Key without value on its own line"
+steps:
+  - click:
+      ? selector

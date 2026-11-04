@@ -6,14 +6,14 @@ import { fileURLToPath } from "node:url";
 
 const FIXTURES = fileURLToPath(new URL("./fixtures/", import.meta.url));
 
-/** Serves the HTML fixtures on a free local port; returns its base URL and a stop function. */
-export async function serveFixtures(): Promise<{ baseUrl: string; stop: () => Promise<void> }> {
+/** Serves the HTML fixtures in `dir` on a free local port; returns its base URL and a stop function. */
+export async function serveFixtures(dir = FIXTURES): Promise<{ baseUrl: string; stop: () => Promise<void> }> {
   const server: Server = createServer(async (req, res) => {
     const { pathname } = new URL(req.url ?? "/", "http://x");
     // Holds back the page's load event, for readiness tests.
     if (pathname === "/slow-resource") return void setTimeout(() => res.writeHead(200).end(), 800);
-    const file = normalize(join(FIXTURES, pathname));
-    if (!file.startsWith(FIXTURES)) return void res.writeHead(403).end();
+    const file = normalize(join(dir, pathname));
+    if (!file.startsWith(dir)) return void res.writeHead(403).end();
     try {
       res.writeHead(200, { "content-type": "text/html; charset=utf-8" }).end(await readFile(file));
     } catch {

@@ -50,3 +50,10 @@ describe("matchesUrl with a glob starting with *", () => {
     expect(matchesUrl("https://help.example.com/help", "**/help", "https://demo.example.com")).toBe(true);
   });
 });
+
+describe("matchesUrl with an absolute glob and no baseUrl", () => {
+  it("normalizes the glob like the browser's URL, as it does with a baseUrl", () => {
+    expect(matchesUrl("https://example.com/x", "https://Example.com/*")).toBe(true);
+    expect(matchesUrl("https://h.test/a%20b/x", "https://h.test/a b/*")).toBe(true);
+  });
+});

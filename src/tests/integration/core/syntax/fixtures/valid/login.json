@@ -9,7 +9,7 @@
     { "line": 10, "action": "input", "target": "Password input field", "value": "{{TEST_PASSWORD}}" },
     { "line": 13, "action": "click", "selector": "button[type=submit]", "target": "Sign in button" },
     { "line": 16, "action": "waitFor", "url": "/dashboard" },
-    { "line": 18, "action": "assert", "selector": "h1", "text": "Welcome" },
+    { "line": 18, "action": "assert", "check": { "selector": "h1", "text": "Welcome" } },
     { "line": 21, "action": "assert", "statement": "The navigation bar shows the logged-in account" }
   ]
 }

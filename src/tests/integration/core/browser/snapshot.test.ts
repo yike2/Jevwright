@@ -1,3 +1,4 @@
+import { setTimeout as sleep } from "node:timers/promises";
 import { describe, expect, it } from "vitest";
 import { data, useBrowser } from "./harness.js";
 
@@ -21,6 +22,15 @@ describe("isVisible when nothing visible matches", () => {
 
       expect(await browser.isVisible("#secret", 300)).toEqual({ ok: true, data: false });
       expect(Date.now() - start).toBeLessThan(1500); // the step timeout is 2000ms
+    }));
+
+  it("reads false at once for a timeout of 0, which Playwright would treat as no timeout", () =>
+    run(async (browser) => {
+      await browser.perform({ action: "open", url: "/checks.html" });
+
+      const read = await Promise.race([browser.isVisible("#secret", 0), sleep(1500).then(() => "still waiting")]);
+
+      expect(read).toEqual({ ok: true, data: false });
     }));
 
   it("fails with Playwright's reason when it rejects the selector", () =>
@@ -111,6 +121,18 @@ describe("snapshot names", () => {
     }));
 });
 
+describe("snapshot of a select without a label", () => {
+  it("names it by its selected option, not by every option", () =>
+    run(async (browser) => {
+      await browser.perform({ action: "open", url: "/select.html" });
+
+      const { elements } = data(await browser.snapshot());
+
+      expect(elements).toMatchObject([{ tag: "select", role: "combobox", name: "Bravo" }]);
+      expect(elements[0]).not.toHaveProperty("text");
+    }));
+});
+
 describe("snapshot text and attrs", () => {
   it("adds text only when it differs from the name, and the state attributes", () =>
     run(async (browser) => {
@@ -146,6 +168,8 @@ describe("snapshot hittable", () => {
         ["Open", true],
         ["Covered", false],
         ["Remember me", true],
+        ["Tall", true], // its center is below the viewport, but its visible part can be clicked
+        ["Wide", true], // the same past the right edge
       ]);
     }));
 });

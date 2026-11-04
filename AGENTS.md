@@ -45,7 +45,7 @@ installing, check majors against this table and pin them. Don't upgrade a major 
 
 ```text
 src/
-├── core/            # engine, no HTTP/DB/UI: syntax/ jev/ browser/ locator/ assert/ report/ pipeline/
+├── core/            # engine, no HTTP/DB/UI: syntax/ jev/ browser/ locator/ assert/ executor/ report/ pipeline/
 ├── cli/             # jevwright validate | run
 ├── app/frontend/    # Next.js: auth, sidebar, editor, dashboard, REST API, OpenAPI
 ├── app/backend/     # Express runner: queue, WebSocket progress; db/ = Prisma (shared)
@@ -66,7 +66,7 @@ docs/                # PRD.md, tech/ (TEMPLATE.md + one doc per module), referen
   both → `selector` first, Jev on no match. Record the method that succeeded.
 - **Assertions:** Playwright first; if it fails and `statement` exists, Jev judges it (fallback pass).
 - **Never rewrite or "self-heal" a user's test file.** The Syntax Analyzer returns *every* diagnostic.
-- **The pipeline stops on the first failed step** and still writes a complete report.
+- **The Executor stops on the first failed step**; the pipeline still writes a complete report.
 - **Adding an action:** parser in `core/syntax/steps.ts` + map entry, a `BrowserAction` variant and its
   function in `core/browser/actions.ts`, valid + invalid fixtures, and updates to `syntax-analyzer.md` and
   `browser-adapter.md`.

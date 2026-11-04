@@ -30,8 +30,8 @@
     {
       "id": "executor",
       "type": "backend",
-      "label": "Step Executor",
-      "sublabel": "runs steps"
+      "label": "Executor",
+      "sublabel": "runs a TestCase"
     },
     {
       "id": "locator",
@@ -336,7 +336,7 @@
       "y": 1718,
       "label": "onEvent(step1 failed)",
       "variant": "dashed",
-      "note": "Remaining steps are skipped; go to Finish"
+      "note": "Remaining steps stay pending; go to Finish"
     },
     {
       "id": "m29",
@@ -459,7 +459,7 @@
       "y": 2550,
       "label": "onEvent(step2 failed)",
       "variant": "dashed",
-      "note": "Remaining steps are skipped; go to Finish"
+      "note": "Remaining steps stay pending; go to Finish"
     },
     {
       "id": "m44",
