@@ -1,0 +1,4 @@
+name: "Relative URL without baseUrl"
+steps:
+  - open:
+      url: "/login"

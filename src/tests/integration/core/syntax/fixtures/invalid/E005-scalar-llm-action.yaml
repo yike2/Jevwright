@@ -1,0 +1,5 @@
+name: "LLM planning without parameters"
+steps:
+  - aiAct: "Log in as the test user"
+  - ai:
+  - aiAct

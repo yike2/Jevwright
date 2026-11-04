@@ -19,6 +19,8 @@ This document describes what the product must do and how users interact with it.
 | 0.3     | 2026-10-29 | Zhimin Gan          | Moved syntax technical details to the Syntax Analyzer technical design |
 | 0.3.1   | 2026-10-29 | Zhimin Gan          | Linked the interactive UI prototype |
 | 0.3.2   | 2026-10-30 | Zhimin Gan          | Linked the architecture and run sequence diagrams; moved the UI prototype link to GitHub Pages |
+| 0.3.3   | 2026-11-02 | Zhimin Gan          | Validation errors report file and line only, no column |
+| 0.3.4   | 2026-11-02 | Zhimin Gan          | Removed the indentation rules from the YAML syntax definition |
 
 ### 1.4 Key Concepts
 
@@ -171,7 +173,7 @@ The modules below and how they connect are shown in the architecture diagram ([o
 The Core Module is the shared execution engine used by both the local CLI and the Backend. It parses a `.yaml` Test Case, launches a browser instance, uses the Jev Harness for element locating and assertions, and produces a test report.
 
 #### 5.1.1 Test File Format and Syntax Analyzer
-- **YAML Syntax Definition**: Define a clear `.yaml` format for Test Cases, specifying the meaning of each key-value pair and the indentation rules.
+- **YAML Syntax Definition**: Define a clear `.yaml` format for Test Cases, specifying the meaning of each key-value pair.
 - **Syntax & Validity Check**: Validate `.yaml` files before execution and return clear, line-numbered error messages when a file is invalid.
 
 #### 5.1.2 Jev Harness
@@ -361,8 +363,8 @@ The local CLI (`jevwright`) provides two primary commands for local development,
 - **Expected Output & Exit Codes**:
   ```text
   $ jevwright validate ./tests/broken.yaml
-  ✖ ./tests/broken.yaml:12:5 — Error: Unknown action "aiAct"
-  ✖ ./tests/broken.yaml:18:3 — Error: Step must contain exactly one action, found "click" and "input"
+  ✖ ./tests/broken.yaml:12 — Error: Unknown action "aiAct"
+  ✖ ./tests/broken.yaml:18 — Error: Step must contain exactly one action, found "click" and "input"
   Validation FAILED (2 errors).
   ```
   Error codes and messages are defined in the [Syntax Analyzer technical design](tech/syntax-analyzer.md).

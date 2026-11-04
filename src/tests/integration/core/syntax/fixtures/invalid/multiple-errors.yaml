@@ -1,0 +1,10 @@
+name: ""
+timeoutMs: -1
+steps:
+  - open:
+      url: "https://demo.example.com/login"
+  - aiTap:
+      target: "Sign in"
+  - scroll:
+      direction: sideways
+      distance: 100

@@ -1,0 +1,14 @@
+name: "Wait and assert"
+steps:
+  - waitFor:
+      condition: "The loading spinner has disappeared"
+  - waitFor:
+      selector: ".results"
+  - assert:
+      url: "https://demo.example.com/results"
+  - assert:
+      selector: ".results"
+  - assert:
+      selector: ".welcome-banner"
+      text: "Welcome"
+      statement: "A welcome banner is shown at the top of the page"

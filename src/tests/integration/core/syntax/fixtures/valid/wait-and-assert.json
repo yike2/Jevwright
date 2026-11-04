@@ -1,0 +1,11 @@
+{
+  "name": "Wait and assert",
+  "timeoutMs": 15000,
+  "steps": [
+    { "line": 3, "action": "waitFor", "condition": "The loading spinner has disappeared" },
+    { "line": 5, "action": "waitFor", "selector": ".results" },
+    { "line": 7, "action": "assert", "url": "https://demo.example.com/results" },
+    { "line": 9, "action": "assert", "selector": ".results" },
+    { "line": 11, "action": "assert", "selector": ".welcome-banner", "text": "Welcome", "statement": "A welcome banner is shown at the top of the page" }
+  ]
+}

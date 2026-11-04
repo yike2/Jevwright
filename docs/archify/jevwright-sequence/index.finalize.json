@@ -5,16 +5,16 @@
   "status": "skipped",
   "type": "sequence",
   "quality": "showcase",
-  "startedAt": "2026-10-29T05:01:46.089Z",
+  "startedAt": "2026-11-02T17:44:36.018Z",
   "specification": {
     "path": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/candidate.json",
-    "sha256": "b5ac99a0eb0c16a96163667c58acc0171e3cac3bb11f203c5fbf2222a87705eb",
-    "bytes": 11544
+    "sha256": "b0b85c06584c9580c35d53e08ffcb508fbb0a6625ca3566b82a91f9863cbdcef",
+    "bytes": 11540
   },
   "artifact": {
     "path": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/index.html",
-    "sha256": "3b393e0b2ddb87d33b963c22c9522cad24cda436c6c61e7fbe95dbc3b911977b",
-    "bytes": 873251
+    "sha256": "940b2386850515816b53d88cb4359ad57b691d7e9e0d4e7ccc38a293482cf827",
+    "bytes": 873248
   },
   "stages": {
     "validate": {
@@ -38,8 +38,8 @@
         "ok": true,
         "command": "validate",
         "specification": {
-          "sha256": "b5ac99a0eb0c16a96163667c58acc0171e3cac3bb11f203c5fbf2222a87705eb",
-          "bytes": 11544
+          "sha256": "b0b85c06584c9580c35d53e08ffcb508fbb0a6625ca3566b82a91f9863cbdcef",
+          "bytes": 11540
         },
         "validation": {
           "checksPassed": 9,
@@ -54,7 +54,7 @@
     "deliver": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 704,
+      "durationMs": 738,
       "command": [
         "/home/dev/.nvm/versions/node/v22.23.2/bin/node",
         "/home/dev/.claude/skills/archify/bin/archify.mjs",
@@ -68,19 +68,19 @@
       ],
       "receipt": {
         "schemaVersion": 1,
-        "receiptId": "345f0a49-a437-4fa4-87a5-59d2d7b5a7be",
+        "receiptId": "82f29524-00d9-40b8-9fbc-1f959fa396af",
         "ok": true,
         "command": "deliver",
         "type": "sequence",
         "input": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/candidate.json",
         "output": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/index.html",
         "specification": {
-          "sha256": "b5ac99a0eb0c16a96163667c58acc0171e3cac3bb11f203c5fbf2222a87705eb",
-          "bytes": 11544
+          "sha256": "b0b85c06584c9580c35d53e08ffcb508fbb0a6625ca3566b82a91f9863cbdcef",
+          "bytes": 11540
         },
         "artifact": {
-          "sha256": "3b393e0b2ddb87d33b963c22c9522cad24cda436c6c61e7fbe95dbc3b911977b",
-          "bytes": 873251
+          "sha256": "940b2386850515816b53d88cb4359ad57b691d7e9e0d4e7ccc38a293482cf827",
+          "bytes": 873248
         },
         "validation": {
           "checksPassed": 9,
@@ -106,7 +106,7 @@
     "check": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 319,
+      "durationMs": 399,
       "command": [
         "/home/dev/.nvm/versions/node/v22.23.2/bin/node",
         "/home/dev/.claude/skills/archify/bin/archify.mjs",
@@ -118,8 +118,8 @@
         "ok": true,
         "file": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/index.html",
         "artifact": {
-          "sha256": "3b393e0b2ddb87d33b963c22c9522cad24cda436c6c61e7fbe95dbc3b911977b",
-          "bytes": 873251
+          "sha256": "940b2386850515816b53d88cb4359ad57b691d7e9e0d4e7ccc38a293482cf827",
+          "bytes": 873248
         },
         "checks": [
           {
@@ -250,13 +250,13 @@
           "issues": []
         },
         "provenance": "current",
-        "deliveryReceiptId": "345f0a49-a437-4fa4-87a5-59d2d7b5a7be"
+        "deliveryReceiptId": "82f29524-00d9-40b8-9fbc-1f959fa396af"
       }
     },
     "browser-check": {
       "status": "skipped",
       "exitCode": 2,
-      "durationMs": 40,
+      "durationMs": 48,
       "command": [
         "/home/dev/.nvm/versions/node/v22.23.2/bin/node",
         "/home/dev/.claude/skills/archify/bin/archify.mjs",
@@ -274,11 +274,11 @@
         "status": "skipped",
         "visualReview": "not-requested",
         "provenance": "current",
-        "deliveryReceiptId": "345f0a49-a437-4fa4-87a5-59d2d7b5a7be",
+        "deliveryReceiptId": "82f29524-00d9-40b8-9fbc-1f959fa396af",
         "artifact": {
           "path": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/index.html",
-          "sha256": "3b393e0b2ddb87d33b963c22c9522cad24cda436c6c61e7fbe95dbc3b911977b",
-          "bytes": 873251
+          "sha256": "940b2386850515816b53d88cb4359ad57b691d7e9e0d4e7ccc38a293482cf827",
+          "bytes": 873248
         },
         "state": {
           "detail": "read",
@@ -362,14 +362,14 @@
   },
   "visualReview": "not-requested",
   "failedStage": "browser-check",
-  "finishedAt": "2026-10-29T05:01:47.371Z",
-  "durationMs": 1281,
+  "finishedAt": "2026-11-02T17:44:37.460Z",
+  "durationMs": 1442,
   "update": {
     "status": "current",
     "installedVersion": "3.2.0",
     "availableVersion": "3.2.0",
     "releaseNotes": null,
-    "checkedAt": "2026-10-29T02:44:40.864Z",
+    "checkedAt": "2026-11-02T17:44:09.227Z",
     "source": "cache",
     "noticeRequired": false,
     "noticeText": null

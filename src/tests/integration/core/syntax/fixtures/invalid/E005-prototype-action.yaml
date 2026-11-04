@@ -1,0 +1,4 @@
+name: "Prototype key"
+steps:
+  - hasOwnProperty: {}
+  - toString: {}

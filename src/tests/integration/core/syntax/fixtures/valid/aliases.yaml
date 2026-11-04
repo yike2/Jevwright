@@ -1,0 +1,5 @@
+name: &n "Aliases"
+description: *n
+steps:
+  - &back { back: {} }
+  - *back

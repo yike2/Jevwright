@@ -1,0 +1,9 @@
+{
+  "name": "Aliases",
+  "description": "Aliases",
+  "timeoutMs": 15000,
+  "steps": [
+    { "line": 4, "action": "back" },
+    { "line": 5, "action": "back" }
+  ]
+}

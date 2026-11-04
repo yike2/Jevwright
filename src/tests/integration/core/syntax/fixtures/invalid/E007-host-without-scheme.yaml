@@ -1,0 +1,4 @@
+name: "Host without a scheme"
+steps:
+  - open:
+      url: "localhost:3000/login"

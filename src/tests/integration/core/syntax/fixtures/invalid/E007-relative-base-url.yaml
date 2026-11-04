@@ -1,0 +1,5 @@
+name: "Relative baseUrl"
+baseUrl: "/app"
+steps:
+  - open:
+      url: "/login"

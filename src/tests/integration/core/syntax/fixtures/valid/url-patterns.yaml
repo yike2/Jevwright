@@ -1,0 +1,8 @@
+name: "URL patterns"
+steps:
+  - open:
+      url: "{{BASE_URL}}/login"
+  - waitFor:
+      url: "**/dashboard"
+  - assert:
+      url: "**/dashboard?tab=*"

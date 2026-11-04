@@ -1,0 +1,13 @@
+{
+  "name": "Page actions",
+  "timeoutMs": 5000,
+  "steps": [
+    { "line": 4, "action": "open", "url": "https://demo.example.com" },
+    { "line": 6, "action": "reload" },
+    { "line": 7, "action": "back" },
+    { "line": 8, "action": "forward" },
+    { "line": 9, "action": "press", "key": "Shift+A" },
+    { "line": 11, "action": "scroll", "direction": "down", "distance": 600 },
+    { "line": 14, "action": "sleep", "ms": 250 }
+  ]
+}

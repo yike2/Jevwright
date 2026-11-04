@@ -1,0 +1,4 @@
+name: "Relative URL check without baseUrl"
+steps:
+  - waitFor:
+      url: "/dashboard"

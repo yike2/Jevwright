@@ -1,0 +1,4 @@
+name: "Aliased steps key"
+description: &key steps
+*key :
+  - back: {}
