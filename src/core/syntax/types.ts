@@ -44,6 +44,7 @@ export type TestCase = {
   description?: string;
   baseUrl?: string;
   timeoutMs: number;
+  runTimeoutMs: number;
   steps: Step[];
 };
 
