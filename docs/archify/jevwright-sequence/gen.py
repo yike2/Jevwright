@@ -72,13 +72,18 @@ M = [
     ("harness", "asserter", "false · confidence", "return", None),
     ("asserter", "executor", "failed + reason", "return", None),
     ("executor", "pipeline", "onEvent(step2 failed)", "dashed", "Remaining steps stay pending; go to Finish"),
+    ("Alt — Run timeout or browser crash",),
+    ("executor", "driver", "close()", "default", "On a timeout, at once; the pending call rejects"),
+    ("driver", "executor", "trace.zip", "return", "Empty when close() fails after a crash"),
+    ("executor", "pipeline", "onEvent(running step failed)", "dashed", None),
+    ("executor", "pipeline", "RunAbortedError · steps · trace", "return", "Carries the Run error; go to buildReport in Finish"),
     ("Finish (always)",),
     ("executor", "driver", "close()", "default", None),
     ("driver", "executor", "trace.zip", "return", None),
     ("executor", "pipeline", "StepResult[] · trace", "return", None),
-    ("pipeline", "report", "build(results, trace)", "default", None),
-    ("report", "pipeline", "Report .json (passed / failed)", "return", None),
-    ("pipeline", "api", "Report", "return", "Worker stores it and pushes Run passed / failed"),
+    ("pipeline", "report", "buildReport(steps, trace, error?)", "default", None),
+    ("report", "pipeline", "Report Bundle (passed / failed)", "return", "report.json · trace.zip · screenshots"),
+    ("pipeline", "api", "Report Bundle", "return", "Worker saves it with its Report Store and pushes Run passed / failed"),
 ]
 
 STEP, NOTE_STEP, SEG_GAP = 44, 84, 26

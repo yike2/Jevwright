@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "receiptId": "53f7057b-778b-45d7-a396-884c9055aa6c",
+  "receiptId": "17174017-88e8-4190-a6c6-b41b9cdd67ab",
   "status": "current",
   "command": "deliver",
   "type": "sequence",
   "input": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/candidate.json",
   "output": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/index.html",
   "specification": {
-    "sha256": "bd4278eee5f8c6f17f01ea7a7904dcbc36b705d2b05d6363ec07252c29ff4ba6",
-    "bytes": 11542
+    "sha256": "8b82c9345872824f889e5c0d60dc983ddd428e6c7b25c5a2926b393e9914415e",
+    "bytes": 12584
   },
   "artifact": {
-    "sha256": "f0bcc62f2b6ecde71244e55337f3e159dd2b84744bbb38c6028fe12acfd85393",
-    "bytes": 871968
+    "sha256": "fe22bcdfb67d849366808a111177a1d273fbd5f59d740d8c23a4e15a7a6121a7",
+    "bytes": 876306
   }
 }
