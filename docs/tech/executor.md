@@ -88,11 +88,13 @@ A Run is aborted in two cases; both throw a `RunAbortedError` (3.1) instead of r
 | The Run timeout expires during launch or a step | `timeout`, message `runTimedOut(runTimeoutMs)` | `failed` with that message as its reason | From `close()` |
 | `launchBrowser()` throws | `infrastructure`, message from the error | – (every step `pending`) | Empty |
 | An Adapter call throws (the browser crashed or disconnected, `browser-adapter.md` 1.10), or anything else throws while a step runs | `infrastructure`, message from the error | `failed` with that message as its reason | From `close()`, or empty when `close()` throws too |
+| `close()` throws after the steps ended | `infrastructure`, message from the error | – (the steps keep their results) | Empty |
 
-- The message is the first line of the error's message, redacted (1.5). The original error is the `RunAbortedError`'s `cause`; it is not redacted, so callers must not log or report it.
+- The message is the first line of the error's message, redacted (1.5). The original error is the `RunAbortedError`'s `cause`, or an `AggregateError` of it and the `close()` error when `close()` throws too. The cause is not redacted, so callers must not log or report it.
 - The running step's failed result has its `startedAt`, a `durationMs` up to the abort, no dialogs, and no screenshot; the trace already holds screenshots up to that point. It is sent in a `finished` event like any other step, and no event is sent after it.
 - On a timeout the Executor calls `close()` at once, which makes the pending Adapter call reject; that rejection is ignored. A step result that arrives after the abort is dropped.
 - When the timeout expires during launch, the Adapter that `launchBrowser()` returns later is closed and its trace is dropped.
+- The Run timeout timer is cleared when the Run ends, so it never keeps the process alive.
 - The steps before the running one keep their results; the steps after it are `pending`.
 
 Steps that fail for a step timeout (`timeoutMs`) are ordinary failed steps, not aborted Runs.

@@ -1,17 +1,28 @@
 import { launchBrowser, type BrowserAdapter } from "../browser/index.js";
-import type { TestCase } from "../syntax/index.js";
-import { missingVariables } from "./reasons.js";
-import { runStep, toStepResult } from "./run-step.js";
-import type { ExecuteOptions, ExecuteResult, StepResult } from "./types.js";
+import { firstLine } from "../browser/errors.js";
+import type { Step, TestCase } from "../syntax/index.js";
+import { RunAbortedError } from "./errors.js";
+import { missingVariables, runTimedOut } from "./reasons.js";
+import { runStep, toStepResult, type StepContext } from "./run-step.js";
+import type { ExecuteOptions, ExecuteResult, RunError, StepResult } from "./types.js";
 import { createRedact, substitute } from "./variables.js";
 
-/** Runs `testCase` on its own browser, stopping at the first failed step; returns every Step result and the trace. */
+const TIMED_OUT = Symbol("timed out");
+
+// `running` is the step in flight, so an aborted Run can fail it; `aborted` makes its late result be dropped.
+type Run = { aborted: boolean; running?: { step: Step; index: number; startedAt: Date } };
+
+/**
+ * Runs `testCase` on its own browser, stopping at the first failed step; returns every Step result and the trace.
+ * Throws a RunAbortedError when the Run timeout expires or the browser crashes (executor.md 1.7).
+ */
 export async function execute(
   testCase: TestCase,
   options: ExecuteOptions,
   launch: typeof launchBrowser = launchBrowser,
 ): Promise<ExecuteResult> {
   const { headed, vars, onEvent } = options;
+  const redact = createRedact(testCase, vars);
   const results: StepResult[] = testCase.steps.map((step, index) => ({
     index,
     line: step.line,
@@ -27,39 +38,85 @@ export async function execute(
     onEvent({ type: "started", step: { index: 0, line: first.line, action: first.action } });
     const failure = { ok: false as const, reason: missingVariables(baseUrl.missing), dialogs: [] };
     const ran = { startedAt: new Date(), durationMs: 0, result: failure };
-    const result = toStepResult(first, 0, ran, createRedact(testCase, vars));
+    const result = toStepResult(first, 0, ran, redact);
     results[0] = result;
     onEvent({ type: "finished", result });
     return { steps: results, trace: Buffer.alloc(0) };
   }
 
-  const browser = await launch({ headed, baseUrl: baseUrl.value, timeoutMs: testCase.timeoutMs });
-  let failure: { error: unknown } | undefined;
+  let timer: NodeJS.Timeout | undefined;
+  const expired = new Promise<typeof TIMED_OUT>((resolve) => {
+    timer = setTimeout(() => resolve(TIMED_OUT), testCase.runTimeoutMs);
+  });
+  const launching = launch({ headed, baseUrl: baseUrl.value, timeoutMs: testCase.timeoutMs });
+  let browser: BrowserAdapter | typeof TIMED_OUT;
+  try {
+    browser = await Promise.race([launching, expired]);
+  } catch (error) {
+    clearTimeout(timer);
+    throw new RunAbortedError("infrastructure", redact(firstLine(error)), results, Buffer.alloc(0), { cause: error });
+  }
+  if (browser === TIMED_OUT) {
+    // Nothing can use a browser that starts after the Run ended, so it is closed and its trace dropped.
+    launching.then((late) => late.close()).catch(() => {});
+    const message = runTimedOut(testCase.runTimeoutMs);
+    throw new RunAbortedError("timeout", message, results, Buffer.alloc(0));
+  }
+  const run: Run = { aborted: false };
+  let aborted: (RunError & { cause?: unknown }) | undefined;
+  try {
+    // After a timeout, closing the browser rejects the pending Adapter call; the race has already settled, so it is ignored.
+    const steps = runSteps(testCase, { browser, vars, redact }, onEvent, results, run);
+    if ((await Promise.race([steps, expired])) === TIMED_OUT) {
+      aborted = { kind: "timeout", message: runTimedOut(testCase.runTimeoutMs) };
+    }
+  } catch (error) {
+    aborted = { kind: "infrastructure", message: redact(firstLine(error)), cause: error };
+  } finally {
+    clearTimeout(timer);
+  }
+  if (aborted) {
+    run.aborted = true;
+    failRunning(run, aborted.message, results, onEvent);
+  }
   let trace: Buffer = Buffer.alloc(0);
   try {
-    await runSteps(testCase, browser, options, results);
-  } catch (error) {
-    failure = { error };
-    throw error;
-  } finally {
-    try {
-      trace = await browser.close();
-    } catch (closeError) {
-      // Thrown from finally, this replaces the error of the steps, so it carries both.
-      if (!failure) throw closeError;
-      throw new AggregateError([failure.error, closeError], "The run failed and the browser could not be closed");
-    }
+    trace = await browser.close();
+  } catch (closeError) {
+    // The Run's own error stays the message; the cause keeps both, so neither is lost.
+    aborted = aborted
+      ? { ...aborted, cause: aborted.cause === undefined ? closeError : new AggregateError([aborted.cause, closeError]) }
+      : { kind: "infrastructure", message: redact(firstLine(closeError)), cause: closeError };
   }
+  if (aborted) throw new RunAbortedError(aborted.kind, aborted.message, results, trace, { cause: aborted.cause });
   return { steps: results, trace };
 }
 
+// Fails the step that was running when the Run was aborted, and sends its finished event.
+function failRunning(run: Run, reason: string, results: StepResult[], onEvent: ExecuteOptions["onEvent"]) {
+  if (!run.running) return;
+  const { step, index, startedAt } = run.running;
+  const ran = { startedAt, durationMs: Date.now() - startedAt.getTime(), result: { ok: false as const, reason, dialogs: [] } };
+  const result = toStepResult(step, index, ran, (text) => text);
+  results[index] = result;
+  onEvent({ type: "finished", result });
+}
+
 // Fills `results` in order and stops at the first failed step, leaving the rest pending.
-async function runSteps(testCase: TestCase, browser: BrowserAdapter, options: ExecuteOptions, results: StepResult[]) {
-  const { vars, onEvent } = options;
-  const redact = createRedact(testCase, vars);
+async function runSteps(
+  testCase: TestCase,
+  context: StepContext,
+  onEvent: ExecuteOptions["onEvent"],
+  results: StepResult[],
+  run: Run,
+) {
   for (const [index, step] of testCase.steps.entries()) {
     onEvent({ type: "started", step: { index, line: step.line, action: step.action } });
-    const result = await runStep(step, index, { browser, vars, redact });
+    run.running = { step, index, startedAt: new Date() };
+    const result = await runStep(step, index, context);
+    // The Run was aborted while this step ran; its step result is already failed.
+    if (run.aborted) return;
+    run.running = undefined;
     results[index] = result;
     onEvent({ type: "finished", result });
     if (result.status === "failed") return;
