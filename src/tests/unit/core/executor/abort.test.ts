@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { BrowserAdapter, LaunchOptions } from "@/core/browser/index.js";
 import { execute, RunAbortedError, type StepEvent } from "@/core/executor/index.js";
 import type { Step, TestCase } from "@/core/syntax/index.js";
@@ -33,6 +33,8 @@ async function abort(test: TestCase, launch: (options: LaunchOptions) => Promise
   return { error: error as RunAbortedError, events };
 }
 
+afterEach(() => vi.useRealTimers());
+
 describe("execute, aborted Runs", () => {
   it("aborts with a timeout when a step outlasts the Run timeout, keeping earlier steps and the trace", async () => {
     // Like Playwright, closing the browser rejects the call that is still pending.
@@ -42,14 +44,17 @@ describe("execute, aborted Runs", () => {
       close: () => (rejectPending(new Error("Target page, context or browser has been closed")), TRACE),
     });
 
-    const { error } = await abort(testCase({ runTimeoutMs: 50 }), async () => adapter);
+    vi.useFakeTimers();
+    const aborted = abort(testCase({ runTimeoutMs: 50 }), async () => adapter);
+    await vi.advanceTimersByTimeAsync(50);
+    const { error } = await aborted;
 
     expect(error.name).toBe("RunAbortedError");
     expect(error.kind).toBe("timeout");
     expect(error.message).toBe("The run did not finish within runTimeoutMs (50 ms)");
     expect(error.steps.map(({ status }) => status)).toEqual(["passed", "failed", "pending"]);
     expect(error.steps[1]).toMatchObject({ reason: error.message, dialogs: [] });
-    expect((error.steps[1] as { durationMs: number }).durationMs).toBeGreaterThanOrEqual(45);
+    expect(error.steps[1]).toMatchObject({ durationMs: 50 });
     expect(error.steps[1]).not.toHaveProperty("screenshot");
     expect(error.trace).toBe(TRACE);
     expect(calls.at(-1)).toEqual({ method: "close" });
@@ -175,5 +180,16 @@ describe("execute, aborted Runs", () => {
 
     expect((error as RunAbortedError).steps.map(({ status }) => status)).toEqual(["passed", "failed", "pending"]);
     expect((error as RunAbortedError).steps[1]).toMatchObject({ reason: "WebSocket is closed" });
+  });
+
+  it("times the Run with runTimeoutMs, not the step timeout", async () => {
+    vi.useFakeTimers();
+    const { adapter } = fakeAdapter({ perform: () => later(30, OK) });
+
+    const ran = execute(testCase({ timeoutMs: 20, runTimeoutMs: 1000 }), { headed: false, vars: {}, onEvent: () => {} }, async () => adapter);
+    const statuses = ran.then(({ steps }) => steps.map(({ status }) => status), (error: unknown) => error);
+    await vi.advanceTimersByTimeAsync(200);
+
+    expect(await statuses).toEqual(["passed", "passed", "passed"]);
   });
 });
