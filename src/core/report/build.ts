@@ -28,7 +28,8 @@ export function buildReport(run: RunOutcome): ReportBundle {
     summary,
     steps,
     ...(hasTrace ? { trace: TRACE_PATH } : {}),
-    ...(run.error ? { error: run.error } : {}),
+    // Only the two fields: a RunAbortedError also fits RunError, but its message would not serialize and its trace would.
+    ...(run.error ? { error: { kind: run.error.kind, message: run.error.message } } : {}),
   };
   return { report, files };
 }
