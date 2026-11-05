@@ -63,7 +63,7 @@ export async function execute(
     throw new RunAbortedError("timeout", message, results, Buffer.alloc(0));
   }
   const run: Run = { aborted: false };
-  let aborted: (RunError & { cause?: unknown }) | undefined;
+  let aborted: Aborted | undefined;
   try {
     // After a timeout, closing the browser rejects the pending Adapter call; the race has already settled, so it is ignored.
     const steps = runSteps(testCase, { browser, vars, redact }, onEvent, results, run);
@@ -77,20 +77,32 @@ export async function execute(
   }
   if (aborted) {
     run.aborted = true;
-    failRunning(run, aborted.message, results, onEvent);
+    try {
+      failRunning(run, aborted.message, results, onEvent);
+    } catch (listenerError) {
+      // The browser must still close, so a throwing onEvent only joins the cause.
+      aborted = withCause(aborted, listenerError);
+    }
   }
   let trace: Buffer = Buffer.alloc(0);
   try {
     trace = await browser.close();
   } catch (closeError) {
-    // The Run's own error stays the message; the cause keeps both, so neither is lost.
     aborted = aborted
-      ? { ...aborted, cause: aborted.cause === undefined ? closeError : new AggregateError([aborted.cause, closeError]) }
+      ? withCause(aborted, closeError)
       : { kind: "infrastructure", message: redact(firstLine(closeError)), cause: closeError };
   }
   if (aborted) throw new RunAbortedError(aborted.kind, aborted.message, results, trace, { cause: aborted.cause });
   return { steps: results, trace };
 }
+
+type Aborted = RunError & { cause?: unknown };
+
+// The Run's own error stays the message; the cause keeps every error, so none is lost.
+const withCause = (aborted: Aborted, error: unknown): Aborted => ({
+  ...aborted,
+  cause: aborted.cause === undefined ? error : new AggregateError([aborted.cause, error]),
+});
 
 // Fails the step that was running when the Run was aborted, and sends its finished event.
 function failRunning(run: Run, reason: string, results: StepResult[], onEvent: ExecuteOptions["onEvent"]) {
@@ -111,8 +123,9 @@ async function runSteps(
   run: Run,
 ) {
   for (const [index, step] of testCase.steps.entries()) {
-    onEvent({ type: "started", step: { index, line: step.line, action: step.action } });
+    // Set first, so an onEvent that throws for this step fails it.
     run.running = { step, index, startedAt: new Date() };
+    onEvent({ type: "started", step: { index, line: step.line, action: step.action } });
     const result = await runStep(step, index, context);
     // The Run was aborted while this step ran; its step result is already failed.
     if (run.aborted) return;
