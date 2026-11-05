@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>My files</title>
+    <link rel="stylesheet" href="/extras/extras.css" />
+  </head>
+  <body>
+    <main>
+      <h1>My files</h1>
+      <nav class="menu" aria-label="Account">
+        <button type="button" id="account-menu" aria-haspopup="true">Account</button>
+        <ul class="menu-items">
+          <li><a href="#" id="profile-link">Profile</a></li>
+          <li><a href="#" id="sign-out-link">Sign out</a></li>
+        </ul>
+      </nav>
+      <p>Right-click a file for more actions. Double-click a file to open it.</p>
+      <ul class="files" id="files">
+        <li tabindex="0" data-file="invoice-2026.pdf">invoice-2026.pdf</li>
+        <li tabindex="0" data-file="packing-list.txt">packing-list.txt</li>
+      </ul>
+      <ul class="context-menu" id="file-menu" role="menu" aria-label="File actions">
+        <li role="none"><button type="button" role="menuitem" id="download-file">Download</button></li>
+        <li role="none"><button type="button" role="menuitem" id="delete-file">Delete</button></li>
+      </ul>
+      <p id="status" role="status" aria-live="polite"></p>
+    </main>
+    <script>
+      const status = document.getElementById("status");
+      const menu = document.getElementById("file-menu");
+      let selected;
+      document.getElementById("files").addEventListener("contextmenu", (event) => {
+        const item = event.target.closest("li");
+        if (!item) return;
+        event.preventDefault();
+        selected = item;
+        menu.style.left = `${event.pageX}px`;
+        menu.style.top = `${event.pageY}px`;
+        menu.classList.add("open");
+      });
+      document.getElementById("files").addEventListener("dblclick", (event) => {
+        const item = event.target.closest("li");
+        if (item) status.textContent = `Opened ${item.dataset.file}.`;
+      });
+      document.getElementById("download-file").addEventListener("click", () => {
+        menu.classList.remove("open");
+        status.textContent = `Downloading ${selected.dataset.file}.`;
+      });
+      document.getElementById("delete-file").addEventListener("click", () => {
+        menu.classList.remove("open");
+        status.textContent = `Deleted ${selected.dataset.file}.`;
+        selected.remove();
+      });
+      document.getElementById("profile-link").addEventListener("click", (event) => {
+        event.preventDefault();
+        status.textContent = "Showing your profile.";
+      });
+      document.getElementById("sign-out-link").addEventListener("click", (event) => {
+        event.preventDefault();
+        status.textContent = "You are signed out.";
+      });
+    </script>
+  </body>
+</html>
