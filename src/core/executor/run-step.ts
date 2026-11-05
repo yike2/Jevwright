@@ -12,7 +12,10 @@ export type StepContext = {
 
 type Outcome = { result: BrowserResult; locateMethod?: LocateMethod };
 
-const fail = (reason: string): Outcome => ({ result: { ok: false, reason, dialogs: [] } });
+/** A failed BrowserResult for a failure the Executor finds itself, with no dialogs. */
+export const failure = (reason: string): BrowserResult => ({ ok: false, reason, dialogs: [] });
+
+const fail = (reason: string): Outcome => ({ result: failure(reason) });
 
 // With a target too, a failed selector would fall back to Jev, which the Element Locator does not offer yet.
 const withTarget = (result: BrowserResult, target: string | undefined): BrowserResult =>
