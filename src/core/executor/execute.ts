@@ -57,7 +57,8 @@ export async function execute(
     throw new RunAbortedError("infrastructure", redact(firstLine(error)), results, Buffer.alloc(0), { cause: error });
   }
   if (browser === TIMED_OUT) {
-    // Nothing can use a browser that starts after the Run ended, so it is closed and its trace dropped.
+    // Nothing can use a browser that starts after the Run ended, so it is closed; its trace and errors are
+    // dropped on purpose (executor.md 1.7), since the Run already ended with its timeout.
     launching.then((late) => late.close()).catch(() => {});
     const message = runTimedOut(testCase.runTimeoutMs);
     throw new RunAbortedError("timeout", message, results, Buffer.alloc(0));

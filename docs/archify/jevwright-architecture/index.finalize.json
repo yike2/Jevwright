@@ -5,16 +5,16 @@
   "status": "pass",
   "type": "architecture",
   "quality": "showcase",
-  "startedAt": "2026-11-03T01:10:21.413Z",
+  "startedAt": "2026-11-05T05:13:45.698Z",
   "specification": {
     "path": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-architecture/candidate.json",
-    "sha256": "976c6bc0bb96bcf5d7c2dfd543da3bb61e1134a136ab94f0c6b9cc571bc40bc8",
-    "bytes": 7809
+    "sha256": "f0d89cba3b871aefb4802827bdc5ccbf2e6358b5ebaf4509def3f270341e121f",
+    "bytes": 7873
   },
   "artifact": {
     "path": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-architecture/index.html",
-    "sha256": "5bdf332e232dd8c53442114d5b7f16ec13227d2d2b59ea2460a3783d7520677f",
-    "bytes": 864223
+    "sha256": "714af4d8e0ffdc46048b4bbb27f2c9f9bfa79f01b2bf59f8f8428aca9d88b6a8",
+    "bytes": 864415
   },
   "stages": {
     "validate": {
@@ -31,6 +31,8 @@
         "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-architecture/index.html",
         "--quality",
         "showcase",
+        "--repo-root",
+        "/home/dev/workspace/6983/Jevwright",
         "--json"
       ],
       "receipt": {
@@ -38,8 +40,8 @@
         "ok": true,
         "command": "validate",
         "specification": {
-          "sha256": "976c6bc0bb96bcf5d7c2dfd543da3bb61e1134a136ab94f0c6b9cc571bc40bc8",
-          "bytes": 7809
+          "sha256": "f0d89cba3b871aefb4802827bdc5ccbf2e6358b5ebaf4509def3f270341e121f",
+          "bytes": 7873
         },
         "validation": {
           "checksPassed": 9,
@@ -54,7 +56,7 @@
     "deliver": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 978,
+      "durationMs": 879,
       "command": [
         "/home/dev/.nvm/versions/node/v22.23.2/bin/node",
         "/home/dev/.claude/skills/archify/bin/archify.mjs",
@@ -64,23 +66,25 @@
         "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-architecture/index.html",
         "--quality",
         "showcase",
+        "--repo-root",
+        "/home/dev/workspace/6983/Jevwright",
         "--json"
       ],
       "receipt": {
         "schemaVersion": 1,
-        "receiptId": "d45d3e03-b9d5-46a3-a59e-685867cab2f8",
+        "receiptId": "e1d2f100-85b1-4093-a614-aee50c1abba4",
         "ok": true,
         "command": "deliver",
         "type": "architecture",
         "input": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-architecture/candidate.json",
         "output": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-architecture/index.html",
         "specification": {
-          "sha256": "976c6bc0bb96bcf5d7c2dfd543da3bb61e1134a136ab94f0c6b9cc571bc40bc8",
-          "bytes": 7809
+          "sha256": "f0d89cba3b871aefb4802827bdc5ccbf2e6358b5ebaf4509def3f270341e121f",
+          "bytes": 7873
         },
         "artifact": {
-          "sha256": "5bdf332e232dd8c53442114d5b7f16ec13227d2d2b59ea2460a3783d7520677f",
-          "bytes": 864223
+          "sha256": "714af4d8e0ffdc46048b4bbb27f2c9f9bfa79f01b2bf59f8f8428aca9d88b6a8",
+          "bytes": 864415
         },
         "validation": {
           "checksPassed": 9,
@@ -106,7 +110,7 @@
     "check": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 373,
+      "durationMs": 297,
       "command": [
         "/home/dev/.nvm/versions/node/v22.23.2/bin/node",
         "/home/dev/.claude/skills/archify/bin/archify.mjs",
@@ -118,8 +122,8 @@
         "ok": true,
         "file": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-architecture/index.html",
         "artifact": {
-          "sha256": "5bdf332e232dd8c53442114d5b7f16ec13227d2d2b59ea2460a3783d7520677f",
-          "bytes": 864223
+          "sha256": "714af4d8e0ffdc46048b4bbb27f2c9f9bfa79f01b2bf59f8f8428aca9d88b6a8",
+          "bytes": 864415
         },
         "checks": [
           {
@@ -186,7 +190,7 @@
             "containerBorderRuns": 0,
             "labelRouteClearanceIssues": 0,
             "labelCanvasOverflowIssues": 0,
-            "minLabelRouteClearance": 35.8,
+            "minLabelRouteClearance": 22.3,
             "desktopReadabilityIssues": 0,
             "viewportHeightIssues": 0,
             "minProjectedNodeTextPx": 6.048780487804878,
@@ -209,6 +213,16 @@
           },
           "routeReview": {
             "crossings": [],
+            "crowdedSides": [
+              {
+                "node": "pipeline",
+                "label": "Run Pipeline",
+                "side": "right",
+                "relationships": 4,
+                "sidePx": 64,
+                "neededPx": 74
+              }
+            ],
             "detours": []
           },
           "leadingSpace": {
@@ -244,13 +258,13 @@
           "issues": []
         },
         "provenance": "current",
-        "deliveryReceiptId": "d45d3e03-b9d5-46a3-a59e-685867cab2f8"
+        "deliveryReceiptId": "e1d2f100-85b1-4093-a614-aee50c1abba4"
       }
     },
     "browser-check": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 3610,
+      "durationMs": 3344,
       "command": [
         "/home/dev/.nvm/versions/node/v22.23.2/bin/node",
         "/home/dev/.claude/skills/archify/bin/archify.mjs",
@@ -268,11 +282,11 @@
         "status": "pass",
         "visualReview": "not-requested",
         "provenance": "current",
-        "deliveryReceiptId": "d45d3e03-b9d5-46a3-a59e-685867cab2f8",
+        "deliveryReceiptId": "e1d2f100-85b1-4093-a614-aee50c1abba4",
         "artifact": {
           "path": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-architecture/index.html",
-          "sha256": "5bdf332e232dd8c53442114d5b7f16ec13227d2d2b59ea2460a3783d7520677f",
-          "bytes": 864223
+          "sha256": "714af4d8e0ffdc46048b4bbb27f2c9f9bfa79f01b2bf59f8f8428aca9d88b6a8",
+          "bytes": 864415
         },
         "state": {
           "detail": "read",
@@ -280,7 +294,7 @@
         },
         "chrome": {
           "status": "available",
-          "executable": "/tmp/claude-1001/-home-dev-workspace-6983-Jevwright/12a34857-0683-4f8c-9cc9-c1050089f953/scratchpad/chrome"
+          "executable": "/tmp/claude-1001/-home-dev-workspace-6983-Jevwright/ac0fc42d-cd0d-44c8-92b1-c0f3c585884c/scratchpad/chrome"
         },
         "diagnostics": [],
         "containment": {
@@ -994,14 +1008,14 @@
     "browserCheckReceipt": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-architecture/index.browser-check.json"
   },
   "visualReview": "not-requested",
-  "finishedAt": "2026-11-03T01:10:26.778Z",
-  "durationMs": 5364,
+  "finishedAt": "2026-11-05T05:13:50.489Z",
+  "durationMs": 4791,
   "update": {
     "status": "current",
     "installedVersion": "3.2.0",
     "availableVersion": "3.2.0",
     "releaseNotes": null,
-    "checkedAt": "2026-11-02T17:44:09.227Z",
+    "checkedAt": "2026-11-05T04:26:54.158Z",
     "source": "cache",
     "noticeRequired": false,
     "noticeText": null

@@ -85,15 +85,16 @@ A Run is aborted in two cases; both throw a `RunAbortedError` (3.1) instead of r
 
 | Case | Run error | The running step | Trace |
 | ---- | --------- | ---------------- | ----- |
-| The Run timeout expires during launch or a step | `timeout`, message `runTimedOut(runTimeoutMs)` | `failed` with that message as its reason | From `close()` |
+| The Run timeout expires during launch | `timeout`, message `runTimedOut(runTimeoutMs)` | – (every step `pending`) | Empty |
+| The Run timeout expires during a step | `timeout`, message `runTimedOut(runTimeoutMs)` | `failed` with that message as its reason | From `close()` |
 | `launchBrowser()` throws | `infrastructure`, message from the error | – (every step `pending`) | Empty |
-| An Adapter call throws (the browser crashed or disconnected, `browser-adapter.md` 1.10), or anything else throws while a step runs | `infrastructure`, message from the error | `failed` with that message as its reason | From `close()`, or empty when `close()` throws too |
+| An Adapter call throws (the browser crashed or disconnected, `browser-adapter.md` 1.10), or anything else throws while a step runs, including `onEvent` | `infrastructure`, message from the error | `failed` with that message as its reason | From `close()`, or empty when `close()` throws too |
 | `close()` throws after the steps ended | `infrastructure`, message from the error | – (the steps keep their results) | Empty |
 
-- The message is the first line of the error's message, redacted (1.5). The original error is the `RunAbortedError`'s `cause`, or an `AggregateError` of it and the `close()` error when `close()` throws too. The cause is not redacted, so callers must not log or report it.
+- The message is the first line of the error's message, redacted (1.5). The original error is the `RunAbortedError`'s `cause`. When failing the running step (its `onEvent`) or `close()` throws too, the cause is an `AggregateError` of every error, in that order, and the browser is still closed. The cause is not redacted, so callers must not log or report it.
 - The running step's failed result has its `startedAt`, a `durationMs` up to the abort, no dialogs, and no screenshot; the trace already holds screenshots up to that point. It is sent in a `finished` event like any other step, and no event is sent after it.
 - On a timeout the Executor calls `close()` at once, which makes the pending Adapter call reject; that rejection is ignored. A step result that arrives after the abort is dropped.
-- When the timeout expires during launch, the Adapter that `launchBrowser()` returns later is closed and its trace is dropped.
+- When the timeout expires during launch, the Adapter that `launchBrowser()` returns later is closed; its trace, and any error from that launch or `close()`, are dropped, because the Run has already ended.
 - The Run timeout timer is cleared when the Run ends, so it never keeps the process alive.
 - The steps before the running one keep their results; the steps after it are `pending`.
 
@@ -237,7 +238,7 @@ Unit tests use a fake `BrowserAdapter` that records every call and returns scrip
 | Unit | `variables`: substitution in every string field, including the Dialog response; missing names listed in order; Redaction of reasons and dialog messages, longest value first, empty values ignored, only Variables used in the `TestCase` | `src/tests/unit/core/executor/variables.test.ts` |
 | Unit | `runStep`: each row of 1.4 makes the stated Adapter call with substituted values; `ready()` failure skips the call; a missing Variable calls no Adapter method before the screenshot; dialogs from `ready()` and the call are merged in order; failure takes a screenshot and keeps the reason when the screenshot fails; `locateMethod` is `selector` for element actions; `LocateByTarget`, `WaitForCondition`, `AssertStatement`, and a failed check with a `statement` fail and are never passed | `src/tests/unit/core/executor/run-step.test.ts` |
 | Unit | `execute`: launch options from the `TestCase` and `headed`; steps run in order; stop at the first failure with the rest `pending`; `started` and `finished` events per executed step and none for `pending` steps; `close()` runs after success, failure, and a thrown error | `src/tests/unit/core/executor/execute.test.ts` |
-| Unit | Aborted Runs, each row of 1.7: the `RunAbortedError`'s kind, redacted message, `cause`, Step results, and trace; the running step failed with its timing; a `finished` event for it and none after; a late Adapter result dropped; the Adapter of a late launch closed; an empty trace when `close()` throws after a crash; a Run that ends before the timeout is not aborted | `src/tests/unit/core/executor/abort.test.ts` |
+| Unit | Aborted Runs, each row of 1.7: the `RunAbortedError`'s kind, redacted message, `cause`, Step results, and trace; the running step failed with its timing; a `finished` event for it and none after; a late Adapter result dropped; the Adapter of a late launch closed; an empty trace when `close()` throws after a crash; the Run timeout counts `runTimeoutMs`, not the step `timeoutMs`; an `onEvent` that throws still closes the browser and fails its step | `src/tests/unit/core/executor/abort.test.ts` |
 | Integration | A `TestCase` against local HTML pages with the real Browser Adapter: a passing run with actions, a dialog, `switchTab`, `waitFor`, and `assert`; a failing `assert` whose `text` is a Variable, with its value redacted from the reason | `src/tests/integration/core/executor/execute.test.ts` |
 
 HTML pages live in `src/tests/integration/core/executor/fixtures/`, one page per scenario, named after it.

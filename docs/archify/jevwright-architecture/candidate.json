@@ -42,7 +42,7 @@
       "id": "cli",
       "type": "frontend",
       "label": "jevwright CLI",
-      "sublabel": "validate / run · local reports",
+      "sublabel": "validate / run · saves Report Bundles",
       "pos": [
         880,
         200
@@ -279,7 +279,7 @@
       "id": "pipeline-api",
       "from": "pipeline",
       "to": "api",
-      "label": "step events · Report",
+      "label": "step events · Report Bundle",
       "variant": "dashed",
       "fromSide": "top",
       "toSide": "bottom"
@@ -296,7 +296,7 @@
       "id": "pipeline-cli",
       "from": "pipeline",
       "to": "cli",
-      "label": "Report",
+      "label": "Report Bundle",
       "fromSide": "top",
       "toSide": "bottom"
     },
@@ -319,19 +319,19 @@
       "toSide": "left"
     },
     {
-      "id": "executor-report",
-      "from": "executor",
+      "id": "pipeline-report",
+      "from": "pipeline",
       "to": "report",
-      "label": "step results",
+      "label": "steps · trace · Run error",
       "variant": "emphasis",
-      "fromSide": "right",
-      "toSide": "left"
+      "fromSide": "bottom",
+      "toSide": "top"
     },
     {
       "id": "report-pipeline",
       "from": "report",
       "to": "pipeline",
-      "label": "Report",
+      "label": "Report Bundle",
       "variant": "emphasis",
       "fromSide": "top",
       "toSide": "bottom"
@@ -340,7 +340,7 @@
       "id": "executor-pipeline",
       "from": "executor",
       "to": "pipeline",
-      "label": "step events",
+      "label": "step events · results · trace",
       "variant": "dashed",
       "fromSide": "top",
       "toSide": "bottom"
