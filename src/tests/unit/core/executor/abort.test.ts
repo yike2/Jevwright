@@ -148,5 +148,32 @@ describe("execute, aborted Runs", () => {
     expect(calls).toEqual([{ method: "close" }]);
   });
 
-});
+  it("still closes the browser and throws a RunAbortedError when onEvent throws for the step that crashed", async () => {
+    const crash = new Error("Browser has been closed");
+    const listenerError = new Error("WebSocket is closed");
+    const { adapter, calls } = fakeAdapter({ perform: () => Promise.reject(crash) });
+    const onEvent = (event: StepEvent) => {
+      if (event.type === "finished") throw listenerError;
+    };
 
+    const error = await execute(testCase(), { headed: false, vars: {}, onEvent }, async () => adapter).catch((thrown: unknown) => thrown);
+
+    expect(error).toBeInstanceOf(RunAbortedError);
+    expect((error as RunAbortedError).message).toBe("Browser has been closed");
+    expect(((error as RunAbortedError).cause as AggregateError).errors).toEqual([crash, listenerError]);
+    expect(calls.at(-1)).toEqual({ method: "close" });
+  });
+
+  it("fails the step whose started event threw", async () => {
+    const listenerError = new Error("WebSocket is closed");
+    const { adapter } = fakeAdapter();
+    const onEvent = (event: StepEvent) => {
+      if (event.type === "started" && event.step.index === 1) throw listenerError;
+    };
+
+    const error = await execute(testCase(), { headed: false, vars: {}, onEvent }, async () => adapter).catch((thrown: unknown) => thrown);
+
+    expect((error as RunAbortedError).steps.map(({ status }) => status)).toEqual(["passed", "failed", "pending"]);
+    expect((error as RunAbortedError).steps[1]).toMatchObject({ reason: "WebSocket is closed" });
+  });
+});
