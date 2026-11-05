@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { StepResult } from "@/core/executor/index.js";
+import { RunAbortedError, type StepResult } from "@/core/executor/index.js";
 import { buildReport, type RunOutcome } from "@/core/report/index.js";
 
 const TRACE = Buffer.from("trace");
@@ -90,6 +90,16 @@ describe("buildReport", () => {
 
     expect(report.status).toBe("failed");
     expect(report.error).toEqual(error);
+  });
+
+  it("keeps only the kind and message when the caller passes the RunAbortedError itself", () => {
+    const error = new RunAbortedError("timeout", "The run did not finish within runTimeoutMs (50 ms)", [], TRACE);
+    const { report } = buildReport(outcome({ error }));
+
+    expect(JSON.parse(JSON.stringify(report)).error).toEqual({
+      kind: "timeout",
+      message: "The run did not finish within runTimeoutMs (50 ms)",
+    });
   });
 
   it("leaves out the trace when it is empty", () => {
