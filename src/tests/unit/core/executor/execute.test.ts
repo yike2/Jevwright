@@ -14,6 +14,7 @@ const testCase = (overrides: Partial<TestCase> = {}): TestCase => ({
   name: "t",
   baseUrl: "http://127.0.0.1:3000",
   timeoutMs: 1000,
+  runTimeoutMs: 600000,
   steps,
   ...overrides,
 });

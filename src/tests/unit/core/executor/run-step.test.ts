@@ -13,7 +13,7 @@ const alert = (message: string): DialogRecord => ({ type: "alert", message, answ
 // Runs `step` as step 3 of a TestCase that holds only it.
 async function run(step: Step, script: Parameters<typeof fakeAdapter>[0] = {}, vars: Record<string, string> = {}) {
   const { adapter, calls } = fakeAdapter(script);
-  const redact = createRedact({ name: "t", timeoutMs: 1000, steps: [step] }, vars);
+  const redact = createRedact({ name: "t", timeoutMs: 1000, runTimeoutMs: 600000, steps: [step] }, vars);
   const result = await runStep(step, 3, { browser: adapter, vars, redact });
   return { result, calls };
 }

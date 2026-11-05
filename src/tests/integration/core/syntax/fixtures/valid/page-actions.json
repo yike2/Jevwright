@@ -1,6 +1,7 @@
 {
   "name": "Page actions",
   "timeoutMs": 5000,
+  "runTimeoutMs": 600000,
   "steps": [
     { "line": 4, "action": "open", "url": "https://demo.example.com" },
     { "line": 6, "action": "reload" },

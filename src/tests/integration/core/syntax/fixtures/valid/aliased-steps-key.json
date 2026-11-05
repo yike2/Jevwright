@@ -2,5 +2,6 @@
   "name": "Aliased steps key",
   "description": "steps",
   "timeoutMs": 15000,
+  "runTimeoutMs": 600000,
   "steps": [{ "line": 4, "action": "back" }]
 }

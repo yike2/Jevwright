@@ -1,6 +1,7 @@
 {
   "name": "URL patterns",
   "timeoutMs": 15000,
+  "runTimeoutMs": 600000,
   "steps": [
     { "line": 3, "action": "open", "url": "{{BASE_URL}}/login" },
     { "line": 5, "action": "waitFor", "url": "**/dashboard" },
