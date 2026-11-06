@@ -425,9 +425,248 @@ describe("createJevClient", () => {
         expect(fetchImpl).not.toHaveBeenCalled();
     });
 
-    it("throws not implemented for bbox stub", async () => {
-        const client = createJevClient({ apiKey: "secret", fetch: vi.fn() as unknown as typeof fetch });
+    it("sends the correct bbox request body for image state", async () => {
+        const image = Buffer.from("abc123", "utf8");
+        const fetchImpl = vi.fn(async (_url: string, init?: RequestInit) => {
+            expect(init?.body).toBe(
+                JSON.stringify({
+                    model: "typesafe/jev-1.14",
+                    state: [{ type: "image_url", image_url: { url: `data:image/png;base64,${image.toString("base64")}` } }],
+                    questions: {
+                        target: {
+                            type: "box",
+                            instructions: "Find the login button",
+                        },
+                        presence: {
+                            type: "noul",
+                            instructions: "Is this element visible in the screenshot: Find the login button",
+                        },
+                    },
+                }),
+            );
 
-        await expect(client.bbox("Find it", Buffer.from(""), { width: 100, height: 100 })).rejects.toThrow("not implemented");
+            return {
+                ok: true,
+                status: 200,
+                headers: { get: () => null },
+                text: async () =>
+                    JSON.stringify({
+                        id: "gen-dec-bbox-1",
+                        model: "typesafe/jev-1.14",
+                        provider: "TypeSafe",
+                        answers: {
+                            target: {
+                                type: "box",
+                                box: { left: 0.25, right: 0.5, top: 0.25, bottom: 0.75 },
+                                confidence: 0.9,
+                            },
+                            presence: { type: "noul", noul: 0.8 },
+                        },
+                        usage: { input_tokens: 530, output_tokens: 100, cost: 0.00005 },
+                    }),
+            };
+        }) as unknown as typeof fetch;
+
+        const client = createJevClient({ apiKey: "secret", fetch: fetchImpl });
+        const result = await client.bbox("Find the login button", image, { width: 1280, height: 720 });
+
+        expect(result).toEqual({
+            ok: true,
+            data: {
+                box: { x: 320, y: 180, width: 320, height: 360 },
+                confidence: 0.9,
+            },
+        });
+    });
+
+    it("returns box null when bbox presence probability is below 0.5", async () => {
+        const fetchImpl = vi.fn(async () => ({
+            ok: true,
+            status: 200,
+            headers: { get: () => null },
+            text: async () =>
+                JSON.stringify({
+                    id: "gen-dec-bbox-2",
+                    model: "typesafe/jev-1.14",
+                    provider: "TypeSafe",
+                    answers: {
+                        target: {
+                            type: "box",
+                            box: { left: 0.25, right: 0.5, top: 0.25, bottom: 0.75 },
+                            confidence: 0.88,
+                        },
+                        presence: { type: "noul", noul: 0.49 },
+                    },
+                    usage: { input_tokens: 530, output_tokens: 100, cost: 0.00005 },
+                }),
+        })) as unknown as typeof fetch;
+
+        const client = createJevClient({ apiKey: "secret", fetch: fetchImpl });
+        const result = await client.bbox("Find it", Buffer.from("img"), { width: 1280, height: 720 });
+
+        expect(result).toEqual({ ok: true, data: { box: null, confidence: 0.88 } });
+    });
+
+    it("returns a box when bbox presence probability is exactly 0.5", async () => {
+        const fetchImpl = vi.fn(async () => ({
+            ok: true,
+            status: 200,
+            headers: { get: () => null },
+            text: async () =>
+                JSON.stringify({
+                    id: "gen-dec-bbox-3",
+                    model: "typesafe/jev-1.14",
+                    provider: "TypeSafe",
+                    answers: {
+                        target: {
+                            type: "box",
+                            box: { left: 0.25, right: 0.5, top: 0.25, bottom: 0.75 },
+                            confidence: 0.93,
+                        },
+                        presence: { type: "noul", noul: 0.5 },
+                    },
+                    usage: { input_tokens: 530, output_tokens: 100, cost: 0.00005 },
+                }),
+        })) as unknown as typeof fetch;
+
+        const client = createJevClient({ apiKey: "secret", fetch: fetchImpl });
+        const result = await client.bbox("Find it", Buffer.from("img"), { width: 1280, height: 720 });
+
+        expect(result).toEqual({
+            ok: true,
+            data: {
+                box: { x: 320, y: 180, width: 320, height: 360 },
+                confidence: 0.93,
+            },
+        });
+    });
+
+    it.each([
+        [
+            "out-of-range fraction",
+            { type: "box", box: { left: -0.1, right: 0.5, top: 0.25, bottom: 0.75 }, confidence: 0.9 },
+            "Invalid Jev response: box coordinates must be between 0 and 1",
+        ],
+        [
+            "left greater than right",
+            { type: "box", box: { left: 0.6, right: 0.5, top: 0.25, bottom: 0.75 }, confidence: 0.9 },
+            "Invalid Jev response: box left must be less than or equal to right",
+        ],
+        [
+            "invalid confidence",
+            { type: "box", box: { left: 0.25, right: 0.5, top: 0.25, bottom: 0.75 }, confidence: 1.2 },
+            "Invalid Jev response: confidence must be between 0 and 1",
+        ],
+        [
+            "missing presence answer",
+            { type: "box", box: { left: 0.25, right: 0.5, top: 0.25, bottom: 0.75 }, confidence: 0.9 },
+            "Invalid Jev response: missing answer for presence",
+        ],
+    ])("rejects malformed bbox responses: %s", async (_label, targetAnswer, expectedReason) => {
+        const fetchImpl = vi.fn(async () => ({
+            ok: true,
+            status: 200,
+            headers: { get: () => null },
+            text: async () =>
+                JSON.stringify({
+                    id: "gen-dec-bbox-4",
+                    model: "typesafe/jev-1.14",
+                    provider: "TypeSafe",
+                    answers:
+                        expectedReason === "Invalid Jev response: missing answer for presence"
+                            ? { target: targetAnswer }
+                            : { target: targetAnswer, presence: { type: "noul", noul: 0.2 } },
+                    usage: { input_tokens: 530, output_tokens: 100, cost: 0.00005 },
+                }),
+        })) as unknown as typeof fetch;
+
+        const client = createJevClient({ apiKey: "secret", fetch: fetchImpl });
+        const result = await client.bbox("Find it", Buffer.from("img"), { width: 1280, height: 720 });
+
+        expect(result).toEqual({ ok: false, reason: expectedReason });
+    });
+
+    it("returns an error when presence probability is 0.2 but the box is invalid", async () => {
+        const fetchImpl = vi.fn(async () => ({
+            ok: true,
+            status: 200,
+            headers: { get: () => null },
+            text: async () =>
+                JSON.stringify({
+                    id: "gen-dec-bbox-5",
+                    model: "typesafe/jev-1.14",
+                    provider: "TypeSafe",
+                    answers: {
+                        target: {
+                            type: "box",
+                            box: { left: 0.7, right: 0.5, top: 0.25, bottom: 0.75 },
+                            confidence: 0.9,
+                        },
+                        presence: { type: "noul", noul: 0.2 },
+                    },
+                    usage: { input_tokens: 530, output_tokens: 100, cost: 0.00005 },
+                }),
+        })) as unknown as typeof fetch;
+
+        const client = createJevClient({ apiKey: "secret", fetch: fetchImpl });
+        const result = await client.bbox("Find it", Buffer.from("img"), { width: 1280, height: 720 });
+
+        expect(result).toEqual({ ok: false, reason: "Invalid Jev response: box left must be less than or equal to right" });
+    });
+
+    it("returns a failed result when bbox viewport is invalid", async () => {
+        const fetchImpl = vi.fn() as unknown as typeof fetch;
+        const client = createJevClient({ apiKey: "secret", fetch: fetchImpl });
+
+        const result = await client.bbox("Find it", Buffer.from("img"), { width: 0, height: 720 });
+
+        expect(result).toEqual({ ok: false, reason: "Invalid Jev response: viewport width must be a positive number" });
+        expect(fetchImpl).not.toHaveBeenCalled();
+    });
+
+    it("passes through a postDecisions error result for bbox", async () => {
+        const fetchImpl = vi.fn(async () => ({
+            ok: false,
+            status: 401,
+            headers: { get: () => null },
+            text: async () => JSON.stringify({ error: "Unauthorized" }),
+        })) as unknown as typeof fetch;
+
+        const client = createJevClient({ apiKey: "secret", fetch: fetchImpl });
+        const result = await client.bbox("Find it", Buffer.from("img"), { width: 1280, height: 720 });
+
+        expect(result).toEqual({ ok: false, reason: "HTTP 401" });
+    });
+
+    it("returns Request aborted when the bbox caller signal is aborted", async () => {
+        const controller = new AbortController();
+        controller.abort();
+
+        const fetchImpl = vi.fn(async () => ({
+            ok: true,
+            status: 200,
+            headers: { get: () => null },
+            text: async () =>
+                JSON.stringify({
+                    id: "gen-dec-bbox-6",
+                    model: "typesafe/jev-1.14",
+                    provider: "TypeSafe",
+                    answers: {
+                        target: {
+                            type: "box",
+                            box: { left: 0.25, right: 0.5, top: 0.25, bottom: 0.75 },
+                            confidence: 0.9,
+                        },
+                        presence: { type: "noul", noul: 0.8 },
+                    },
+                    usage: { input_tokens: 530, output_tokens: 100, cost: 0.00005 },
+                }),
+        })) as unknown as typeof fetch;
+
+        const client = createJevClient({ apiKey: "secret", fetch: fetchImpl });
+        const result = await client.bbox("Find it", Buffer.from("img"), { width: 1280, height: 720 }, controller.signal);
+
+        expect(result).toEqual({ ok: false, reason: "Request aborted" });
+        expect(fetchImpl).not.toHaveBeenCalled();
     });
 });

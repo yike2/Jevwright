@@ -26,8 +26,82 @@ export type JevClient = {
 
 export function createJevClient(deps: { apiKey: string; fetch: typeof fetch }): JevClient {
     return {
-        bbox: async () => {
-            throw new Error("not implemented");
+        bbox: async (
+            question: string,
+            image: Buffer,
+            viewport: { width: number; height: number },
+            signal?: AbortSignal,
+        ) => {
+            const viewportValidation = validateViewport(viewport);
+            if (!viewportValidation.ok) {
+                return viewportValidation;
+            }
+
+            const requestBody: JevDecisionRequest = {
+                model: "typesafe/jev-1.14",
+                state: [{ type: "image_url", image_url: { url: `data:image/png;base64,${image.toString("base64")}` } }],
+                questions: {
+                    [TARGET_QUESTION_NAME]: {
+                        type: "box",
+                        instructions: question,
+                    },
+                    [PRESENCE_QUESTION_NAME]: {
+                        type: "noul",
+                        instructions: `Is this element visible in the screenshot: ${question}`,
+                    },
+                },
+            };
+
+            const response = await postDecisions<unknown>(
+                requestBody,
+                deps.apiKey,
+                deps.fetch as unknown as Parameters<typeof postDecisions>[2],
+                signal,
+            );
+
+            if (!response.ok) {
+                return response;
+            }
+
+            const targetAnswer = getAnswer(response.data, TARGET_QUESTION_NAME);
+            if (!targetAnswer.ok) {
+                return targetAnswer;
+            }
+
+            const validatedBox = validateBoxResponse(targetAnswer.data);
+            if (!validatedBox.ok) {
+                return validatedBox;
+            }
+
+            const presenceAnswer = getAnswer(response.data, PRESENCE_QUESTION_NAME);
+            if (!presenceAnswer.ok) {
+                return presenceAnswer;
+            }
+
+            const presenceProbability = validateNoulProbability(presenceAnswer.data);
+            if (!presenceProbability.ok) {
+                return presenceProbability;
+            }
+
+            if (presenceProbability.data.probability < 0.5) {
+                return { ok: true, data: { box: null, confidence: validatedBox.data.confidence } };
+            }
+
+            const { left, right, top, bottom } = validatedBox.data.box;
+            const { width, height } = viewportValidation.data;
+
+            return {
+                ok: true,
+                data: {
+                    box: {
+                        x: left * width,
+                        y: top * height,
+                        width: (right - left) * width,
+                        height: (bottom - top) * height,
+                    },
+                    confidence: validatedBox.data.confidence,
+                },
+            };
         },
         choice: async (question: string, options: string[], signal?: AbortSignal) => {
             if (options.length === 0) {
@@ -190,4 +264,61 @@ function validateChoiceResponse(data: unknown, optionCount: number): ReadResult<
     }
 
     return { ok: true, data: { choice, confidence } };
+}
+
+function validateViewport(viewport: { width: number; height: number }): ReadResult<{ width: number; height: number }> {
+    if (!isPositiveFiniteNumber(viewport.width)) {
+        return { ok: false, reason: "Invalid Jev response: viewport width must be a positive number" };
+    }
+
+    if (!isPositiveFiniteNumber(viewport.height)) {
+        return { ok: false, reason: "Invalid Jev response: viewport height must be a positive number" };
+    }
+
+    return { ok: true, data: viewport };
+}
+
+function validateBoxResponse(
+    data: unknown,
+): ReadResult<{ box: { top: number; bottom: number; left: number; right: number }; confidence: number }> {
+    if (typeof data !== "object" || data === null || !("box" in data) || !("confidence" in data)) {
+        return { ok: false, reason: "Invalid Jev response: missing box answer" };
+    }
+
+    const box = (data as { box?: unknown }).box;
+    if (typeof box !== "object" || box === null) {
+        return { ok: false, reason: "Invalid Jev response: missing box answer" };
+    }
+
+    const top = (box as { top?: unknown }).top;
+    const bottom = (box as { bottom?: unknown }).bottom;
+    const left = (box as { left?: unknown }).left;
+    const right = (box as { right?: unknown }).right;
+
+    if (!isFraction(top) || !isFraction(bottom) || !isFraction(left) || !isFraction(right)) {
+        return { ok: false, reason: "Invalid Jev response: box coordinates must be between 0 and 1" };
+    }
+
+    if (left > right) {
+        return { ok: false, reason: "Invalid Jev response: box left must be less than or equal to right" };
+    }
+
+    if (top > bottom) {
+        return { ok: false, reason: "Invalid Jev response: box top must be less than or equal to bottom" };
+    }
+
+    const confidence = (data as { confidence?: unknown }).confidence;
+    if (!isFraction(confidence)) {
+        return { ok: false, reason: "Invalid Jev response: confidence must be between 0 and 1" };
+    }
+
+    return { ok: true, data: { box: { top, bottom, left, right }, confidence } };
+}
+
+function isPositiveFiniteNumber(value: unknown): value is number {
+    return typeof value === "number" && Number.isFinite(value) && value > 0;
+}
+
+function isFraction(value: unknown): value is number {
+    return typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 1;
 }
