@@ -83,7 +83,7 @@ Matching the box to an element is pure geometry on the snapshot. Targets that ar
    `Which element best matches the description: "<target>"?`
 6. The stage fails if Jev returns no choice, an index out of range, or a confidence below `CONFIDENCE_THRESHOLD`. Otherwise it returns the chosen candidate's `id`.
 
-Known limitation: identical elements, such as six "Delete task" buttons in different table rows, produce identical lines, so DOM Locate cannot tell them apart. Visual Locate usually can, because it sees the row around the button. Adding nearby text to each line is left as a later accuracy improvement (PRD 4.3.9).
+Known limitation: identical elements, such as six "Delete task" buttons in different table rows, produce identical lines, so DOM Locate cannot tell them apart. Visual Locate usually can, because it sees the row around the button. Adding nearby text to each line is left as a later accuracy improvement (PRD 4.3.9). Contenteditable elements without an explicit role get the tag name as their role, so they are not input candidates.
 
 ### 1.6 Constants
 
