@@ -107,7 +107,17 @@ Could not locate "Sign in button":
   dom — Jev chose no candidate
 ```
 
-The Locator does not retry. Request-level retry policy belongs to the Jev Harness; see [docs/tech/jev-harness.md](jev-harness.md). If the Browser Driver itself fails (for example the browser crashed), the error is not caught and propagates as an infrastructure failure. Taking the failure screenshot and marking the step as `failed` are handled by the execution pipeline.
+The Locator does not retry. Request-level retry policy belongs to the Jev Harness; see [docs/tech/jev-harness.md](jev-harness.md).
+
+ReadResult failures are part of a stage's normal control flow, not infrastructure failures:
+
+- `isVisible(selector, timeoutMs)` returning `{ ok: false, reason }` is a selector-stage failure: record the `selector` attempt with that reason and continue to the next stage if a `target` exists.
+- `screenshot()` or `snapshot()` returning `{ ok: false, reason }` is also a stage failure for the current stage: record the attempt with the reason and continue to the next stage if any.
+- Only a thrown error (for example, the browser disconnected or crashed) propagates as an infrastructure failure.
+
+This matches the BrowserAdapter contract in [docs/tech/browser-adapter.md](browser-adapter.md): timeout and read failures stay typed, while a disconnected browser is thrown.
+
+Taking the failure screenshot and marking the step as `failed` are handled by the execution pipeline.
 
 ## 2. Internal Flow
 
@@ -149,13 +159,18 @@ flowchart TD
 ### 3.1 Function
 
 ```ts
-function locate(request: LocateRequest, driver: BrowserDriver, jev: JevClient): Promise<LocateResult>;
+function locate(
+  request: LocateRequest,
+  adapter: BrowserAdapter,
+  jev: JevClient,
+): Promise<LocateResult>;
 
 type LocateRequest = {
   action: "click" | "doubleClick" | "rightClick" | "hover" | "input";
   selector?: string; // from Step
   target?: string; // from Step
   timeoutMs: number; // TestCase.timeoutMs
+  signal?: AbortSignal;
 };
 
 type LocateMethod = "selector" | "visual" | "dom";
@@ -170,7 +185,7 @@ type LocateAttempt = {
 
 type LocateResult = {
   method: LocateMethod; // the stage that succeeded
-  elementId?: number; // snapshot element id; present for visual and dom
+  element: ElementRef; // selector or snapshotId; the BrowserAction element reference
   confidence?: number; // Visual and DOM only
   durationMs: number; // total time of all attempts
   attempts: LocateAttempt[];
@@ -181,79 +196,80 @@ class LocateError extends Error {
 }
 ```
 
-In the run sequence diagram this call is `locate(page, step)`, where `page` stands for the Browser Driver, and the returned "element position" is `elementId`.
+In the run sequence diagram this call is `locate(page, step)`, where `page` stands for the BrowserAdapter, and the returned element reference is `ElementRef`.
 
-The Step Executor turns the result into a Playwright locator:
+The Step Executor performs the located element immediately, without any extra action or snapshot in between:
 
 ```ts
 const result = await locate(
-  { action: step.action, selector: step.selector, target: step.target, timeoutMs: testCase.timeoutMs },
-  driver,
+  {
+    action: step.action,
+    selector: step.selector,
+    target: step.target,
+    timeoutMs: testCase.timeoutMs,
+    signal,
+  },
+  adapter,
   jev,
 );
-const locator =
-  result.method === "selector"
-    ? page.locator(step.selector!).first()
-    : page.locator(`[data-jev-id="${result.elementId}"]`);
-await locator.fill(step.value);
+
+await adapter.perform({
+  action: step.action,
+  element: result.element,
+  ...(step.action === "input" ? { value: step.value } : {}),
+  ...(step.dialog ? { dialog: step.dialog } : {}),
+});
 ```
+
+A `snapshotId` is only valid for the snapshot just taken, so the Executor must call `perform()` right after `locate()`, with no other snapshot or action in between.
 
 `method`, `confidence`, and `durationMs` are passed on to the report, e.g. the CLI line `click "Sign In button" [visual, conf=0.92] (1420ms)`.
 
 ### 3.2 Jev Harness Interface
 
-```ts
-type BoundingBox = { x: number; y: number; width: number; height: number }; // pixels of the viewport
-
-type ReadResult<T> =
-  | { ok: true; data: T }
-  | { ok: false; reason: string };
-
-interface JevClient {
-  // Visual Locate: viewport pixels, same as snapshot bbox; null if not found.
-  bbox(
-    question: string,
-    image: Buffer,
-    viewport: { width: number; height: number },
-    signal?: AbortSignal,
-  ): Promise<ReadResult<{ box: BoundingBox | null; confidence: number }>>;
-
-  // DOM Locate: choose one option; index is into options, null if none fits.
-  choice(
-    question: string,
-    options: string[],
-    signal?: AbortSignal,
-  ): Promise<ReadResult<{ index: number | null; confidence: number }>>;
-}
-```
+The Locator uses the shared Jev client from [src/core/jev/index.ts](../core/jev/index.ts), and the public contract is described there. This doc keeps the assumptions that matter for Locator behavior:
 
 Assumptions:
 
 - The screenshot must cover exactly the current viewport and be taken at the same scroll position as the snapshot; it must not be a full-page screenshot.
 - Conversion uses the viewport size, not the PNG dimensions: `x = left * width`, `y = top * height`, `width = (right - left) * width`, `height = (bottom - top) * height`.
 - Transport and API failures come back as `{ ok: false, reason }`; only successful model answers are `{ ok: true, data }`.
+- `box: null` and `index: null` are stage failures, not successful answers.
 - The Harness handles request-level retries using the policy in [docs/tech/jev-harness.md](jev-harness.md); the Locator records the failed stage and does not retry itself.
 - `jev` is passed in as a parameter, so tests can use a fake `JevClient`.
 
-### 3.3 Browser Driver Interface (Assumed)
+### 3.3 BrowserAdapter Interface Used by the Locator
 
-> **Assumed interface.** `BrowserDriver` is implemented by the Browser Driver (`src/core/browser/`). The Locator depends only on the methods below; they will be aligned with the Browser Driver doc once it exists.
+The Locator depends only on the BrowserAdapter methods in [docs/tech/browser-adapter.md](browser-adapter.md) and [src/core/browser/types.ts](../core/browser/types.ts):
 
 ```ts
-interface BrowserDriver {
-  // Waits until the first element matching selector is visible.
-  // Returns false on timeout or when Playwright rejects the selector string.
-  isVisible(selector: string, timeoutMs: number): Promise<boolean>;
-
-  // PNG of the current viewport only, at the same scroll position as the snapshot; not a full-page screen.
-  screenshot(): Promise<Buffer>;
-
-  // Visible interactive elements in the viewport, marked with data-jev-id; mirrors snapshot.json (see 1.3).
-  snapshot(): Promise<PageSnapshot>;
+interface BrowserAdapter {
+  isVisible(selector: string, timeoutMs: number): Promise<ReadResult<boolean>>;
+  screenshot(): Promise<ReadResult<Buffer>>;
+  snapshot(): Promise<ReadResult<PageSnapshot>>;
 }
 ```
 
-`PageSnapshot` is defined by the Browser Driver. `driver` is passed in as a parameter, so tests can use a fake driver that serves fixture files instead of a real browser.
+The Locator uses only the fields it needs from `PageSnapshot` and `SnapshotElement`, defined in [src/core/browser/types.ts](../core/browser/types.ts):
+
+```ts
+type PageSnapshot = {
+  viewport: { width: number; height: number };
+  elements: SnapshotElement[];
+};
+
+type SnapshotElement = {
+  id: number;
+  role: string;
+  name: string;
+  text?: string;
+  attrs: Record<string, string | boolean>;
+  bbox: { x: number; y: number; width: number; height: number };
+  hittable: boolean;
+};
+```
+
+`adapter` is passed in as a parameter, so tests can use a fake adapter that serves fixture files instead of a real browser.
 
 ## 4. Class Architecture
 
@@ -293,9 +309,9 @@ src/core/locator/
 
 All tests use Vitest and never launch a browser. Tests pass a fake `BrowserDriver` (serving fixture files and counting calls) and a fake `JevClient` (returning scripted answers); the product always uses the real ones.
 
-| Type        | Coverage                                                                                                                                                                                                                                                                                   | Location                                                                                        |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
-| Unit        | Description lines (truncation, omitted fields, `aria-checked`); element at point (inside, smallest area, `hittable: false` skipped, editable filter for `input`)                                                                                                                           | `src/tests/unit/core/locator/dom.test.ts`, `visual.test.ts`                                     |
-| Unit        | `locate()` flow: `selector` only never calls Jev; a selector hit takes no screenshot; probe timeout is `SELECTOR_PROBE_MS` when `target` is present, `timeoutMs` otherwise; order Visual → DOM; snapshot is reused between stages; `LocateError` lists every attempt                       | `src/tests/unit/core/locator/locate.test.ts`                                                    |
-| Integration | For every target in the hw3 fixtures: a fake Jev returning the ground-truth `bbox` makes Visual Locate return the expected `elementId`; a fake Jev choosing the ground-truth element does the same for DOM Locate; targets with `present: false` or `elementId: null` end in `LocateError` | `src/tests/integration/locator/fixtures.test.ts`, reading `src/tests/integration/hw3/fixtures/` |
-| Manual      | The same fixtures with the real Jev through OpenRouter, to measure accuracy; not run in CI                                                                                                                                                                                                 | Benchmark Test Suite                                                                            |
+| Type        | Coverage                                                                                                                                                                                                                                                                                              | Location                                                                                        |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Unit        | Description lines (truncation, omitted fields, `aria-checked`); element at point (inside, smallest area, `hittable: false` skipped, editable filter for `input`)                                                                                                                                      | `src/tests/unit/core/locator/dom.test.ts`, `visual.test.ts`                                     |
+| Unit        | `locate()` flow: `selector` only never calls Jev; a selector hit takes no screenshot; probe timeout is `SELECTOR_PROBE_MS` when `target` is present, `timeoutMs` otherwise; order Visual → DOM; snapshot is reused between stages; `LocateError` lists every attempt                                  | `src/tests/unit/core/locator/locate.test.ts`                                                    |
+| Integration | For every target in the hw3 fixtures: a fake Jev returning the ground-truth `bbox` makes Visual Locate return { snapshotId: <fixture elementId> }; a fake Jev choosing the ground-truth element does the same for DOM Locate; targets with `present: false` or `elementId: null` end in `LocateError` | `src/tests/integration/locator/fixtures.test.ts`, reading `src/tests/integration/hw3/fixtures/` |
+| Manual      | The same fixtures with the real Jev through OpenRouter, to measure accuracy; not run in CI                                                                                                                                                                                                            | Benchmark Test Suite                                                                            |
