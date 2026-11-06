@@ -1,6 +1,6 @@
 # Element Locator
 
-The Element Locator decides which page element a step refers to. It reads the page through the Browser Driver (selector check, screenshot, element snapshot), asks the Jev Harness when AI is needed, and returns the chosen element's id. It does not import Playwright, never performs the action itself, and never modifies the test file.
+The Element Locator decides which page element a step refers to. It reads the page through the BrowserAdapter (selector check, screenshot, element snapshot), asks the Jev Harness when AI is needed, and returns an `ElementRef` for the chosen element. It does not import Playwright, never performs the action itself, and never modifies the test file.
 
 ## 1. Functional Definition
 
@@ -14,11 +14,11 @@ Page-level actions (`open`, `back`, `press`, ...), `waitFor`, and `assert` do no
 
 There are three stages, always tried in this order:
 
-| Stage         | Method name | Input                            | Succeeds when                                                                                          |
-| ------------- | ----------- | -------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| Selector      | `selector`  | `selector`                       | The Browser Driver finds a visible element for `selector` within the stage timeout                     |
-| Visual Locate | `visual`    | `target` + screenshot + snapshot | Jev returns a bounding box with confidence ≥ threshold, and the box center falls on a snapshot element |
-| DOM Locate    | `dom`       | `target` + snapshot              | Jev chooses a candidate with confidence ≥ threshold                                                    |
+| Stage         | Method name | Input                            | Succeeds when                                                                                  |
+| ------------- | ----------- | -------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Selector      | `selector`  | `selector`                       | The BrowserAdapter finds a visible element for `selector` within the stage timeout             |
+| Visual Locate | `visual`    | `target` + screenshot + snapshot | Jev returns a bounding box (not `null`) with confidence ≥ threshold, and the box center falls on a usable snapshot element |
+| DOM Locate    | `dom`       | `target` + snapshot              | Jev chooses a candidate (an index in range, not `null`) with confidence ≥ threshold            |
 
 Which stages run depends on the fields present, matching the Syntax Analyzer doc (1.1):
 
@@ -30,48 +30,48 @@ Which stages run depends on the fields present, matching the Syntax Analyzer doc
 
 A later stage runs only if the previous one failed. The first stage that succeeds ends the process.
 
-### 1.3 Page Data from the Browser Driver
+### 1.3 Page Data from the BrowserAdapter
 
-The Locator reads the page only through the `BrowserDriver` interface (see 3.3), implemented by the Browser Driver (`src/core/browser/`). It asks for data only when a stage needs it:
+The Locator reads the page only through the `BrowserAdapter` interface (see 3.3), implemented in `src/core/browser/`. It asks for data only when a stage needs it:
 
-| Stage    | Browser Driver calls                                                                                     |
+| Stage    | BrowserAdapter calls                                                                                     |
 | -------- | -------------------------------------------------------------------------------------------------------- |
 | Selector | `isVisible(selector, timeoutMs)`. If several elements match, the first one is used; this is not an error |
-| Visual   | `screenshot()`; then `snapshot()` once Jev has returned a box                                            |
-| DOM      | `snapshot()`, reusing the one from Visual Locate if it was already taken                                 |
+| Visual   | `screenshot()`, then `snapshot()` right after it, both before asking Jev                                 |
+| DOM      | `snapshot()`, reusing the one from Visual Locate if it was already taken successfully                    |
 
-So a selector hit costs no screenshot, and a Visual Locate that fails at Jev costs no snapshot. No action runs between the screenshot and the snapshot, so both describe the same page state.
+So a selector hit costs no screenshot. The screenshot and the snapshot are taken one right after the other, with no action and no Jev call in between, so both describe the same page state even if the page changes while Jev is answering.
 
 The snapshot uses the same format as the integration fixtures (`src/tests/integration/hw3/README.md`): every visible interactive element inside the viewport, in DOM order, marked in the page with `data-jev-id`. The Locator reads these fields of each element:
 
 | Field                           | Use                                                                               |
 | ------------------------------- | --------------------------------------------------------------------------------- |
-| `id`                            | The value returned to the Step Executor                                           |
-| `role`, `name`, `text`, `attrs` | DOM Locate description lines; `role` and `attrs.disabled` also decide editability |
+| `id`                            | Returned to the Step Executor as `{ snapshotId }`                                 |
+| `role`, `name`, `text`, `attrs` | DOM Locate description lines; `role` and `attrs.disabled` also decide usability   |
 | `bbox`                          | Matching the Visual Locate box center                                             |
 | `hittable`                      | Elements covered by something else (e.g. a modal backdrop) are skipped            |
 
-All coordinates are CSS pixels relative to the viewport, so screenshot pixels and `bbox` values share one coordinate system. The snapshot's `texts` list is not used by the Locator.
+All coordinates are CSS pixels relative to the viewport, so screenshot pixels and `bbox` values share one coordinate system.
 
 ### 1.4 Visual Locate
 
-1. Take a screenshot through the Browser Driver.
+1. Take a screenshot and then a snapshot through the BrowserAdapter, one right after the other, so both describe the same page state. If either returns `{ ok: false }`, the stage fails and its reason is recorded.
 2. Ask Jev for a bounding box on the screenshot (see 3.2) with the question:
    `Find the element described as: "<target>". Return its bounding box.`
-3. The stage fails if the Harness returns `{ ok: false, reason }`, or if `ok: true` but the returned `confidence` is below `CONFIDENCE_THRESHOLD`.
-4. Take the snapshot, compute the box center, and find the snapshot elements whose `bbox` contains it, keeping only usable elements (see 1.5, step 1).
-5. If several elements contain the point (e.g. a button inside a clickable card), choose the one with the smallest area.
-6. The stage fails if no element contains the point. Otherwise it returns that element's `id`.
+3. The stage fails if the Harness returns `{ ok: false, reason }`, if it returns `box: null` (Jev judged the element not visible, i.e. the presence answer is below 0.5), or if the returned `confidence` is below `CONFIDENCE_THRESHOLD`.
+4. Compute the box center and find the snapshot elements whose `bbox` contains it, considering only usable elements (see 1.5, step 1). The `MAX_DOM_CANDIDATES` cap does not apply here. A point on an edge counts as inside, and elements with zero width or height never match.
+5. If several elements contain the point (e.g. a button inside a clickable card), choose the one with the smallest area. If the areas are equal, choose the one that comes first in the snapshot, i.e. in DOM order.
+6. The stage fails if no element contains the point. Otherwise it returns `{ snapshotId }` set to that element's `id`.
 
 Matching the box to an element is pure geometry on the snapshot. Targets that are not interactive, such as an alert message or a canvas chart, are not in the snapshot and cannot be returned, which is fine because they are never the target of an interaction step.
 
 ### 1.5 DOM Locate
 
-1. Build the candidate list from the snapshot elements that are usable for the action:
-   - `hittable` is `true` and `attrs.disabled` is not set;
+1. Build the list of snapshot elements that are usable for the action:
+   - `hittable` is `true` and `attrs.disabled` is not `true`;
    - for the `input` action, only editable elements: `role` is `textbox` or `searchbox`.
-2. Keep at most `MAX_DOM_CANDIDATES` (50) candidates, in snapshot order.
-3. Build one description line per candidate from `role`, `name`, `text`, and the `type`, `placeholder`, `checked`, and `aria-checked` attributes, truncating text to `MAX_TEXT_LENGTH` (50) characters and omitting empty fields:
+2. The DOM stage then keeps at most `MAX_DOM_CANDIDATES` (50) of them, in snapshot order.
+3. Build one description line per candidate from `role`, `name`, `text`, and the `type`, `placeholder`, `checked`, and `aria-checked` attributes, omitting empty fields. `false` is not an empty field, so `checked=false` is shown. Text is first truncated to `MAX_TEXT_LENGTH` (50) characters, without an ellipsis, and then `\` and `"` are escaped:
    ```text
    textbox "Email" type=email placeholder="you@example.com"
    button "Show password"
@@ -81,7 +81,7 @@ Matching the box to an element is pure geometry on the snapshot. Targets that ar
 4. The stage fails if there are no candidates.
 5. Ask Jev to choose one line (see 3.2) with the question:
    `Which element best matches the description: "<target>"?`
-6. The stage fails if Jev returns no choice, an index out of range, or a confidence below `CONFIDENCE_THRESHOLD`. Otherwise it returns the chosen candidate's `id`.
+6. The stage fails if the Harness returns `{ ok: false, reason }`, if it returns `index: null` or an index out of range, or if the returned `confidence` is below `CONFIDENCE_THRESHOLD`. Otherwise it returns `{ snapshotId }` set to the chosen candidate's `id`.
 
 Known limitation: identical elements, such as six "Delete task" buttons in different table rows, produce identical lines, so DOM Locate cannot tell them apart. Visual Locate usually can, because it sees the row around the button. Adding nearby text to each line is left as a later accuracy improvement (PRD 4.3.9). Contenteditable elements without an explicit role get the tag name as their role, so they are not input candidates.
 
@@ -91,10 +91,10 @@ Known limitation: identical elements, such as six "Delete task" buttons in diffe
 | ---------------------- | ------ | ---------------------------------------------------- |
 | `SELECTOR_PROBE_MS`    | `2000` | Selector stage timeout when `target` is also present |
 | `CONFIDENCE_THRESHOLD` | `0.7`  | Minimum Jev confidence for Visual and DOM Locate     |
-| `MAX_DOM_CANDIDATES`   | `50`   | Maximum candidates sent to Jev                       |
+| `MAX_DOM_CANDIDATES`   | `50`   | Maximum candidates sent to Jev in DOM Locate         |
 | `MAX_TEXT_LENGTH`      | `50`   | Maximum characters of text per candidate line        |
 
-All constants live in `constants.ts`. The `data-jev-id` marking belongs to the Browser Driver.
+All constants live in `constants.ts`. There are two separate checks: the Jev Harness turns a presence answer below 0.5 into `box: null` or `index: null`, and the Locator then rejects an answer whose `confidence` is below `CONFIDENCE_THRESHOLD`. The `data-jev-id` marking belongs to the BrowserAdapter.
 
 ### 1.7 Failure
 
@@ -126,7 +126,7 @@ Where the Locator sits in one element step:
 ```mermaid
 flowchart LR
   S[Step Executor] -->|LocateRequest| L[Locator]
-  L <-->|isVisible / screenshot / snapshot| B[Browser Driver]
+  L <-->|isVisible / screenshot / snapshot| B[BrowserAdapter]
   L <-->|bbox / choice| J[Jev Harness]
   L -->|LocateResult| S
 ```
@@ -170,7 +170,7 @@ type LocateRequest = {
   selector?: string; // from Step
   target?: string; // from Step
   timeoutMs: number; // TestCase.timeoutMs
-  signal?: AbortSignal;
+  signal?: AbortSignal; // passed to Jev calls
 };
 
 type LocateMethod = "selector" | "visual" | "dom";
@@ -179,14 +179,14 @@ type LocateAttempt = {
   method: LocateMethod;
   ok: boolean;
   durationMs: number;
-  confidence?: number; // Visual and DOM only
+  confidence?: number; // Visual and DOM only: the confidence returned by the Jev Harness
   reason?: string; // present when ok is false
 };
 
 type LocateResult = {
   method: LocateMethod; // the stage that succeeded
-  element: ElementRef; // selector or snapshotId; the BrowserAction element reference
-  confidence?: number; // Visual and DOM only
+  element: ElementRef; // { selector } or { snapshotId }; the BrowserAction element reference
+  confidence?: number; // Visual and DOM only: the confidence returned by the Jev Harness
   durationMs: number; // total time of all attempts
   attempts: LocateAttempt[];
 };
@@ -227,7 +227,7 @@ A `snapshotId` is only valid for the snapshot just taken, so the Executor must c
 
 ### 3.2 Jev Harness Interface
 
-The Locator uses the shared Jev client from [src/core/jev/index.ts](../core/jev/index.ts), and the public contract is described there. This doc keeps the assumptions that matter for Locator behavior:
+The Locator uses the shared Jev client from [src/core/jev/index.ts](../../src/core/jev/index.ts), and the public contract is described there. This doc keeps the assumptions that matter for Locator behavior:
 
 Assumptions:
 
@@ -240,7 +240,7 @@ Assumptions:
 
 ### 3.3 BrowserAdapter Interface Used by the Locator
 
-The Locator depends only on the BrowserAdapter methods in [docs/tech/browser-adapter.md](browser-adapter.md) and [src/core/browser/types.ts](../core/browser/types.ts):
+The Locator depends only on the BrowserAdapter methods in [docs/tech/browser-adapter.md](browser-adapter.md) and [src/core/browser/types.ts](../../src/core/browser/types.ts):
 
 ```ts
 interface BrowserAdapter {
@@ -250,7 +250,7 @@ interface BrowserAdapter {
 }
 ```
 
-The Locator uses only the fields it needs from `PageSnapshot` and `SnapshotElement`, defined in [src/core/browser/types.ts](../core/browser/types.ts):
+The Locator uses only the fields it needs from `PageSnapshot` and `SnapshotElement`, defined in [src/core/browser/types.ts](../../src/core/browser/types.ts):
 
 ```ts
 type PageSnapshot = {
@@ -280,24 +280,25 @@ flowchart LR
   locate[locate.ts] --> selector[selector.ts]
   locate --> visual[visual.ts]
   locate --> dom[dom.ts]
+  visual --> dom
 ```
 
 | Module         | Responsibility                                                                                                     |
 | -------------- | ------------------------------------------------------------------------------------------------------------------ |
 | `locate.ts`    | Entry point `locate()`: decides which stages run, records attempts, returns `LocateResult` or throws `LocateError` |
-| `selector.ts`  | Selector stage (1.2): `driver.isVisible()` with the right timeout                                                  |
-| `visual.ts`    | Visual Locate (1.4): screenshot, Jev `bbox`, box center, element at point                                          |
-| `dom.ts`       | DOM Locate (1.5): usable candidates, description lines, Jev `choice`                                               |
+| `selector.ts`  | Selector stage (1.2): `adapter.isVisible()` with the right timeout                                                 |
+| `visual.ts`    | Visual Locate (1.4): screenshot and snapshot, Jev `bbox`, box center, element at point                             |
+| `dom.ts`       | DOM Locate (1.5): usable elements (`filterUsable`, also used by `visual.ts`), candidate cap, description lines, Jev `choice` |
 | `constants.ts` | Constants in 1.6                                                                                                   |
 
-None of these modules imports Playwright. To add a new stage, add a module and call it from `locate.ts` in the desired order.
+None of these modules imports Playwright. `BrowserAdapter` and `JevClient` are imported from `src/core/browser/` and `src/core/jev/`, not redefined here. To add a new stage, add a module and call it from `locate.ts` in the desired order.
 
 ### 4.2 Directory Layout
 
 ```text
 src/core/locator/
 ├── index.ts       # exports locate, LocateError and types
-├── types.ts       # LocateRequest, LocateResult, LocateAttempt, JevClient, BrowserDriver
+├── types.ts       # LocateRequest, LocateMethod, LocateAttempt, LocateResult
 ├── constants.ts
 ├── locate.ts
 ├── selector.ts
@@ -307,11 +308,12 @@ src/core/locator/
 
 ## 5. Test Plan
 
-All tests use Vitest and never launch a browser. Tests pass a fake `BrowserDriver` (serving fixture files and counting calls) and a fake `JevClient` (returning scripted answers); the product always uses the real ones.
+All tests use Vitest and never launch a browser. Tests pass a fake `BrowserAdapter` (serving fixture files and counting calls) and a fake `JevClient` (returning scripted answers); the product always uses the real ones.
 
 | Type        | Coverage                                                                                                                                                                                                                                                                                              | Location                                                                                        |
 | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| Unit        | Description lines (truncation, omitted fields, `aria-checked`); element at point (inside, smallest area, `hittable: false` skipped, editable filter for `input`)                                                                                                                                      | `src/tests/unit/core/locator/dom.test.ts`, `visual.test.ts`                                     |
-| Unit        | `locate()` flow: `selector` only never calls Jev; a selector hit takes no screenshot; probe timeout is `SELECTOR_PROBE_MS` when `target` is present, `timeoutMs` otherwise; order Visual → DOM; snapshot is reused between stages; `LocateError` lists every attempt                                  | `src/tests/unit/core/locator/locate.test.ts`                                                    |
+| Unit        | Usable elements (`hittable: false` and disabled skipped, editable filter for `input`); candidate cap; description lines (truncation, escaping, omitted fields, `checked=false`, `aria-checked`)                                                                                                       | `src/tests/unit/core/locator/dom.test.ts`                                                       |
+| Unit        | Element at point (inside, edge point counts, zero-size element never matches, smallest area wins, area tie goes to the earliest, no match returns `null`); box center                                                                                                                                | `src/tests/unit/core/locator/visual.test.ts`                                                    |
+| Unit        | `locate()` flow: `selector` only never calls Jev; a selector hit takes no screenshot; a confidence below `CONFIDENCE_THRESHOLD` fails the stage; probe timeout is `SELECTOR_PROBE_MS` when `target` is present, `timeoutMs` otherwise; Visual takes the snapshot before calling Jev; order Visual → DOM; snapshot is reused between stages; `LocateError` lists every attempt | `src/tests/unit/core/locator/locate.test.ts`                                                    |
 | Integration | For every target in the hw3 fixtures: a fake Jev returning the ground-truth `bbox` makes Visual Locate return { snapshotId: <fixture elementId> }; a fake Jev choosing the ground-truth element does the same for DOM Locate; targets with `present: false` or `elementId: null` end in `LocateError` | `src/tests/integration/locator/fixtures.test.ts`, reading `src/tests/integration/hw3/fixtures/` |
 | Manual      | The same fixtures with the real Jev through OpenRouter, to measure accuracy; not run in CI                                                                                                                                                                                                            | Benchmark Test Suite                                                                            |
