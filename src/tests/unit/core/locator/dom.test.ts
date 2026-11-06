@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { SnapshotElement } from "@/core/browser/index.js";
+import type { PageSnapshot, SnapshotElement } from "@/core/browser/index.js";
 import { MAX_DOM_CANDIDATES } from "@/core/locator/constants.js";
-import { describeCandidate, filterUsable, selectCandidates } from "@/core/locator/dom.js";
+import { describeCandidate, filterUsable, runDom, selectCandidates } from "@/core/locator/dom.js";
+import type { LocateRequest } from "@/core/locator/types.js";
 
 const element = (overrides: Partial<SnapshotElement> = {}): SnapshotElement => ({
     id: 0,
@@ -167,5 +168,248 @@ describe("describeCandidate", () => {
         });
 
         expect(describeCandidate(candidate)).toBe('switch "Weekly" checked=true aria-checked=false');
+    });
+});
+
+describe("runDom", () => {
+    const baseRequest = (overrides: Partial<LocateRequest> = {}): LocateRequest => ({
+        action: "click",
+        target: "Sign in button",
+        timeoutMs: 1000,
+        ...overrides,
+    });
+
+    const snapshot = (elements: SnapshotElement[]): PageSnapshot => ({
+        url: "https://example.test",
+        title: "Example",
+        viewport: { width: 1280, height: 720 },
+        elements,
+    });
+
+    it("uses existingSnapshot and does not call adapter.snapshot", async () => {
+        const existing = snapshot([element({ id: 10, role: "button", name: "Sign in" })]);
+        let snapshotCalls = 0;
+
+        const adapter = {
+            snapshot: async () => {
+                snapshotCalls += 1;
+                return { ok: true as const, data: existing };
+            },
+        };
+
+        const jev = {
+            choice: async () => ({ ok: true as const, data: { index: 0, confidence: 0.9 } }),
+        };
+
+        const result = await runDom(baseRequest(), adapter, jev, existing);
+
+        expect(snapshotCalls).toBe(0);
+        expect(result.attempt.ok).toBe(true);
+        expect(result.snapshot).toBe(existing);
+        expect(result.attempt.durationMs).toBeGreaterThanOrEqual(0);
+    });
+
+    it("calls adapter.snapshot once when no existingSnapshot and does not call choice on snapshot failure", async () => {
+        let snapshotCalls = 0;
+        let choiceCalls = 0;
+
+        const adapter = {
+            snapshot: async () => {
+                snapshotCalls += 1;
+                return { ok: false as const, reason: "snapshot failed" };
+            },
+        };
+
+        const jev = {
+            choice: async () => {
+                choiceCalls += 1;
+                return { ok: true as const, data: { index: 0, confidence: 0.9 } };
+            },
+        };
+
+        const result = await runDom(baseRequest(), adapter, jev);
+
+        expect(snapshotCalls).toBe(1);
+        expect(choiceCalls).toBe(0);
+        expect(result.attempt.ok).toBe(false);
+        expect(result.attempt.reason).toContain("snapshot");
+        expect(result.attempt.durationMs).toBeGreaterThanOrEqual(0);
+    });
+
+    it("fails when there are no usable candidates and does not call choice", async () => {
+        let choiceCalls = 0;
+        const currentSnapshot = snapshot([
+            element({ id: 1, hittable: false }),
+            element({ id: 2, attrs: { disabled: true } }),
+        ]);
+
+        const adapter = {
+            snapshot: async () => ({ ok: true as const, data: currentSnapshot }),
+        };
+
+        const jev = {
+            choice: async () => {
+                choiceCalls += 1;
+                return { ok: true as const, data: { index: 0, confidence: 0.9 } };
+            },
+        };
+
+        const result = await runDom(baseRequest(), adapter, jev);
+
+        expect(choiceCalls).toBe(0);
+        expect(result.attempt.ok).toBe(false);
+        expect(result.attempt.reason).toContain("usable");
+        expect(result.snapshot).toBe(currentSnapshot);
+        expect(result.attempt.durationMs).toBeGreaterThanOrEqual(0);
+    });
+
+    it("calls choice with exact options, exact question, and request.signal", async () => {
+        const signal = new AbortController().signal;
+        const request = baseRequest({ target: "Sign in button", signal });
+        const currentSnapshot = snapshot([
+            element({ id: 1, role: "button", name: "Cancel" }),
+            element({ id: 2, role: "button", name: "Sign in" }),
+        ]);
+
+        const calls: Array<{ question: string; options: string[]; signalArg: AbortSignal | undefined }> = [];
+
+        const adapter = {
+            snapshot: async () => ({ ok: true as const, data: currentSnapshot }),
+        };
+
+        const jev = {
+            choice: async (question: string, options: string[], signalArg?: AbortSignal) => {
+                calls.push({ question, options, signalArg });
+                return { ok: true as const, data: { index: 1, confidence: 0.9 } };
+            },
+        };
+
+        await runDom(request, adapter, jev);
+
+        expect(calls).toHaveLength(1);
+        expect(calls[0].question).toBe('Which element best matches the description: "Sign in button"?');
+        expect(calls[0].options).toEqual(selectCandidates(currentSnapshot.elements, request.action).map(describeCandidate));
+        expect(calls[0].signalArg).toBe(signal);
+    });
+
+    it("fails when choice returns ok false", async () => {
+        const currentSnapshot = snapshot([element({ id: 2, role: "button", name: "Sign in" })]);
+
+        const adapter = {
+            snapshot: async () => ({ ok: true as const, data: currentSnapshot }),
+        };
+
+        const jev = {
+            choice: async () => ({ ok: false as const, reason: "upstream error" }),
+        };
+
+        const result = await runDom(baseRequest(), adapter, jev);
+
+        expect(result.attempt.ok).toBe(false);
+        expect(result.attempt.reason).toContain("upstream");
+        expect(result.snapshot).toBe(currentSnapshot);
+        expect(result.attempt.durationMs).toBeGreaterThanOrEqual(0);
+    });
+
+    it("fails when index is null and leaves attempt.confidence undefined", async () => {
+        const currentSnapshot = snapshot([element({ id: 2, role: "button", name: "Sign in" })]);
+
+        const adapter = {
+            snapshot: async () => ({ ok: true as const, data: currentSnapshot }),
+        };
+
+        const jev = {
+            choice: async () => ({ ok: true as const, data: { index: null, confidence: 0.95 } }),
+        };
+
+        const result = await runDom(baseRequest(), adapter, jev);
+
+        expect(result.attempt.ok).toBe(false);
+        expect(result.attempt.reason).toContain("no candidate");
+        expect(result.attempt.confidence).toBeUndefined();
+        expect(result.attempt.durationMs).toBeGreaterThanOrEqual(0);
+    });
+
+    it("fails when index is out of range", async () => {
+        const currentSnapshot = snapshot([element({ id: 2, role: "button", name: "Sign in" })]);
+
+        const adapter = {
+            snapshot: async () => ({ ok: true as const, data: currentSnapshot }),
+        };
+
+        const jev = {
+            choice: async () => ({ ok: true as const, data: { index: 1, confidence: 0.88 } }),
+        };
+
+        const result = await runDom(baseRequest(), adapter, jev);
+
+        expect(result.attempt.ok).toBe(false);
+        expect(result.attempt.reason).toContain("out of range");
+        expect(result.attempt.confidence).toBe(0.88);
+        expect(result.attempt.durationMs).toBeGreaterThanOrEqual(0);
+    });
+
+    it("fails when confidence is below 0.7 and succeeds at exactly 0.7", async () => {
+        const currentSnapshot = snapshot([element({ id: 2, role: "button", name: "Sign in" })]);
+
+        const adapter = {
+            snapshot: async () => ({ ok: true as const, data: currentSnapshot }),
+        };
+
+        const lowConfidenceJev = {
+            choice: async () => ({ ok: true as const, data: { index: 0, confidence: 0.69 } }),
+        };
+
+        const thresholdJev = {
+            choice: async () => ({ ok: true as const, data: { index: 0, confidence: 0.7 } }),
+        };
+
+        const low = await runDom(baseRequest(), adapter, lowConfidenceJev);
+        expect(low.attempt.ok).toBe(false);
+        expect(low.attempt.reason).toContain("below");
+        expect(low.attempt.confidence).toBe(0.69);
+        expect(low.attempt.durationMs).toBeGreaterThanOrEqual(0);
+
+        const pass = await runDom(baseRequest(), adapter, thresholdJev);
+        expect(pass.attempt.ok).toBe(true);
+        expect(pass.attempt.confidence).toBe(0.7);
+        expect(pass.element).toEqual({ snapshotId: 2 });
+        expect(pass.attempt.durationMs).toBeGreaterThanOrEqual(0);
+    });
+
+    it("maps Jev index to candidates index when unusable elements shift the list", async () => {
+        const currentSnapshot = snapshot([
+            element({ id: 10, role: "button", name: "Blocked", hittable: false }),
+            element({ id: 20, role: "button", name: "First usable" }),
+            element({ id: 30, role: "button", name: "Second usable" }),
+        ]);
+
+        const adapter = {
+            snapshot: async () => ({ ok: true as const, data: currentSnapshot }),
+        };
+
+        const jev = {
+            choice: async () => ({ ok: true as const, data: { index: 0, confidence: 0.9 } }),
+        };
+
+        const result = await runDom(baseRequest(), adapter, jev);
+
+        expect(result.attempt.ok).toBe(true);
+        expect(result.element).toEqual({ snapshotId: 20 });
+        expect(result.attempt.durationMs).toBeGreaterThanOrEqual(0);
+    });
+
+    it("propagates errors thrown by adapter.snapshot", async () => {
+        const adapter = {
+            snapshot: async () => {
+                throw new Error("adapter exploded");
+            },
+        };
+
+        const jev = {
+            choice: async () => ({ ok: true as const, data: { index: 0, confidence: 0.9 } }),
+        };
+
+        await expect(runDom(baseRequest(), adapter, jev)).rejects.toThrow("adapter exploded");
     });
 });
