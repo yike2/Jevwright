@@ -48,6 +48,24 @@ The request body is:
 
 The Harness treats Jev’s model output as untrusted and validates the fields it uses before returning them.
 
+Real Jev responses are wrapped by question name under an `answers` object. The harness reads `answers[target]` (or whichever question key it asked) and validates the nested payload before returning data. The `usage` block is metadata and is ignored for core result parsing.
+
+```json
+{
+  "id": "gen-dec-123",
+  "model": "typesafe/jev-1.14",
+  "provider": "TypeSafe",
+  "answers": {
+    "target": { "type": "noul", "noul": 0.82 }
+  },
+  "usage": {
+    "input_tokens": 476,
+    "output_tokens": 70,
+    "cost": 0.00002
+  }
+}
+```
+
 ### 1.4 Public methods
 
 The Harness exposes the functions required by the Locator and Asserter:
