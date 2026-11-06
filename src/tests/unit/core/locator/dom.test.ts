@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { SnapshotElement } from "@/core/browser/index.js";
-import { describeCandidate, selectCandidates } from "@/core/locator/dom.js";
+import { MAX_DOM_CANDIDATES } from "@/core/locator/constants.js";
+import { describeCandidate, filterUsable, selectCandidates } from "@/core/locator/dom.js";
 
 const element = (overrides: Partial<SnapshotElement> = {}): SnapshotElement => ({
     id: 0,
@@ -43,6 +44,47 @@ describe("selectCandidates", () => {
 
         expect(selectCandidates(candidates, "click")).toHaveLength(50);
         expect(selectCandidates(candidates, "click").map((item) => item.id)).toEqual(Array.from({ length: 50 }, (_, i) => i));
+    });
+});
+
+describe("filterUsable", () => {
+    it("excludes non-hittable elements", () => {
+        const candidates = [
+            element({ id: 0, hittable: false }),
+            element({ id: 1, hittable: true }),
+        ];
+
+        expect(filterUsable(candidates, "click").map((item) => item.id)).toEqual([1]);
+    });
+
+    it("excludes disabled elements but keeps disabled=false", () => {
+        const candidates = [
+            element({ id: 0, attrs: { disabled: true } }),
+            element({ id: 1, attrs: { disabled: false } }),
+            element({ id: 2, attrs: {} }),
+        ];
+
+        expect(filterUsable(candidates, "click").map((item) => item.id)).toEqual([1, 2]);
+    });
+
+    it("keeps only textbox and searchbox roles for input actions", () => {
+        const candidates = [
+            element({ id: 0, role: "textbox" }),
+            element({ id: 1, role: "searchbox" }),
+            element({ id: 2, role: "button" }),
+            element({ id: 3, role: "checkbox" }),
+        ];
+
+        expect(filterUsable(candidates, "input").map((item) => item.id)).toEqual([0, 1]);
+    });
+
+    it("returns all usable elements when under the cap and leaves selectCandidates capped", () => {
+        const candidates = Array.from({ length: MAX_DOM_CANDIDATES + 10 }, (_, id) =>
+            element({ id, hittable: true, attrs: { disabled: false } }),
+        );
+
+        expect(filterUsable(candidates, "click")).toHaveLength(MAX_DOM_CANDIDATES + 10);
+        expect(selectCandidates(candidates, "click")).toHaveLength(MAX_DOM_CANDIDATES);
     });
 });
 

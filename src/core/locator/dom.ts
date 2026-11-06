@@ -5,11 +5,11 @@ const truncateText = (value: string): string => value.slice(0, MAX_TEXT_LENGTH);
 
 const escapeText = (value: string): string => truncateText(value).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 
-export function selectCandidates(
+export function filterUsable(
     elements: SnapshotElement[],
     action: "click" | "doubleClick" | "rightClick" | "hover" | "input",
 ): SnapshotElement[] {
-    const usable = elements.filter((element) => {
+    return elements.filter((element) => {
         if (!element.hittable) return false;
         if (element.attrs.disabled === true) return false;
         if (action === "input") {
@@ -17,8 +17,13 @@ export function selectCandidates(
         }
         return true;
     });
+}
 
-    return usable.slice(0, MAX_DOM_CANDIDATES);
+export function selectCandidates(
+    elements: SnapshotElement[],
+    action: "click" | "doubleClick" | "rightClick" | "hover" | "input",
+): SnapshotElement[] {
+    return filterUsable(elements, action).slice(0, MAX_DOM_CANDIDATES);
 }
 
 export function describeCandidate(element: SnapshotElement): string {
