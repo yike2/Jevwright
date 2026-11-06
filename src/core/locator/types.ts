@@ -1,4 +1,4 @@
-import type { BrowserAdapter, ElementRef } from "@/core/browser/index.js";
+import type { BrowserAdapter, ElementRef, PageSnapshot } from "@/core/browser/index.js";
 import type { JevClient } from "@/core/jev/index.js";
 
 export type LocateRequest = {
@@ -17,6 +17,12 @@ export type LocateAttempt = {
     durationMs: number;
     confidence?: number;
     reason?: string;
+};
+
+export type StageResult = {
+    attempt: LocateAttempt;
+    element?: ElementRef;
+    snapshot?: PageSnapshot;
 };
 
 export type LocateResult = {
