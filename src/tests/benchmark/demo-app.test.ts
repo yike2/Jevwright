@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { execute } from "@/core/executor/index.js";
 import { analyze } from "@/core/syntax/index.js";
+import { throwingJev } from "../unit/core/executor/fake-adapter.js";
 import { serveDemoApp } from "./server.js";
 
 const SITE = fileURLToPath(new URL("./demo-app/site/", import.meta.url));
@@ -36,12 +37,12 @@ steps:
       text: "Products"
 `;
 
-// Analyzes `yaml` and runs it headless against the demo app; returns the step statuses and any failure reason.
+// Analyzes `yaml` and runs it headless against the demo app, by selector only (Jev must not be called); returns the step statuses and any failure reason.
 async function run(yaml: string) {
   const { testCase, diagnostics } = analyze(yaml);
   if (!testCase) throw new Error(`Invalid test: ${JSON.stringify(diagnostics)}`);
   const vars = { BASE: app.baseUrl, SWAG_PASSWORD: "secret_sauce" };
-  const { steps } = await execute(testCase, { headed: false, vars, onEvent: () => {} });
+  const { steps } = await execute(testCase, { headed: false, vars, onEvent: () => {}, jev: throwingJev });
   return { statuses: steps.map(({ status }) => status), reasons: steps.flatMap((step) => ("reason" in step ? [step.reason] : [])) };
 }
 
