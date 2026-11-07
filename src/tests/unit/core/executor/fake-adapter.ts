@@ -1,8 +1,21 @@
-import type { BrowserAction, BrowserAdapter, BrowserCheck, BrowserResult, ReadResult } from "@/core/browser/index.js";
+import type { BrowserAction, BrowserAdapter, BrowserCheck, BrowserResult, PageSnapshot, ReadResult } from "@/core/browser/index.js";
+import type { JevClient } from "@/core/jev/index.js";
 
 export const OK: BrowserResult = { ok: true, dialogs: [] };
 export const PNG = Buffer.from("png");
 export const TRACE = Buffer.from("trace");
+
+export const throwingJev: JevClient = {
+  bbox: async () => {
+    throw new Error("Jev should not be called yet");
+  },
+  choice: async () => {
+    throw new Error("Jev should not be called yet");
+  },
+  noul: async () => {
+    throw new Error("Jev should not be called yet");
+  },
+};
 
 export const failed = (reason: string, dialogs: BrowserResult["dialogs"] = []): BrowserResult => ({
   ok: false,
@@ -12,15 +25,17 @@ export const failed = (reason: string, dialogs: BrowserResult["dialogs"] = []): 
 
 type Script = {
   ready?: () => BrowserResult | Promise<BrowserResult>;
+  isVisible?: (selector: string, timeoutMs: number) => ReadResult<boolean> | Promise<ReadResult<boolean>>;
   perform?: (action: BrowserAction) => BrowserResult | Promise<BrowserResult>;
   check?: (check: BrowserCheck) => BrowserResult | Promise<BrowserResult>;
   screenshot?: () => ReadResult<Buffer> | Promise<ReadResult<Buffer>>;
+  snapshot?: () => ReadResult<PageSnapshot> | Promise<ReadResult<PageSnapshot>>;
   close?: () => Buffer | Promise<Buffer>;
 };
 
 export type Call =
   | { method: "ready" | "screenshot" | "snapshot" | "close" }
-  | { method: "isVisible"; selector: string }
+  | { method: "isVisible"; selector: string; timeoutMs: number }
   | { method: "perform"; action: BrowserAction }
   | { method: "check"; check: BrowserCheck };
 
@@ -32,9 +47,9 @@ export function fakeAdapter(script: Script = {}) {
       calls.push({ method: "ready" });
       return script.ready ? script.ready() : OK;
     },
-    async isVisible(selector) {
-      calls.push({ method: "isVisible", selector });
-      return { ok: true, data: true };
+    async isVisible(selector, timeoutMs) {
+      calls.push({ method: "isVisible", selector, timeoutMs });
+      return script.isVisible ? script.isVisible(selector, timeoutMs) : { ok: true, data: true };
     },
     async screenshot() {
       calls.push({ method: "screenshot" });
@@ -42,7 +57,7 @@ export function fakeAdapter(script: Script = {}) {
     },
     async snapshot() {
       calls.push({ method: "snapshot" });
-      return { ok: false, reason: "No snapshot in the fake" };
+      return script.snapshot ? script.snapshot() : { ok: false, reason: "No snapshot in the fake" };
     },
     async perform(action) {
       calls.push({ method: "perform", action });

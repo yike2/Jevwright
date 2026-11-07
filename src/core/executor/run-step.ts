@@ -1,6 +1,10 @@
 import type { BrowserAdapter, BrowserCheck, BrowserResult } from "../browser/index.js";
+import { judge, waitUntil } from "../asserter/index.js";
+import type { JevClient } from "../jev/index.js";
 import type { AssertCheck, Step } from "../syntax/index.js";
-import { missingVariables, NEEDS_ASSERTER, NEEDS_LOCATOR } from "./reasons.js";
+import { locate, LocateError } from "../locator/index.js";
+import type { JudgeResult } from "../asserter/index.js";
+import { missingVariables } from "./reasons.js";
 import type { FailedStep, LocateMethod, PassedStep } from "./types.js";
 import { substitute } from "./variables.js";
 
@@ -8,15 +12,21 @@ export type StepContext = {
   browser: BrowserAdapter;
   vars: Record<string, string>;
   redact: (text: string) => string;
+  jev: JevClient;
+  timeoutMs: number;
 };
 
 type Outcome = { result: BrowserResult; locateMethod?: LocateMethod };
 
 const fail = (reason: string): Outcome => ({ result: { ok: false, reason, dialogs: [] } });
 
-// With a target too, a failed selector would fall back to Jev, which the Element Locator does not offer yet.
-const withTarget = (result: BrowserResult, target: string | undefined): BrowserResult =>
-  result.ok || target === undefined ? result : { ...result, reason: `${result.reason}; ${NEEDS_LOCATOR}` };
+function mapJudgeResult(result: JudgeResult, dialogs: BrowserResult["dialogs"] = []): BrowserResult {
+  if (result.ok) {
+    return { ok: true, dialogs };
+  }
+
+  return { ok: false, reason: result.reason, dialogs };
+}
 
 function toCheck(check: AssertCheck): BrowserCheck {
   if ("url" in check) return { check: "url", url: check.url };
@@ -26,7 +36,8 @@ function toCheck(check: AssertCheck): BrowserCheck {
 }
 
 // The one Adapter call for a step whose Variables are filled in (executor.md 1.4).
-async function act(step: Step, browser: BrowserAdapter): Promise<Outcome> {
+async function act(step: Step, context: StepContext): Promise<Outcome> {
+  const { browser, jev } = context;
   switch (step.action) {
     case "open":
     case "back":
@@ -42,42 +53,83 @@ async function act(step: Step, browser: BrowserAdapter): Promise<Outcome> {
     case "click":
     case "doubleClick":
     case "rightClick":
-    case "hover":
-      // TODO: locate by target through the Element Locator.
-      if (step.selector === undefined) return fail(NEEDS_LOCATOR);
-      return {
-        result: withTarget(
-          await browser.perform({ action: step.action, element: { selector: step.selector }, dialog: step.dialog }),
-          step.target,
-        ),
-        locateMethod: "selector",
-      };
+    case "hover": {
+      if (step.target === undefined) {
+        return {
+          result: await browser.perform({ action: step.action, element: { selector: step.selector }, dialog: step.dialog }),
+          locateMethod: "selector",
+        };
+      }
+
+      try {
+        const located = await locate(
+          { action: step.action, selector: step.selector, target: step.target, timeoutMs: context.timeoutMs },
+          browser,
+          jev,
+        );
+        return {
+          result: await browser.perform({ action: step.action, element: located.element, dialog: step.dialog }),
+          locateMethod: located.method,
+        };
+      } catch (error) {
+        if (error instanceof LocateError) return fail(error.message);
+        throw error;
+      }
+    }
     case "input":
-      // TODO: locate by target through the Element Locator.
-      if (step.selector === undefined) return fail(NEEDS_LOCATOR);
-      return {
-        result: withTarget(
-          await browser.perform({
+      if (step.target === undefined) {
+        return {
+          result: await browser.perform({
             action: "input",
             element: { selector: step.selector },
             value: step.value,
             dialog: step.dialog,
           }),
-          step.target,
-        ),
-        locateMethod: "selector",
-      };
+          locateMethod: "selector",
+        };
+      }
+
+      try {
+        const located = await locate(
+          { action: "input", selector: step.selector, target: step.target, timeoutMs: context.timeoutMs },
+          browser,
+          jev,
+        );
+        return {
+          result: await browser.perform({
+            action: "input",
+            element: located.element,
+            value: step.value,
+            dialog: step.dialog,
+          }),
+          locateMethod: located.method,
+        };
+      } catch (error) {
+        if (error instanceof LocateError) return fail(error.message);
+        throw error;
+      }
     case "waitFor":
-      // TODO: judge the condition through the Asserter.
-      if ("condition" in step) return fail(NEEDS_ASSERTER);
+      if ("condition" in step) {
+        const judged = await waitUntil(step.condition, context.timeoutMs, browser, jev);
+        return { result: mapJudgeResult(judged) };
+      }
       if ("selector" in step) return { result: await browser.check({ check: "visible", selector: step.selector }) };
       return { result: await browser.check({ check: "url", url: step.url }) };
     case "assert": {
-      // TODO: judge the statement through the Asserter, also as the fallback of a failed check.
-      if (!("check" in step)) return fail(NEEDS_ASSERTER);
+      if (!("check" in step)) {
+        const judged = await judge(step.statement, browser, jev);
+        return { result: mapJudgeResult(judged) };
+      }
+
       const result = await browser.check(toCheck(step.check));
       if (result.ok || step.statement === undefined) return { result };
-      return { result: { ...result, reason: `${result.reason}; ${NEEDS_ASSERTER}` } };
+
+      const judged = await judge(step.statement, browser, jev);
+      if (judged.ok) {
+        return { result: { ok: true, dialogs: result.dialogs } };
+      }
+
+      return { result: { ok: false, reason: `${result.reason}; ${judged.reason}`, dialogs: result.dialogs } };
     }
     default: {
       const unknown: never = step;
@@ -99,7 +151,7 @@ export async function runStep(step: Step, index: number, context: StepContext): 
     if (!ready.ok) {
       outcome = { result: ready };
     } else {
-      const acted = await act(filled.value, browser);
+      const acted = await act(filled.value, context);
       outcome = { ...acted, result: { ...acted.result, dialogs: [...ready.dialogs, ...acted.result.dialogs] } };
     }
   }

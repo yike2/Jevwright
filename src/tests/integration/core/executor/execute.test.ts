@@ -42,7 +42,18 @@ steps:
 async function run(yaml: string): Promise<ExecuteResult> {
   const { testCase, diagnostics } = analyze(yaml);
   if (!testCase) throw new Error(`Invalid test: ${JSON.stringify(diagnostics)}`);
-  return execute(testCase, { headed: false, vars: { BASE: server.baseUrl, EMAIL: "student@x.com" }, onEvent: () => {} });
+  const jev = {
+    bbox: async () => {
+      throw new Error("Jev should not be called yet");
+    },
+    choice: async () => {
+      throw new Error("Jev should not be called yet");
+    },
+    noul: async () => {
+      throw new Error("Jev should not be called yet");
+    },
+  };
+  return execute(testCase, { headed: false, vars: { BASE: server.baseUrl, EMAIL: "student@x.com" }, onEvent: () => { }, jev });
 }
 
 describe("execute", () => {
