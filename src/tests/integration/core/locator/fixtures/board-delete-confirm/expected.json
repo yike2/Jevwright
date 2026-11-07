@@ -1,0 +1,38 @@
+{
+  "scenario": "board-delete-confirm",
+  "description": "Confirmation dialog after clicking delete on 'Write release notes'",
+  "targets": [
+    {
+      "target": "Red 'Delete' button in the confirmation dialog",
+      "present": true,
+      "elementId": 32,
+      "bbox": {
+        "x": 770,
+        "y": 417,
+        "width": 76,
+        "height": 36
+      }
+    },
+    {
+      "target": "'Cancel' button in the confirmation dialog",
+      "present": true,
+      "elementId": 31,
+      "bbox": {
+        "x": 685,
+        "y": 417,
+        "width": 77,
+        "height": 36
+      }
+    }
+  ],
+  "statements": [
+    {
+      "statement": "The dialog asks to confirm deleting 'Write release notes'",
+      "holds": true
+    },
+    {
+      "statement": "The dialog asks to confirm deleting 'Design new pricing page'",
+      "holds": false
+    }
+  ]
+}

@@ -1,0 +1,121 @@
+{
+  "scenario": "board-default",
+  "description": "Task board of the 'Website redesign' project",
+  "targets": [
+    {
+      "target": "'New task' button",
+      "present": true,
+      "elementId": 9,
+      "bbox": {
+        "x": 1136,
+        "y": 89,
+        "width": 116,
+        "height": 36
+      }
+    },
+    {
+      "target": "Search tasks input in the top bar",
+      "present": true,
+      "elementId": 1,
+      "bbox": {
+        "x": 193,
+        "y": 10,
+        "width": 360,
+        "height": 36
+      }
+    },
+    {
+      "target": "Bell icon for notifications",
+      "present": true,
+      "elementId": 2,
+      "bbox": {
+        "x": 1152,
+        "y": 12,
+        "width": 32,
+        "height": 32
+      }
+    },
+    {
+      "target": "Gear icon that opens settings",
+      "present": true,
+      "elementId": 3,
+      "bbox": {
+        "x": 1190,
+        "y": 12,
+        "width": 32,
+        "height": 32
+      }
+    },
+    {
+      "target": "Delete (trash) icon in the 'Write release notes' row",
+      "note": "Ambiguous: six identical 'Delete task' buttons; only the row text tells them apart",
+      "present": true,
+      "elementId": 21,
+      "bbox": {
+        "x": 1205,
+        "y": 348,
+        "width": 32,
+        "height": 32
+      }
+    },
+    {
+      "target": "Checkbox for the 'Design new pricing page' task",
+      "note": "Ambiguous: six identical 'Mark as done' checkboxes",
+      "present": true,
+      "elementId": 16,
+      "bbox": {
+        "x": 267,
+        "y": 305,
+        "width": 13,
+        "height": 13
+      }
+    },
+    {
+      "target": "'Done' tab",
+      "present": true,
+      "elementId": 12,
+      "bbox": {
+        "x": 376,
+        "y": 145,
+        "width": 65,
+        "height": 34
+      }
+    },
+    {
+      "target": "'Mobile app' project in the sidebar",
+      "present": true,
+      "elementId": 6,
+      "bbox": {
+        "x": 12,
+        "y": 129,
+        "width": 195,
+        "height": 32
+      }
+    },
+    {
+      "target": "'Export to CSV' button",
+      "present": false,
+      "elementId": null,
+      "bbox": null
+    }
+  ],
+  "statements": [
+    {
+      "statement": "The task list shows 6 tasks",
+      "holds": true
+    },
+    {
+      "statement": "The 'Write release notes' task is assigned to Priya Shah",
+      "holds": true
+    },
+    {
+      "statement": "Two tasks are marked as done",
+      "holds": true
+    },
+    {
+      "statement": "The notification bell shows 5 unread notifications",
+      "holds": false,
+      "note": "It shows 3"
+    }
+  ]
+}

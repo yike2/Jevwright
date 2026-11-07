@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { execute } from "@/core/executor/index.js";
 import { buildReport } from "@/core/report/index.js";
 import { analyze } from "@/core/syntax/index.js";
+import { throwingJev } from "../../../unit/core/executor/fake-adapter.js";
 import { serveFixtures } from "../browser/server.js";
 
 const FIXTURES = fileURLToPath(new URL("./fixtures/", import.meta.url));
@@ -26,7 +27,7 @@ steps:
       selector: "#go"
 `);
     const startedAt = new Date();
-    const { steps, trace } = await execute(testCase!, { headed: false, vars: {}, onEvent: () => {} });
+    const { steps, trace } = await execute(testCase!, { headed: false, vars: {}, onEvent: () => {}, jev: throwingJev });
 
     const { report, files } = buildReport({ file: "missing-button.yaml", testCase: testCase!, startedAt, durationMs: 1, steps, trace });
 

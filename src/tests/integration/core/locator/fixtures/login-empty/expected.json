@@ -1,0 +1,82 @@
+{
+  "scenario": "login-empty",
+  "description": "Login page before the user types anything",
+  "targets": [
+    {
+      "target": "Email input field",
+      "present": true,
+      "elementId": 0,
+      "bbox": {
+        "x": 473,
+        "y": 351,
+        "width": 334,
+        "height": 36
+      }
+    },
+    {
+      "target": "Password input field",
+      "present": true,
+      "elementId": 1,
+      "bbox": {
+        "x": 473,
+        "y": 423,
+        "width": 334,
+        "height": 36
+      }
+    },
+    {
+      "target": "Blue 'Sign in' button",
+      "present": true,
+      "elementId": 5,
+      "bbox": {
+        "x": 473,
+        "y": 514,
+        "width": 334,
+        "height": 36
+      }
+    },
+    {
+      "target": "Eye icon button that shows the password",
+      "note": "Icon only; DOM name comes from aria-label",
+      "present": true,
+      "elementId": 2,
+      "bbox": {
+        "x": 773,
+        "y": 425,
+        "width": 32,
+        "height": 32
+      }
+    },
+    {
+      "target": "'Remember me' checkbox",
+      "present": true,
+      "elementId": 3,
+      "bbox": {
+        "x": 477,
+        "y": 478,
+        "width": 13,
+        "height": 13
+      }
+    },
+    {
+      "target": "'Sign in with Google' button",
+      "present": false,
+      "elementId": null,
+      "bbox": null
+    }
+  ],
+  "statements": [
+    {
+      "statement": "A sign-in form with email and password fields is shown",
+      "holds": true
+    },
+    {
+      "statement": "An error message is shown",
+      "holds": false
+    },
+    {
+      "statement": "The user is signed in",
+      "holds": false
+    }
+  ]
+}

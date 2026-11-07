@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { BrowserAdapter, LaunchOptions } from "@/core/browser/index.js";
 import { execute, RunAbortedError, type StepEvent } from "@/core/executor/index.js";
 import type { Step, TestCase } from "@/core/syntax/index.js";
-import { fakeAdapter, OK, TRACE } from "./fake-adapter.js";
+import { fakeAdapter, OK, throwingJev, TRACE } from "./fake-adapter.js";
 
 const steps: Step[] = [
   { line: 3, action: "open", url: "/login" },
@@ -25,7 +25,7 @@ const later = <T>(ms: number, value: T) => new Promise<T>((resolve) => setTimeou
 // Runs `test` and returns the RunAbortedError it throws, with the events it sent.
 async function abort(test: TestCase, launch: (options: LaunchOptions) => Promise<BrowserAdapter>, vars = {}) {
   const events: StepEvent[] = [];
-  const error = await execute(test, { headed: false, vars, onEvent: (event) => events.push(event) }, launch).then(
+  const error = await execute(test, { headed: false, vars, onEvent: (event) => events.push(event), jev: throwingJev }, launch).then(
     () => undefined,
     (thrown: unknown) => thrown,
   );
@@ -161,7 +161,7 @@ describe("execute, aborted Runs", () => {
       if (event.type === "finished") throw listenerError;
     };
 
-    const error = await execute(testCase(), { headed: false, vars: {}, onEvent }, async () => adapter).catch((thrown: unknown) => thrown);
+    const error = await execute(testCase(), { headed: false, vars: {}, onEvent, jev: throwingJev }, async () => adapter).catch((thrown: unknown) => thrown);
 
     expect(error).toBeInstanceOf(RunAbortedError);
     expect((error as RunAbortedError).message).toBe("Browser has been closed");
@@ -176,7 +176,7 @@ describe("execute, aborted Runs", () => {
       if (event.type === "started" && event.step.index === 1) throw listenerError;
     };
 
-    const error = await execute(testCase(), { headed: false, vars: {}, onEvent }, async () => adapter).catch((thrown: unknown) => thrown);
+    const error = await execute(testCase(), { headed: false, vars: {}, onEvent, jev: throwingJev }, async () => adapter).catch((thrown: unknown) => thrown);
 
     expect((error as RunAbortedError).steps.map(({ status }) => status)).toEqual(["passed", "failed", "pending"]);
     expect((error as RunAbortedError).steps[1]).toMatchObject({ reason: "WebSocket is closed" });
@@ -186,7 +186,7 @@ describe("execute, aborted Runs", () => {
     vi.useFakeTimers();
     const { adapter } = fakeAdapter({ perform: () => later(30, OK) });
 
-    const ran = execute(testCase({ timeoutMs: 20, runTimeoutMs: 1000 }), { headed: false, vars: {}, onEvent: () => {} }, async () => adapter);
+    const ran = execute(testCase({ timeoutMs: 20, runTimeoutMs: 1000 }), { headed: false, vars: {}, onEvent: () => {}, jev: throwingJev }, async () => adapter);
     const statuses = ran.then(({ steps }) => steps.map(({ status }) => status), (error: unknown) => error);
     await vi.advanceTimersByTimeAsync(200);
 

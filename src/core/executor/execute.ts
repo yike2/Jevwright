@@ -30,7 +30,7 @@ export async function execute(
   options: ExecuteOptions,
   launch: typeof launchBrowser = launchBrowser,
 ): Promise<ExecuteResult> {
-  const { headed, vars, onEvent } = options;
+  const { headed, vars, onEvent, jev } = options;
   const redact = createRedact(testCase, vars);
   const state: RunState = {
     results: testCase.steps.map((step, index) => ({ index, line: step.line, action: step.action, status: "pending" })),
@@ -82,7 +82,7 @@ export async function execute(
   let aborted: Aborted | undefined;
   try {
     // After a timeout, closing the browser rejects the pending Adapter call; the race has already settled, so it is ignored.
-    const steps = runSteps(testCase, { browser, vars, redact }, state);
+    const steps = runSteps(testCase, { browser, vars, redact, jev, timeoutMs: testCase.timeoutMs }, state);
     if ((await Promise.race([steps, expired])) === TIMED_OUT) aborted = timedOut;
   } catch (error) {
     aborted = infrastructure(error);

@@ -1,4 +1,5 @@
 import type { DialogRecord } from "../browser/index.js";
+import type { JevClient } from "../jev/index.js";
 import type { Step } from "../syntax/index.js";
 
 export type LocateMethod = "selector" | "visual" | "dom";
@@ -27,6 +28,7 @@ export type ExecuteOptions = {
   headed: boolean;
   vars: Record<string, string>;
   onEvent: (event: StepEvent) => void;
+  jev: JevClient;
 };
 
 export type ExecuteResult = {
