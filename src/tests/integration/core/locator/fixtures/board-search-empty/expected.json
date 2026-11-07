@@ -1,0 +1,45 @@
+{
+  "scenario": "board-search-empty",
+  "description": "Task board after searching for a word no task contains",
+  "targets": [
+    {
+      "target": "'Clear search' button",
+      "present": true,
+      "elementId": 13,
+      "bbox": {
+        "x": 691,
+        "y": 308,
+        "width": 118,
+        "height": 36
+      }
+    },
+    {
+      "target": "Search input containing 'invoice'",
+      "present": true,
+      "elementId": 1,
+      "bbox": {
+        "x": 193,
+        "y": 10,
+        "width": 360,
+        "height": 36
+      }
+    },
+    {
+      "target": "Delete icon in the 'Write release notes' row",
+      "note": "The row is filtered out",
+      "present": false,
+      "elementId": null,
+      "bbox": null
+    }
+  ],
+  "statements": [
+    {
+      "statement": "No tasks match the search",
+      "holds": true
+    },
+    {
+      "statement": "The task 'Write release notes' is visible",
+      "holds": false
+    }
+  ]
+}

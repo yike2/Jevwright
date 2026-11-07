@@ -1,0 +1,38 @@
+{
+  "scenario": "settings-saved",
+  "description": "Settings page after turning on the weekly summary and saving",
+  "targets": [
+    {
+      "target": "'Settings saved' confirmation message",
+      "present": true,
+      "elementId": null,
+      "bbox": {
+        "x": 248,
+        "y": 730,
+        "width": 134,
+        "height": 38
+      }
+    },
+    {
+      "target": "Toggle for the weekly summary",
+      "present": true,
+      "elementId": 12,
+      "bbox": {
+        "x": 1191,
+        "y": 230,
+        "width": 40,
+        "height": 22
+      }
+    }
+  ],
+  "statements": [
+    {
+      "statement": "A message confirms the settings were saved",
+      "holds": true
+    },
+    {
+      "statement": "The weekly summary toggle is off",
+      "holds": false
+    }
+  ]
+}
