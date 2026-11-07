@@ -4,6 +4,7 @@ import { isAbsoluteUrl, isAction, parseAction } from "./steps.js";
 import type { AnalyzeResult, Diagnostic, Step } from "./types.js";
 
 const DEFAULT_TIMEOUT_MS = 15000;
+const DEFAULT_RUN_TIMEOUT_MS = 600000;
 
 const parserDiagnostic = (error: YAMLError): Diagnostic => ({
   code: "E001",
@@ -34,6 +35,7 @@ export function analyze(source: string): AnalyzeResult {
     fields.invalid("baseUrl", '"baseUrl" must be an absolute URL, such as "https://example.com"');
   }
   const timeoutMs = fields.positiveInt("timeoutMs") ?? DEFAULT_TIMEOUT_MS;
+  const runTimeoutMs = fields.positiveInt("runTimeoutMs") ?? DEFAULT_RUN_TIMEOUT_MS;
 
   const steps: Step[] = [];
   if (!fields.has("steps")) {
@@ -55,7 +57,7 @@ export function analyze(source: string): AnalyzeResult {
 
   diagnostics.sort((a, b) => a.line - b.line);
   if (diagnostics.length > 0) return { diagnostics };
-  return { testCase: { name: name!, description, baseUrl, timeoutMs, steps }, diagnostics };
+  return { testCase: { name: name!, description, baseUrl, timeoutMs, runTimeoutMs, steps }, diagnostics };
 }
 
 // Checks that a step is an object with exactly one known action whose parameters are an object.

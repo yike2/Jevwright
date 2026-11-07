@@ -3,6 +3,7 @@
   "description": "A valid user can sign in and reach the dashboard",
   "baseUrl": "https://demo.example.com",
   "timeoutMs": 15000,
+  "runTimeoutMs": 600000,
   "steps": [
     { "line": 5, "action": "open", "url": "/login" },
     { "line": 7, "action": "input", "selector": "#email", "value": "{{TEST_EMAIL}}" },

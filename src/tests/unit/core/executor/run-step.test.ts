@@ -13,7 +13,7 @@ const alert = (message: string): DialogRecord => ({ type: "alert", message, answ
 // Runs `step` as step 3 of a TestCase that holds only it.
 async function run(step: Step, script: Parameters<typeof fakeAdapter>[0] = {}, vars: Record<string, string> = {}) {
   const { adapter, calls } = fakeAdapter(script);
-  const redact = createRedact({ name: "t", timeoutMs: 1000, steps: [step] }, vars);
+  const redact = createRedact({ name: "t", timeoutMs: 1000, runTimeoutMs: 600000, steps: [step] }, vars);
   const result = await runStep(step, 3, { browser: adapter, vars, redact, jev: throwingJev, timeoutMs: 1000 });
   return { result, calls };
 }
@@ -302,7 +302,7 @@ describe("runStep locator integration", () => {
     });
 
     const step: Step = { line: 2, action: "click", target: "The target button" };
-    const redact = createRedact({ name: "t", timeoutMs: 1000, steps: [step] }, {});
+    const redact = createRedact({ name: "t", timeoutMs: 1000, runTimeoutMs: 600000, steps: [step] }, {});
     const result = await runStep(step, 3, { browser: adapter, vars: {}, redact, jev, timeoutMs: 1000 });
 
     expect(result).toMatchObject({ status: "passed", locateMethod: "visual" });
@@ -320,7 +320,7 @@ describe("runStep locator integration", () => {
     const { adapter, calls } = fakeAdapter({ isVisible: () => ({ ok: true, data: true }) });
 
     const step: Step = { line: 2, action: "hover", selector: "#go", target: "Go button" };
-    const redact = createRedact({ name: "t", timeoutMs: 1000, steps: [step] }, {});
+    const redact = createRedact({ name: "t", timeoutMs: 1000, runTimeoutMs: 600000, steps: [step] }, {});
     const result = await runStep(step, 3, { browser: adapter, vars: {}, redact, jev, timeoutMs: 1000 });
 
     expect(result).toMatchObject({ status: "passed", locateMethod: "selector" });
@@ -347,7 +347,7 @@ describe("runStep locator integration", () => {
     });
 
     const step: Step = { line: 2, action: "click", selector: "#legacy", target: "The target button" };
-    const redact = createRedact({ name: "t", timeoutMs, steps: [step] }, {});
+    const redact = createRedact({ name: "t", timeoutMs, runTimeoutMs: 600000, steps: [step] }, {});
     const result = await runStep(step, 3, { browser: adapter, vars: {}, redact, jev, timeoutMs });
 
     expect(result).toMatchObject({ status: "passed", locateMethod: "visual" });
@@ -368,7 +368,7 @@ describe("runStep locator integration", () => {
     const { adapter, calls } = fakeAdapter({ snapshot: () => ({ ok: true, data: SNAPSHOT }) });
 
     const step: Step = { line: 2, action: "input", target: "Email", value: "a@b.c" };
-    const redact = createRedact({ name: "t", timeoutMs: 1000, steps: [step] }, {});
+    const redact = createRedact({ name: "t", timeoutMs: 1000, runTimeoutMs: 600000, steps: [step] }, {});
     const result = await runStep(step, 3, { browser: adapter, vars: {}, redact, jev, timeoutMs: 1000 });
 
     expect(result).toMatchObject({ status: "passed", locateMethod: "visual" });
@@ -383,7 +383,7 @@ describe("runStep locator integration", () => {
     const { adapter, calls } = fakeAdapter();
 
     const step: Step = { line: 2, action: "click", target: "The Go button" };
-    const redact = createRedact({ name: "t", timeoutMs: 1000, steps: [step] }, {});
+    const redact = createRedact({ name: "t", timeoutMs: 1000, runTimeoutMs: 600000, steps: [step] }, {});
     const result = await runStep(step, 3, { browser: adapter, vars: {}, redact, jev, timeoutMs: 1000 });
 
     expect(result).toMatchObject({
@@ -398,7 +398,7 @@ describe("runStep locator integration", () => {
     const { adapter } = fakeAdapter({ snapshot: () => { throw new Error("Browser disconnected"); } });
 
     const step: Step = { line: 2, action: "click", target: "The Go button" };
-    const redact = createRedact({ name: "t", timeoutMs: 1000, steps: [step] }, {});
+    const redact = createRedact({ name: "t", timeoutMs: 1000, runTimeoutMs: 600000, steps: [step] }, {});
 
     await expect(runStep(step, 3, { browser: adapter, vars: {}, redact, jev, timeoutMs: 1000 })).rejects.toThrow(
       "Browser disconnected",
@@ -419,7 +419,7 @@ describe("runStep locator integration", () => {
     });
 
     const step: Step = { line: 2, action: "click", selector: "#legacy", target: "The target button" };
-    const redact = createRedact({ name: "t", timeoutMs, steps: [step] }, {});
+    const redact = createRedact({ name: "t", timeoutMs, runTimeoutMs: 600000, steps: [step] }, {});
     const result = await runStep(step, 3, { browser: adapter, vars: {}, redact, jev, timeoutMs });
 
     expect(result).toMatchObject({ status: "passed", locateMethod: "visual" });
@@ -442,7 +442,7 @@ describe("runStep asserter integration", () => {
     const jev = makeJevWithNoul(noul);
     const { adapter } = fakeAdapter();
     const step: Step = { line: 2, action: "waitFor", condition };
-    const redact = createRedact({ name: "t", timeoutMs: 1000, steps: [step] }, {});
+    const redact = createRedact({ name: "t", timeoutMs: 1000, runTimeoutMs: 600000, steps: [step] }, {});
 
     const result = await runStep(step, 3, { browser: adapter, vars: {}, redact, jev, timeoutMs: 1000 });
 
@@ -456,7 +456,7 @@ describe("runStep asserter integration", () => {
     const jev = makeJevWithNoul(noul);
     const { adapter } = fakeAdapter();
     const step: Step = { line: 2, action: "waitFor", condition: "The list has loaded" };
-    const redact = createRedact({ name: "t", timeoutMs: 0, steps: [step] }, {});
+    const redact = createRedact({ name: "t", timeoutMs: 0, runTimeoutMs: 600000, steps: [step] }, {});
 
     const result = await runStep(step, 3, { browser: adapter, vars: {}, redact, jev, timeoutMs: 0 });
 
@@ -471,7 +471,7 @@ describe("runStep asserter integration", () => {
     const jev = makeJevWithNoul(noul);
     const { adapter } = fakeAdapter();
     const step: Step = { line: 2, action: "assert", statement: "The list has loaded" };
-    const redact = createRedact({ name: "t", timeoutMs: 1000, steps: [step] }, {});
+    const redact = createRedact({ name: "t", timeoutMs: 1000, runTimeoutMs: 600000, steps: [step] }, {});
 
     const result = await runStep(step, 3, { browser: adapter, vars: {}, redact, jev, timeoutMs: 1000 });
 
@@ -483,7 +483,7 @@ describe("runStep asserter integration", () => {
     const jev = makeJevWithNoul(noul);
     const { adapter } = fakeAdapter();
     const step: Step = { line: 2, action: "assert", check: { selector: "h1", text: "Hi" }, statement: "A greeting is shown" };
-    const redact = createRedact({ name: "t", timeoutMs: 1000, steps: [step] }, {});
+    const redact = createRedact({ name: "t", timeoutMs: 1000, runTimeoutMs: 600000, steps: [step] }, {});
 
     const result = await runStep(step, 3, { browser: adapter, vars: {}, redact, jev, timeoutMs: 1000 });
 
@@ -497,7 +497,7 @@ describe("runStep asserter integration", () => {
     const checkDialogs = [alert("Check said no")];
     const { adapter } = fakeAdapter({ check: () => failed('Text of "h1" did not contain "Hi"', checkDialogs) });
     const step: Step = { line: 2, action: "assert", check: { selector: "h1", text: "Hi" }, statement: "A greeting is shown" };
-    const redact = createRedact({ name: "t", timeoutMs: 1000, steps: [step] }, {});
+    const redact = createRedact({ name: "t", timeoutMs: 1000, runTimeoutMs: 600000, steps: [step] }, {});
 
     const result = await runStep(step, 3, { browser: adapter, vars: {}, redact, jev, timeoutMs: 1000 });
 
@@ -510,7 +510,7 @@ describe("runStep asserter integration", () => {
     const checkDialogs = [alert("Check said no")];
     const { adapter } = fakeAdapter({ check: () => failed('Text of "h1" did not contain "Hi"', checkDialogs) });
     const step: Step = { line: 2, action: "assert", check: { selector: "h1", text: "Hi" }, statement: "A greeting is shown" };
-    const redact = createRedact({ name: "t", timeoutMs: 1000, steps: [step] }, {});
+    const redact = createRedact({ name: "t", timeoutMs: 1000, runTimeoutMs: 600000, steps: [step] }, {});
 
     const result = await runStep(step, 3, { browser: adapter, vars: {}, redact, jev, timeoutMs: 1000 });
 
@@ -526,7 +526,7 @@ describe("runStep asserter integration", () => {
     const jev = makeJevWithNoul(noul);
     const { adapter } = fakeAdapter();
     const step: Step = { line: 2, action: "assert", statement: "The list has loaded" };
-    const redact = createRedact({ name: "t", timeoutMs: 1000, steps: [step] }, {});
+    const redact = createRedact({ name: "t", timeoutMs: 1000, runTimeoutMs: 600000, steps: [step] }, {});
 
     const result = await runStep(step, 3, { browser: adapter, vars: {}, redact, jev, timeoutMs: 1000 });
 
@@ -541,7 +541,7 @@ describe("runStep asserter integration", () => {
     const jev = makeJevWithNoul(noul);
     const { adapter } = fakeAdapter();
     const step: Step = { line: 2, action: "assert", statement: "The list has loaded" };
-    const redact = createRedact({ name: "t", timeoutMs: 1000, steps: [step] }, {});
+    const redact = createRedact({ name: "t", timeoutMs: 1000, runTimeoutMs: 600000, steps: [step] }, {});
 
     await expect(runStep(step, 3, { browser: adapter, vars: {}, redact, jev, timeoutMs: 1000 })).rejects.toBe(error);
   });

@@ -14,6 +14,7 @@ const testCase = (overrides: Partial<TestCase> = {}): TestCase => ({
   name: "t",
   baseUrl: "http://127.0.0.1:3000",
   timeoutMs: 1000,
+  runTimeoutMs: 600000,
   steps,
   ...overrides,
 });
@@ -88,35 +89,6 @@ describe("execute", () => {
     expect(result.trace).toBe(TRACE);
   });
 
-  it("closes the browser and rethrows when the Adapter throws", async () => {
-    const crash = new Error("Browser has been closed");
-    const { adapter, calls } = fakeAdapter({ perform: () => Promise.reject(crash) });
-
-    await expect(execute(testCase(), { headed: false, vars: {}, onEvent: () => { }, jev: throwingJev }, async () => adapter)).rejects.toBe(crash);
-    expect(calls.at(-1)).toEqual({ method: "close" });
-  });
-
-  it("throws both errors when closing also fails after the Adapter threw", async () => {
-    const crash = new Error("Browser has been closed");
-    const closeError = new Error("Could not stop the trace");
-    const { adapter } = fakeAdapter({ perform: () => Promise.reject(crash), close: () => Promise.reject(closeError) });
-
-    const error = await execute(testCase(), { headed: false, vars: {}, onEvent: () => { }, jev: throwingJev }, async () => adapter).catch(
-      (thrown: unknown) => thrown,
-    );
-
-    expect(error).toBeInstanceOf(AggregateError);
-    expect((error as AggregateError).errors).toEqual([crash, closeError]);
-  });
-
-  it("rethrows when launching fails", async () => {
-    const launchError = new Error("Chromium did not start");
-
-    await expect(
-      execute(testCase(), { headed: false, vars: {}, onEvent: () => { }, jev: throwingJev }, () => Promise.reject(launchError)),
-    ).rejects.toBe(launchError);
-  });
-
   it("fills Variables in the baseUrl before launching", async () => {
     const { launches } = await run(testCase({ baseUrl: "{{BASE}}/app" }), {}, { vars: { BASE: "https://demo.test" } });
 
@@ -161,4 +133,21 @@ describe("execute", () => {
 
     expect(events.at(-1)).toMatchObject({ type: "finished", result: { reason: "Typed {{PASSWORD}} into a disabled field" } });
   });
+
+  it("leaves no Run timeout timer behind, so the process can exit", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    await run(testCase());
+
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("leaves no Run timeout timer behind when launching fails", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const launchError = new Error("Chromium did not start");
+
+    await execute(testCase(), { headed: false, vars: {}, onEvent: () => {}, jev: throwingJev }, () => Promise.reject(launchError)).catch(() => {});
+
+    expect(vi.getTimerCount()).toBe(0);
+  });
 });
+

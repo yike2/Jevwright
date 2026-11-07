@@ -18,7 +18,10 @@ export type StepContext = {
 
 type Outcome = { result: BrowserResult; locateMethod?: LocateMethod };
 
-const fail = (reason: string): Outcome => ({ result: { ok: false, reason, dialogs: [] } });
+/** A failed BrowserResult for a failure the Executor finds itself, with no dialogs. */
+export const failure = (reason: string): BrowserResult => ({ ok: false, reason, dialogs: [] });
+
+const fail = (reason: string): Outcome => ({ result: failure(reason) });
 
 function mapJudgeResult(result: JudgeResult, dialogs: BrowserResult["dialogs"] = []): BrowserResult {
   if (result.ok) {

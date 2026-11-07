@@ -35,3 +35,5 @@ export type ExecuteResult = {
   steps: StepResult[]; // one per TestCase step, in order
   trace: Buffer; // from BrowserAdapter.close()
 };
+
+export type RunError = { kind: "timeout" | "infrastructure"; message: string }; // message redacted

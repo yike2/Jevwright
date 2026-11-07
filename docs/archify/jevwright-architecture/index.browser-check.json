@@ -6,11 +6,11 @@
   "status": "pass",
   "visualReview": "not-requested",
   "provenance": "current",
-  "deliveryReceiptId": "d45d3e03-b9d5-46a3-a59e-685867cab2f8",
+  "deliveryReceiptId": "e1d2f100-85b1-4093-a614-aee50c1abba4",
   "artifact": {
     "path": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-architecture/index.html",
-    "sha256": "5bdf332e232dd8c53442114d5b7f16ec13227d2d2b59ea2460a3783d7520677f",
-    "bytes": 864223
+    "sha256": "714af4d8e0ffdc46048b4bbb27f2c9f9bfa79f01b2bf59f8f8428aca9d88b6a8",
+    "bytes": 864415
   },
   "state": {
     "detail": "read",
@@ -18,7 +18,7 @@
   },
   "chrome": {
     "status": "available",
-    "executable": "/tmp/claude-1001/-home-dev-workspace-6983-Jevwright/12a34857-0683-4f8c-9cc9-c1050089f953/scratchpad/chrome"
+    "executable": "/tmp/claude-1001/-home-dev-workspace-6983-Jevwright/ac0fc42d-cd0d-44c8-92b1-c0f3c585884c/scratchpad/chrome"
   },
   "diagnostics": [],
   "containment": {

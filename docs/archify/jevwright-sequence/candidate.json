@@ -102,8 +102,13 @@
     },
     {
       "from": 2624,
+      "label": "Alt — Run timeout or browser crash",
+      "to": 2942
+    },
+    {
+      "from": 2946,
       "label": "Finish (always)",
-      "to": 2950
+      "to": 3312
     }
   ],
   "messages": [
@@ -467,61 +472,97 @@
       "to": "driver",
       "y": 2660,
       "label": "close()",
-      "variant": "default"
+      "variant": "default",
+      "note": "On a timeout, at once; the pending call rejects"
     },
     {
       "id": "m45",
       "from": "driver",
       "to": "executor",
-      "y": 2704,
+      "y": 2744,
       "label": "trace.zip",
-      "variant": "return"
+      "variant": "return",
+      "note": "Empty when close() fails after a crash"
     },
     {
       "id": "m46",
       "from": "executor",
       "to": "pipeline",
-      "y": 2748,
+      "y": 2828,
+      "label": "onEvent(running step failed)",
+      "variant": "dashed"
+    },
+    {
+      "id": "m47",
+      "from": "executor",
+      "to": "pipeline",
+      "y": 2872,
+      "label": "RunAbortedError · steps · trace",
+      "variant": "return",
+      "note": "Carries the Run error; go to buildReport in Finish"
+    },
+    {
+      "id": "m48",
+      "from": "executor",
+      "to": "driver",
+      "y": 2982,
+      "label": "close()",
+      "variant": "default"
+    },
+    {
+      "id": "m49",
+      "from": "driver",
+      "to": "executor",
+      "y": 3026,
+      "label": "trace.zip",
+      "variant": "return"
+    },
+    {
+      "id": "m50",
+      "from": "executor",
+      "to": "pipeline",
+      "y": 3070,
       "label": "StepResult[] · trace",
       "variant": "return"
     },
     {
-      "id": "m47",
+      "id": "m51",
       "from": "pipeline",
       "to": "report",
-      "y": 2792,
-      "label": "build(results, trace)",
+      "y": 3114,
+      "label": "buildReport(steps, trace, error?)",
       "variant": "default"
     },
     {
-      "id": "m48",
+      "id": "m52",
       "from": "report",
       "to": "pipeline",
-      "y": 2836,
-      "label": "Report .json (passed / failed)",
-      "variant": "return"
+      "y": 3158,
+      "label": "Report Bundle (passed / failed)",
+      "variant": "return",
+      "note": "report.json · trace.zip · screenshots"
     },
     {
-      "id": "m49",
+      "id": "m53",
       "from": "pipeline",
       "to": "api",
-      "y": 2880,
-      "label": "Report",
+      "y": 3242,
+      "label": "Report Bundle",
       "variant": "return",
-      "note": "Worker stores it and pushes Run passed / failed"
+      "note": "Worker saves it with its Report Store and pushes Run passed / failed"
     }
   ],
   "activations": [
     {
       "participant": "api",
       "from": 181,
-      "to": 2886,
+      "to": 3248,
       "type": "backend"
     },
     {
       "participant": "pipeline",
       "from": 181,
-      "to": 2886,
+      "to": 3248,
       "type": "backend"
     },
     {
@@ -533,7 +574,7 @@
     {
       "participant": "executor",
       "from": 559,
-      "to": 2754,
+      "to": 3076,
       "type": "backend"
     },
     {
@@ -551,7 +592,7 @@
     {
       "participant": "driver",
       "from": 603,
-      "to": 2710,
+      "to": 3032,
       "type": "cloud"
     },
     {
@@ -562,8 +603,8 @@
     },
     {
       "participant": "report",
-      "from": 2787,
-      "to": 2842,
+      "from": 3109,
+      "to": 3164,
       "type": "backend"
     }
   ]

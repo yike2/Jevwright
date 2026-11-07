@@ -1,0 +1,6 @@
+{
+  "name": "Run timeout",
+  "timeoutMs": 15000,
+  "runTimeoutMs": 120000,
+  "steps": [{ "line": 4, "action": "reload" }]
+}

@@ -128,6 +128,7 @@ steps:
 | `description` | string           |          | –       | Test description |
 | `baseUrl`     | absolute URL     |          | –       | Base for relative URLs in `open` and `url`; see 1.5 |
 | `timeoutMs`   | positive integer |          | `15000` | Timeout for each step |
+| `runTimeoutMs` | positive integer |         | `600000` | Timeout for the whole Run: the browser launch and all steps (`executor.md` 1.7) |
 | `steps`       | Step[]           | ✔        | –       | At least one step, executed in order |
 
 `{{NAME}}` in strings is kept as is and replaced at execution time with a variable from the local `.env` or the platform configuration.
@@ -276,6 +277,7 @@ type TestCase = {
   description?: string;
   baseUrl?: string;
   timeoutMs: number;
+  runTimeoutMs: number;
   steps: Step[];
 };
 ```

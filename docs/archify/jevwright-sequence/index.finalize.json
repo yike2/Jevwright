@@ -5,16 +5,16 @@
   "status": "pass",
   "type": "sequence",
   "quality": "showcase",
-  "startedAt": "2026-11-03T01:10:06.441Z",
+  "startedAt": "2026-11-05T04:27:17.384Z",
   "specification": {
     "path": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/candidate.json",
-    "sha256": "bd4278eee5f8c6f17f01ea7a7904dcbc36b705d2b05d6363ec07252c29ff4ba6",
-    "bytes": 11542
+    "sha256": "8b82c9345872824f889e5c0d60dc983ddd428e6c7b25c5a2926b393e9914415e",
+    "bytes": 12584
   },
   "artifact": {
     "path": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/index.html",
-    "sha256": "f0bcc62f2b6ecde71244e55337f3e159dd2b84744bbb38c6028fe12acfd85393",
-    "bytes": 871968
+    "sha256": "fe22bcdfb67d849366808a111177a1d273fbd5f59d740d8c23a4e15a7a6121a7",
+    "bytes": 876306
   },
   "stages": {
     "validate": {
@@ -31,6 +31,8 @@
         "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/index.html",
         "--quality",
         "showcase",
+        "--repo-root",
+        "/home/dev/workspace/6983/Jevwright",
         "--json"
       ],
       "receipt": {
@@ -38,8 +40,8 @@
         "ok": true,
         "command": "validate",
         "specification": {
-          "sha256": "bd4278eee5f8c6f17f01ea7a7904dcbc36b705d2b05d6363ec07252c29ff4ba6",
-          "bytes": 11542
+          "sha256": "8b82c9345872824f889e5c0d60dc983ddd428e6c7b25c5a2926b393e9914415e",
+          "bytes": 12584
         },
         "validation": {
           "checksPassed": 9,
@@ -54,7 +56,7 @@
     "deliver": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 923,
+      "durationMs": 670,
       "command": [
         "/home/dev/.nvm/versions/node/v22.23.2/bin/node",
         "/home/dev/.claude/skills/archify/bin/archify.mjs",
@@ -64,23 +66,25 @@
         "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/index.html",
         "--quality",
         "showcase",
+        "--repo-root",
+        "/home/dev/workspace/6983/Jevwright",
         "--json"
       ],
       "receipt": {
         "schemaVersion": 1,
-        "receiptId": "53f7057b-778b-45d7-a396-884c9055aa6c",
+        "receiptId": "17174017-88e8-4190-a6c6-b41b9cdd67ab",
         "ok": true,
         "command": "deliver",
         "type": "sequence",
         "input": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/candidate.json",
         "output": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/index.html",
         "specification": {
-          "sha256": "bd4278eee5f8c6f17f01ea7a7904dcbc36b705d2b05d6363ec07252c29ff4ba6",
-          "bytes": 11542
+          "sha256": "8b82c9345872824f889e5c0d60dc983ddd428e6c7b25c5a2926b393e9914415e",
+          "bytes": 12584
         },
         "artifact": {
-          "sha256": "f0bcc62f2b6ecde71244e55337f3e159dd2b84744bbb38c6028fe12acfd85393",
-          "bytes": 871968
+          "sha256": "fe22bcdfb67d849366808a111177a1d273fbd5f59d740d8c23a4e15a7a6121a7",
+          "bytes": 876306
         },
         "validation": {
           "checksPassed": 9,
@@ -106,7 +110,7 @@
     "check": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 411,
+      "durationMs": 289,
       "command": [
         "/home/dev/.nvm/versions/node/v22.23.2/bin/node",
         "/home/dev/.claude/skills/archify/bin/archify.mjs",
@@ -118,8 +122,8 @@
         "ok": true,
         "file": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/index.html",
         "artifact": {
-          "sha256": "f0bcc62f2b6ecde71244e55337f3e159dd2b84744bbb38c6028fe12acfd85393",
-          "bytes": 871968
+          "sha256": "fe22bcdfb67d849366808a111177a1d273fbd5f59d740d8c23a4e15a7a6121a7",
+          "bytes": 876306
         },
         "checks": [
           {
@@ -245,18 +249,18 @@
             },
             "minimumSourceTextPx": 7,
             "minimumProjectedTextPx": 6,
-            "semanticTextCount": 78
+            "semanticTextCount": 86
           },
           "issues": []
         },
         "provenance": "current",
-        "deliveryReceiptId": "53f7057b-778b-45d7-a396-884c9055aa6c"
+        "deliveryReceiptId": "17174017-88e8-4190-a6c6-b41b9cdd67ab"
       }
     },
     "browser-check": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 12948,
+      "durationMs": 10143,
       "command": [
         "/home/dev/.nvm/versions/node/v22.23.2/bin/node",
         "/home/dev/.claude/skills/archify/bin/archify.mjs",
@@ -274,11 +278,11 @@
         "status": "pass",
         "visualReview": "not-requested",
         "provenance": "current",
-        "deliveryReceiptId": "53f7057b-778b-45d7-a396-884c9055aa6c",
+        "deliveryReceiptId": "17174017-88e8-4190-a6c6-b41b9cdd67ab",
         "artifact": {
           "path": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/index.html",
-          "sha256": "f0bcc62f2b6ecde71244e55337f3e159dd2b84744bbb38c6028fe12acfd85393",
-          "bytes": 871968
+          "sha256": "fe22bcdfb67d849366808a111177a1d273fbd5f59d740d8c23a4e15a7a6121a7",
+          "bytes": 876306
         },
         "state": {
           "detail": "read",
@@ -286,7 +290,7 @@
         },
         "chrome": {
           "status": "available",
-          "executable": "/tmp/claude-1001/-home-dev-workspace-6983-Jevwright/12a34857-0683-4f8c-9cc9-c1050089f953/scratchpad/chrome"
+          "executable": "/tmp/claude-1001/-home-dev-workspace-6983-Jevwright/ac0fc42d-cd0d-44c8-92b1-c0f3c585884c/scratchpad/chrome"
         },
         "diagnostics": [],
         "containment": {
@@ -300,7 +304,7 @@
               "innerWidth": 1440,
               "innerHeight": 900,
               "scrollWidth": 1440,
-              "scrollHeight": 3924,
+              "scrollHeight": 4373,
               "overflowX": false,
               "overflowY": true,
               "verticalScrollAccepted": true,
@@ -315,9 +319,9 @@
                 "bodyPaddingPx": 12,
                 "headerPx": 52,
                 "diagramChromePx": 78,
-                "svgPx": 3781,
+                "svgPx": 4230,
                 "cardsPx": 0,
-                "viewBoxHeight": 3048
+                "viewBoxHeight": 3410
               },
               "viewBoxWidth": 1085,
               "minimumProjectedNodeTextPx": 7,
@@ -352,7 +356,7 @@
               "innerWidth": 1600,
               "innerHeight": 1000,
               "scrollWidth": 1600,
-              "scrollHeight": 4439,
+              "scrollHeight": 4942,
               "overflowX": false,
               "overflowY": true,
               "verticalScrollAccepted": true,
@@ -367,9 +371,9 @@
                 "bodyPaddingPx": 64,
                 "headerPx": 60,
                 "diagramChromePx": 84,
-                "svgPx": 4231,
+                "svgPx": 4733,
                 "cardsPx": 0,
-                "viewBoxHeight": 3048
+                "viewBoxHeight": 3410
               },
               "viewBoxWidth": 1085,
               "minimumProjectedNodeTextPx": 7,
@@ -404,7 +408,7 @@
               "innerWidth": 1920,
               "innerHeight": 1080,
               "scrollWidth": 1920,
-              "scrollHeight": 4780,
+              "scrollHeight": 5323,
               "overflowX": false,
               "overflowY": true,
               "verticalScrollAccepted": true,
@@ -419,9 +423,9 @@
                 "bodyPaddingPx": 64,
                 "headerPx": 60,
                 "diagramChromePx": 84,
-                "svgPx": 4572,
+                "svgPx": 5115,
                 "cardsPx": 0,
-                "viewBoxHeight": 3048
+                "viewBoxHeight": 3410
               },
               "viewBoxWidth": 1085,
               "minimumProjectedNodeTextPx": 7,
@@ -456,7 +460,7 @@
               "innerWidth": 2048,
               "innerHeight": 1320,
               "scrollWidth": 2048,
-              "scrollHeight": 4798,
+              "scrollHeight": 5341,
               "overflowX": false,
               "overflowY": true,
               "verticalScrollAccepted": true,
@@ -471,9 +475,9 @@
                 "bodyPaddingPx": 64,
                 "headerPx": 68,
                 "diagramChromePx": 94,
-                "svgPx": 4572,
+                "svgPx": 5115,
                 "cardsPx": 0,
-                "viewBoxHeight": 3048
+                "viewBoxHeight": 3410
               },
               "viewBoxWidth": 1085,
               "minimumProjectedNodeTextPx": 7,
@@ -561,7 +565,7 @@
               "innerWidth": 1440,
               "innerHeight": 900,
               "scrollWidth": 1440,
-              "scrollHeight": 3924,
+              "scrollHeight": 4373,
               "overflowX": false,
               "overflowY": true,
               "verticalScrollAccepted": true,
@@ -576,9 +580,9 @@
                 "bodyPaddingPx": 12,
                 "headerPx": 52,
                 "diagramChromePx": 78,
-                "svgPx": 3781,
+                "svgPx": 4230,
                 "cardsPx": 0,
-                "viewBoxHeight": 3048
+                "viewBoxHeight": 3410
               },
               "viewBoxWidth": 1085,
               "minimumProjectedNodeTextPx": 7,
@@ -613,7 +617,7 @@
               "innerWidth": 1600,
               "innerHeight": 1000,
               "scrollWidth": 1600,
-              "scrollHeight": 4439,
+              "scrollHeight": 4942,
               "overflowX": false,
               "overflowY": true,
               "verticalScrollAccepted": true,
@@ -628,9 +632,9 @@
                 "bodyPaddingPx": 64,
                 "headerPx": 60,
                 "diagramChromePx": 84,
-                "svgPx": 4231,
+                "svgPx": 4733,
                 "cardsPx": 0,
-                "viewBoxHeight": 3048
+                "viewBoxHeight": 3410
               },
               "viewBoxWidth": 1085,
               "minimumProjectedNodeTextPx": 7,
@@ -665,7 +669,7 @@
               "innerWidth": 1920,
               "innerHeight": 1080,
               "scrollWidth": 1920,
-              "scrollHeight": 4780,
+              "scrollHeight": 5323,
               "overflowX": false,
               "overflowY": true,
               "verticalScrollAccepted": true,
@@ -680,9 +684,9 @@
                 "bodyPaddingPx": 64,
                 "headerPx": 60,
                 "diagramChromePx": 84,
-                "svgPx": 4572,
+                "svgPx": 5115,
                 "cardsPx": 0,
-                "viewBoxHeight": 3048
+                "viewBoxHeight": 3410
               },
               "viewBoxWidth": 1085,
               "minimumProjectedNodeTextPx": 7,
@@ -717,7 +721,7 @@
               "innerWidth": 2048,
               "innerHeight": 1320,
               "scrollWidth": 2048,
-              "scrollHeight": 4798,
+              "scrollHeight": 5341,
               "overflowX": false,
               "overflowY": true,
               "verticalScrollAccepted": true,
@@ -732,9 +736,9 @@
                 "bodyPaddingPx": 64,
                 "headerPx": 68,
                 "diagramChromePx": 94,
-                "svgPx": 4572,
+                "svgPx": 5115,
                 "cardsPx": 0,
-                "viewBoxHeight": 3048
+                "viewBoxHeight": 3410
               },
               "viewBoxWidth": 1085,
               "minimumProjectedNodeTextPx": 7,
@@ -774,7 +778,7 @@
               "innerWidth": 1440,
               "innerHeight": 900,
               "scrollWidth": 1440,
-              "scrollHeight": 3924,
+              "scrollHeight": 4373,
               "overflowX": false,
               "overflowY": true,
               "verticalScrollAccepted": true,
@@ -789,9 +793,9 @@
                 "bodyPaddingPx": 12,
                 "headerPx": 52,
                 "diagramChromePx": 78,
-                "svgPx": 3781,
+                "svgPx": 4230,
                 "cardsPx": 0,
-                "viewBoxHeight": 3048
+                "viewBoxHeight": 3410
               },
               "viewBoxWidth": 1085,
               "minimumProjectedNodeTextPx": 7,
@@ -826,7 +830,7 @@
               "innerWidth": 1600,
               "innerHeight": 1000,
               "scrollWidth": 1600,
-              "scrollHeight": 4439,
+              "scrollHeight": 4942,
               "overflowX": false,
               "overflowY": true,
               "verticalScrollAccepted": true,
@@ -841,9 +845,9 @@
                 "bodyPaddingPx": 64,
                 "headerPx": 60,
                 "diagramChromePx": 84,
-                "svgPx": 4231,
+                "svgPx": 4733,
                 "cardsPx": 0,
-                "viewBoxHeight": 3048
+                "viewBoxHeight": 3410
               },
               "viewBoxWidth": 1085,
               "minimumProjectedNodeTextPx": 7,
@@ -878,7 +882,7 @@
               "innerWidth": 1920,
               "innerHeight": 1080,
               "scrollWidth": 1920,
-              "scrollHeight": 4780,
+              "scrollHeight": 5323,
               "overflowX": false,
               "overflowY": true,
               "verticalScrollAccepted": true,
@@ -893,9 +897,9 @@
                 "bodyPaddingPx": 64,
                 "headerPx": 60,
                 "diagramChromePx": 84,
-                "svgPx": 4572,
+                "svgPx": 5115,
                 "cardsPx": 0,
-                "viewBoxHeight": 3048
+                "viewBoxHeight": 3410
               },
               "viewBoxWidth": 1085,
               "minimumProjectedNodeTextPx": 7,
@@ -930,7 +934,7 @@
               "innerWidth": 2048,
               "innerHeight": 1320,
               "scrollWidth": 2048,
-              "scrollHeight": 4798,
+              "scrollHeight": 5341,
               "overflowX": false,
               "overflowY": true,
               "verticalScrollAccepted": true,
@@ -945,9 +949,9 @@
                 "bodyPaddingPx": 64,
                 "headerPx": 68,
                 "diagramChromePx": 94,
-                "svgPx": 4572,
+                "svgPx": 5115,
                 "cardsPx": 0,
-                "viewBoxHeight": 3048
+                "viewBoxHeight": 3410
               },
               "viewBoxWidth": 1085,
               "minimumProjectedNodeTextPx": 7,
@@ -1000,14 +1004,14 @@
     "browserCheckReceipt": "/home/dev/workspace/6983/Jevwright/docs/archify/jevwright-sequence/index.browser-check.json"
   },
   "visualReview": "not-requested",
-  "finishedAt": "2026-11-03T01:10:21.135Z",
-  "durationMs": 14694,
+  "finishedAt": "2026-11-05T04:27:28.751Z",
+  "durationMs": 11367,
   "update": {
     "status": "current",
     "installedVersion": "3.2.0",
     "availableVersion": "3.2.0",
     "releaseNotes": null,
-    "checkedAt": "2026-11-02T17:44:09.227Z",
+    "checkedAt": "2026-11-05T04:26:54.158Z",
     "source": "cache",
     "noticeRequired": false,
     "noticeText": null

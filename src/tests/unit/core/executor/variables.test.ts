@@ -4,7 +4,7 @@ import type { Step, TestCase } from "@/core/syntax/index.js";
 
 const vars = { BASE: "https://demo.test", EMAIL: "student@x.com", PASSWORD: "s3cret" };
 
-const testCase = (...steps: Step[]): TestCase => ({ name: "t", timeoutMs: 1000, steps });
+const testCase = (...steps: Step[]): TestCase => ({ name: "t", timeoutMs: 1000, runTimeoutMs: 600000, steps });
 
 describe("substitute", () => {
   it.each<[string, Step, Step]>([
