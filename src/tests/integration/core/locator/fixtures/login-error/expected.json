@@ -1,0 +1,55 @@
+{
+  "scenario": "login-error",
+  "description": "Login page after submitting a wrong password",
+  "targets": [
+    {
+      "target": "Red error message about the incorrect email or password",
+      "note": "Not interactive, so it is absent from snapshot.elements",
+      "present": true,
+      "elementId": null,
+      "bbox": {
+        "x": 473,
+        "y": 304,
+        "width": 334,
+        "height": 38
+      }
+    },
+    {
+      "target": "'Sign in' button",
+      "present": true,
+      "elementId": 5,
+      "bbox": {
+        "x": 473,
+        "y": 541,
+        "width": 334,
+        "height": 36
+      }
+    },
+    {
+      "target": "'Forgot password?' link",
+      "present": true,
+      "elementId": 4,
+      "bbox": {
+        "x": 684,
+        "y": 504,
+        "width": 123,
+        "height": 16
+      }
+    }
+  ],
+  "statements": [
+    {
+      "statement": "An error message says the email or password is incorrect",
+      "holds": true
+    },
+    {
+      "statement": "The email field is highlighted as invalid",
+      "holds": true,
+      "note": "Visual only: red border"
+    },
+    {
+      "statement": "The user has reached the task board",
+      "holds": false
+    }
+  ]
+}

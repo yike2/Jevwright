@@ -1,0 +1,90 @@
+{
+  "scenario": "settings-default",
+  "description": "Settings page with profile, notification toggles and an activity chart",
+  "targets": [
+    {
+      "target": "Full name input",
+      "present": true,
+      "elementId": 7,
+      "bbox": {
+        "x": 269,
+        "y": 199,
+        "width": 452,
+        "height": 36
+      }
+    },
+    {
+      "target": "Time zone dropdown",
+      "present": true,
+      "elementId": 10,
+      "bbox": {
+        "x": 269,
+        "y": 415,
+        "width": 452,
+        "height": 36
+      }
+    },
+    {
+      "target": "Toggle for the weekly summary",
+      "note": "Switch with no text; name comes from aria-labelledby",
+      "present": true,
+      "elementId": 12,
+      "bbox": {
+        "x": 1191,
+        "y": 230,
+        "width": 40,
+        "height": 22
+      }
+    },
+    {
+      "target": "'Save changes' button",
+      "present": true,
+      "elementId": 15,
+      "bbox": {
+        "x": 1124,
+        "y": 730,
+        "width": 128,
+        "height": 36
+      }
+    },
+    {
+      "target": "'Delete account' button",
+      "present": true,
+      "elementId": 14,
+      "bbox": {
+        "x": 779,
+        "y": 572,
+        "width": 136,
+        "height": 36
+      }
+    },
+    {
+      "target": "Bar chart of tasks completed per week",
+      "note": "Canvas: only Visual Locate can find it",
+      "present": true,
+      "elementId": null,
+      "bbox": {
+        "x": 269,
+        "y": 540,
+        "width": 440,
+        "height": 150
+      }
+    }
+  ],
+  "statements": [
+    {
+      "statement": "The weekly summary toggle is off",
+      "holds": true
+    },
+    {
+      "statement": "The email field can be edited",
+      "holds": false,
+      "note": "It is disabled"
+    },
+    {
+      "statement": "The tallest bar in the chart is for the week of Oct 20",
+      "holds": true,
+      "note": "Visual only: drawn on a canvas"
+    }
+  ]
+}
