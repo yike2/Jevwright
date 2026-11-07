@@ -1,0 +1,87 @@
+{
+  "scenario": "board-new-task-dialog",
+  "description": "Task board with the 'New task' modal dialog open",
+  "targets": [
+    {
+      "target": "Title input in the New task dialog",
+      "present": true,
+      "elementId": 31,
+      "bbox": {
+        "x": 434,
+        "y": 279,
+        "width": 412,
+        "height": 36
+      }
+    },
+    {
+      "target": "Assignee dropdown",
+      "present": true,
+      "elementId": 32,
+      "bbox": {
+        "x": 434,
+        "y": 351,
+        "width": 200,
+        "height": 36
+      }
+    },
+    {
+      "target": "'High' priority radio button",
+      "present": true,
+      "elementId": 36,
+      "bbox": {
+        "x": 609,
+        "y": 426,
+        "width": 13,
+        "height": 13
+      }
+    },
+    {
+      "target": "'Create task' button",
+      "present": true,
+      "elementId": 39,
+      "bbox": {
+        "x": 736,
+        "y": 570,
+        "width": 110,
+        "height": 36
+      }
+    },
+    {
+      "target": "'Cancel' button in the dialog",
+      "present": true,
+      "elementId": 38,
+      "bbox": {
+        "x": 650,
+        "y": 570,
+        "width": 77,
+        "height": 36
+      }
+    },
+    {
+      "target": "'New task' button behind the dialog",
+      "note": "Covered by the modal backdrop: hittable is false",
+      "present": true,
+      "elementId": 9,
+      "bbox": {
+        "x": 1136,
+        "y": 89,
+        "width": 116,
+        "height": 36
+      }
+    }
+  ],
+  "statements": [
+    {
+      "statement": "A dialog for creating a new task is open",
+      "holds": true
+    },
+    {
+      "statement": "Medium priority is selected",
+      "holds": true
+    },
+    {
+      "statement": "The dialog has a field for choosing a project",
+      "holds": false
+    }
+  ]
+}

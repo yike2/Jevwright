@@ -1,0 +1,628 @@
+{
+  "url": "/board.html",
+  "title": "Website redesign · Tasklane",
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  },
+  "elements": [
+    {
+      "id": 0,
+      "tag": "a",
+      "role": "link",
+      "name": "Tasklane",
+      "attrs": {
+        "href": "board.html"
+      },
+      "bbox": {
+        "x": 20,
+        "y": 15,
+        "width": 117,
+        "height": 26
+      },
+      "hittable": true
+    },
+    {
+      "id": 1,
+      "tag": "input",
+      "role": "searchbox",
+      "name": "Search tasks",
+      "attrs": {
+        "type": "search",
+        "placeholder": "Search tasks"
+      },
+      "bbox": {
+        "x": 193,
+        "y": 10,
+        "width": 360,
+        "height": 36
+      },
+      "hittable": true
+    },
+    {
+      "id": 2,
+      "tag": "button",
+      "role": "button",
+      "name": "Notifications",
+      "text": "3",
+      "attrs": {},
+      "bbox": {
+        "x": 1152,
+        "y": 12,
+        "width": 32,
+        "height": 32
+      },
+      "hittable": true
+    },
+    {
+      "id": 3,
+      "tag": "a",
+      "role": "link",
+      "name": "Settings",
+      "attrs": {
+        "href": "settings.html"
+      },
+      "bbox": {
+        "x": 1190,
+        "y": 12,
+        "width": 32,
+        "height": 32
+      },
+      "hittable": true
+    },
+    {
+      "id": 4,
+      "tag": "button",
+      "role": "button",
+      "name": "Account menu",
+      "text": "DM",
+      "attrs": {},
+      "bbox": {
+        "x": 1228,
+        "y": 12,
+        "width": 32,
+        "height": 32
+      },
+      "hittable": true
+    },
+    {
+      "id": 5,
+      "tag": "a",
+      "role": "link",
+      "name": "Website redesign 6",
+      "attrs": {
+        "href": "board.html",
+        "aria-current": "page"
+      },
+      "bbox": {
+        "x": 12,
+        "y": 97,
+        "width": 195,
+        "height": 32
+      },
+      "hittable": true
+    },
+    {
+      "id": 6,
+      "tag": "a",
+      "role": "link",
+      "name": "Mobile app 11",
+      "attrs": {
+        "href": "#"
+      },
+      "bbox": {
+        "x": 12,
+        "y": 129,
+        "width": 195,
+        "height": 32
+      },
+      "hittable": true
+    },
+    {
+      "id": 7,
+      "tag": "a",
+      "role": "link",
+      "name": "Marketing launch 4",
+      "attrs": {
+        "href": "#"
+      },
+      "bbox": {
+        "x": 12,
+        "y": 161,
+        "width": 195,
+        "height": 32
+      },
+      "hittable": true
+    },
+    {
+      "id": 8,
+      "tag": "button",
+      "role": "button",
+      "name": "+ New project",
+      "attrs": {},
+      "bbox": {
+        "x": 12,
+        "y": 205,
+        "width": 195,
+        "height": 36
+      },
+      "hittable": true
+    },
+    {
+      "id": 9,
+      "tag": "button",
+      "role": "button",
+      "name": "New task",
+      "attrs": {},
+      "bbox": {
+        "x": 1136,
+        "y": 89,
+        "width": 116,
+        "height": 36
+      },
+      "hittable": true
+    },
+    {
+      "id": 10,
+      "tag": "button",
+      "role": "tab",
+      "name": "All",
+      "attrs": {
+        "aria-selected": "false"
+      },
+      "bbox": {
+        "x": 248,
+        "y": 145,
+        "width": 45,
+        "height": 34
+      },
+      "hittable": true
+    },
+    {
+      "id": 11,
+      "tag": "button",
+      "role": "tab",
+      "name": "Active",
+      "attrs": {
+        "aria-selected": "false"
+      },
+      "bbox": {
+        "x": 297,
+        "y": 145,
+        "width": 71,
+        "height": 34
+      },
+      "hittable": true
+    },
+    {
+      "id": 12,
+      "tag": "button",
+      "role": "tab",
+      "name": "Done",
+      "attrs": {
+        "aria-selected": "true"
+      },
+      "bbox": {
+        "x": 373,
+        "y": 145,
+        "width": 69,
+        "height": 34
+      },
+      "hittable": true
+    },
+    {
+      "id": 13,
+      "tag": "input",
+      "role": "checkbox",
+      "name": "Mark as done",
+      "attrs": {
+        "type": "checkbox",
+        "value": "on",
+        "checked": true
+      },
+      "bbox": {
+        "x": 267,
+        "y": 252,
+        "width": 13,
+        "height": 13
+      },
+      "hittable": true
+    },
+    {
+      "id": 14,
+      "tag": "button",
+      "role": "button",
+      "name": "Edit task",
+      "attrs": {},
+      "bbox": {
+        "x": 1169,
+        "y": 242,
+        "width": 32,
+        "height": 32
+      },
+      "hittable": true
+    },
+    {
+      "id": 15,
+      "tag": "button",
+      "role": "button",
+      "name": "Delete task",
+      "attrs": {},
+      "bbox": {
+        "x": 1205,
+        "y": 242,
+        "width": 32,
+        "height": 32
+      },
+      "hittable": true
+    },
+    {
+      "id": 16,
+      "tag": "input",
+      "role": "checkbox",
+      "name": "Mark as done",
+      "attrs": {
+        "type": "checkbox",
+        "value": "on",
+        "checked": true
+      },
+      "bbox": {
+        "x": 267,
+        "y": 305,
+        "width": 13,
+        "height": 13
+      },
+      "hittable": true
+    },
+    {
+      "id": 17,
+      "tag": "button",
+      "role": "button",
+      "name": "Edit task",
+      "attrs": {},
+      "bbox": {
+        "x": 1169,
+        "y": 295,
+        "width": 32,
+        "height": 32
+      },
+      "hittable": true
+    },
+    {
+      "id": 18,
+      "tag": "button",
+      "role": "button",
+      "name": "Delete task",
+      "attrs": {},
+      "bbox": {
+        "x": 1205,
+        "y": 295,
+        "width": 32,
+        "height": 32
+      },
+      "hittable": true
+    }
+  ],
+  "texts": [
+    {
+      "text": "Tasklane",
+      "tag": "a",
+      "bbox": {
+        "x": 54,
+        "y": 18,
+        "width": 83,
+        "height": 20
+      }
+    },
+    {
+      "text": "3",
+      "tag": "span",
+      "bbox": {
+        "x": 1171,
+        "y": 16,
+        "width": 6,
+        "height": 11
+      }
+    },
+    {
+      "text": "DM",
+      "tag": "button",
+      "bbox": {
+        "x": 1234,
+        "y": 20,
+        "width": 26,
+        "height": 16
+      }
+    },
+    {
+      "text": "Projects",
+      "tag": "h3",
+      "bbox": {
+        "x": 20,
+        "y": 76,
+        "width": 61,
+        "height": 13
+      }
+    },
+    {
+      "text": "Website redesign",
+      "tag": "a",
+      "bbox": {
+        "x": 20,
+        "y": 105,
+        "width": 138,
+        "height": 16
+      }
+    },
+    {
+      "text": "6",
+      "tag": "span",
+      "bbox": {
+        "x": 189,
+        "y": 105,
+        "width": 10,
+        "height": 16
+      }
+    },
+    {
+      "text": "Mobile app",
+      "tag": "a",
+      "bbox": {
+        "x": 20,
+        "y": 137,
+        "width": 77,
+        "height": 16
+      }
+    },
+    {
+      "text": "11",
+      "tag": "span",
+      "bbox": {
+        "x": 181,
+        "y": 137,
+        "width": 18,
+        "height": 16
+      }
+    },
+    {
+      "text": "Marketing launch",
+      "tag": "a",
+      "bbox": {
+        "x": 20,
+        "y": 169,
+        "width": 121,
+        "height": 16
+      }
+    },
+    {
+      "text": "4",
+      "tag": "span",
+      "bbox": {
+        "x": 190,
+        "y": 169,
+        "width": 9,
+        "height": 16
+      }
+    },
+    {
+      "text": "+ New project",
+      "tag": "button",
+      "bbox": {
+        "x": 60,
+        "y": 215,
+        "width": 100,
+        "height": 16
+      }
+    },
+    {
+      "text": "Website redesign",
+      "tag": "h1",
+      "bbox": {
+        "x": 248,
+        "y": 80,
+        "width": 216,
+        "height": 25
+      }
+    },
+    {
+      "text": "6 tasks · 4 open",
+      "tag": "p",
+      "bbox": {
+        "x": 248,
+        "y": 109,
+        "width": 112,
+        "height": 16
+      }
+    },
+    {
+      "text": "New task",
+      "tag": "button",
+      "bbox": {
+        "x": 1173,
+        "y": 99,
+        "width": 64,
+        "height": 16
+      }
+    },
+    {
+      "text": "All",
+      "tag": "button",
+      "bbox": {
+        "x": 262,
+        "y": 153,
+        "width": 17,
+        "height": 16
+      }
+    },
+    {
+      "text": "Active",
+      "tag": "button",
+      "bbox": {
+        "x": 311,
+        "y": 153,
+        "width": 43,
+        "height": 16
+      }
+    },
+    {
+      "text": "Done",
+      "tag": "button",
+      "bbox": {
+        "x": 387,
+        "y": 153,
+        "width": 41,
+        "height": 16
+      }
+    },
+    {
+      "text": "Task",
+      "tag": "th",
+      "bbox": {
+        "x": 331,
+        "y": 207,
+        "width": 30,
+        "height": 14
+      }
+    },
+    {
+      "text": "Assignee",
+      "tag": "th",
+      "bbox": {
+        "x": 659,
+        "y": 207,
+        "width": 61,
+        "height": 14
+      }
+    },
+    {
+      "text": "Due",
+      "tag": "th",
+      "bbox": {
+        "x": 812,
+        "y": 207,
+        "width": 27,
+        "height": 14
+      }
+    },
+    {
+      "text": "Priority",
+      "tag": "th",
+      "bbox": {
+        "x": 918,
+        "y": 207,
+        "width": 51,
+        "height": 14
+      }
+    },
+    {
+      "text": "Status",
+      "tag": "th",
+      "bbox": {
+        "x": 1057,
+        "y": 207,
+        "width": 44,
+        "height": 14
+      }
+    },
+    {
+      "text": "Collect stakeholder feedback",
+      "tag": "td",
+      "bbox": {
+        "x": 331,
+        "y": 250,
+        "width": 203,
+        "height": 16
+      }
+    },
+    {
+      "text": "Dana Miller",
+      "tag": "td",
+      "bbox": {
+        "x": 659,
+        "y": 250,
+        "width": 79,
+        "height": 16
+      }
+    },
+    {
+      "text": "Oct 28",
+      "tag": "td",
+      "bbox": {
+        "x": 812,
+        "y": 250,
+        "width": 46,
+        "height": 16
+      }
+    },
+    {
+      "text": "Medium",
+      "tag": "span",
+      "bbox": {
+        "x": 926,
+        "y": 251,
+        "width": 54,
+        "height": 14
+      }
+    },
+    {
+      "text": "Done",
+      "tag": "span",
+      "bbox": {
+        "x": 1065,
+        "y": 251,
+        "width": 35,
+        "height": 14
+      }
+    },
+    {
+      "text": "Set up analytics events",
+      "tag": "td",
+      "bbox": {
+        "x": 331,
+        "y": 303,
+        "width": 164,
+        "height": 16
+      }
+    },
+    {
+      "text": "Priya Shah",
+      "tag": "td",
+      "bbox": {
+        "x": 659,
+        "y": 303,
+        "width": 74,
+        "height": 16
+      }
+    },
+    {
+      "text": "Oct 30",
+      "tag": "td",
+      "bbox": {
+        "x": 812,
+        "y": 303,
+        "width": 46,
+        "height": 16
+      }
+    },
+    {
+      "text": "Low",
+      "tag": "span",
+      "bbox": {
+        "x": 926,
+        "y": 304,
+        "width": 27,
+        "height": 14
+      }
+    },
+    {
+      "text": "Done",
+      "tag": "span",
+      "bbox": {
+        "x": 1065,
+        "y": 304,
+        "width": 35,
+        "height": 14
+      }
+    }
+  ]
+}

@@ -3,9 +3,13 @@
   "version": "1.0.0",
   "description": "",
   "type": "module",
+  "packageManager": "pnpm@9.15.9",
   "scripts": {
     "prepare": "git config core.hooksPath .githooks && git config commit.template .gitmessage",
     "test": "vitest run",
+    "test:unit": "vitest run src/tests/unit",
+    "test:integration": "vitest run src/tests/integration",
+    "test:live": "vitest run --config vitest.live.config.ts src/tests/live",
     "typecheck": "tsc"
   },
   "keywords": [],

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { LaunchOptions } from "@/core/browser/index.js";
 import { execute, type ExecuteOptions, type StepEvent } from "@/core/executor/index.js";
 import type { Step, TestCase } from "@/core/syntax/index.js";
-import { failed, fakeAdapter, TRACE } from "./fake-adapter.js";
+import { failed, fakeAdapter, throwingJev, TRACE } from "./fake-adapter.js";
 
 const steps: Step[] = [
   { line: 3, action: "open", url: "/login" },
@@ -24,7 +24,11 @@ async function run(test: TestCase, script: Parameters<typeof fakeAdapter>[0] = {
   const launches: LaunchOptions[] = [];
   const events: StepEvent[] = [];
   const launch = async (launchOptions: LaunchOptions) => (launches.push(launchOptions), adapter);
-  const result = await execute(test, { headed: false, vars: {}, onEvent: (event) => events.push(event), ...options }, launch);
+  const result = await execute(
+    test,
+    { headed: false, vars: {}, onEvent: (event) => events.push(event), jev: throwingJev, ...options },
+    launch,
+  );
   return { result, calls, launches, events };
 }
 
@@ -88,7 +92,7 @@ describe("execute", () => {
     const crash = new Error("Browser has been closed");
     const { adapter, calls } = fakeAdapter({ perform: () => Promise.reject(crash) });
 
-    await expect(execute(testCase(), { headed: false, vars: {}, onEvent: () => {} }, async () => adapter)).rejects.toBe(crash);
+    await expect(execute(testCase(), { headed: false, vars: {}, onEvent: () => { }, jev: throwingJev }, async () => adapter)).rejects.toBe(crash);
     expect(calls.at(-1)).toEqual({ method: "close" });
   });
 
@@ -97,7 +101,7 @@ describe("execute", () => {
     const closeError = new Error("Could not stop the trace");
     const { adapter } = fakeAdapter({ perform: () => Promise.reject(crash), close: () => Promise.reject(closeError) });
 
-    const error = await execute(testCase(), { headed: false, vars: {}, onEvent: () => {} }, async () => adapter).catch(
+    const error = await execute(testCase(), { headed: false, vars: {}, onEvent: () => { }, jev: throwingJev }, async () => adapter).catch(
       (thrown: unknown) => thrown,
     );
 
@@ -109,7 +113,7 @@ describe("execute", () => {
     const launchError = new Error("Chromium did not start");
 
     await expect(
-      execute(testCase(), { headed: false, vars: {}, onEvent: () => {} }, () => Promise.reject(launchError)),
+      execute(testCase(), { headed: false, vars: {}, onEvent: () => { }, jev: throwingJev }, () => Promise.reject(launchError)),
     ).rejects.toBe(launchError);
   });
 

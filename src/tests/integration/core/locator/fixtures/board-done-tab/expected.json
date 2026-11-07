@@ -1,0 +1,38 @@
+{
+  "scenario": "board-done-tab",
+  "description": "Task board filtered to the 'Done' tab",
+  "targets": [
+    {
+      "target": "'Done' tab, currently selected",
+      "present": true,
+      "elementId": 12,
+      "bbox": {
+        "x": 373,
+        "y": 145,
+        "width": 69,
+        "height": 34
+      }
+    },
+    {
+      "target": "Checkbox for 'Set up analytics events'",
+      "present": true,
+      "elementId": 16,
+      "bbox": {
+        "x": 267,
+        "y": 305,
+        "width": 13,
+        "height": 13
+      }
+    }
+  ],
+  "statements": [
+    {
+      "statement": "Only completed tasks are listed",
+      "holds": true
+    },
+    {
+      "statement": "The 'Audit current navigation' task is listed",
+      "holds": false
+    }
+  ]
+}

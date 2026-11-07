@@ -1,0 +1,516 @@
+{
+  "url": "/settings.html",
+  "title": "Settings · Tasklane",
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  },
+  "elements": [
+    {
+      "id": 0,
+      "tag": "a",
+      "role": "link",
+      "name": "Tasklane",
+      "attrs": {
+        "href": "board.html"
+      },
+      "bbox": {
+        "x": 20,
+        "y": 15,
+        "width": 117,
+        "height": 26
+      },
+      "hittable": true
+    },
+    {
+      "id": 1,
+      "tag": "a",
+      "role": "link",
+      "name": "Back to board",
+      "attrs": {
+        "href": "board.html"
+      },
+      "bbox": {
+        "x": 1095,
+        "y": 10,
+        "width": 127,
+        "height": 36
+      },
+      "hittable": true
+    },
+    {
+      "id": 2,
+      "tag": "button",
+      "role": "button",
+      "name": "Account menu",
+      "text": "DM",
+      "attrs": {},
+      "bbox": {
+        "x": 1228,
+        "y": 12,
+        "width": 32,
+        "height": 32
+      },
+      "hittable": true
+    },
+    {
+      "id": 3,
+      "tag": "a",
+      "role": "link",
+      "name": "Profile",
+      "attrs": {
+        "href": "#profile",
+        "aria-current": "page"
+      },
+      "bbox": {
+        "x": 12,
+        "y": 97,
+        "width": 195,
+        "height": 32
+      },
+      "hittable": true
+    },
+    {
+      "id": 4,
+      "tag": "a",
+      "role": "link",
+      "name": "Notifications",
+      "attrs": {
+        "href": "#notifications"
+      },
+      "bbox": {
+        "x": 12,
+        "y": 129,
+        "width": 195,
+        "height": 32
+      },
+      "hittable": true
+    },
+    {
+      "id": 5,
+      "tag": "a",
+      "role": "link",
+      "name": "Activity",
+      "attrs": {
+        "href": "#activity"
+      },
+      "bbox": {
+        "x": 12,
+        "y": 161,
+        "width": 195,
+        "height": 32
+      },
+      "hittable": true
+    },
+    {
+      "id": 6,
+      "tag": "a",
+      "role": "link",
+      "name": "Danger zone",
+      "attrs": {
+        "href": "#danger"
+      },
+      "bbox": {
+        "x": 12,
+        "y": 193,
+        "width": 195,
+        "height": 32
+      },
+      "hittable": true
+    },
+    {
+      "id": 7,
+      "tag": "input",
+      "role": "textbox",
+      "name": "Full name",
+      "attrs": {
+        "type": "text",
+        "value": "Dana Miller"
+      },
+      "bbox": {
+        "x": 269,
+        "y": 199,
+        "width": 452,
+        "height": 36
+      },
+      "hittable": true
+    },
+    {
+      "id": 8,
+      "tag": "input",
+      "role": "textbox",
+      "name": "Email",
+      "attrs": {
+        "type": "email",
+        "value": "demo@example.com",
+        "disabled": true
+      },
+      "bbox": {
+        "x": 269,
+        "y": 271,
+        "width": 452,
+        "height": 36
+      },
+      "hittable": true
+    },
+    {
+      "id": 9,
+      "tag": "select",
+      "role": "combobox",
+      "name": "Role",
+      "text": "Designer Product manager Engineer",
+      "attrs": {
+        "value": "Product manager"
+      },
+      "bbox": {
+        "x": 269,
+        "y": 343,
+        "width": 452,
+        "height": 36
+      },
+      "hittable": true
+    },
+    {
+      "id": 10,
+      "tag": "select",
+      "role": "combobox",
+      "name": "Time zone",
+      "text": "UTC−08:00 Pacific Time UTC−05:00 Eastern Time UTC+00:00 London UTC+08:00 Singapore",
+      "attrs": {
+        "value": "UTC−05:00 Eastern Time"
+      },
+      "bbox": {
+        "x": 269,
+        "y": 415,
+        "width": 452,
+        "height": 36
+      },
+      "hittable": true
+    },
+    {
+      "id": 11,
+      "tag": "button",
+      "role": "switch",
+      "name": "Email me when a task is assigned to me",
+      "attrs": {
+        "type": "button",
+        "aria-checked": "true"
+      },
+      "bbox": {
+        "x": 1191,
+        "y": 187,
+        "width": 40,
+        "height": 22
+      },
+      "hittable": true
+    },
+    {
+      "id": 12,
+      "tag": "button",
+      "role": "switch",
+      "name": "Send a weekly summary",
+      "attrs": {
+        "type": "button",
+        "aria-checked": "true"
+      },
+      "bbox": {
+        "x": 1191,
+        "y": 230,
+        "width": 40,
+        "height": 22
+      },
+      "hittable": true
+    },
+    {
+      "id": 13,
+      "tag": "button",
+      "role": "switch",
+      "name": "Notify me when someone mentions me",
+      "attrs": {
+        "type": "button",
+        "aria-checked": "true"
+      },
+      "bbox": {
+        "x": 1191,
+        "y": 273,
+        "width": 40,
+        "height": 22
+      },
+      "hittable": true
+    },
+    {
+      "id": 14,
+      "tag": "button",
+      "role": "button",
+      "name": "Delete account",
+      "attrs": {
+        "type": "button"
+      },
+      "bbox": {
+        "x": 779,
+        "y": 572,
+        "width": 136,
+        "height": 36
+      },
+      "hittable": true
+    },
+    {
+      "id": 15,
+      "tag": "button",
+      "role": "button",
+      "name": "Save changes",
+      "attrs": {
+        "type": "submit"
+      },
+      "bbox": {
+        "x": 1124,
+        "y": 731,
+        "width": 128,
+        "height": 36
+      },
+      "hittable": true
+    }
+  ],
+  "texts": [
+    {
+      "text": "Tasklane",
+      "tag": "a",
+      "bbox": {
+        "x": 54,
+        "y": 18,
+        "width": 83,
+        "height": 20
+      }
+    },
+    {
+      "text": "Back to board",
+      "tag": "a",
+      "bbox": {
+        "x": 1110,
+        "y": 20,
+        "width": 97,
+        "height": 16
+      }
+    },
+    {
+      "text": "DM",
+      "tag": "button",
+      "bbox": {
+        "x": 1234,
+        "y": 20,
+        "width": 26,
+        "height": 16
+      }
+    },
+    {
+      "text": "Settings",
+      "tag": "h3",
+      "bbox": {
+        "x": 20,
+        "y": 76,
+        "width": 61,
+        "height": 13
+      }
+    },
+    {
+      "text": "Profile",
+      "tag": "a",
+      "bbox": {
+        "x": 20,
+        "y": 105,
+        "width": 51,
+        "height": 16
+      }
+    },
+    {
+      "text": "Notifications",
+      "tag": "a",
+      "bbox": {
+        "x": 20,
+        "y": 137,
+        "width": 88,
+        "height": 16
+      }
+    },
+    {
+      "text": "Activity",
+      "tag": "a",
+      "bbox": {
+        "x": 20,
+        "y": 169,
+        "width": 52,
+        "height": 16
+      }
+    },
+    {
+      "text": "Danger zone",
+      "tag": "a",
+      "bbox": {
+        "x": 20,
+        "y": 201,
+        "width": 89,
+        "height": 16
+      }
+    },
+    {
+      "text": "Settings",
+      "tag": "h1",
+      "bbox": {
+        "x": 248,
+        "y": 80,
+        "width": 104,
+        "height": 25
+      }
+    },
+    {
+      "text": "Profile",
+      "tag": "h2",
+      "bbox": {
+        "x": 269,
+        "y": 146,
+        "width": 59,
+        "height": 19
+      }
+    },
+    {
+      "text": "Full name",
+      "tag": "label",
+      "bbox": {
+        "x": 269,
+        "y": 177,
+        "width": 77,
+        "height": 16
+      }
+    },
+    {
+      "text": "Email",
+      "tag": "label",
+      "bbox": {
+        "x": 269,
+        "y": 249,
+        "width": 43,
+        "height": 16
+      }
+    },
+    {
+      "text": "Role",
+      "tag": "label",
+      "bbox": {
+        "x": 269,
+        "y": 321,
+        "width": 35,
+        "height": 16
+      }
+    },
+    {
+      "text": "Time zone",
+      "tag": "label",
+      "bbox": {
+        "x": 269,
+        "y": 393,
+        "width": 81,
+        "height": 16
+      }
+    },
+    {
+      "text": "Notifications",
+      "tag": "h2",
+      "bbox": {
+        "x": 779,
+        "y": 146,
+        "width": 115,
+        "height": 19
+      }
+    },
+    {
+      "text": "Email me when a task is assigned to me",
+      "tag": "span",
+      "bbox": {
+        "x": 779,
+        "y": 190,
+        "width": 282,
+        "height": 16
+      }
+    },
+    {
+      "text": "Send a weekly summary",
+      "tag": "span",
+      "bbox": {
+        "x": 779,
+        "y": 233,
+        "width": 172,
+        "height": 16
+      }
+    },
+    {
+      "text": "Notify me when someone mentions me",
+      "tag": "span",
+      "bbox": {
+        "x": 779,
+        "y": 276,
+        "width": 275,
+        "height": 16
+      }
+    },
+    {
+      "text": "Tasks completed per week",
+      "tag": "h2",
+      "bbox": {
+        "x": 269,
+        "y": 509,
+        "width": 238,
+        "height": 19
+      }
+    },
+    {
+      "text": "Danger zone",
+      "tag": "h2",
+      "bbox": {
+        "x": 779,
+        "y": 509,
+        "width": 114,
+        "height": 19
+      }
+    },
+    {
+      "text": "Deleting your account removes all projects and tasks.",
+      "tag": "p",
+      "bbox": {
+        "x": 779,
+        "y": 542,
+        "width": 378,
+        "height": 16
+      }
+    },
+    {
+      "text": "Delete account",
+      "tag": "button",
+      "bbox": {
+        "x": 794,
+        "y": 582,
+        "width": 106,
+        "height": 16
+      }
+    },
+    {
+      "text": "Settings saved.",
+      "tag": "div",
+      "bbox": {
+        "x": 261,
+        "y": 741,
+        "width": 108,
+        "height": 16
+      }
+    },
+    {
+      "text": "Save changes",
+      "tag": "button",
+      "bbox": {
+        "x": 1139,
+        "y": 741,
+        "width": 98,
+        "height": 16
+      }
+    }
+  ]
+}

@@ -1,0 +1,242 @@
+{
+  "url": "/login.html",
+  "title": "Sign in · Tasklane",
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  },
+  "elements": [
+    {
+      "id": 0,
+      "tag": "input",
+      "role": "textbox",
+      "name": "Email",
+      "attrs": {
+        "type": "email",
+        "placeholder": "you@example.com",
+        "aria-invalid": "true",
+        "value": "demo@example.com"
+      },
+      "bbox": {
+        "x": 473,
+        "y": 378,
+        "width": 334,
+        "height": 36
+      },
+      "hittable": true
+    },
+    {
+      "id": 1,
+      "tag": "input",
+      "role": "textbox",
+      "name": "Password",
+      "attrs": {
+        "type": "password",
+        "placeholder": "Enter your password",
+        "aria-invalid": "true",
+        "value": "wrong-password"
+      },
+      "bbox": {
+        "x": 473,
+        "y": 450,
+        "width": 334,
+        "height": 36
+      },
+      "hittable": true
+    },
+    {
+      "id": 2,
+      "tag": "button",
+      "role": "button",
+      "name": "Show password",
+      "attrs": {
+        "type": "button"
+      },
+      "bbox": {
+        "x": 773,
+        "y": 452,
+        "width": 32,
+        "height": 32
+      },
+      "hittable": true
+    },
+    {
+      "id": 3,
+      "tag": "input",
+      "role": "checkbox",
+      "name": "Remember me",
+      "attrs": {
+        "type": "checkbox",
+        "value": "on",
+        "checked": false
+      },
+      "bbox": {
+        "x": 477,
+        "y": 505,
+        "width": 13,
+        "height": 13
+      },
+      "hittable": true
+    },
+    {
+      "id": 4,
+      "tag": "a",
+      "role": "link",
+      "name": "Forgot password?",
+      "attrs": {
+        "href": "#"
+      },
+      "bbox": {
+        "x": 684,
+        "y": 504,
+        "width": 123,
+        "height": 16
+      },
+      "hittable": true
+    },
+    {
+      "id": 5,
+      "tag": "button",
+      "role": "button",
+      "name": "Sign in",
+      "attrs": {
+        "type": "submit"
+      },
+      "bbox": {
+        "x": 473,
+        "y": 541,
+        "width": 334,
+        "height": 36
+      },
+      "hittable": true
+    },
+    {
+      "id": 6,
+      "tag": "a",
+      "role": "link",
+      "name": "Create one",
+      "attrs": {
+        "href": "#"
+      },
+      "bbox": {
+        "x": 647,
+        "y": 597,
+        "width": 77,
+        "height": 16
+      },
+      "hittable": true
+    }
+  ],
+  "texts": [
+    {
+      "text": "Tasklane",
+      "tag": "div",
+      "bbox": {
+        "x": 507,
+        "y": 190,
+        "width": 83,
+        "height": 20
+      }
+    },
+    {
+      "text": "Sign in to your workspace",
+      "tag": "h1",
+      "bbox": {
+        "x": 473,
+        "y": 233,
+        "width": 323,
+        "height": 25
+      }
+    },
+    {
+      "text": "Use demo@example.com / password123",
+      "tag": "p",
+      "bbox": {
+        "x": 473,
+        "y": 272,
+        "width": 286,
+        "height": 16
+      }
+    },
+    {
+      "text": "The email or password is incorrect.",
+      "tag": "div",
+      "bbox": {
+        "x": 486,
+        "y": 315,
+        "width": 245,
+        "height": 16
+      }
+    },
+    {
+      "text": "Email",
+      "tag": "label",
+      "bbox": {
+        "x": 473,
+        "y": 356,
+        "width": 43,
+        "height": 16
+      }
+    },
+    {
+      "text": "Password",
+      "tag": "label",
+      "bbox": {
+        "x": 473,
+        "y": 428,
+        "width": 75,
+        "height": 16
+      }
+    },
+    {
+      "text": "Remember me",
+      "tag": "label",
+      "bbox": {
+        "x": 499,
+        "y": 504,
+        "width": 104,
+        "height": 16
+      }
+    },
+    {
+      "text": "Forgot password?",
+      "tag": "a",
+      "bbox": {
+        "x": 684,
+        "y": 504,
+        "width": 123,
+        "height": 16
+      }
+    },
+    {
+      "text": "Sign in",
+      "tag": "button",
+      "bbox": {
+        "x": 616,
+        "y": 551,
+        "width": 48,
+        "height": 16
+      }
+    },
+    {
+      "text": "No account?",
+      "tag": "p",
+      "bbox": {
+        "x": 556,
+        "y": 597,
+        "width": 91,
+        "height": 16
+      }
+    },
+    {
+      "text": "Create one",
+      "tag": "a",
+      "bbox": {
+        "x": 647,
+        "y": 597,
+        "width": 77,
+        "height": 16
+      }
+    }
+  ]
+}
