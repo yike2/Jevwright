@@ -14,19 +14,19 @@ Page-level actions (`open`, `back`, `press`, ...), `waitFor`, and `assert` do no
 
 There are three stages, always tried in this order:
 
-| Stage         | Method name | Input                            | Succeeds when                                                                                  |
-| ------------- | ----------- | -------------------------------- | ---------------------------------------------------------------------------------------------- |
-| Selector      | `selector`  | `selector`                       | The BrowserAdapter finds a visible element for `selector` within the stage timeout             |
+| Stage         | Method name | Input                            | Succeeds when                                                                                                              |
+| ------------- | ----------- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Selector      | `selector`  | `selector`                       | The BrowserAdapter finds a visible element for `selector` within the stage timeout                                         |
 | Visual Locate | `visual`    | `target` + screenshot + snapshot | Jev returns a bounding box (not `null`) with confidence ≥ threshold, and the box center falls on a usable snapshot element |
-| DOM Locate    | `dom`       | `target` + snapshot              | Jev chooses a candidate (an index in range, not `null`) with confidence ≥ threshold            |
+| DOM Locate    | `dom`       | `target` + snapshot              | Jev chooses a candidate (an index in range, not `null`) with confidence ≥ threshold                                        |
 
 Which stages run depends on the fields present, matching the Syntax Analyzer doc (1.1):
 
-| Fields                | Stages run                                               | Selector stage timeout        |
-| --------------------- | -------------------------------------------------------- | ----------------------------- |
-| `selector` only       | Selector. On failure the step fails; Jev is never called | `timeoutMs`                   |
-| `target` only         | Visual → DOM                                             | –                             |
-| `selector` + `target` | Selector → Visual → DOM                                  | `SELECTOR_PROBE_MS` (2000 ms) |
+| Fields                | Stages run                                               | Selector stage timeout                                   |
+| --------------------- | -------------------------------------------------------- | -------------------------------------------------------- |
+| `selector` only       | Selector. On failure the step fails; Jev is never called | `timeoutMs`                                              |
+| `target` only         | Visual → DOM                                             | –                                                        |
+| `selector` + `target` | Selector → Visual → DOM                                  | `SELECTOR_PROBE_MS` (2000 ms), or `timeoutMs` if smaller |
 
 A later stage runs only if the previous one failed. The first stage that succeeds ends the process.
 
@@ -44,12 +44,12 @@ So a selector hit costs no screenshot. The screenshot and the snapshot are taken
 
 The snapshot uses the same format as the integration fixtures (`src/tests/integration/hw3/README.md`): every visible interactive element inside the viewport, in DOM order, marked in the page with `data-jev-id`. The Locator reads these fields of each element:
 
-| Field                           | Use                                                                               |
-| ------------------------------- | --------------------------------------------------------------------------------- |
-| `id`                            | Returned to the Step Executor as `{ snapshotId }`                                 |
-| `role`, `name`, `text`, `attrs` | DOM Locate description lines; `role` and `attrs.disabled` also decide usability   |
-| `bbox`                          | Matching the Visual Locate box center                                             |
-| `hittable`                      | Elements covered by something else (e.g. a modal backdrop) are skipped            |
+| Field                           | Use                                                                             |
+| ------------------------------- | ------------------------------------------------------------------------------- |
+| `id`                            | Returned to the Step Executor as `{ snapshotId }`                               |
+| `role`, `name`, `text`, `attrs` | DOM Locate description lines; `role` and `attrs.disabled` also decide usability |
+| `bbox`                          | Matching the Visual Locate box center                                           |
+| `hittable`                      | Elements covered by something else (e.g. a modal backdrop) are skipped          |
 
 All coordinates are CSS pixels relative to the viewport, so screenshot pixels and `bbox` values share one coordinate system.
 
@@ -283,13 +283,13 @@ flowchart LR
   visual --> dom
 ```
 
-| Module         | Responsibility                                                                                                     |
-| -------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `locate.ts`    | Entry point `locate()`: decides which stages run, records attempts, returns `LocateResult` or throws `LocateError` |
-| `selector.ts`  | Selector stage (1.2): `adapter.isVisible()` with the right timeout                                                 |
-| `visual.ts`    | Visual Locate (1.4): screenshot and snapshot, Jev `bbox`, box center, element at point                             |
+| Module         | Responsibility                                                                                                               |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `locate.ts`    | Entry point `locate()`: decides which stages run, records attempts, returns `LocateResult` or throws `LocateError`           |
+| `selector.ts`  | Selector stage (1.2): `adapter.isVisible()` with the right timeout                                                           |
+| `visual.ts`    | Visual Locate (1.4): screenshot and snapshot, Jev `bbox`, box center, element at point                                       |
 | `dom.ts`       | DOM Locate (1.5): usable elements (`filterUsable`, also used by `visual.ts`), candidate cap, description lines, Jev `choice` |
-| `constants.ts` | Constants in 1.6                                                                                                   |
+| `constants.ts` | Constants in 1.6                                                                                                             |
 
 None of these modules imports Playwright. `BrowserAdapter` and `JevClient` are imported from `src/core/browser/` and `src/core/jev/`, not redefined here. To add a new stage, add a module and call it from `locate.ts` in the desired order.
 
@@ -310,10 +310,10 @@ src/core/locator/
 
 All tests use Vitest and never launch a browser. Tests pass a fake `BrowserAdapter` (serving fixture files and counting calls) and a fake `JevClient` (returning scripted answers); the product always uses the real ones.
 
-| Type        | Coverage                                                                                                                                                                                                                                                                                              | Location                                                                                        |
-| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| Unit        | Usable elements (`hittable: false` and disabled skipped, editable filter for `input`); candidate cap; description lines (truncation, escaping, omitted fields, `checked=false`, `aria-checked`)                                                                                                       | `src/tests/unit/core/locator/dom.test.ts`                                                       |
-| Unit        | Element at point (inside, edge point counts, zero-size element never matches, smallest area wins, area tie goes to the earliest, no match returns `null`); box center                                                                                                                                | `src/tests/unit/core/locator/visual.test.ts`                                                    |
-| Unit        | `locate()` flow: `selector` only never calls Jev; a selector hit takes no screenshot; a confidence below `CONFIDENCE_THRESHOLD` fails the stage; probe timeout is `SELECTOR_PROBE_MS` when `target` is present, `timeoutMs` otherwise; Visual takes the snapshot before calling Jev; order Visual → DOM; snapshot is reused between stages; `LocateError` lists every attempt | `src/tests/unit/core/locator/locate.test.ts`                                                    |
-| Integration | For every target in the hw3 fixtures: a fake Jev returning the ground-truth `bbox` makes Visual Locate return { snapshotId: <fixture elementId> }; a fake Jev choosing the ground-truth element does the same for DOM Locate; targets with `present: false` or `elementId: null` end in `LocateError` | `src/tests/integration/locator/fixtures.test.ts`, reading `src/tests/integration/hw3/fixtures/` |
-| Manual      | The same fixtures with the real Jev through OpenRouter, to measure accuracy; not run in CI                                                                                                                                                                                                            | Benchmark Test Suite                                                                            |
+| Type        | Coverage                                                                                                                                                                                                                                                                                                                                                                                                     | Location                                                                                        |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| Unit        | Usable elements (`hittable: false` and disabled skipped, editable filter for `input`); candidate cap; description lines (truncation, escaping, omitted fields, `checked=false`, `aria-checked`)                                                                                                                                                                                                              | `src/tests/unit/core/locator/dom.test.ts`                                                       |
+| Unit        | Element at point (inside, edge point counts, zero-size element never matches, smallest area wins, area tie goes to the earliest, no match returns `null`); box center                                                                                                                                                                                                                                        | `src/tests/unit/core/locator/visual.test.ts`                                                    |
+| Unit        | `locate()` flow: `selector` only never calls Jev; a selector hit takes no screenshot; a confidence below `CONFIDENCE_THRESHOLD` fails the stage; probe timeout is the smaller of `SELECTOR_PROBE_MS` and `timeoutMs` when `target` is present, `timeoutMs` otherwise; Visual takes the snapshot before calling Jev; order Visual → DOM; snapshot is reused between stages; `LocateError` lists every attempt | `src/tests/unit/core/locator/locate.test.ts`                                                    |
+| Integration | For every target in the hw3 fixtures: a fake Jev returning the ground-truth `bbox` makes Visual Locate return { snapshotId: <fixture elementId> }; a fake Jev choosing the ground-truth element does the same for DOM Locate; targets with `present: false` or `elementId: null` end in `LocateError`                                                                                                        | `src/tests/integration/locator/fixtures.test.ts`, reading `src/tests/integration/hw3/fixtures/` |
+| Manual      | The same fixtures with the real Jev through OpenRouter, to measure accuracy; not run in CI                                                                                                                                                                                                                                                                                                                   | Benchmark Test Suite                                                                            |
