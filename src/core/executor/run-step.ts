@@ -1,8 +1,10 @@
 import type { BrowserAdapter, BrowserCheck, BrowserResult } from "../browser/index.js";
+import { judge, waitUntil } from "../asserter/index.js";
 import type { JevClient } from "../jev/index.js";
 import type { AssertCheck, Step } from "../syntax/index.js";
 import { locate, LocateError } from "../locator/index.js";
-import { missingVariables, NEEDS_ASSERTER } from "./reasons.js";
+import type { JudgeResult } from "../asserter/index.js";
+import { missingVariables } from "./reasons.js";
 import type { FailedStep, LocateMethod, PassedStep } from "./types.js";
 import { substitute } from "./variables.js";
 
@@ -17,6 +19,14 @@ export type StepContext = {
 type Outcome = { result: BrowserResult; locateMethod?: LocateMethod };
 
 const fail = (reason: string): Outcome => ({ result: { ok: false, reason, dialogs: [] } });
+
+function mapJudgeResult(result: JudgeResult, dialogs: BrowserResult["dialogs"] = []): BrowserResult {
+  if (result.ok) {
+    return { ok: true, dialogs };
+  }
+
+  return { ok: false, reason: result.reason, dialogs };
+}
 
 function toCheck(check: AssertCheck): BrowserCheck {
   if ("url" in check) return { check: "url", url: check.url };
@@ -99,16 +109,27 @@ async function act(step: Step, context: StepContext): Promise<Outcome> {
         throw error;
       }
     case "waitFor":
-      // TODO: judge the condition through the Asserter.
-      if ("condition" in step) return fail(NEEDS_ASSERTER);
+      if ("condition" in step) {
+        const judged = await waitUntil(step.condition, context.timeoutMs, browser, jev);
+        return { result: mapJudgeResult(judged) };
+      }
       if ("selector" in step) return { result: await browser.check({ check: "visible", selector: step.selector }) };
       return { result: await browser.check({ check: "url", url: step.url }) };
     case "assert": {
-      // TODO: judge the statement through the Asserter, also as the fallback of a failed check.
-      if (!("check" in step)) return fail(NEEDS_ASSERTER);
+      if (!("check" in step)) {
+        const judged = await judge(step.statement, browser, jev);
+        return { result: mapJudgeResult(judged) };
+      }
+
       const result = await browser.check(toCheck(step.check));
       if (result.ok || step.statement === undefined) return { result };
-      return { result: { ...result, reason: `${result.reason}; ${NEEDS_ASSERTER}` } };
+
+      const judged = await judge(step.statement, browser, jev);
+      if (judged.ok) {
+        return { result: { ok: true, dialogs: result.dialogs } };
+      }
+
+      return { result: { ok: false, reason: `${result.reason}; ${judged.reason}`, dialogs: result.dialogs } };
     }
     default: {
       const unknown: never = step;

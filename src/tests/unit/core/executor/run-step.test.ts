@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { QUESTION_PREFIX } from "@/core/asserter/constants.js";
 import type { BrowserAction, BrowserCheck, DialogRecord, PageSnapshot } from "@/core/browser/index.js";
 import type { JevClient } from "@/core/jev/index.js";
 import { SELECTOR_PROBE_MS } from "@/core/locator/constants.js";
@@ -6,8 +7,6 @@ import { runStep } from "@/core/executor/run-step.js";
 import { createRedact } from "@/core/executor/variables.js";
 import type { Step } from "@/core/syntax/index.js";
 import { failed, fakeAdapter, PNG, throwingJev } from "./fake-adapter.js";
-
-const NEEDS_ASSERTER = "Judging a natural-language condition needs the Asserter, which is not available yet";
 
 const alert = (message: string): DialogRecord => ({ type: "alert", message, answer: "accepted", expected: true });
 
@@ -173,22 +172,11 @@ describe("runStep steps that need Jev", () => {
       { line: 2, action: "input", target: "The email field", value: "a@b.c" },
       'Could not locate "The email field":\n  visual — No snapshot in the fake\n  dom — No snapshot in the fake',
     ],
-    ["waitFor with a condition", { line: 2, action: "waitFor", condition: "The list has loaded" }, NEEDS_ASSERTER],
-    ["assert with only a statement", { line: 2, action: "assert", statement: "The list has loaded" }, NEEDS_ASSERTER],
   ])("fails %s without acting on the page", async (_case, step, reason) => {
     const { result, calls } = await run(step);
 
     expect(result).toMatchObject({ status: "failed", reason });
     expect(calls.filter((call) => call.method === "perform" || call.method === "check")).toEqual([]);
-  });
-
-  it("fails an assert whose check fails, adding that the statement needs the Asserter", async () => {
-    const { result } = await run(
-      { line: 2, action: "assert", check: { selector: "h1", text: "Hi" }, statement: "A greeting is shown" },
-      { check: () => failed('Text of "h1" did not contain "Hi"') },
-    );
-
-    expect(result).toMatchObject({ status: "failed", reason: `Text of "h1" did not contain "Hi"; ${NEEDS_ASSERTER}` });
   });
 });
 
@@ -436,5 +424,125 @@ describe("runStep locator integration", () => {
 
     expect(result).toMatchObject({ status: "passed", locateMethod: "visual" });
     expect(calls).toContainEqual({ method: "isVisible", selector: "#legacy", timeoutMs });
+  });
+});
+
+describe("runStep asserter integration", () => {
+  function makeJevWithNoul(noul: JevClient["noul"]): JevClient {
+    return {
+      bbox: vi.fn(async () => ({ ok: false as const, reason: "bbox not stubbed" })),
+      choice: vi.fn(async () => ({ ok: false as const, reason: "choice not stubbed" })),
+      noul,
+    };
+  }
+
+  it("waitFor condition holds (noul=0.9): passed and asks once with QUESTION_PREFIX + condition", async () => {
+    const condition = "The list has loaded";
+    const noul = vi.fn<JevClient["noul"]>(async () => ({ ok: true as const, data: { probability: 0.9 } }));
+    const jev = makeJevWithNoul(noul);
+    const { adapter } = fakeAdapter();
+    const step: Step = { line: 2, action: "waitFor", condition };
+    const redact = createRedact({ name: "t", timeoutMs: 1000, steps: [step] }, {});
+
+    const result = await runStep(step, 3, { browser: adapter, vars: {}, redact, jev, timeoutMs: 1000 });
+
+    expect(result).toMatchObject({ status: "passed" });
+    expect(noul).toHaveBeenCalledTimes(1);
+    expect(noul).toHaveBeenCalledWith(`${QUESTION_PREFIX}${condition}`, { image: PNG });
+  });
+
+  it("waitFor condition never holds with timeoutMs 0: failed with timeout reason", async () => {
+    const noul = vi.fn<JevClient["noul"]>(async () => ({ ok: true as const, data: { probability: 0.1 } }));
+    const jev = makeJevWithNoul(noul);
+    const { adapter } = fakeAdapter();
+    const step: Step = { line: 2, action: "waitFor", condition: "The list has loaded" };
+    const redact = createRedact({ name: "t", timeoutMs: 0, steps: [step] }, {});
+
+    const result = await runStep(step, 3, { browser: adapter, vars: {}, redact, jev, timeoutMs: 0 });
+
+    expect(result).toMatchObject({ status: "failed", reason: "Condition did not hold within 0ms (last noul=0.1)" });
+  });
+
+  it.each([
+    { probability: 0.9, status: "passed" },
+    { probability: 0.1, status: "failed", reason: "Statement does not hold (noul=0.1)" },
+  ] as const)("assert statement only (noul=$probability): $status", async ({ probability, status, reason }) => {
+    const noul = vi.fn<JevClient["noul"]>(async () => ({ ok: true as const, data: { probability } }));
+    const jev = makeJevWithNoul(noul);
+    const { adapter } = fakeAdapter();
+    const step: Step = { line: 2, action: "assert", statement: "The list has loaded" };
+    const redact = createRedact({ name: "t", timeoutMs: 1000, steps: [step] }, {});
+
+    const result = await runStep(step, 3, { browser: adapter, vars: {}, redact, jev, timeoutMs: 1000 });
+
+    expect(result).toMatchObject({ status, ...(reason ? { reason } : {}) });
+  });
+
+  it("assert check passes with a statement: Jev not called", async () => {
+    const noul = vi.fn<JevClient["noul"]>(async () => ({ ok: true as const, data: { probability: 0.9 } }));
+    const jev = makeJevWithNoul(noul);
+    const { adapter } = fakeAdapter();
+    const step: Step = { line: 2, action: "assert", check: { selector: "h1", text: "Hi" }, statement: "A greeting is shown" };
+    const redact = createRedact({ name: "t", timeoutMs: 1000, steps: [step] }, {});
+
+    const result = await runStep(step, 3, { browser: adapter, vars: {}, redact, jev, timeoutMs: 1000 });
+
+    expect(result).toMatchObject({ status: "passed" });
+    expect(noul).not.toHaveBeenCalled();
+  });
+
+  it("assert check fails and statement holds: passed and keeps check dialogs", async () => {
+    const noul = vi.fn<JevClient["noul"]>(async () => ({ ok: true as const, data: { probability: 0.9 } }));
+    const jev = makeJevWithNoul(noul);
+    const checkDialogs = [alert("Check said no")];
+    const { adapter } = fakeAdapter({ check: () => failed('Text of "h1" did not contain "Hi"', checkDialogs) });
+    const step: Step = { line: 2, action: "assert", check: { selector: "h1", text: "Hi" }, statement: "A greeting is shown" };
+    const redact = createRedact({ name: "t", timeoutMs: 1000, steps: [step] }, {});
+
+    const result = await runStep(step, 3, { browser: adapter, vars: {}, redact, jev, timeoutMs: 1000 });
+
+    expect(result).toMatchObject({ status: "passed", dialogs: checkDialogs });
+  });
+
+  it("assert check fails and statement does not hold: failed with combined reason", async () => {
+    const noul = vi.fn<JevClient["noul"]>(async () => ({ ok: true as const, data: { probability: 0.1 } }));
+    const jev = makeJevWithNoul(noul);
+    const checkDialogs = [alert("Check said no")];
+    const { adapter } = fakeAdapter({ check: () => failed('Text of "h1" did not contain "Hi"', checkDialogs) });
+    const step: Step = { line: 2, action: "assert", check: { selector: "h1", text: "Hi" }, statement: "A greeting is shown" };
+    const redact = createRedact({ name: "t", timeoutMs: 1000, steps: [step] }, {});
+
+    const result = await runStep(step, 3, { browser: adapter, vars: {}, redact, jev, timeoutMs: 1000 });
+
+    expect(result).toMatchObject({
+      status: "failed",
+      reason: 'Text of "h1" did not contain "Hi"; Statement does not hold (noul=0.1)',
+      dialogs: checkDialogs,
+    });
+  });
+
+  it("noul returns { ok: false, reason }: failed with that reason", async () => {
+    const noul = vi.fn<JevClient["noul"]>(async () => ({ ok: false as const, reason: "Service unavailable" }));
+    const jev = makeJevWithNoul(noul);
+    const { adapter } = fakeAdapter();
+    const step: Step = { line: 2, action: "assert", statement: "The list has loaded" };
+    const redact = createRedact({ name: "t", timeoutMs: 1000, steps: [step] }, {});
+
+    const result = await runStep(step, 3, { browser: adapter, vars: {}, redact, jev, timeoutMs: 1000 });
+
+    expect(result).toMatchObject({ status: "failed", reason: "Service unavailable" });
+  });
+
+  it("noul throws: runStep rejects with the same error", async () => {
+    const error = new Error("noul exploded");
+    const noul = vi.fn<JevClient["noul"]>(async () => {
+      throw error;
+    });
+    const jev = makeJevWithNoul(noul);
+    const { adapter } = fakeAdapter();
+    const step: Step = { line: 2, action: "assert", statement: "The list has loaded" };
+    const redact = createRedact({ name: "t", timeoutMs: 1000, steps: [step] }, {});
+
+    await expect(runStep(step, 3, { browser: adapter, vars: {}, redact, jev, timeoutMs: 1000 })).rejects.toBe(error);
   });
 });
