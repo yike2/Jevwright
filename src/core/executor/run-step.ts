@@ -1,4 +1,5 @@
 import type { BrowserAdapter, BrowserCheck, BrowserResult } from "../browser/index.js";
+import type { JevClient } from "../jev/index.js";
 import type { AssertCheck, Step } from "../syntax/index.js";
 import { missingVariables, NEEDS_ASSERTER, NEEDS_LOCATOR } from "./reasons.js";
 import type { FailedStep, LocateMethod, PassedStep } from "./types.js";
@@ -8,6 +9,8 @@ export type StepContext = {
   browser: BrowserAdapter;
   vars: Record<string, string>;
   redact: (text: string) => string;
+  jev: JevClient;
+  timeoutMs: number;
 };
 
 type Outcome = { result: BrowserResult; locateMethod?: LocateMethod };
@@ -26,7 +29,8 @@ function toCheck(check: AssertCheck): BrowserCheck {
 }
 
 // The one Adapter call for a step whose Variables are filled in (executor.md 1.4).
-async function act(step: Step, browser: BrowserAdapter): Promise<Outcome> {
+async function act(step: Step, context: StepContext): Promise<Outcome> {
+  const { browser } = context;
   switch (step.action) {
     case "open":
     case "back":
@@ -99,7 +103,7 @@ export async function runStep(step: Step, index: number, context: StepContext): 
     if (!ready.ok) {
       outcome = { result: ready };
     } else {
-      const acted = await act(filled.value, browser);
+      const acted = await act(filled.value, context);
       outcome = { ...acted, result: { ...acted.result, dialogs: [...ready.dialogs, ...acted.result.dialogs] } };
     }
   }

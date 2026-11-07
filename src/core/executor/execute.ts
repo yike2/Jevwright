@@ -11,7 +11,7 @@ export async function execute(
   options: ExecuteOptions,
   launch: typeof launchBrowser = launchBrowser,
 ): Promise<ExecuteResult> {
-  const { headed, vars, onEvent } = options;
+  const { headed, vars, onEvent, jev } = options;
   const results: StepResult[] = testCase.steps.map((step, index) => ({
     index,
     line: step.line,
@@ -55,11 +55,11 @@ export async function execute(
 
 // Fills `results` in order and stops at the first failed step, leaving the rest pending.
 async function runSteps(testCase: TestCase, browser: BrowserAdapter, options: ExecuteOptions, results: StepResult[]) {
-  const { vars, onEvent } = options;
+  const { vars, onEvent, jev } = options;
   const redact = createRedact(testCase, vars);
   for (const [index, step] of testCase.steps.entries()) {
     onEvent({ type: "started", step: { index, line: step.line, action: step.action } });
-    const result = await runStep(step, index, { browser, vars, redact });
+    const result = await runStep(step, index, { browser, vars, redact, jev, timeoutMs: testCase.timeoutMs });
     results[index] = result;
     onEvent({ type: "finished", result });
     if (result.status === "failed") return;

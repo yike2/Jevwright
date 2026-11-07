@@ -6,13 +6,13 @@ The Executor runs one validated `TestCase`: it launches the Browser Adapter, run
 
 ### 1.1 Terms
 
-| Term | Meaning |
-| ---- | ------- |
-| **Executor** | The module that runs a whole `TestCase` on its own browser |
-| **Step result** | The outcome of one step: `pending`, `passed`, or `failed`, with timing, locate method, dialogs, and failure reason |
-| **Step event** | A progress message sent through `onEvent`: one when a step starts, one when it ends |
-| **Variable** | A `{{NAME}}` placeholder in a test file string, filled in from the caller's `vars` before the Adapter sees the step |
-| **Redaction** | Replacing a Variable's value with its `{{NAME}}` in reasons, dialog messages, and events, so the value never reaches a report or log |
+| Term            | Meaning                                                                                                                              |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| **Executor**    | The module that runs a whole `TestCase` on its own browser                                                                           |
+| **Step result** | The outcome of one step: `pending`, `passed`, or `failed`, with timing, locate method, dialogs, and failure reason                   |
+| **Step event**  | A progress message sent through `onEvent`: one when a step starts, one when it ends                                                  |
+| **Variable**    | A `{{NAME}}` placeholder in a test file string, filled in from the caller's `vars` before the Adapter sees the step                  |
+| **Redaction**   | Replacing a Variable's value with its `{{NAME}}` in reasons, dialog messages, and events, so the value never reaches a report or log |
 
 ### 1.2 Run Lifecycle
 
@@ -38,19 +38,19 @@ A step passes only when `ready()` and its call both return `ok: true`.
 
 The mapping is one exhaustive `switch` over the `Step` types defined in `syntax-analyzer.md` 3.2.
 
-| Step | Adapter call | Locate method |
-| ---- | ------------ | ------------- |
-| `open`, `back`, `forward`, `reload`, `press`, `scroll`, `sleep`, `switchTab` | `perform()` with the step's fields, including its Dialog response | – |
-| Element action with `LocateBySelector` | `perform()` with `element: { selector }`; if the selector matches nothing, the step fails with the Adapter's reason | `selector` |
-| Element action with `LocateByBoth` | Same; on failure the reason is `<Adapter reason>; <NEEDS_LOCATOR>`, because the Jev fallback on `target` is not available yet | `selector` |
-| Element action with `LocateByTarget` | None; fails with `NEEDS_LOCATOR` | – |
-| `WaitForSelector` | `check({ check: "visible", selector })` | – |
-| `WaitForUrl` | `check({ check: "url", url })` | – |
-| `WaitForCondition` | None; fails with `NEEDS_ASSERTER` | – |
-| `AssertWithCheck`, `check` has `selector` only | `check({ check: "visible", selector })` | – |
-| `AssertWithCheck`, `check` has `selector` and `text` | `check({ check: "text", selector, text })` | – |
-| `AssertWithCheck`, `check` has `url` | `check({ check: "url", url })` | – |
-| `AssertStatement` | None; fails with `NEEDS_ASSERTER` | – |
+| Step                                                                         | Adapter call                                                                                                                  | Locate method |
+| ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ------------- |
+| `open`, `back`, `forward`, `reload`, `press`, `scroll`, `sleep`, `switchTab` | `perform()` with the step's fields, including its Dialog response                                                             | –             |
+| Element action with `LocateBySelector`                                       | `perform()` with `element: { selector }`; if the selector matches nothing, the step fails with the Adapter's reason           | `selector`    |
+| Element action with `LocateByBoth`                                           | Same; on failure the reason is `<Adapter reason>; <NEEDS_LOCATOR>`, because the Jev fallback on `target` is not available yet | `selector`    |
+| Element action with `LocateByTarget`                                         | None; fails with `NEEDS_LOCATOR`                                                                                              | –             |
+| `WaitForSelector`                                                            | `check({ check: "visible", selector })`                                                                                       | –             |
+| `WaitForUrl`                                                                 | `check({ check: "url", url })`                                                                                                | –             |
+| `WaitForCondition`                                                           | None; fails with `NEEDS_ASSERTER`                                                                                             | –             |
+| `AssertWithCheck`, `check` has `selector` only                               | `check({ check: "visible", selector })`                                                                                       | –             |
+| `AssertWithCheck`, `check` has `selector` and `text`                         | `check({ check: "text", selector, text })`                                                                                    | –             |
+| `AssertWithCheck`, `check` has `url`                                         | `check({ check: "url", url })`                                                                                                | –             |
+| `AssertStatement`                                                            | None; fails with `NEEDS_ASSERTER`                                                                                             | –             |
 
 If an `AssertWithCheck` with a `statement` fails its check, the step fails with `<check reason>; <NEEDS_ASSERTER>`, because the Jev fallback is not available yet.
 
@@ -68,11 +68,11 @@ Values are never logged.
 
 ### 1.6 Failure Reasons
 
-| Constant | Reason |
-| -------- | ------ |
+| Constant           | Reason                                                                                           |
+| ------------------ | ------------------------------------------------------------------------------------------------ |
 | `MISSING_VARIABLE` | `Variable {{NAME}} is not set`, or `Variables {{A}}, {{B}} are not set` when several are missing |
-| `NEEDS_LOCATOR` | `Locating by target needs the Element Locator, which is not available yet` |
-| `NEEDS_ASSERTER` | `Judging a natural-language condition needs the Asserter, which is not available yet` |
+| `NEEDS_LOCATOR`    | `Locating by target needs the Element Locator, which is not available yet`                       |
+| `NEEDS_ASSERTER`   | `Judging a natural-language condition needs the Asserter, which is not available yet`            |
 
 Every other reason comes from the Browser Adapter unchanged, apart from Redaction.
 
@@ -111,10 +111,19 @@ flowchart TD
 ```ts
 function execute(testCase: TestCase, options: ExecuteOptions, launch?: typeof launchBrowser): Promise<ExecuteResult>;
 
+type StepContext = {
+  browser: BrowserAdapter;
+  vars: Record<string, string>;
+  redact: (text: string) => string;
+  jev: JevClient;
+  timeoutMs: number;
+};
+
 type ExecuteOptions = {
   headed: boolean;
   vars: Record<string, string>;
   onEvent: (event: StepEvent) => void;
+  jev: JevClient;
 };
 
 type ExecuteResult = {
@@ -171,13 +180,13 @@ flowchart LR
   execute --> vars
 ```
 
-| Module | Responsibility |
-| ------ | -------------- |
-| `execute.ts` | `execute()`: launch, step loop, events, `pending` steps, `close()` in `finally` (1.2) |
-| `run-step.ts` | `runStep()`: `ready()`, the step-to-Adapter mapping, dialogs, failure screenshot (1.3, 1.4) |
-| `variables.ts` | Variable substitution and Redaction (1.5) |
-| `reasons.ts` | Failure reasons in 1.6 |
-| `types.ts` | Types in 3 |
+| Module         | Responsibility                                                                                                                                                          |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `execute.ts`   | `execute()`: launch, step loop, events, `pending` steps, `close()` in `finally` (1.2)                                                                                   |
+| `run-step.ts`  | `runStep()`: `ready()`, the step-to-Adapter mapping, dialogs, failure screenshot, and `StepContext` with `browser`, `vars`, `redact`, `jev`, and `timeoutMs` (1.3, 1.4) |
+| `variables.ts` | Variable substitution and Redaction (1.5)                                                                                                                               |
+| `reasons.ts`   | Failure reasons in 1.6                                                                                                                                                  |
+| `types.ts`     | Types in 3                                                                                                                                                              |
 
 ### 4.2 Directory Layout
 
@@ -195,11 +204,11 @@ src/core/executor/
 
 Unit tests use a fake `BrowserAdapter` that records every call and returns scripted results.
 
-| Type | Coverage | Location |
-| ---- | -------- | -------- |
-| Unit | `variables`: substitution in every string field, including the Dialog response; missing names listed in order; Redaction of reasons and dialog messages, longest value first, empty values ignored, only Variables used in the `TestCase` | `src/tests/unit/core/executor/variables.test.ts` |
-| Unit | `runStep`: each row of 1.4 makes the stated Adapter call with substituted values; `ready()` failure skips the call; a missing Variable calls no Adapter method before the screenshot; dialogs from `ready()` and the call are merged in order; failure takes a screenshot and keeps the reason when the screenshot fails; `locateMethod` is `selector` for element actions; `LocateByTarget`, `WaitForCondition`, `AssertStatement`, and a failed check with a `statement` fail and are never passed | `src/tests/unit/core/executor/run-step.test.ts` |
-| Unit | `execute`: launch options from the `TestCase` and `headed`; steps run in order; stop at the first failure with the rest `pending`; `started` and `finished` events per executed step and none for `pending` steps; `close()` runs after success, failure, and a thrown error; the original error is rethrown; both errors are thrown when `close()` also fails | `src/tests/unit/core/executor/execute.test.ts` |
-| Integration | A `TestCase` against local HTML pages with the real Browser Adapter: a passing run with actions, a dialog, `switchTab`, `waitFor`, and `assert`; a failing `assert` whose `text` is a Variable, with its value redacted from the reason | `src/tests/integration/core/executor/execute.test.ts` |
+| Type        | Coverage                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | Location                                              |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| Unit        | `variables`: substitution in every string field, including the Dialog response; missing names listed in order; Redaction of reasons and dialog messages, longest value first, empty values ignored, only Variables used in the `TestCase`                                                                                                                                                                                                                                                            | `src/tests/unit/core/executor/variables.test.ts`      |
+| Unit        | `runStep`: each row of 1.4 makes the stated Adapter call with substituted values; `ready()` failure skips the call; a missing Variable calls no Adapter method before the screenshot; dialogs from `ready()` and the call are merged in order; failure takes a screenshot and keeps the reason when the screenshot fails; `locateMethod` is `selector` for element actions; `LocateByTarget`, `WaitForCondition`, `AssertStatement`, and a failed check with a `statement` fail and are never passed | `src/tests/unit/core/executor/run-step.test.ts`       |
+| Unit        | `execute`: launch options from the `TestCase` and `headed`; steps run in order; stop at the first failure with the rest `pending`; `started` and `finished` events per executed step and none for `pending` steps; `close()` runs after success, failure, and a thrown error; the original error is rethrown; both errors are thrown when `close()` also fails                                                                                                                                       | `src/tests/unit/core/executor/execute.test.ts`        |
+| Integration | A `TestCase` against local HTML pages with the real Browser Adapter: a passing run with actions, a dialog, `switchTab`, `waitFor`, and `assert`; a failing `assert` whose `text` is a Variable, with its value redacted from the reason                                                                                                                                                                                                                                                              | `src/tests/integration/core/executor/execute.test.ts` |
 
 HTML pages live in `src/tests/integration/core/executor/fixtures/`, one page per scenario, named after it.

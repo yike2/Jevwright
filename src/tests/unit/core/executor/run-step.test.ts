@@ -3,7 +3,7 @@ import type { BrowserAction, BrowserCheck, DialogRecord } from "@/core/browser/i
 import { runStep } from "@/core/executor/run-step.js";
 import { createRedact } from "@/core/executor/variables.js";
 import type { Step } from "@/core/syntax/index.js";
-import { failed, fakeAdapter, PNG } from "./fake-adapter.js";
+import { failed, fakeAdapter, PNG, throwingJev } from "./fake-adapter.js";
 
 const NEEDS_LOCATOR = "Locating by target needs the Element Locator, which is not available yet";
 const NEEDS_ASSERTER = "Judging a natural-language condition needs the Asserter, which is not available yet";
@@ -14,7 +14,7 @@ const alert = (message: string): DialogRecord => ({ type: "alert", message, answ
 async function run(step: Step, script: Parameters<typeof fakeAdapter>[0] = {}, vars: Record<string, string> = {}) {
   const { adapter, calls } = fakeAdapter(script);
   const redact = createRedact({ name: "t", timeoutMs: 1000, steps: [step] }, vars);
-  const result = await runStep(step, 3, { browser: adapter, vars, redact });
+  const result = await runStep(step, 3, { browser: adapter, vars, redact, jev: throwingJev, timeoutMs: 1000 });
   return { result, calls };
 }
 

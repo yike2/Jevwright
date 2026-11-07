@@ -1,8 +1,21 @@
 import type { BrowserAction, BrowserAdapter, BrowserCheck, BrowserResult, ReadResult } from "@/core/browser/index.js";
+import type { JevClient } from "@/core/jev/index.js";
 
 export const OK: BrowserResult = { ok: true, dialogs: [] };
 export const PNG = Buffer.from("png");
 export const TRACE = Buffer.from("trace");
+
+export const throwingJev: JevClient = {
+  bbox: async () => {
+    throw new Error("Jev should not be called yet");
+  },
+  choice: async () => {
+    throw new Error("Jev should not be called yet");
+  },
+  noul: async () => {
+    throw new Error("Jev should not be called yet");
+  },
+};
 
 export const failed = (reason: string, dialogs: BrowserResult["dialogs"] = []): BrowserResult => ({
   ok: false,
