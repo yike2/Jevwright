@@ -102,7 +102,7 @@ If every stage that ran has failed, `locate()` throws a `LocateError` containing
 
 ```text
 Could not locate "Sign in button":
-  selector "#login" — not visible within 2000 ms
+  selector — "#login" not visible within 2000 ms
   visual — confidence 0.42 below 0.7
   dom — Jev chose no candidate
 ```
