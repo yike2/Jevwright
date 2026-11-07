@@ -1,11 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { BrowserAction, BrowserCheck, DialogRecord } from "@/core/browser/index.js";
+import type { BrowserAction, BrowserCheck, DialogRecord, PageSnapshot } from "@/core/browser/index.js";
+import type { JevClient } from "@/core/jev/index.js";
+import { SELECTOR_PROBE_MS } from "@/core/locator/constants.js";
 import { runStep } from "@/core/executor/run-step.js";
 import { createRedact } from "@/core/executor/variables.js";
 import type { Step } from "@/core/syntax/index.js";
 import { failed, fakeAdapter, PNG, throwingJev } from "./fake-adapter.js";
 
-const NEEDS_LOCATOR = "Locating by target needs the Element Locator, which is not available yet";
 const NEEDS_ASSERTER = "Judging a natural-language condition needs the Asserter, which is not available yet";
 
 const alert = (message: string): DialogRecord => ({ type: "alert", message, answer: "accepted", expected: true });
@@ -17,6 +18,43 @@ async function run(step: Step, script: Parameters<typeof fakeAdapter>[0] = {}, v
   const result = await runStep(step, 3, { browser: adapter, vars, redact, jev: throwingJev, timeoutMs: 1000 });
   return { result, calls };
 }
+
+function makeJev(overrides: Partial<JevClient> = {}): JevClient {
+  return {
+    bbox: vi.fn(async () => ({ ok: false as const, reason: "bbox not stubbed" })),
+    choice: vi.fn(async () => ({ ok: false as const, reason: "choice not stubbed" })),
+    noul: vi.fn(async () => ({ ok: false as const, reason: "noul not stubbed" })),
+    ...overrides,
+  };
+}
+
+const SNAPSHOT: PageSnapshot = {
+  url: "https://example.test/",
+  title: "Example",
+  viewport: { width: 1000, height: 800 },
+  elements: [
+    {
+      id: 101,
+      tag: "button",
+      role: "button",
+      name: "Target",
+      text: "Target",
+      attrs: {},
+      bbox: { x: 100, y: 100, width: 120, height: 40 },
+      hittable: true,
+    },
+    {
+      id: 202,
+      tag: "input",
+      role: "textbox",
+      name: "Email",
+      text: "",
+      attrs: { type: "email" },
+      bbox: { x: 300, y: 100, width: 220, height: 40 },
+      hittable: true,
+    },
+  ],
+};
 
 afterEach(() => vi.useRealTimers());
 
@@ -60,11 +98,6 @@ describe("runStep mapping", () => {
       { line: 2, action: "input", selector: "#name", value: "x", dialog: { accept: false } },
       { action: "input", element: { selector: "#name" }, value: "x", dialog: { accept: false } },
     ],
-    [
-      "click by selector with a target",
-      { line: 2, action: "click", selector: "#go", target: "The Go button" },
-      { action: "click", element: { selector: "#go" } },
-    ],
   ])("performs %s with the selector and records the selector locate method", async (_case, step, action) => {
     const { result, calls } = await run(step);
 
@@ -88,12 +121,15 @@ describe("runStep mapping", () => {
   it.each<[string, Step]>([
     ["click", { line: 2, action: "click", selector: "#old-id", target: "The Go button" }],
     ["input", { line: 2, action: "input", selector: "#old-id", target: "The email field", value: "a@b.c" }],
-  ])("adds that the target needs the Element Locator when the selector of a %s with both fails", async (_action, step) => {
-    const { result } = await run(step, { perform: () => failed("Timeout 1000ms exceeded waiting for #old-id") });
+  ])("reports the perform failure when the selector of a %s with a target is visible", async (_action, step) => {
+    const { result } = await run(step, {
+      isVisible: () => ({ ok: true, data: true }),
+      perform: () => failed("Timeout 1000ms exceeded waiting for #old-id"),
+    });
 
     expect(result).toMatchObject({
       status: "failed",
-      reason: `Timeout 1000ms exceeded waiting for #old-id; ${NEEDS_LOCATOR}`,
+      reason: "Timeout 1000ms exceeded waiting for #old-id",
     });
   });
 
@@ -127,8 +163,16 @@ describe("runStep mapping", () => {
 
 describe("runStep steps that need Jev", () => {
   it.each<[string, Step, string]>([
-    ["a target-only element action", { line: 2, action: "click", target: "The Go button" }, NEEDS_LOCATOR],
-    ["a target-only input", { line: 2, action: "input", target: "The email field", value: "a@b.c" }, NEEDS_LOCATOR],
+    [
+      "a target-only element action",
+      { line: 2, action: "click", target: "The Go button" },
+      'Could not locate "The Go button":\n  visual — No snapshot in the fake\n  dom — No snapshot in the fake',
+    ],
+    [
+      "a target-only input",
+      { line: 2, action: "input", target: "The email field", value: "a@b.c" },
+      'Could not locate "The email field":\n  visual — No snapshot in the fake\n  dom — No snapshot in the fake',
+    ],
     ["waitFor with a condition", { line: 2, action: "waitFor", condition: "The list has loaded" }, NEEDS_ASSERTER],
     ["assert with only a statement", { line: 2, action: "assert", statement: "The list has loaded" }, NEEDS_ASSERTER],
   ])("fails %s without acting on the page", async (_case, step, reason) => {
@@ -250,5 +294,147 @@ describe("runStep results", () => {
     );
 
     expect(result).toMatchObject({ startedAt: "2026-11-03T10:00:00.000Z", durationMs: 250 });
+  });
+});
+
+describe("runStep locator integration", () => {
+  it("target only, visual succeeds: perform receives { snapshotId } and locateMethod visual", async () => {
+    const jev = makeJev({
+      bbox: vi.fn(async () => ({
+        ok: true as const,
+        data: { box: { x: 120, y: 110, width: 20, height: 20 }, confidence: 0.95 },
+      })),
+    });
+    const { adapter, calls } = fakeAdapter({
+      snapshot: () => ({ ok: true, data: SNAPSHOT }),
+      perform: (action) => {
+        expect(action).toEqual({ action: "click", element: { snapshotId: 101 } });
+        return { ok: true, dialogs: [] };
+      },
+    });
+
+    const step: Step = { line: 2, action: "click", target: "The target button" };
+    const redact = createRedact({ name: "t", timeoutMs: 1000, steps: [step] }, {});
+    const result = await runStep(step, 3, { browser: adapter, vars: {}, redact, jev, timeoutMs: 1000 });
+
+    expect(result).toMatchObject({ status: "passed", locateMethod: "visual" });
+    expect(calls).toEqual([
+      { method: "ready" },
+      { method: "screenshot" },
+      { method: "snapshot" },
+      { method: "perform", action: { action: "click", element: { snapshotId: 101 } } },
+    ]);
+    expect(jev.choice).not.toHaveBeenCalled();
+  });
+
+  it("selector + target, selector visible: perform receives { selector }, locateMethod selector, Jev not called", async () => {
+    const jev = makeJev();
+    const { adapter, calls } = fakeAdapter({ isVisible: () => ({ ok: true, data: true }) });
+
+    const step: Step = { line: 2, action: "hover", selector: "#go", target: "Go button" };
+    const redact = createRedact({ name: "t", timeoutMs: 1000, steps: [step] }, {});
+    const result = await runStep(step, 3, { browser: adapter, vars: {}, redact, jev, timeoutMs: 1000 });
+
+    expect(result).toMatchObject({ status: "passed", locateMethod: "selector" });
+    expect(calls).toEqual([
+      { method: "ready" },
+      { method: "isVisible", selector: "#go", timeoutMs: 1000 },
+      { method: "perform", action: { action: "hover", element: { selector: "#go" } } },
+    ]);
+    expect(jev.bbox).not.toHaveBeenCalled();
+    expect(jev.choice).not.toHaveBeenCalled();
+  });
+
+  it("selector + target, selector not visible: falls back to visual and probes with min(SELECTOR_PROBE_MS, timeoutMs)", async () => {
+    const timeoutMs = 500;
+    const jev = makeJev({
+      bbox: vi.fn(async () => ({
+        ok: true as const,
+        data: { box: { x: 120, y: 110, width: 20, height: 20 }, confidence: 0.95 },
+      })),
+    });
+    const { adapter, calls } = fakeAdapter({
+      isVisible: () => ({ ok: true, data: false }),
+      snapshot: () => ({ ok: true, data: SNAPSHOT }),
+    });
+
+    const step: Step = { line: 2, action: "click", selector: "#legacy", target: "The target button" };
+    const redact = createRedact({ name: "t", timeoutMs, steps: [step] }, {});
+    const result = await runStep(step, 3, { browser: adapter, vars: {}, redact, jev, timeoutMs });
+
+    expect(result).toMatchObject({ status: "passed", locateMethod: "visual" });
+    expect(calls).toContainEqual({
+      method: "isVisible",
+      selector: "#legacy",
+      timeoutMs: Math.min(SELECTOR_PROBE_MS, timeoutMs),
+    });
+  });
+
+  it("input with target: perform receives located element and value", async () => {
+    const jev = makeJev({
+      bbox: vi.fn(async () => ({
+        ok: true as const,
+        data: { box: { x: 320, y: 110, width: 20, height: 20 }, confidence: 0.9 },
+      })),
+    });
+    const { adapter, calls } = fakeAdapter({ snapshot: () => ({ ok: true, data: SNAPSHOT }) });
+
+    const step: Step = { line: 2, action: "input", target: "Email", value: "a@b.c" };
+    const redact = createRedact({ name: "t", timeoutMs: 1000, steps: [step] }, {});
+    const result = await runStep(step, 3, { browser: adapter, vars: {}, redact, jev, timeoutMs: 1000 });
+
+    expect(result).toMatchObject({ status: "passed", locateMethod: "visual" });
+    expect(calls).toContainEqual({
+      method: "perform",
+      action: { action: "input", element: { snapshotId: 202 }, value: "a@b.c" },
+    });
+  });
+
+  it("locate fails (LocateError): step fails with the LocateError message, perform not called", async () => {
+    const jev = makeJev();
+    const { adapter, calls } = fakeAdapter();
+
+    const step: Step = { line: 2, action: "click", target: "The Go button" };
+    const redact = createRedact({ name: "t", timeoutMs: 1000, steps: [step] }, {});
+    const result = await runStep(step, 3, { browser: adapter, vars: {}, redact, jev, timeoutMs: 1000 });
+
+    expect(result).toMatchObject({
+      status: "failed",
+      reason: 'Could not locate "The Go button":\n  visual — No snapshot in the fake\n  dom — No snapshot in the fake',
+    });
+    expect(calls.filter((call) => call.method === "perform")).toEqual([]);
+  });
+
+  it("a non-LocateError thrown by the adapter propagates from runStep", async () => {
+    const jev = makeJev();
+    const { adapter } = fakeAdapter({ snapshot: () => { throw new Error("Browser disconnected"); } });
+
+    const step: Step = { line: 2, action: "click", target: "The Go button" };
+    const redact = createRedact({ name: "t", timeoutMs: 1000, steps: [step] }, {});
+
+    await expect(runStep(step, 3, { browser: adapter, vars: {}, redact, jev, timeoutMs: 1000 })).rejects.toThrow(
+      "Browser disconnected",
+    );
+  });
+
+  it("passes context timeoutMs to locate", async () => {
+    const timeoutMs = 321;
+    const jev = makeJev({
+      bbox: vi.fn(async () => ({
+        ok: true as const,
+        data: { box: { x: 120, y: 110, width: 20, height: 20 }, confidence: 0.95 },
+      })),
+    });
+    const { adapter, calls } = fakeAdapter({
+      isVisible: (_selector, probedTimeoutMs) => ({ ok: true, data: probedTimeoutMs === timeoutMs ? false : true }),
+      snapshot: () => ({ ok: true, data: SNAPSHOT }),
+    });
+
+    const step: Step = { line: 2, action: "click", selector: "#legacy", target: "The target button" };
+    const redact = createRedact({ name: "t", timeoutMs, steps: [step] }, {});
+    const result = await runStep(step, 3, { browser: adapter, vars: {}, redact, jev, timeoutMs });
+
+    expect(result).toMatchObject({ status: "passed", locateMethod: "visual" });
+    expect(calls).toContainEqual({ method: "isVisible", selector: "#legacy", timeoutMs });
   });
 });

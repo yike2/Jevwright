@@ -1,7 +1,8 @@
 import type { BrowserAdapter, BrowserCheck, BrowserResult } from "../browser/index.js";
 import type { JevClient } from "../jev/index.js";
 import type { AssertCheck, Step } from "../syntax/index.js";
-import { missingVariables, NEEDS_ASSERTER, NEEDS_LOCATOR } from "./reasons.js";
+import { locate, LocateError } from "../locator/index.js";
+import { missingVariables, NEEDS_ASSERTER } from "./reasons.js";
 import type { FailedStep, LocateMethod, PassedStep } from "./types.js";
 import { substitute } from "./variables.js";
 
@@ -17,10 +18,6 @@ type Outcome = { result: BrowserResult; locateMethod?: LocateMethod };
 
 const fail = (reason: string): Outcome => ({ result: { ok: false, reason, dialogs: [] } });
 
-// With a target too, a failed selector would fall back to Jev, which the Element Locator does not offer yet.
-const withTarget = (result: BrowserResult, target: string | undefined): BrowserResult =>
-  result.ok || target === undefined ? result : { ...result, reason: `${result.reason}; ${NEEDS_LOCATOR}` };
-
 function toCheck(check: AssertCheck): BrowserCheck {
   if ("url" in check) return { check: "url", url: check.url };
   return check.text === undefined
@@ -30,7 +27,7 @@ function toCheck(check: AssertCheck): BrowserCheck {
 
 // The one Adapter call for a step whose Variables are filled in (executor.md 1.4).
 async function act(step: Step, context: StepContext): Promise<Outcome> {
-  const { browser } = context;
+  const { browser, jev } = context;
   switch (step.action) {
     case "open":
     case "back":
@@ -46,31 +43,61 @@ async function act(step: Step, context: StepContext): Promise<Outcome> {
     case "click":
     case "doubleClick":
     case "rightClick":
-    case "hover":
-      // TODO: locate by target through the Element Locator.
-      if (step.selector === undefined) return fail(NEEDS_LOCATOR);
-      return {
-        result: withTarget(
-          await browser.perform({ action: step.action, element: { selector: step.selector }, dialog: step.dialog }),
-          step.target,
-        ),
-        locateMethod: "selector",
-      };
+    case "hover": {
+      if (step.target === undefined) {
+        return {
+          result: await browser.perform({ action: step.action, element: { selector: step.selector }, dialog: step.dialog }),
+          locateMethod: "selector",
+        };
+      }
+
+      try {
+        const located = await locate(
+          { action: step.action, selector: step.selector, target: step.target, timeoutMs: context.timeoutMs },
+          browser,
+          jev,
+        );
+        return {
+          result: await browser.perform({ action: step.action, element: located.element, dialog: step.dialog }),
+          locateMethod: located.method,
+        };
+      } catch (error) {
+        if (error instanceof LocateError) return fail(error.message);
+        throw error;
+      }
+    }
     case "input":
-      // TODO: locate by target through the Element Locator.
-      if (step.selector === undefined) return fail(NEEDS_LOCATOR);
-      return {
-        result: withTarget(
-          await browser.perform({
+      if (step.target === undefined) {
+        return {
+          result: await browser.perform({
             action: "input",
             element: { selector: step.selector },
             value: step.value,
             dialog: step.dialog,
           }),
-          step.target,
-        ),
-        locateMethod: "selector",
-      };
+          locateMethod: "selector",
+        };
+      }
+
+      try {
+        const located = await locate(
+          { action: "input", selector: step.selector, target: step.target, timeoutMs: context.timeoutMs },
+          browser,
+          jev,
+        );
+        return {
+          result: await browser.perform({
+            action: "input",
+            element: located.element,
+            value: step.value,
+            dialog: step.dialog,
+          }),
+          locateMethod: located.method,
+        };
+      } catch (error) {
+        if (error instanceof LocateError) return fail(error.message);
+        throw error;
+      }
     case "waitFor":
       // TODO: judge the condition through the Asserter.
       if ("condition" in step) return fail(NEEDS_ASSERTER);
