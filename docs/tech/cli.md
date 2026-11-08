@@ -63,7 +63,7 @@ For each file, the CLI prints one line per `finished` event, except pending step
 The summary line is exactly:
 
 - `✔ PASSED (<passed>/<total> passed) in <s>s → <report directory>` when the report status is passed.
-- `✖ FAILED (<passed>/<total> passed, <failed> failed, <pending> pending) in <s>s → <report directory>` when failed, omitting a count that is `0`.
+- `✖ FAILED (<passed>/<total> passed, <failed> failed, <pending> pending) in <s>s → <report directory>` when failed, omitting `<failed> failed` or `<pending> pending` when it is `0`.
 
 `<s>` is `durationMs / 1000` with 2 decimal places. `<report directory>` is relative to the working directory and uses `/` as the separator.
 
