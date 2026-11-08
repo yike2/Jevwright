@@ -9,6 +9,7 @@ The CLI runs local `.yaml` validation and test execution from the current workin
 Each command expands each argument as follows:
 
 - A path that contains `*`, `?`, or `[` is expanded with `fs.glob` from `node:fs/promises`.
+- Entries matched by a glob that are directories are ignored; only files are kept.
 - A directory is searched recursively for files ending in `.yaml`.
 - A file path is used as given, whatever its extension.
 - Results are de-duplicated and sorted.
