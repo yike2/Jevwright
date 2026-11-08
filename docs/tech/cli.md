@@ -15,6 +15,7 @@ Each command expands each argument as follows:
 - Results are de-duplicated and sorted.
 - Every file must be inside the current working directory.
 - A path that does not exist, a glob or directory that yields no files, or a file outside the working directory is a usage error and exits `2` before processing any file.
+- Invalid command-line usage reported by commander (no command, unknown command or option, missing path argument) is a usage error and exits `2`; `--help` prints help to stdout and exits `0`.
 
 ### 1.2 Configuration for `run`
 
@@ -39,6 +40,7 @@ For every accepted file, the CLI reads the source and calls `runTest({ file, sou
 - The CLI uses a file-system `ReportStore` in `src/cli`; it writes `report.json` with 2-space indentation and a trailing newline, and every other bundle file at its path, creating directories as needed.
 - The `ReportStore` catches file-system errors and throws a `ReportStoreError` with the message `Failed to write report to <dir> (<code>)`, using `UNKNOWN` when the error has no code; it never includes the original message or cause.
 - If `runTest()` throws, the CLI prints `<file>: unexpected error (<error.name>)` without the message, counts the file as failed, and continues.
+- If reading a file fails, the CLI prints `<file>: unexpected error (<error.name>)` and continues; the file counts as failed for `run` and invalid for `validate`. With `validate --json`, this line goes to stderr so stdout stays valid JSON.
 - An invalid file does not stop other files; every file is processed.
 
 ### 1.4 Output
@@ -163,20 +165,22 @@ The source for the exit-code rules is docs/PRD.md section 7.2.
 
 ### 4.1 Modules
 
-| Module              | Responsibility                                                                                 |
-| ------------------- | ---------------------------------------------------------------------------------------------- |
-| `main.ts`           | Commander entry point and dispatch to `validate` and `run`                                     |
-| `path-expansion.ts` | Expand each path argument, enforce working-directory rules, and dedupe/sort results            |
-| `config.ts`         | Load `.env`, validate required configuration for `run`, and assemble the runtime `vars` object |
-| `report-store.ts`   | File-system ReportStore: create directories, write `report.json`, and wrap file-system errors  |
-| `output.ts`         | Human-readable output for validation and `run`, plus JSON serialization for `validate --json`  |
-| `exit-codes.ts`     | Merge per-file outcomes into the final exit code                                               |
+| Module              | Responsibility                                                                                  |
+| ------------------- | ----------------------------------------------------------------------------------------------- |
+| `main.ts`           | Process entry point: calls `runCli` with the command-line arguments and sets `process.exitCode` |
+| `run-cli.ts`        | Commander setup and dispatch to `validate` and `run`; returns the exit code instead of exiting  |
+| `path-expansion.ts` | Expand each path argument, enforce working-directory rules, and dedupe/sort results             |
+| `config.ts`         | Load `.env`, validate required configuration for `run`, and assemble the runtime `vars` object  |
+| `report-store.ts`   | File-system ReportStore: create directories, write `report.json`, and wrap file-system errors   |
+| `output.ts`         | Human-readable output for validation and `run`, plus JSON serialization for `validate --json`   |
+| `exit-codes.ts`     | Merge per-file outcomes into the final exit code                                                |
 
 ### 4.2 Directory Layout
 
 ```text
 src/cli/
 ├── main.ts
+├── run-cli.ts
 ├── path-expansion.ts
 ├── config.ts
 ├── report-store.ts
