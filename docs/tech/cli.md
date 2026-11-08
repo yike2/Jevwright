@@ -20,7 +20,8 @@ Each command expands each argument as follows:
 
 - If `.env` exists in the working directory, it is loaded with `process.loadEnvFile`.
 - A missing `.env` is not an error.
-- `OPENROUTER_API_KEY` must be non-empty; otherwise the CLI exits `2` before processing any file.
+- Variables already set in the environment are not overridden by `.env`.
+- `OPENROUTER_API_KEY` must be non-empty; otherwise the CLI prints `OPENROUTER_API_KEY is not set` to stderr and exits `2` before processing any file.
 - `validate` does not require `OPENROUTER_API_KEY`.
 - `vars` passed to `runTest()` are every string value in `process.env` except `OPENROUTER_API_KEY`.
 - The CLI does not check test variables; a missing variable fails its step in the Executor.
