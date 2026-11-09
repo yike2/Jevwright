@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { ROUTES } from "@/app/backend/src/api/contract.js";
 import { buildOpenApi } from "@/app/backend/src/openapi.js";
@@ -57,5 +58,11 @@ describe("buildOpenApi", () => {
     expect(Object.keys(doc.components.schemas).filter((name) => name.startsWith("Live"))).toEqual(
       expect.arrayContaining(["LiveMessage", "LiveSnapshot", "LiveStatus", "LiveStepMessage", "LiveStep"]),
     );
+  });
+
+  it("matches the exported docs/api/openapi.json; run pnpm api:docs after changing the contract", () => {
+    const exported = readFileSync(new URL("../../../../../docs/api/openapi.json", import.meta.url), "utf8");
+
+    expect(JSON.parse(exported)).toEqual(JSON.parse(JSON.stringify(doc)));
   });
 });
