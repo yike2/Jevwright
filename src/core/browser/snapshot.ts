@@ -4,6 +4,8 @@ import type { PageSnapshot, SnapshotElement } from "./types.js";
 
 /** Builds the Page Snapshot of `page`, marking each element with data-jev-id. */
 export async function takeSnapshot(page: Page): Promise<PageSnapshot> {
+  // TODO: workaround for tsx (esbuild keepNames), which wraps the named functions inside `collect` in __name(); the page has no __name, so define a no-op one. Remove if the CLI and backend stop running through tsx.
+  await page.evaluate("void (globalThis.__name ??= (fn) => fn)");
   const elements = await page.evaluate(collect, INTERACTIVE_SELECTOR);
   return { url: page.url(), title: await page.title(), viewport: VIEWPORT, elements };
 }
