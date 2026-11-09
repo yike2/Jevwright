@@ -99,6 +99,7 @@ describe("checks on a selector with several matches", () => {
 });
 
 describe("check text on an element that disappears", () => {
+  // TODO(#57): times out in a full local integration run (several files launch Chromium at once); passes alone and in CI.
   it("fails with the last text it read, not a read timeout", () =>
     run(async (browser) => {
       await browser.perform({ action: "open", url: "/checks.html" });

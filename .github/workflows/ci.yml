@@ -141,5 +141,6 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Run integration tests
-        # Three browser/executor integration tests currently time out locally; remove this once fixed.
+        # TODO(#57): three browser tests in checks.test.ts and dialogs.test.ts time out in a full local run but pass
+        # alone and in CI. Remove the job's continue-on-error once they are fixed.
         run: pnpm test:integration
