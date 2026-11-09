@@ -173,3 +173,23 @@ describe("snapshot hittable", () => {
       ]);
     }));
 });
+
+describe("snapshot of shadow roots", () => {
+  it("collects the elements inside open shadow roots, nested ones too, but not inside closed ones", () =>
+    run(async (browser) => {
+      await browser.perform({ action: "open", url: "/shadow.html" });
+
+      const { elements } = data(await browser.snapshot());
+
+      expect(elements.map((e) => e.name)).toEqual(["Light", "Hide Outer", "Outer", "Inner"]);
+    }));
+
+  it("finds an element inside a shadow root hittable, not covered by its host", () =>
+    run(async (browser) => {
+      await browser.perform({ action: "open", url: "/shadow.html" });
+
+      const { elements } = data(await browser.snapshot());
+
+      expect(elements.filter((e) => ["Outer", "Inner"].includes(e.name)).map((e) => e.hittable)).toEqual([true, true]);
+    }));
+});

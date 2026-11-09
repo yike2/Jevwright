@@ -1,0 +1,24 @@
+<!doctype html>
+<title>Shadow</title>
+<style>
+  body { margin: 0; }
+  button { display: block; margin: 10px; }
+</style>
+<button>Light</button>
+<button id="hide-outer">Hide Outer</button>
+<div id="open-host"></div>
+<div id="closed-host"></div>
+<p id="clicked"></p>
+<script>
+  const clicked = document.getElementById("clicked");
+  const open = document.getElementById("open-host").attachShadow({ mode: "open" });
+  open.innerHTML = '<button id="outer">Outer</button><div id="inner-host"></div>';
+  const inner = open.getElementById("inner-host").attachShadow({ mode: "open" });
+  inner.innerHTML = '<button id="inner">Inner</button>';
+  const closed = document.getElementById("closed-host").attachShadow({ mode: "closed" });
+  closed.innerHTML = "<button>Closed</button>";
+  document.getElementById("hide-outer").addEventListener("click", () => (open.getElementById("outer").hidden = true));
+  for (const root of [open, inner]) {
+    root.addEventListener("click", (event) => (clicked.textContent = `Clicked ${event.target.textContent}`));
+  }
+</script>
