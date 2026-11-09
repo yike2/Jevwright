@@ -126,7 +126,7 @@ name: "Add the Onesie among six products"
 
 | Dimension | Tag | The case |
 | --------- | --- | -------- |
-| Element (Atomic, exactly one) | `button`, `link`, `field`, `icon`, `image`, `dropdown`, `menu-item` | Acts on that kind of element; `icon` is a control with no visible text |
+| Element (Atomic, exactly one) | `button`, `link`, `field`, `icon`, `image`, `dropdown`, `menu-item`, `item` | Acts on that kind of element; `icon` is a control with no visible text, `item` an entry of a list such as a file |
 | Crowd | `repeated` | Has several elements alike, such as six "Add to cart" buttons |
 | | `small` | Acts on an element under 24 px on a side |
 | Place | `offscreen` | Acts on an element outside the viewport when the step starts |
@@ -210,6 +210,7 @@ function serveDemoApp(): Promise<{ baseUrl: string; stop: () => Promise<void> }>
 | `demo-app/backtrace-stub.jsx` | Stands in for `@backtrace/react` in the build |
 | `demo-app/vite.config.jevwright.mjs` | Adds the stub to the upstream Vite config |
 | `suite.test.ts` | Checks the suite (5) |
+| `tags.ts` | The Tag vocabulary (1.5) and `readTags()` |
 | `benchmark.ts` | `pnpm benchmark`: serves the Demo App, runs each folder with the CLI, retries the files that are not right, writes the summary |
 | `summary.ts` | Sums up Reports into the metrics of 1.6; no I/O |
 
@@ -221,6 +222,7 @@ src/tests/benchmark/
 ├── server.test.ts
 ├── demo-app.test.ts
 ├── suite.test.ts
+├── tags.ts
 ├── benchmark.ts
 ├── summary.ts
 ├── summary.test.ts
