@@ -33,7 +33,11 @@ function run(file: string, steps: Ran[]): SuiteRun {
     summary: { total: steps.length, passed, failed, pending: steps.length - passed - failed },
     steps: reportSteps,
   };
-  return { file, report, testCase: { name: file, timeoutMs: 15000, runTimeoutMs: 600000, steps: steps.map((s) => s.step) } };
+  return {
+    file,
+    report,
+    testCase: { name: file, timeoutMs: 15000, runTimeoutMs: 600000, steps: steps.map((s) => s.step) },
+  };
 }
 
 const passing = (file: string) => run(file, [ran(open)]);
@@ -41,7 +45,11 @@ const failing = (file: string) => run(file, [ran(open, "failed")]);
 
 describe("summarize", () => {
   it("gives the pass rate of each locating folder, zero for a folder with no runs", () => {
-    const summary = summarize([passing("selector/sign-in.yaml"), failing("selector/checkout.yaml"), passing("atomic/a.yaml")]);
+    const summary = summarize([
+      passing("selector/sign-in.yaml"),
+      failing("selector/checkout.yaml"),
+      passing("atomic/a.yaml"),
+    ]);
 
     expect(summary.passRates).toEqual({
       selector: { passed: 1, total: 2, rate: 0.5 },
@@ -68,7 +76,10 @@ describe("summarize", () => {
   });
 
   it("judges a holds/ file right when it passes", () => {
-    const summary = summarize([run("assert/holds/a.yaml", [ran(open), ran(statement)]), run("assert/holds/b.yaml", [ran(open), ran(statement, "failed")])]);
+    const summary = summarize([
+      run("assert/holds/a.yaml", [ran(open), ran(statement)]),
+      run("assert/holds/b.yaml", [ran(open), ran(statement, "failed")]),
+    ]);
 
     expect(summary.judging.holds).toEqual({ passed: 1, total: 2, rate: 0.5 });
   });
@@ -84,7 +95,10 @@ describe("summarize", () => {
   });
 
   it("sums up the judging of holds/ and fails/ together", () => {
-    const summary = summarize([run("assert/holds/a.yaml", [ran(statement)]), run("assert/fails/b.yaml", [ran(statement)])]);
+    const summary = summarize([
+      run("assert/holds/a.yaml", [ran(statement)]),
+      run("assert/fails/b.yaml", [ran(statement)]),
+    ]);
 
     expect(summary.judging.all).toEqual({ passed: 1, total: 2, rate: 0.5 });
   });
@@ -96,7 +110,10 @@ describe("summarize", () => {
         ran(click, "passed", { locateMethod: "visual", durationMs: 1200 }),
         ran(click, "failed", { locateMethod: "dom", durationMs: 3000 }),
       ]),
-      run("assert/holds/a.yaml", [ran(statement, "passed", { durationMs: 1500 }), ran(condition, "passed", { durationMs: 2500 })]),
+      run("assert/holds/a.yaml", [
+        ran(statement, "passed", { durationMs: 1500 }),
+        ran(condition, "passed", { durationMs: 2500 }),
+      ]),
     ]);
 
     expect(summary.latency.byKind).toEqual({
@@ -142,6 +159,8 @@ describe("summarize", () => {
     const timedOut = run("target/slider.yaml", [ran(open), ran(click, "pending")]);
     timedOut.report.error = { kind: "timeout", message: "Run timed out after 600000ms" };
 
-    expect(summarize([timedOut]).failures).toEqual([{ file: "target/slider.yaml", reason: "timeout: Run timed out after 600000ms" }]);
+    expect(summarize([timedOut]).failures).toEqual([
+      { file: "target/slider.yaml", reason: "timeout: Run timed out after 600000ms" },
+    ]);
   });
 });
