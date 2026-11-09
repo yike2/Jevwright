@@ -79,7 +79,8 @@ class PlaywrightAdapter implements BrowserAdapter {
   }
 
   screenshot(): Promise<ReadResult<Buffer>> {
-    return this.read(() => this.page.screenshot());
+    // Finish CSS transitions and animations first, so a sliding menu is shot, and then snapshotted, where it stops.
+    return this.read(() => this.page.screenshot({ animations: "disabled" }));
   }
 
   snapshot(): Promise<ReadResult<PageSnapshot>> {
