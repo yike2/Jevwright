@@ -41,7 +41,7 @@ At the start of every step the Executor calls `ready()`, which waits for the `lo
 | Method | `data` on success | Used by |
 | ------ | ----------------- | ------- |
 | `isVisible(selector, timeoutMs)` | `true` once the first element matching `selector` is visible; `false` when it is not visible within `timeoutMs` | Locator selector stage |
-| `screenshot()` | PNG of the current tab's viewport | Locator Visual Locate, Jev assertions, report evidence |
+| `screenshot()` | PNG of the current tab's viewport, taken with Playwright's `animations: "disabled"`: finite CSS transitions and animations jump to their end first, infinite ones to their start | Locator Visual Locate, Jev assertions, report evidence |
 | `snapshot()` | `PageSnapshot` of the current tab | Locator Visual and DOM Locate |
 
 Each method returns a `ReadResult`: `{ ok: true, data }`, or `{ ok: false, reason }` under the same error rules as every other method (1.10), for example when the current tab was closed or Playwright rejects the selector. A read is not a step, so it leaves the answered dialogs for the result of the step's `ready()`, `perform()`, or `check()`.
@@ -366,7 +366,7 @@ Browser tests launch real headless Chromium against local HTML pages served by `
 | Unit | `dialogs`: a dialog that cannot be answered fails the step and still releases the waiting action | `src/tests/unit/core/browser/dialogs.test.ts` |
 | Integration | Lifecycle: screenshot size equals the viewport, trace zip returned by `close()`, `ready()` waiting for `load` after a click, calls after the browser is gone throw, Chromium closed when launching fails | `src/tests/integration/core/browser/launch.test.ts` |
 | Integration | Every action in 1.6, including `back` with no history, `back` across origins, an invalid key, a click on a covered element timing out, and a click by snapshot id inside a nested shadow root | `src/tests/integration/core/browser/actions.test.ts` |
-| Integration | Reads: `isVisible` visible, hidden, invalid selector; every read after the current tab closed; reads leave dialogs for the step result. Snapshot: viewport-only, hidden elements skipped, roles, names, text and attrs, `hittable: false` when covered, ids cleared between snapshots; elements inside open and nested shadow roots collected and hittable, closed ones not | `src/tests/integration/core/browser/snapshot.test.ts` |
+| Integration | Reads: `isVisible` visible, hidden, invalid selector; every read after the current tab closed; reads leave dialogs for the step result. Snapshot: viewport-only, hidden elements skipped, roles, names, text and attrs, `hittable: false` when covered, ids cleared between snapshots; elements inside open and nested shadow roots collected and hittable, closed ones not; a snapshot after a screenshot taken mid-transition sees the end positions | `src/tests/integration/core/browser/snapshot.test.ts` |
 | Integration | Dialogs: accept, dismiss, prompt text, `message` match and mismatch, expected dialog missing, Unexpected dialog during a step and between steps | `src/tests/integration/core/browser/dialogs.test.ts` |
 | Integration | Tabs: switch to a `target=_blank` tab and back, ambiguous match, timeout, closed current tab | `src/tests/integration/core/browser/tabs.test.ts` |
 | Integration | Checks: `visible`, `text`, and `url` pass and fail; first-match rule; `url` matches like `switchTab` | `src/tests/integration/core/browser/checks.test.ts` |

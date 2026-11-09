@@ -193,3 +193,22 @@ describe("snapshot of shadow roots", () => {
       expect(elements.filter((e) => ["Outer", "Inner"].includes(e.name)).map((e) => e.hittable)).toEqual([true, true]);
     }));
 });
+
+describe("screenshot of a page in a CSS transition", () => {
+  it("finishes the transition first, so the snapshot after it sees the end positions", () =>
+    run(async (browser) => {
+      await browser.perform({ action: "open", url: "/slide.html" });
+      await browser.perform({ action: "click", element: { selector: "#open" } });
+
+      data(await browser.screenshot());
+      const { elements } = data(await browser.snapshot());
+
+      // Mid-way through its 5 s slide the panel item would sit off the left edge, out of the snapshot.
+      expect(elements.find((e) => e.name === "Panel item")?.bbox).toEqual({
+        x: 10,
+        y: 100,
+        width: expect.any(Number),
+        height: expect.any(Number),
+      });
+    }));
+});
