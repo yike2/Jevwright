@@ -56,6 +56,7 @@ describe("a dialog response", () => {
       expect(await logged(browser, "[confirmed]")).toEqual(passed);
     }));
 
+  // TODO(#57): times out in a full local integration run (several files launch Chromium at once); passes alone and in CI.
   it(
     "fails when no dialog appears within max(timeoutMs, DIALOG_MIN_WAIT_MS)",
     () =>
@@ -162,6 +163,7 @@ describe("an unexpected dialog", () => {
       expect(await browser.ready()).toEqual(passed);
     }));
 
+  // TODO(#57): times out in a full local integration run (several files launch Chromium at once); passes alone and in CI.
   it(
     "counts as unexpected after an armed response whose dialog never came",
     () =>
