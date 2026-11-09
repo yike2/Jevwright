@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { BoundingBox, SnapshotElement } from "@/core/browser/index.js";
-import { findElementAtPoint, getBoundingBoxCenter, runVisual } from "@/core/locator/visual.js";
+import { findElementAtPoint, findElementOverlapping, getBoundingBoxCenter, runVisual } from "@/core/locator/visual.js";
 
 const element = (overrides: Partial<SnapshotElement> = {}): SnapshotElement => ({
   id: 0,
@@ -79,6 +79,30 @@ describe("findElementAtPoint", () => {
     const second = element({ id: 2, bbox: { x: 10, y: 10, width: 20, height: 20 } });
 
     expect(findElementAtPoint([first, second], { x: 15, y: 15 })).toBe(first);
+  });
+});
+
+describe("findElementOverlapping", () => {
+  it("returns the element that overlaps the box the most", () => {
+    const little = element({ id: 1, bbox: { x: 0, y: 0, width: 10, height: 10 } });
+    const most = element({ id: 2, bbox: { x: 20, y: 0, width: 10, height: 10 } });
+    const box = { x: 8, y: 0, width: 20, height: 10 }; // 2 px of the first, 8 px of the second
+
+    expect(findElementOverlapping([little, most], box)).toBe(most);
+  });
+
+  it("uses DOM order to break ties on equal overlap", () => {
+    const first = element({ id: 1, bbox: { x: 0, y: 0, width: 10, height: 10 } });
+    const second = element({ id: 2, bbox: { x: 20, y: 0, width: 10, height: 10 } });
+
+    expect(findElementOverlapping([first, second], { x: 5, y: 0, width: 20, height: 10 })).toBe(first);
+  });
+
+  it("returns null when the box overlaps no element, or only touches an edge", () => {
+    const candidates = [element({ bbox: { x: 0, y: 0, width: 10, height: 10 } })];
+
+    expect(findElementOverlapping(candidates, { x: 50, y: 50, width: 10, height: 10 })).toBeNull();
+    expect(findElementOverlapping(candidates, { x: 10, y: 0, width: 10, height: 10 })).toBeNull();
   });
 });
 
@@ -311,5 +335,27 @@ describe("runVisual", () => {
     };
 
     await expect(runVisual(request, adapter, jev)).rejects.toThrow("browser exploded");
+  });
+
+  it("takes the usable element the box overlaps most when the center misses a small target", async () => {
+    const request = { action: "click" as const, target: "Fifth dot below the slider", timeoutMs: 1000 };
+    const dot = element({ id: 4, bbox: { x: 665, y: 452, width: 10, height: 10 } });
+    const pageSnapshot = snapshot([element({ id: 3, bbox: { x: 625, y: 452, width: 10, height: 10 } }), dot]);
+    const adapter = {
+      screenshot: async () => ({ ok: true as const, data: Buffer.from("shot") }),
+      snapshot: async () => ({ ok: true as const, data: pageSnapshot }),
+    };
+    // Center (659.2, 452) misses every dot, but the box reaches into dot 4 and not dot 3.
+    const jev = {
+      bbox: async () => ({
+        ok: true as const,
+        data: { box: { x: 652, y: 447, width: 14.4, height: 10 }, confidence: 0.9 },
+      }),
+    };
+
+    const result = await runVisual(request, adapter, jev);
+
+    expect(result.attempt.ok).toBe(true);
+    expect(result.element).toEqual({ snapshotId: 4 });
   });
 });

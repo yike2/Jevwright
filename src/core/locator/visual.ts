@@ -39,6 +39,13 @@ export function findElementAtPoint(
   return best?.element ?? null;
 }
 
+/** Returns the element whose bbox overlaps `box` the most, the earliest on a tie; `null` when none overlaps. */
+export function findElementOverlapping(elements: SnapshotElement[], box: BoundingBox): SnapshotElement | null {
+  void elements;
+  void box;
+  return null;
+}
+
 export async function runVisual(
   request: LocateRequest,
   adapter: Pick<BrowserAdapter, "screenshot" | "snapshot">,
