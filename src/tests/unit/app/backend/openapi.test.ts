@@ -8,9 +8,10 @@ const operation = (path: string, method: string) =>
   (doc.paths as Record<string, Record<string, Record<string, unknown>>>)[path]?.[method];
 
 describe("buildOpenApi", () => {
-  it("is an OpenAPI 3.1 document under /api/v1 with Bearer auth", () => {
+  it("is an OpenAPI 3.1 document with its required info, under /api/v1, with Bearer auth", () => {
     expect(doc).toMatchObject({
       openapi: "3.1.0",
+      info: { title: "Jevwright API", version: expect.any(String) },
       servers: [{ url: "/api/v1" }],
       components: { securitySchemes: { bearer: { type: "http", scheme: "bearer", bearerFormat: "JWT" } } },
     });
