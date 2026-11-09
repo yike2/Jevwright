@@ -13,7 +13,12 @@ describe("buildOpenApi", () => {
       openapi: "3.1.0",
       info: { title: "Jevwright API", version: expect.any(String) },
       servers: [{ url: "/api/v1" }],
-      components: { securitySchemes: { bearer: { type: "http", scheme: "bearer", bearerFormat: "JWT" } } },
+      components: {
+        securitySchemes: {
+          bearer: { type: "http", scheme: "bearer", bearerFormat: "JWT" },
+          token: { type: "apiKey", in: "query", name: "token" },
+        },
+      },
     });
   });
 
@@ -37,18 +42,50 @@ describe("buildOpenApi", () => {
     expect(Object.keys(create?.responses as object).sort()).toEqual(["201", "400", "401", "404", "409"]);
   });
 
-  it("asks for a Bearer token on every route except health, docs, register, login, and the WebSocket", () => {
-    const open = ROUTES.filter((r) => !r.auth).map((r) => `${r.method} ${r.path}`);
+  it("asks for the login token as a Bearer header, or as ?token= where a browser cannot set headers", () => {
+    const open = ROUTES.filter((r) => r.auth === "none").map((r) => `${r.method} ${r.path}`);
 
-    expect(open.sort()).toEqual([
-      "get /health",
-      "get /openapi.json",
-      "get /runs/:runId/live",
-      "post /auth/login",
-      "post /auth/register",
-    ]);
+    expect(open.sort()).toEqual(["get /health", "get /openapi.json", "post /auth/login", "post /auth/register"]);
     expect(operation("/projects", "get")?.security).toEqual([{ bearer: [] }]);
+    expect(operation("/runs/{runId}/files/{path}", "get")?.security).toEqual([{ bearer: [] }, { token: [] }]);
+    expect(operation("/runs/{runId}/live", "get")?.security).toEqual([{ token: [] }]);
     expect(operation("/health", "get")?.security).toEqual([]);
+  });
+
+  it("answers every list as { items }, and pages the Run list with limit, cursor, and nextCursor", () => {
+    const lists = ["/tree", "/projects", "/projects/{projectId}/modules", "/modules/{moduleId}/test-files", "/runs"];
+    const okSchema = (path: string) =>
+      (
+        operation(path, "get")?.responses as Record<
+          string,
+          { content: { "application/json": { schema: { properties: Record<string, unknown> } } } }
+        >
+      )["200"].content["application/json"].schema;
+
+    for (const path of lists) expect(Object.keys(okSchema(path).properties)).toContain("items");
+    expect(Object.keys(okSchema("/runs").properties)).toEqual(["items", "nextCursor"]);
+    expect((operation("/runs", "get")?.parameters as { name: string }[]).map((p) => p.name).sort()).toEqual([
+      "cursor",
+      "limit",
+      "projectId",
+      "testFileId",
+    ]);
+  });
+
+  it("types each error's details: field issues for 400, diagnostics for 422", () => {
+    const errorOf = (path: string, method: string, status: string) =>
+      JSON.stringify((operation(path, method)?.responses as Record<string, unknown>)[status]);
+
+    expect(errorOf("/projects", "post", "400")).toContain('"path"');
+    expect(errorOf("/test-files/{testFileId}/runs", "post", "422")).toContain('"line"');
+  });
+
+  it("describes steps the same way in the Report and in Live Progress, from pending to failed", () => {
+    const steps = JSON.stringify(doc.components.schemas.Step);
+
+    for (const status of ["pending", "running", "passed", "failed"]) expect(steps).toContain(`"${status}"`);
+    expect(JSON.stringify(doc.components.schemas.Report)).toContain('"steps"');
+    expect(JSON.stringify(doc.components.schemas.LiveSnapshot)).toContain('"steps"');
   });
 
   it("documents the Live Progress WebSocket and each message it sends", () => {

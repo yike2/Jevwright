@@ -1,8 +1,10 @@
 import request from "supertest";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { createApp } from "@/app/backend/src/app.js";
 
 const app = createApp({ corsOrigin: "http://localhost:3000", handlers: {} });
+const PROJECT_ID = "6f1c2a4e-9b3d-4c5e-8f7a-1b2c3d4e5f60";
+const RUN_ID = "0b1c2d3e-4f50-4a6b-8c7d-9e0f1a2b3c4d";
 
 describe("the backend app", () => {
   it("answers the health check without a token", async () => {
@@ -29,14 +31,36 @@ describe("the backend app", () => {
     expect(res.body).toEqual({ error: { code: "not_implemented", message: "GET /projects is not implemented yet" } });
   });
 
-  it("answers 400 with the zod issues when a body fails its schema, before the handler", async () => {
-    const res = await request(app).post("/api/v1/auth/register").send({ email: "not-an-email", password: "short" });
+  it("answers 400 with each failing field, without calling the handler", async () => {
+    const handler = vi.fn();
+    const strict = createApp({ corsOrigin: "http://localhost:3000", handlers: { "post /auth/register": handler } });
+
+    const res = await request(strict).post("/api/v1/auth/register").send({ email: "not-an-email", password: "short" });
 
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe("invalid_request");
-    expect(res.body.error.details.map((issue: { path: string[] }) => issue.path.join("."))).toEqual(
-      expect.arrayContaining(["body.email", "body.password"]),
-    );
+    expect(res.body.error.details.map((issue: { path: string }) => issue.path).sort()).toEqual([
+      "body.email",
+      "body.password",
+    ]);
+    expect(res.body.error.details[0].message).toEqual(expect.any(String));
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it("answers 400 for a path id that is not a uuid", async () => {
+    const res = await request(app).get("/api/v1/projects/p1/modules");
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.details.map((issue: { path: string }) => issue.path)).toEqual(["params.projectId"]);
+  });
+
+  it("answers 400 for a source over 256 KiB characters", async () => {
+    const res = await request(app)
+      .post("/api/v1/test-files/validate")
+      .send({ source: "a".repeat(256 * 1024 + 1) });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.details.map((issue: { path: string }) => issue.path)).toEqual(["body.source"]);
   });
 
   it("answers 400 for a body that is not JSON", async () => {
@@ -46,10 +70,10 @@ describe("the backend app", () => {
     expect(res.body.error.code).toBe("invalid_request");
   });
 
-  it("answers 413 for a body over the size limit", async () => {
+  it("answers 413 for a body over the 1 MB limit", async () => {
     const res = await request(app)
       .post("/api/v1/test-files/validate")
-      .send({ source: "a".repeat(400 * 1024) });
+      .send({ source: "a".repeat(1100 * 1024) });
 
     expect(res.status).toBe(413);
     expect(res.body.error.code).toBe("too_large");
@@ -84,9 +108,43 @@ describe("the backend app", () => {
       },
     });
 
-    const res = await request(withHandler).post("/api/v1/projects/p1/modules").send({ name: "Checkout" });
+    const res = await request(withHandler).post(`/api/v1/projects/${PROJECT_ID}/modules`).send({ name: "Checkout" });
 
     expect(res.status).toBe(201);
-    expect(res.body).toEqual({ params: { projectId: "p1" }, body: { name: "Checkout" } });
+    expect(res.body).toEqual({ params: { projectId: PROJECT_ID }, body: { name: "Checkout" } });
+  });
+
+  it("sends no CORS headers to any other origin", async () => {
+    const res = await request(app).get("/api/v1/health").set("origin", "https://evil.example");
+
+    expect(res.headers["access-control-allow-origin"]).toBeUndefined();
+  });
+
+  it("answers an unexpected error as a generic 500, without its message", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const failing = createApp({
+      corsOrigin: "http://localhost:3000",
+      handlers: {
+        "get /projects": () => {
+          throw new Error("connection to db-secret-host failed");
+        },
+      },
+    });
+
+    const res = await request(failing).get("/api/v1/projects");
+
+    expect(res.status).toBe(500);
+    expect(res.body).toEqual({ error: { code: "internal", message: "Internal server error" } });
+  });
+
+  it("hands a Run File handler the whole wildcard path", async () => {
+    const files = createApp({
+      corsOrigin: "http://localhost:3000",
+      handlers: { "get /runs/:runId/files/*path": ({ params }, res) => void res.json(params) },
+    });
+
+    const res = await request(files).get(`/api/v1/runs/${RUN_ID}/files/screenshots/step-0.png`);
+
+    expect(res.body).toEqual({ runId: RUN_ID, path: "screenshots/step-0.png" });
   });
 });
