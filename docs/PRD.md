@@ -21,7 +21,7 @@ This document describes what the product must do and how users interact with it.
 | 0.3.2   | 2026-10-30 | Zhimin Gan          | Linked the architecture and run sequence diagrams; moved the UI prototype link to GitHub Pages |
 | 0.3.3   | 2026-11-02 | Zhimin Gan          | Validation errors report file and line only, no column |
 | 0.3.4   | 2026-11-02 | Zhimin Gan          | Removed the indentation rules from the YAML syntax definition |
-| 0.4     | 2026-11-09 | Zhimin Gan          | Removed the Run rate limit; access to another user's data answers not found |
+| 0.4     | 2026-11-09 | Zhimin Gan          | Removed the Run rate limit; access to another user's data answers not found; reports download as JSON only; cloud Runs block private-network addresses |
 
 ### 1.4 Key Concepts
 
@@ -65,7 +65,7 @@ However, existing AI testing tools (such as Midscene) rely on heavy general-purp
 
 ### 3.2 Non-Goals
 
-- **Server-Side Test Execution Security and Privacy**: Implementing security isolation (such as container sandboxing or network restrictions) and sensitive data privacy hardening for tests running on the backend server is out of scope for this version.
+- **Server-Side Test Execution Security and Privacy**: Implementing security isolation (such as container sandboxing or network restrictions beyond blocking private-network addresses) and sensitive data privacy hardening for tests running on the backend server is out of scope for this version.
 
 ### 3.3 Success Metrics
 
@@ -103,7 +103,7 @@ However, existing AI testing tools (such as Midscene) rely on heavy general-purp
 3. Validate and save the test file in the in-browser editor.
 4. Click the **Run** button; the backend queues and executes the test on the server worker.
 5. Watch live step-by-step progress, status updates, and screenshots in the Dashboard's **Test Process** view.
-6. Review the final pass/fail outcome, step timings, locate methods, and screenshots in the **Test History & Reports** view, or export the report.
+6. Review the final pass/fail outcome, step timings, locate methods, and screenshots in the **Test History & Reports** view, or download the JSON report.
 
 ### 4.3 User Stories and Acceptance Criteria
 
@@ -159,7 +159,7 @@ However, existing AI testing tools (such as Midscene) rely on heavy general-purp
     - **Given** complex pages in the benchmark test suite, **When** the Jev Harness refines its visual/DOM context extraction and fallback strategy, **Then** overall locating and assertion pass rates improve without significantly increasing step latency.
 
 #### 4.3.10 Server-Side Execution Security and Privacy Hardening
-- **US-4.3.10 (Won't)**: *As a Platform Owner, I might want strict server-side security isolation (e.g., container sandboxing, network restrictions) and sensitive data privacy hardening for cloud test runs, but this will not be implemented in this version.*
+- **US-4.3.10 (Won't)**: *As a Platform Owner, I might want strict server-side security isolation (e.g., container sandboxing, network restrictions beyond blocking private-network addresses) and sensitive data privacy hardening for cloud test runs, but this will not be implemented in this version.*
   - **Acceptance Criteria**:
     - **Given** the scope of the current version, **When** tests are executed on the backend server, **Then** server-side security sandboxing and privacy hardening are explicitly excluded and deferred to a future release.
 
@@ -282,7 +282,7 @@ The Core Module is the shared execution engine used by both the local CLI and th
 | Should   | Dashboard: Files Overview with Latest Status                       | 5.4.3       | Improves at-a-glance test health tracking, but files remain accessible through the sidebar without it.                                                                                                                                                              |
 | Should   | Benchmark Test Suite and Demo App                                  | 5.5         | Needed to measure the Success Metrics and to tune and demo the platform, but not required for the product to function.                                                                                                                                              |
 | Could    | Locating and Assertion Accuracy Optimization                       | —           | Further improve element-locating and assertion-judging accuracy beyond the baseline, for example by tuning Jev Harness prompts and confidence thresholds, preprocessing screenshots, and filtering DOM candidates, using the Benchmark Test Suite to measure gains. |
-| Won't    | Server-Side Test Execution Security and Privacy                    | 3.2         | Implementing security isolation (such as container sandboxing or network restrictions) and sensitive data privacy hardening for tests running on the backend server is out of scope for this version.                                                               |
+| Won't    | Server-Side Test Execution Security and Privacy                    | 3.2         | Implementing security isolation (such as container sandboxing or network restrictions beyond blocking private-network addresses) and sensitive data privacy hardening for tests running on the backend server is out of scope for this version.                                                               |
 
 ---
 
@@ -324,7 +324,7 @@ The Web UI uses a consistent workspace layout illustrated by the wireframes in [
 - **Main Pane (`dashboard to show test history and reports`)**:
   - **`.yaml files` tab**: Lists test files in the current project/module with their latest status.
   - **`test process` (Live Run View)**: Streams real-time step-by-step execution status (`queued`, `running`, `passed`, `failed`), live screenshots, and active locate methods over WebSocket.
-  - **`test history` (Run History & Report View)**: Displays historical runs with filtering, step-level timing and confidence breakdowns, annotated screenshots, execution logs, and HTML/JSON report export.
+  - **`test history` (Run History & Report View)**: Displays historical runs with filtering, step-level timings, locate methods, screenshots, failure reasons, and JSON report download.
 
 ---
 

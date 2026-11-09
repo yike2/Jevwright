@@ -29,7 +29,7 @@ export type ReportFile = { path: string; data: Buffer };
 
 export type ReportBundle = { report: Report; files: ReportFile[] }; // files: trace first, then screenshots by step
 
-/** Saves a Report Bundle; the CLI writes files, the backend writes Postgres and Vercel Blob. */
+/** Saves a Report Bundle; the CLI writes files, the backend writes Postgres and its Run Files directory. */
 export interface ReportStore {
   save(bundle: ReportBundle): Promise<void>;
 }
