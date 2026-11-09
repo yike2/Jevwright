@@ -51,7 +51,12 @@ function collect(interactive: string): SnapshotElement[] {
     const labels = "labels" in el ? (el.labels as NodeListOf<HTMLLabelElement> | null) : null;
     return (
       clean(el.getAttribute("aria-label")) ||
-      clean(labelledBy?.split(/\s+/).map((id) => document.getElementById(id)?.textContent).join(" ")) ||
+      clean(
+        labelledBy
+          ?.split(/\s+/)
+          .map((id) => document.getElementById(id)?.textContent)
+          .join(" "),
+      ) ||
       clean([...(labels ?? [])].map((label) => label.textContent).join(" ")) ||
       clean(visibleText(el)) ||
       clean(el.getAttribute("title")) ||
@@ -60,7 +65,15 @@ function collect(interactive: string): SnapshotElement[] {
   };
   const attrs = (el: HTMLElement) => {
     const out: Record<string, string | boolean> = {};
-    for (const key of ["type", "placeholder", "href", "aria-checked", "aria-selected", "aria-current", "aria-invalid"]) {
+    for (const key of [
+      "type",
+      "placeholder",
+      "href",
+      "aria-checked",
+      "aria-selected",
+      "aria-current",
+      "aria-invalid",
+    ]) {
       const value = el.getAttribute(key);
       if (value !== null) out[key] = value;
     }

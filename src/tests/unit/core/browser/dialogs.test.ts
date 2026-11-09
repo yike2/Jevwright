@@ -35,7 +35,8 @@ describe("DialogGuard.take", () => {
     const page = { on: (_event: string, handler: (dialog: Dialog) => void) => (listener = handler) };
     const guard = new DialogGuard();
     guard.watch(page as unknown as Page);
-    const late = () => sleep(20).then(() => Promise.reject(new Error("Target page, context or browser has been closed")));
+    const late = () =>
+      sleep(20).then(() => Promise.reject(new Error("Target page, context or browser has been closed")));
     listener({ type: () => "alert", message: () => "Hi", accept: late, dismiss: late } as unknown as Dialog);
 
     const step = await guard.take();

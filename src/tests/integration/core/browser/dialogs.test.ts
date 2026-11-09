@@ -7,8 +7,11 @@ const { run } = useBrowser();
 
 const passed = { ok: true, dialogs: [] };
 const logged = (browser: BrowserAdapter, text: string) => browser.check({ check: "text", selector: "#log", text });
-const click = (browser: BrowserAdapter, selector: string, dialog?: { accept: boolean; text?: string; message?: string }) =>
-  browser.perform({ action: "click", element: { selector }, dialog });
+const click = (
+  browser: BrowserAdapter,
+  selector: string,
+  dialog?: { accept: boolean; text?: string; message?: string },
+) => browser.perform({ action: "click", element: { selector }, dialog });
 
 describe("a dialog response", () => {
   it("accepts the dialog its action opens and reports it", () =>
@@ -53,18 +56,22 @@ describe("a dialog response", () => {
       expect(await logged(browser, "[confirmed]")).toEqual(passed);
     }));
 
-  it("fails when no dialog appears within max(timeoutMs, DIALOG_MIN_WAIT_MS)", () =>
-    run(async (browser) => {
-      await browser.perform({ action: "open", url: "/dialogs.html" });
-      const start = Date.now();
+  it(
+    "fails when no dialog appears within max(timeoutMs, DIALOG_MIN_WAIT_MS)",
+    () =>
+      run(async (browser) => {
+        await browser.perform({ action: "open", url: "/dialogs.html" });
+        const start = Date.now();
 
-      expect(await click(browser, "#none", { accept: true })).toEqual({
-        ok: false,
-        reason: "The expected dialog did not appear within 3000ms",
-        dialogs: [],
-      });
-      expect(Date.now() - start).toBeGreaterThanOrEqual(3000);
-    }), 10_000);
+        expect(await click(browser, "#none", { accept: true })).toEqual({
+          ok: false,
+          reason: "The expected dialog did not appear within 3000ms",
+          dialogs: [],
+        });
+        expect(Date.now() - start).toBeGreaterThanOrEqual(3000);
+      }),
+    10_000,
+  );
 
   it("waits for a dialog that opens a moment after the action", () =>
     run(async (browser) => {
@@ -155,25 +162,33 @@ describe("an unexpected dialog", () => {
       expect(await browser.ready()).toEqual(passed);
     }));
 
-  it("counts as unexpected after an armed response whose dialog never came", () =>
-    run(async (browser) => {
-      await browser.perform({ action: "open", url: "/dialogs.html" });
-      await click(browser, "#none", { accept: true });
+  it(
+    "counts as unexpected after an armed response whose dialog never came",
+    () =>
+      run(async (browser) => {
+        await browser.perform({ action: "open", url: "/dialogs.html" });
+        await click(browser, "#none", { accept: true });
 
-      expect(await click(browser, "#alert")).toMatchObject({ ok: false, reason: 'Unexpected alert dialog: "Saved"' });
-    }), 10_000);
+        expect(await click(browser, "#alert")).toMatchObject({ ok: false, reason: 'Unexpected alert dialog: "Saved"' });
+      }),
+    10_000,
+  );
 });
 
 describe("a dialog response on an action that fails", () => {
-  it("does not wait for the dialog after the action reported its failure", () =>
-    run(async (browser) => {
-      await browser.perform({ action: "open", url: "/dialogs.html" });
-      const start = Date.now();
+  it(
+    "does not wait for the dialog after the action reported its failure",
+    () =>
+      run(async (browser) => {
+        await browser.perform({ action: "open", url: "/dialogs.html" });
+        const start = Date.now();
 
-      expect(await browser.perform({ action: "back", dialog: { accept: true } })).toMatchObject({
-        ok: false,
-        reason: "There is no previous page to go back to",
-      });
-      expect(Date.now() - start).toBeLessThan(3000);
-    }), 10_000);
+        expect(await browser.perform({ action: "back", dialog: { accept: true } })).toMatchObject({
+          ok: false,
+          reason: "There is no previous page to go back to",
+        });
+        expect(Date.now() - start).toBeLessThan(3000);
+      }),
+    10_000,
+  );
 });

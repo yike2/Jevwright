@@ -48,7 +48,7 @@ describe("output", () => {
 ]`);
   });
 
-  it("formats --json as \"[]\" when there are no diagnostics", () => {
+  it('formats --json as "[]" when there are no diagnostics', () => {
     expect(formatValidateJson([])).toBe("[]");
   });
 
@@ -139,7 +139,7 @@ describe("output", () => {
     );
   });
 
-  it("formats the passed summary line (durationMs 2900 → \"in 2.90s\")", () => {
+  it('formats the passed summary line (durationMs 2900 → "in 2.90s")', () => {
     const report: Report = {
       file: "suite/target/login.yaml",
       name: "User Login",
@@ -188,7 +188,7 @@ describe("output", () => {
     );
   });
 
-  it("rounds the summary duration to 2 decimals (durationMs 1234 → \"1.23s\")", () => {
+  it('rounds the summary duration to 2 decimals (durationMs 1234 → "1.23s")', () => {
     const report: Report = {
       file: "suite/target/login.yaml",
       name: "User Login",

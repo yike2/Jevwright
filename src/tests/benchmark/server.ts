@@ -27,7 +27,9 @@ export async function serveDemoApp(): Promise<{ baseUrl: string; stop: () => Pro
     // new URL() resolves "..", so the path stays inside the site or the extras.
     const { pathname } = new URL(req.url ?? "/", "http://x");
     // The app routes on the client, at paths such as /inventory.html that are no file, so they get index.html.
-    const path = pathname.startsWith("/extras/") ? join(EXTRAS, pathname.slice("/extras/".length)) : join(SITE, pathname);
+    const path = pathname.startsWith("/extras/")
+      ? join(EXTRAS, pathname.slice("/extras/".length))
+      : join(SITE, pathname);
     const file = await readFile(path)
       .then((body) => ({ body, type: TYPES[extname(pathname)] ?? "application/octet-stream" }))
       .catch(async () => ({ body: await readFile(join(SITE, "index.html")), type: TYPES[".html"]! }));

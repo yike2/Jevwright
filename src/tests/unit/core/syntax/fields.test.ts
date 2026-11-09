@@ -13,8 +13,7 @@ function readerFor(source: string) {
   return { reader, diagnostics };
 }
 
-const positions = (diagnostics: Diagnostic[]) =>
-  diagnostics.map(({ code, line }) => ({ code, line }));
+const positions = (diagnostics: Diagnostic[]) => diagnostics.map(({ code, line }) => ({ code, line }));
 
 describe("FieldReader", () => {
   describe("string", () => {
@@ -94,12 +93,15 @@ describe("FieldReader", () => {
       expect(diagnostics).toEqual([]);
     });
 
-    it.each(["0", "-5", "1.5", '"250"', "2147483648", "3000000000", "1e300", "1e3", "0x10", "1000.0"])("reports E007 at the value for %s", (value) => {
-      const { reader, diagnostics } = readerFor(`sleep:\n  ms: ${value}\n`);
+    it.each(["0", "-5", "1.5", '"250"', "2147483648", "3000000000", "1e300", "1e3", "0x10", "1000.0"])(
+      "reports E007 at the value for %s",
+      (value) => {
+        const { reader, diagnostics } = readerFor(`sleep:\n  ms: ${value}\n`);
 
-      expect(reader.positiveInt("ms", true)).toBeUndefined();
-      expect(positions(diagnostics)).toEqual([{ code: "E007", line: 2 }]);
-    });
+        expect(reader.positiveInt("ms", true)).toBeUndefined();
+        expect(positions(diagnostics)).toEqual([{ code: "E007", line: 2 }]);
+      },
+    );
   });
 
   describe("oneOf", () => {

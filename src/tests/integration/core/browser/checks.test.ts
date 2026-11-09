@@ -30,7 +30,9 @@ describe("check url with a pattern", () => {
 
       expect(await browser.check({ check: "url", url: "**/plain.*" })).toEqual({ ok: true, dialogs: [] });
       expect(await browser.check({ check: "url", url: "**/{plain,checks}.html" })).toMatchObject({ ok: false });
-      expect(await browser.perform({ action: "switchTab", url: "**/{plain,checks}.html" })).toMatchObject({ ok: false });
+      expect(await browser.perform({ action: "switchTab", url: "**/{plain,checks}.html" })).toMatchObject({
+        ok: false,
+      });
     }));
 });
 

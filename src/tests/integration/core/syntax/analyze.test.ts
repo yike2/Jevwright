@@ -20,8 +20,7 @@ function load(dir: "valid" | "invalid") {
     });
 }
 
-const positions = (diagnostics: Diagnostic[]) =>
-  diagnostics.map(({ code, line }) => ({ code, line }));
+const positions = (diagnostics: Diagnostic[]) => diagnostics.map(({ code, line }) => ({ code, line }));
 
 describe("analyze", () => {
   it.each(load("valid"))("parses valid/$file into the expected TestCase", ({ source, expected }) => {

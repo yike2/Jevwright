@@ -1,4 +1,14 @@
-import { isAlias, isMap, isScalar, type Document, type LineCounter, type Node, type Pair, type Scalar, type YAMLMap } from "yaml";
+import {
+  isAlias,
+  isMap,
+  isScalar,
+  type Document,
+  type LineCounter,
+  type Node,
+  type Pair,
+  type Scalar,
+  type YAMLMap,
+} from "yaml";
 import type { Diagnostic } from "./types.js";
 
 // Largest delay Node timers and Playwright accept; anything above fires after 1 ms.
@@ -70,9 +80,7 @@ export class FieldReader {
   positiveInt(key: string, required = false): number | undefined {
     // The source check rejects 1e3, 0x10 and 1000.0, which parse to integers but are not written as one.
     const read = ({ value, source }: Scalar) =>
-      typeof value === "number" && /^\d+$/.test(source ?? "") && value > 0 && value <= MAX_TIMER_MS
-        ? value
-        : undefined;
+      typeof value === "number" && /^\d+$/.test(source ?? "") && value > 0 && value <= MAX_TIMER_MS ? value : undefined;
     return this.value(key, required, read, `a positive integer up to ${MAX_TIMER_MS}`);
   }
 

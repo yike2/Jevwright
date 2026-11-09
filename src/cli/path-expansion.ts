@@ -46,7 +46,10 @@ async function collectDirectoryFiles(
   return { ok: true, files };
 }
 
-async function collectGlobFiles(arg: string, cwd: string): Promise<{ ok: true; files: string[] } | { ok: false; error: string }> {
+async function collectGlobFiles(
+  arg: string,
+  cwd: string,
+): Promise<{ ok: true; files: string[] } | { ok: false; error: string }> {
   const files: string[] = [];
 
   for await (const entry of glob(arg, { cwd, withFileTypes: true })) {

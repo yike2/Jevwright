@@ -4,13 +4,11 @@ import type { Report, ReportStore } from "../report/index.js";
 import type { Diagnostic } from "../syntax/index.js";
 
 export type RunTestOptions = {
-    headed: boolean;
-    vars: Record<string, string>;
-    jev: JevClient;
-    store: ReportStore;
-    onEvent?: (event: StepEvent) => void;
+  headed: boolean;
+  vars: Record<string, string>;
+  jev: JevClient;
+  store: ReportStore;
+  onEvent?: (event: StepEvent) => void;
 };
 
-export type RunTestResult =
-    | { kind: "invalid"; diagnostics: Diagnostic[] }
-    | { kind: "completed"; report: Report };
+export type RunTestResult = { kind: "invalid"; diagnostics: Diagnostic[] } | { kind: "completed"; report: Report };

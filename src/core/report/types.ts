@@ -11,9 +11,7 @@ export type RunOutcome = {
   error?: RunError;
 };
 
-export type ReportStep =
-  | Exclude<StepResult, FailedStep>
-  | (Omit<FailedStep, "screenshot"> & { screenshot?: string }); // path in the Bundle
+export type ReportStep = Exclude<StepResult, FailedStep> | (Omit<FailedStep, "screenshot"> & { screenshot?: string }); // path in the Bundle
 
 export type Report = {
   file: string;

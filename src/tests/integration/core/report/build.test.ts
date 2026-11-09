@@ -29,7 +29,14 @@ steps:
     const startedAt = new Date();
     const { steps, trace } = await execute(testCase!, { headed: false, vars: {}, onEvent: () => {}, jev: throwingJev });
 
-    const { report, files } = buildReport({ file: "missing-button.yaml", testCase: testCase!, startedAt, durationMs: 1, steps, trace });
+    const { report, files } = buildReport({
+      file: "missing-button.yaml",
+      testCase: testCase!,
+      startedAt,
+      durationMs: 1,
+      steps,
+      trace,
+    });
 
     expect(report).toMatchObject({ status: "failed", trace: "trace.zip", summary: { passed: 1, failed: 1 } });
     expect(report.steps[1]).toMatchObject({ screenshot: "screenshots/step-1.png" });

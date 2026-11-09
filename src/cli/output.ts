@@ -14,9 +14,7 @@ export function formatValidateFailed(errorCount: number): string {
   return `Validation FAILED (${errorCount} errors).`;
 }
 
-export function formatValidateJson(
-  results: readonly { file: string; diagnostics: readonly Diagnostic[] }[],
-): string {
+export function formatValidateJson(results: readonly { file: string; diagnostics: readonly Diagnostic[] }[]): string {
   const flattened: Array<{ file: string; code: string; message: string; line: number }> = [];
 
   for (const result of results) {

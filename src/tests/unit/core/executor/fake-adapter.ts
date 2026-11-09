@@ -1,4 +1,11 @@
-import type { BrowserAction, BrowserAdapter, BrowserCheck, BrowserResult, PageSnapshot, ReadResult } from "@/core/browser/index.js";
+import type {
+  BrowserAction,
+  BrowserAdapter,
+  BrowserCheck,
+  BrowserResult,
+  PageSnapshot,
+  ReadResult,
+} from "@/core/browser/index.js";
 import type { JevClient } from "@/core/jev/index.js";
 
 export const OK: BrowserResult = { ok: true, dialogs: [] };
