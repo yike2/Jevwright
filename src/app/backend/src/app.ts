@@ -12,8 +12,8 @@ export type AppDeps = {
   handlers: Partial<Record<string, Handler>>; // keyed "<method> <path>", e.g. "get /projects"
 };
 
-// A 256 KiB source plus its JSON escaping and the other fields.
-const BODY_LIMIT = "300kb";
+// A 256 Ki character source can double in JSON escaping; the source schema enforces its own limit.
+const BODY_LIMIT = "1mb";
 
 /** Builds the Express app: CORS, JSON parsing, the contract routes, the API docs, and JSON errors. */
 export function createApp(deps: AppDeps): Express {
@@ -64,7 +64,10 @@ function validate(route: Route): RequestHandler {
       if (!schema) continue;
       const parsed = schema.safeParse(value ?? {});
       if (parsed.success) input[part] = parsed.data;
-      else issues.push(...parsed.error.issues.map((issue) => ({ ...issue, path: [part, ...issue.path] })));
+      else
+        issues.push(
+          ...parsed.error.issues.map((issue) => ({ path: [part, ...issue.path].join("."), message: issue.message })),
+        );
     }
     if (issues.length > 0) return next(new ApiError("invalid_request", "The request fails its schema", issues));
     res.locals.input = input;

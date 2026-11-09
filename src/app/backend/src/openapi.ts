@@ -1,5 +1,5 @@
 import { z, type ZodType } from "zod";
-import { ROUTES, type Route } from "./api/contract.js";
+import { ROUTES, type Auth, type Route } from "./api/contract.js";
 import { COMPONENTS } from "./api/schemas.js";
 
 export type OpenApiDocument = {
@@ -30,11 +30,18 @@ function parameters(schema: z.ZodObject | undefined, place: "path" | "query") {
   }));
 }
 
+const SECURITY: Record<Auth, Record<string, never[]>[]> = {
+  bearer: [{ bearer: [] }],
+  "bearer-or-query": [{ bearer: [] }, { token: [] }],
+  query: [{ token: [] }],
+  none: [],
+};
+
 function operation(route: Route) {
   return {
     summary: route.summary,
     ...(route.description ? { description: route.description } : {}),
-    security: route.auth ? [{ bearer: [] }] : [],
+    security: SECURITY[route.auth],
     parameters: [...parameters(route.params, "path"), ...parameters(route.query, "query")],
     ...(route.body
       ? {
@@ -73,7 +80,10 @@ export function buildOpenApi(): OpenApiDocument {
       schemas: Object.fromEntries(
         Object.entries(COMPONENTS).map(([name, schema]) => [name, jsonSchema(schema, "output")]),
       ),
-      securitySchemes: { bearer: { type: "http", scheme: "bearer", bearerFormat: "JWT" } },
+      securitySchemes: {
+        bearer: { type: "http", scheme: "bearer", bearerFormat: "JWT" },
+        token: { type: "apiKey", in: "query", name: "token", description: "The same login JWT, as ?token=" },
+      },
     },
   };
 }

@@ -88,13 +88,13 @@ describe("buildOpenApi", () => {
     expect(JSON.stringify(doc.components.schemas.LiveSnapshot)).toContain('"steps"');
   });
 
-  it("documents the Live Progress WebSocket and each message it sends", () => {
+  it("documents the Live Progress WebSocket, its ?token=, and each message it sends", () => {
     const live = operation("/runs/{runId}/live", "get");
 
     expect(live?.description).toMatch(/WebSocket/);
-    expect(live?.parameters).toContainEqual(expect.objectContaining({ name: "token", in: "query", required: true }));
-    expect(Object.keys(doc.components.schemas).filter((name) => name.startsWith("Live"))).toEqual(
-      expect.arrayContaining(["LiveMessage", "LiveSnapshot", "LiveStatus", "LiveStepMessage", "LiveStep"]),
+    expect(live?.security).toEqual([{ token: [] }]);
+    expect(Object.keys(doc.components.schemas)).toEqual(
+      expect.arrayContaining(["LiveMessage", "LiveSnapshot", "LiveStatus", "LiveStepMessage", "Step"]),
     );
   });
 
