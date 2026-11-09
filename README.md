@@ -14,6 +14,46 @@ pnpm exec playwright install --with-deps chromium   # browser for runs and tests
 
 `pnpm install` also sets up the git commit template, the commit-msg hook, and nano (wrapping at 72 chars) as the commit editor (see below). These settings apply to this repository only.
 
+## Running
+
+Copy [`.env.example`](.env.example) to `.env` and fill it in. `.env` is git-ignored; never commit it.
+
+| Variable | Needed for |
+| --- | --- |
+| `OPENROUTER_API_KEY` | `jevwright run`, `pnpm benchmark`, `pnpm test:live`: every command that calls Jev |
+| `SWAG_PASSWORD` | Benchmark test files; the Demo App's password is `secret_sauce` |
+
+### Tests
+
+```bash
+pnpm test          # unit and integration tests; never calls Jev
+pnpm lint
+pnpm typecheck
+pnpm test:live     # tests that call the real Jev; skipped without OPENROUTER_API_KEY
+```
+
+### CLI
+
+```bash
+pnpm jevwright validate tests/login.yaml   # check a test file without a browser
+pnpm jevwright run tests/login.yaml        # run it; add --headed to watch the browser
+```
+
+`run` writes each file's report, trace, and screenshots to `jevwright-reports/<timestamp>/`. See [docs/tech/cli.md](docs/tech/cli.md) for the output and exit codes.
+
+### Benchmark
+
+The benchmark runs the suite in [`src/tests/benchmark/suite/`](src/tests/benchmark/suite/) against a local copy of the Swag Labs demo shop, with the real Jev:
+
+```bash
+pnpm benchmark                 # every folder: selector, target, both, atomic, assert (about 10 minutes)
+pnpm benchmark target atomic   # only the folders you name
+```
+
+It serves the demo shop itself, runs each file once, and runs a file again when it is not right the first time. It prints pass rates per folder, Flow group, and tag, judging accuracy, and Jev step latency, then saves the summary to `benchmark-results/<timestamp>.json` (git-ignored), with each file's outcome (`stable`, `flaky`, or `wrong`) so two runs can be compared file by file. The reports of every try are in `benchmark-results/<timestamp>/`.
+
+`pnpm test` also checks the suite without Jev: every file analyzes, and every `selector/` Flow passes. See [docs/tech/benchmark.md](docs/tech/benchmark.md) for the suite layout, the tags, and the metrics.
+
 ## Commit messages
 
 Every commit message must follow [Conventional Commits](https://www.conventionalcommits.org) with a scope and the issue number:
