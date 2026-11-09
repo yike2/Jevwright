@@ -1,6 +1,6 @@
-# tags: image, repeated, offscreen, by-relation
-name: "Product image below the fold"
-description: "Atomic case: product image below the fold, found by target"
+# tags: image, repeated, by-relation
+name: "Product image in the third row"
+description: "Atomic case: product image in the third row, found by target"
 baseUrl: "{{BASE}}"
 steps:
   - open:

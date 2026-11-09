@@ -1,6 +1,6 @@
-# tags: link, repeated, offscreen, by-text
-name: "Product name below the fold"
-description: "Atomic case: product name below the fold, found by target"
+# tags: link, repeated, by-text
+name: "Product name in the third row"
+description: "Atomic case: product name in the third row, found by target"
 baseUrl: "{{BASE}}"
 steps:
   - open:
