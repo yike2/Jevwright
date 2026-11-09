@@ -1,4 +1,5 @@
-name: "Menu said to be closed"
+# tags: negation, state
+name: "Menu said to be closed while it slides in"
 description: "Assert case: the last step fails"
 baseUrl: "{{BASE}}"
 steps:

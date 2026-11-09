@@ -1,3 +1,4 @@
+# tags: link, by-text
 name: "Link that opens a new tab"
 description: "Atomic case: link that opens a new tab, found by target"
 baseUrl: "{{BASE}}"

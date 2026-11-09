@@ -1,5 +1,6 @@
+# tags: button, repeated, by-relation
 name: "Add the Fleece Jacket among six products"
-description: "Atomic case: add the fleece jacket among six products, found by target"
+description: "Atomic case: add the Fleece Jacket among six products, found by target"
 baseUrl: "{{BASE}}"
 steps:
   - open:

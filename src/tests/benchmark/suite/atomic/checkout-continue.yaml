@@ -1,3 +1,4 @@
+# tags: button, by-text
 name: "Continue button"
 description: "Atomic case: continue button, found by target"
 baseUrl: "{{BASE}}"

@@ -1,3 +1,4 @@
+# tags: negation, state
 name: "Cart said to be empty"
 description: "Assert case: the last step fails"
 baseUrl: "{{BASE}}"

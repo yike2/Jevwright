@@ -1,0 +1,13 @@
+# tags: button, by-text
+name: "Save profile"
+description: "Atomic case: save profile, found by target"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/extras/dialogs.html"
+  - click:
+      target: "'Save profile' button"
+      dialog: { accept: true, message: "Profile saved" }
+  - assert:
+      selector: "#status"
+      text: "Your profile was saved."

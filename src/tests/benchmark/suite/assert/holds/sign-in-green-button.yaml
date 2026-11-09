@@ -1,0 +1,9 @@
+# tags: visual
+name: "Green login button"
+description: "Assert case: the last step holds"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/"
+  - assert:
+      statement: "The Login button is green"

@@ -1,0 +1,22 @@
+# tags: image, repeated, offscreen, by-relation
+name: "Product image below the fold"
+description: "Atomic case: product image below the fold, found by target"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/"
+  - input:
+      selector: '[data-test="username"]'
+      value: "standard_user"
+  - input:
+      selector: '[data-test="password"]'
+      value: "{{SWAG_PASSWORD}}"
+  - click:
+      selector: '[data-test="login-button"]'
+  - waitFor:
+      url: "**/inventory.html"
+  - click:
+      target: "Product photo of the Sauce Labs Onesie"
+  - assert:
+      selector: '[data-test="inventory-item-name"]'
+      text: "Sauce Labs Onesie"

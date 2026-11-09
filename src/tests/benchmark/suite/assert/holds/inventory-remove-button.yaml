@@ -1,3 +1,4 @@
+# tags: state, text
 name: "Remove button after adding"
 description: "Assert case: the last step holds"
 baseUrl: "{{BASE}}"

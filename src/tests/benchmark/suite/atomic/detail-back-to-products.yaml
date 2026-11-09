@@ -1,3 +1,4 @@
+# tags: button, by-text
 name: "Back to products"
 description: "Atomic case: back to products, found by target"
 baseUrl: "{{BASE}}"
@@ -17,7 +18,7 @@ steps:
   - click:
       selector: '[data-test="item-4-title-link"]'
   - click:
-      target: "'Back to products' button at the top left"
+      target: "'Back to products' button"
   - assert:
       selector: '[data-test="title"]'
       text: "Products"

@@ -1,5 +1,6 @@
-name: "Dynamic Catalog submenu"
-description: "Atomic case: dynamic catalog submenu, found by target"
+# tags: menu-item, overlay, animating, by-text
+name: "Dynamic Catalog menu item"
+description: "Atomic case: dynamic Catalog menu item, found by target"
 baseUrl: "{{BASE}}"
 steps:
   - open:

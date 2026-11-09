@@ -1,5 +1,6 @@
-name: "All Items menu item"
-description: "Atomic case: all items menu item, found by target"
+# tags: menu-item, overlay, animating, by-text
+name: "All Items while the menu slides in"
+description: "Atomic case: all Items while the menu slides in, found by target"
 baseUrl: "{{BASE}}"
 steps:
   - open:

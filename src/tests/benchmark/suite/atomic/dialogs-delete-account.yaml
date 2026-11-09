@@ -1,11 +1,12 @@
-name: "Delete account with a confirm"
-description: "Atomic case: delete account with a confirm, found by target"
+# tags: button, by-look
+name: "Delete account by its look"
+description: "Atomic case: delete account by its look, found by target"
 baseUrl: "{{BASE}}"
 steps:
   - open:
       url: "/extras/dialogs.html"
   - click:
-      target: "Red 'Delete account' button in the Danger zone"
+      target: "Red button in the Danger zone"
       dialog: { accept: false }
   - assert:
       selector: "#status"

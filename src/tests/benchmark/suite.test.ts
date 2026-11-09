@@ -5,6 +5,7 @@ import { execute } from "@/core/executor/index.js";
 import { analyze, type Step, type TestCase } from "@/core/syntax/index.js";
 import { throwingJev } from "../unit/core/executor/fake-adapter.js";
 import { serveDemoApp } from "./server.js";
+import { DESCRIPTION_TAGS, ELEMENT_TAGS, FACT_TAGS, LOCATING_TAGS, readTags } from "./tags.js";
 
 const SUITE = fileURLToPath(new URL("./suite/", import.meta.url));
 const files = readdirSync(SUITE, { recursive: true, encoding: "utf8" })
@@ -54,6 +55,32 @@ describe("the benchmark suite", () => {
 
     expect(stale.length).toBeGreaterThanOrEqual(1);
     expect(stale.length).toBeLessThanOrEqual(3);
+  });
+
+  const tagged = files.filter((file) => file.startsWith("atomic/") || file.startsWith("assert/"));
+  const count = (tags: readonly string[], among: readonly string[]) => tags.filter((tag) => among.includes(tag)).length;
+
+  it.each(flows("atomic"))("atomic/%s has one Element tag, one Description tag, and only known tags", (file) => {
+    const tags = readTags(read(`atomic/${file}`));
+
+    expect(count(tags, ELEMENT_TAGS)).toBe(1);
+    expect(count(tags, DESCRIPTION_TAGS)).toBe(1);
+    expect(tags.filter((tag) => ![...ELEMENT_TAGS, ...DESCRIPTION_TAGS, ...LOCATING_TAGS].includes(tag))).toEqual([]);
+  });
+
+  it.each(files.filter((file) => file.startsWith("assert/")))("%s has Fact tags only", (file) => {
+    const tags = readTags(read(file));
+
+    expect(tags.length).toBeGreaterThan(0);
+    expect(tags.filter((tag) => !FACT_TAGS.includes(tag))).toEqual([]);
+  });
+
+  it("puts every tag on at least five cases", () => {
+    const uses = new Map<string, number>();
+    for (const tag of tagged.flatMap((file) => readTags(read(file)))) uses.set(tag, (uses.get(tag) ?? 0) + 1);
+    const all = [...ELEMENT_TAGS, ...DESCRIPTION_TAGS, ...LOCATING_TAGS, ...FACT_TAGS];
+
+    expect(all.filter((tag) => (uses.get(tag) ?? 0) < 5)).toEqual([]);
   });
 
   describe("selector/ against the Demo App", () => {

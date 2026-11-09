@@ -1,0 +1,14 @@
+# tags: item, by-text
+name: "Right-click a file"
+description: "Atomic case: right-click a file, found by target"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/extras/menus.html"
+  - rightClick:
+      target: "File 'packing-list.txt' in the file list"
+  - click:
+      selector: "#delete-file"
+  - assert:
+      selector: "#status"
+      text: "Deleted packing-list.txt."

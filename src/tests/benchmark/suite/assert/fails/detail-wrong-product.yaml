@@ -1,5 +1,6 @@
-name: "Slider dot"
-description: "Atomic case: slider dot, found by target"
+# tags: text
+name: "Wrong product on the detail page"
+description: "Assert case: the last step fails"
 baseUrl: "{{BASE}}"
 steps:
   - open:
@@ -14,10 +15,7 @@ steps:
       selector: '[data-test="login-button"]'
   - waitFor:
       url: "**/inventory.html"
-  - open:
-      url: "/dynamic-catalog-slider.html"
   - click:
-      target: "Fifth of the six dots below the product slider"
+      selector: '[data-test="item-0-title-link"]'
   - assert:
-      selector: '[data-test="dynamic-catalog-slider-item-name"]'
-      text: "Sauce Labs Backpack"
+      statement: "The page shows the Sauce Labs Onesie"

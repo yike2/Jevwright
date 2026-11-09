@@ -1,3 +1,4 @@
+# tags: count, state
 name: "Cart badge shows two"
 description: "Assert case: the last step holds"
 baseUrl: "{{BASE}}"

@@ -1,3 +1,4 @@
+# tags: field, by-text
 name: "Username field"
 description: "Atomic case: username field, found by target"
 baseUrl: "{{BASE}}"

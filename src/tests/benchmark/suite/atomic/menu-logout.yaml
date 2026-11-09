@@ -1,5 +1,6 @@
-name: "Logout menu item"
-description: "Atomic case: logout menu item, found by target"
+# tags: menu-item, overlay, animating, by-text
+name: "Logout while the menu slides in"
+description: "Atomic case: logout while the menu slides in, found by target"
 baseUrl: "{{BASE}}"
 steps:
   - open:

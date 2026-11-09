@@ -1,3 +1,4 @@
+# tags: button, by-text
 name: "Checkout button"
 description: "Atomic case: checkout button, found by target"
 baseUrl: "{{BASE}}"
@@ -22,7 +23,7 @@ steps:
       selector: '[data-test="title"]'
       text: "Your Cart"
   - click:
-      target: "Green 'Checkout' button on the cart page"
+      target: "'Checkout' button on the cart page"
   - assert:
       selector: '[data-test="title"]'
       text: "Checkout: Your Information"

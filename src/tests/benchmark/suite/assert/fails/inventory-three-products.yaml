@@ -1,3 +1,4 @@
+# tags: count
 name: "Wrong product count"
 description: "Assert case: the last step fails"
 baseUrl: "{{BASE}}"

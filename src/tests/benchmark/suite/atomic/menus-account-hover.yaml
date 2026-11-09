@@ -1,3 +1,4 @@
+# tags: button, by-text
 name: "Account menu on hover"
 description: "Atomic case: account menu on hover, found by target"
 baseUrl: "{{BASE}}"

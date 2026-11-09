@@ -1,3 +1,4 @@
+# tags: count
 name: "Six products"
 description: "Assert case: the last step holds"
 baseUrl: "{{BASE}}"

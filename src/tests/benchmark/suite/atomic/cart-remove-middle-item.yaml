@@ -1,3 +1,4 @@
+# tags: button, repeated, by-relation
 name: "Remove one of three cart items"
 description: "Atomic case: remove one of three cart items, found by target"
 baseUrl: "{{BASE}}"

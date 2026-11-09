@@ -1,3 +1,4 @@
+# tags: button, by-relation
 name: "Cancel on the overview"
 description: "Atomic case: cancel on the overview, found by target"
 baseUrl: "{{BASE}}"

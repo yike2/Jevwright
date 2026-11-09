@@ -1,3 +1,4 @@
+# tags: button, by-text
 name: "Add to cart on the detail page"
 description: "Atomic case: add to cart on the detail page, found by target"
 baseUrl: "{{BASE}}"

@@ -1,3 +1,4 @@
+# tags: text
 name: "Payment failed"
 description: "Assert case: the last step fails"
 baseUrl: "{{BASE}}"

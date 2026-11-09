@@ -1,3 +1,4 @@
+# tags: price
 name: "Wrong order total"
 description: "Assert case: the last step fails"
 baseUrl: "{{BASE}}"

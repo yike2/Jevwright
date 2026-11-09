@@ -1,4 +1,5 @@
-name: "Menu open"
+# tags: state
+name: "Menu open while it slides in"
 description: "Assert case: the last step holds"
 baseUrl: "{{BASE}}"
 steps:

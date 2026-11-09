@@ -1,0 +1,11 @@
+# tags: button, shadow, by-text
+name: "Button in an outer shadow root"
+description: "Atomic case: button in an outer shadow root, found by target"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/shadow-dom/nested-shadow-root.html"
+  - click:
+      target: "'Outer Button'"
+  - assert:
+      selector: "#outer-button:focus"

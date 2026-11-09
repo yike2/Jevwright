@@ -1,3 +1,4 @@
+# tags: button, by-relation
 name: "Cancel on the checkout form"
 description: "Atomic case: cancel on the checkout form, found by target"
 baseUrl: "{{BASE}}"

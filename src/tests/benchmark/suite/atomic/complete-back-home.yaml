@@ -1,3 +1,4 @@
+# tags: button, by-text
 name: "Back home"
 description: "Atomic case: back home, found by target"
 baseUrl: "{{BASE}}"

@@ -1,3 +1,4 @@
+# tags: menu-item, overlay, by-text
 name: "Delete in the right-click menu"
 description: "Atomic case: delete in the right-click menu, found by target"
 baseUrl: "{{BASE}}"

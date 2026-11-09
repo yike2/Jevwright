@@ -1,5 +1,6 @@
-name: "Product image"
-description: "Atomic case: product image, found by target"
+# tags: icon, small, dynamic, by-look
+name: "First slider dot"
+description: "Atomic case: first slider dot, found by target"
 baseUrl: "{{BASE}}"
 steps:
   - open:
@@ -14,8 +15,10 @@ steps:
       selector: '[data-test="login-button"]'
   - waitFor:
       url: "**/inventory.html"
+  - open:
+      url: "/dynamic-catalog-slider.html"
   - click:
-      target: "Product photo of the Sauce Labs Bolt T-Shirt"
+      target: "First, leftmost dot below the product slider"
   - assert:
-      selector: '[data-test="inventory-item-name"]'
-      text: "Sauce Labs Bolt T-Shirt"
+      selector: '[data-test="dynamic-catalog-slider-item-name"]'
+      text: "Sauce Labs Bike Light"

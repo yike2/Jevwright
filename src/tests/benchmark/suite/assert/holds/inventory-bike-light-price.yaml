@@ -1,5 +1,6 @@
-name: "Product name link"
-description: "Atomic case: product name link, found by target"
+# tags: price
+name: "Bike Light price"
+description: "Assert case: the last step holds"
 baseUrl: "{{BASE}}"
 steps:
   - open:
@@ -14,8 +15,5 @@ steps:
       selector: '[data-test="login-button"]'
   - waitFor:
       url: "**/inventory.html"
-  - click:
-      target: "Product name link 'Sauce Labs Fleece Jacket'"
   - assert:
-      selector: '[data-test="inventory-item-name"]'
-      text: "Sauce Labs Fleece Jacket"
+      statement: "The Sauce Labs Bike Light costs $9.99"

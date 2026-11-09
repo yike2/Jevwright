@@ -1,3 +1,4 @@
+# tags: item, by-text
 name: "Double-click a file"
 description: "Atomic case: double-click a file, found by target"
 baseUrl: "{{BASE}}"

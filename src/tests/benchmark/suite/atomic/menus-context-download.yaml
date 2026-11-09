@@ -1,3 +1,4 @@
+# tags: menu-item, overlay, by-text
 name: "Download in the right-click menu"
 description: "Atomic case: download in the right-click menu, found by target"
 baseUrl: "{{BASE}}"

@@ -1,3 +1,4 @@
+# tags: icon, small, by-look
 name: "Error close button on the checkout form"
 description: "Atomic case: error close button on the checkout form, found by target"
 baseUrl: "{{BASE}}"
@@ -32,6 +33,6 @@ steps:
       selector: '[data-test="error"]'
       text: "First Name is required"
   - click:
-      target: "Small 'X' close button at the right end of the red error message"
+      target: "Small 'X' at the right end of the red error message"
   - assert:
       selector: '[data-test="firstName"]:not(.error)'

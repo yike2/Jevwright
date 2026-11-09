@@ -1,3 +1,4 @@
+# tags: button, by-text
 name: "Continue shopping"
 description: "Atomic case: continue shopping, found by target"
 baseUrl: "{{BASE}}"

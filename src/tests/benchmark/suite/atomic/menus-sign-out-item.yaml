@@ -1,5 +1,6 @@
-name: "Item of the hover menu"
-description: "Atomic case: item of the hover menu, found by target"
+# tags: menu-item, overlay, by-text
+name: "Sign out in the hover menu"
+description: "Atomic case: sign out in the hover menu, found by target"
 baseUrl: "{{BASE}}"
 steps:
   - open:

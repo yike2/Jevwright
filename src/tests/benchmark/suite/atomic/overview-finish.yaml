@@ -1,3 +1,4 @@
+# tags: button, by-text
 name: "Finish button"
 description: "Atomic case: finish button, found by target"
 baseUrl: "{{BASE}}"
@@ -41,7 +42,7 @@ steps:
       selector: '[data-test="title"]'
       text: "Checkout: Overview"
   - click:
-      target: "Green 'Finish' button below the order summary"
+      target: "'Finish' button below the order summary"
   - assert:
       selector: '[data-test="complete-header"]'
       text: "Thank you for your order!"

@@ -1,5 +1,6 @@
-name: "Add the Onesie among six products"
-description: "Atomic case: add the onesie among six products, found by target"
+# tags: button, repeated, offscreen, by-relation
+name: "Add the Onesie below the fold"
+description: "Atomic case: add the Onesie below the fold, found by target"
 baseUrl: "{{BASE}}"
 steps:
   - open:

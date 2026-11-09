@@ -1,0 +1,13 @@
+# tags: button, by-text
+name: "Change display name"
+description: "Atomic case: change display name, found by target"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/extras/dialogs.html"
+  - click:
+      target: "'Change display name' button"
+      dialog: { accept: true, text: "Swag Lover" }
+  - assert:
+      selector: "#display-name"
+      text: "Swag Lover"
