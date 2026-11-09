@@ -1,0 +1,13 @@
+name: "Item of the hover menu"
+description: "Atomic case: item of the hover menu, found by target"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/extras/menus.html"
+  - hover:
+      selector: "#account-menu"
+  - click:
+      target: "'Sign out' item in the Account menu"
+  - assert:
+      selector: "#status"
+      text: "You are signed out."

@@ -1,0 +1,13 @@
+name: "New tab"
+description: "A guide opens in a new tab"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/extras/tabs.html"
+  - click:
+      target: "'Read the returns policy' link"
+  - switchTab:
+      url: "**/extras/returns.html"
+  - assert:
+      selector: "#returns-window"
+      text: "30 days"

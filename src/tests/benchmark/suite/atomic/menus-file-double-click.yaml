@@ -1,0 +1,11 @@
+name: "Double-click a file"
+description: "Atomic case: double-click a file, found by target"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/extras/menus.html"
+  - doubleClick:
+      target: "File 'invoice-2026.pdf' in the file list"
+  - assert:
+      selector: "#status"
+      text: "Opened invoice-2026.pdf."

@@ -1,0 +1,11 @@
+name: "Account said to be deleted"
+description: "Assert case: the last step fails"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/extras/dialogs.html"
+  - click:
+      selector: "#delete"
+      dialog: { accept: false }
+  - assert:
+      statement: "The page says the account was deleted"

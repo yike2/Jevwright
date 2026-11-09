@@ -1,0 +1,12 @@
+name: "Link that opens a new tab"
+description: "Atomic case: link that opens a new tab, found by target"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/extras/tabs.html"
+  - click:
+      target: "'Read the shipping times' link"
+  - switchTab:
+      url: "**/extras/shipping.html"
+  - assert:
+      url: "**/extras/shipping.html"

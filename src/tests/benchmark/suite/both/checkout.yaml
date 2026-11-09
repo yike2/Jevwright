@@ -1,0 +1,55 @@
+name: "Checkout"
+description: "A standard user buys the backpack"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/"
+  - input:
+      selector: '[data-test="username"]'
+      target: "Username text field in the login form"
+      value: "standard_user"
+  - input:
+      selector: '[data-test="password"]'
+      target: "Password text field in the login form"
+      value: "{{SWAG_PASSWORD}}"
+  - click:
+      selector: '[data-test="login-button"]'
+      target: "Green 'Login' button below the password field"
+  - waitFor:
+      url: "**/inventory.html"
+  - click:
+      selector: '[data-test="add-to-cart-sauce-labs-backpack"]'
+      target: "'Add to cart' button of the Sauce Labs Backpack product card"
+  - click:
+      selector: "#cart-icon" # stale
+      target: "Shopping cart icon in the top-right corner of the header"
+  - assert:
+      selector: '[data-test="title"]'
+      text: "Your Cart"
+  - click:
+      selector: "#checkout-btn" # stale
+      target: "Green 'Checkout' button on the cart page"
+  - input:
+      selector: '[data-test="firstName"]'
+      target: "'First Name' text field of the checkout form"
+      value: "Ada"
+  - input:
+      selector: '[data-test="lastName"]'
+      target: "'Last Name' text field of the checkout form"
+      value: "Lovelace"
+  - input:
+      selector: '[data-test="postalCode"]'
+      target: "'Zip/Postal Code' text field of the checkout form"
+      value: "10001"
+  - click:
+      selector: '[data-test="continue"]'
+      target: "'Continue' button below the checkout form"
+  - assert:
+      selector: '[data-test="total-label"]'
+      text: "Total: $32.39"
+  - click:
+      selector: '[data-test="finish-order"]' # stale
+      target: "Green 'Finish' button below the order summary"
+  - assert:
+      selector: '[data-test="complete-header"]'
+      text: "Thank you for your order!"

@@ -1,0 +1,47 @@
+name: "Finish button"
+description: "Atomic case: finish button, found by target"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/"
+  - input:
+      selector: '[data-test="username"]'
+      value: "standard_user"
+  - input:
+      selector: '[data-test="password"]'
+      value: "{{SWAG_PASSWORD}}"
+  - click:
+      selector: '[data-test="login-button"]'
+  - waitFor:
+      url: "**/inventory.html"
+  - click:
+      selector: '[data-test="add-to-cart-sauce-labs-backpack"]'
+  - click:
+      selector: '[data-test="shopping-cart-link"]'
+  - assert:
+      selector: '[data-test="title"]'
+      text: "Your Cart"
+  - click:
+      selector: '[data-test="checkout"]'
+  - assert:
+      selector: '[data-test="title"]'
+      text: "Checkout: Your Information"
+  - input:
+      selector: '[data-test="firstName"]'
+      value: "Ada"
+  - input:
+      selector: '[data-test="lastName"]'
+      value: "Lovelace"
+  - input:
+      selector: '[data-test="postalCode"]'
+      value: "10001"
+  - click:
+      selector: '[data-test="continue"]'
+  - assert:
+      selector: '[data-test="title"]'
+      text: "Checkout: Overview"
+  - click:
+      target: "Green 'Finish' button below the order summary"
+  - assert:
+      selector: '[data-test="complete-header"]'
+      text: "Thank you for your order!"

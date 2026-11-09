@@ -1,0 +1,21 @@
+name: "Dialogs"
+description: "The alert, prompt, and confirm of the account page are answered"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/extras/dialogs.html"
+  - click:
+      selector: "#save"
+      dialog: { accept: true, message: "Profile saved" }
+  - click:
+      selector: "#rename"
+      dialog: { accept: true, text: "Swag Lover" }
+  - assert:
+      selector: "#display-name"
+      text: "Swag Lover"
+  - click:
+      selector: "#delete"
+      dialog: { accept: false }
+  - assert:
+      selector: "#status"
+      text: "Your account was kept."

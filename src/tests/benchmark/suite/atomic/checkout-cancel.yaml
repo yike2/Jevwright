@@ -1,0 +1,33 @@
+name: "Cancel on the checkout form"
+description: "Atomic case: cancel on the checkout form, found by target"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/"
+  - input:
+      selector: '[data-test="username"]'
+      value: "standard_user"
+  - input:
+      selector: '[data-test="password"]'
+      value: "{{SWAG_PASSWORD}}"
+  - click:
+      selector: '[data-test="login-button"]'
+  - waitFor:
+      url: "**/inventory.html"
+  - click:
+      selector: '[data-test="add-to-cart-sauce-labs-backpack"]'
+  - click:
+      selector: '[data-test="shopping-cart-link"]'
+  - assert:
+      selector: '[data-test="title"]'
+      text: "Your Cart"
+  - click:
+      selector: '[data-test="checkout"]'
+  - assert:
+      selector: '[data-test="title"]'
+      text: "Checkout: Your Information"
+  - click:
+      target: "'Cancel' button next to 'Continue' on the checkout form"
+  - assert:
+      selector: '[data-test="title"]'
+      text: "Your Cart"

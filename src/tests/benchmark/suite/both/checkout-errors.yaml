@@ -1,0 +1,54 @@
+name: "Checkout form errors"
+description: "Each missing field of the checkout form shows its error"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/"
+  - input:
+      selector: '[data-test="username"]'
+      target: "Username text field in the login form"
+      value: "standard_user"
+  - input:
+      selector: '[data-test="password"]'
+      target: "Password text field in the login form"
+      value: "{{SWAG_PASSWORD}}"
+  - click:
+      selector: '[data-test="login-button"]'
+      target: "Green 'Login' button below the password field"
+  - waitFor:
+      url: "**/inventory.html"
+  - click:
+      selector: '[data-test="add-to-cart-sauce-labs-backpack"]'
+      target: "'Add to cart' button of the Sauce Labs Backpack product card"
+  - click:
+      selector: '[data-test="shopping-cart-link"]'
+      target: "Shopping cart icon in the top-right corner of the header"
+  - click:
+      selector: '[data-test="checkout"]'
+      target: "Green 'Checkout' button on the cart page"
+  - click:
+      selector: "#continue-btn" # stale
+      target: "'Continue' button below the checkout form"
+  - assert:
+      selector: '[data-test="error"]'
+      text: "First Name is required"
+  - input:
+      selector: "#first-name-input" # stale
+      target: "'First Name' text field of the checkout form"
+      value: "Ada"
+  - click:
+      selector: '[data-test="continue"]'
+      target: "'Continue' button below the checkout form"
+  - assert:
+      selector: '[data-test="error"]'
+      text: "Last Name is required"
+  - input:
+      selector: '[data-test="lastName"]'
+      target: "'Last Name' text field of the checkout form"
+      value: "Lovelace"
+  - click:
+      selector: '[data-test="continue"]'
+      target: "'Continue' button below the checkout form"
+  - assert:
+      selector: '[data-test="error"]'
+      text: "Postal Code is required"

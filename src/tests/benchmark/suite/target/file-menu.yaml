@@ -1,0 +1,18 @@
+name: "File menu"
+description: "Right-click deletes a file and double-click opens one"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/extras/menus.html"
+  - rightClick:
+      target: "File 'packing-list.txt' in the file list"
+  - click:
+      target: "'Delete' item in the right-click menu"
+  - assert:
+      selector: "#status"
+      text: "Deleted packing-list.txt."
+  - doubleClick:
+      target: "File 'invoice-2026.pdf' in the file list"
+  - assert:
+      selector: "#status"
+      text: "Opened invoice-2026.pdf."
