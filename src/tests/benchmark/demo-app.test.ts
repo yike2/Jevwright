@@ -10,7 +10,8 @@ import { serveDemoApp } from "./server.js";
 const SITE = fileURLToPath(new URL("./demo-app/site/", import.meta.url));
 
 // An external stylesheet, script, image, frame, or CSS url() that a page would load on its own.
-const EXTERNAL = /<(?:link|script|img|iframe)\b[^>]*\b(?:href|src)=["']https?:|url\(\s*["']?https?:|@import\s+["']https?:/i;
+const EXTERNAL =
+  /<(?:link|script|img|iframe)\b[^>]*\b(?:href|src)=["']https?:|url\(\s*["']?https?:|@import\s+["']https?:/i;
 
 let app: Awaited<ReturnType<typeof serveDemoApp>>;
 beforeAll(async () => (app = await serveDemoApp()));
@@ -43,7 +44,10 @@ async function run(yaml: string) {
   if (!testCase) throw new Error(`Invalid test: ${JSON.stringify(diagnostics)}`);
   const vars = { BASE: app.baseUrl, SWAG_PASSWORD: "secret_sauce" };
   const { steps } = await execute(testCase, { headed: false, vars, onEvent: () => {}, jev: throwingJev });
-  return { statuses: steps.map(({ status }) => status), reasons: steps.flatMap((step) => ("reason" in step ? [step.reason] : [])) };
+  return {
+    statuses: steps.map(({ status }) => status),
+    reasons: steps.flatMap((step) => ("reason" in step ? [step.reason] : [])),
+  };
 }
 
 describe("the Swag Labs demo app", () => {

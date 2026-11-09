@@ -62,7 +62,11 @@ describe("runStep mapping", () => {
     ["open", { line: 2, action: "open", url: "/login" }, { action: "open", url: "/login" }],
     ["back", { line: 2, action: "back" }, { action: "back" }],
     ["forward", { line: 2, action: "forward" }, { action: "forward" }],
-    ["reload", { line: 2, action: "reload", dialog: { accept: false } }, { action: "reload", dialog: { accept: false } }],
+    [
+      "reload",
+      { line: 2, action: "reload", dialog: { accept: false } },
+      { action: "reload", dialog: { accept: false } },
+    ],
     ["press", { line: 2, action: "press", key: "Enter" }, { action: "press", key: "Enter" }],
     [
       "scroll",
@@ -84,8 +88,16 @@ describe("runStep mapping", () => {
       { line: 2, action: "click", selector: "#go", dialog: { accept: true } },
       { action: "click", element: { selector: "#go" }, dialog: { accept: true } },
     ],
-    ["doubleClick", { line: 2, action: "doubleClick", selector: "#a" }, { action: "doubleClick", element: { selector: "#a" } }],
-    ["rightClick", { line: 2, action: "rightClick", selector: "#a" }, { action: "rightClick", element: { selector: "#a" } }],
+    [
+      "doubleClick",
+      { line: 2, action: "doubleClick", selector: "#a" },
+      { action: "doubleClick", element: { selector: "#a" } },
+    ],
+    [
+      "rightClick",
+      { line: 2, action: "rightClick", selector: "#a" },
+      { action: "rightClick", element: { selector: "#a" } },
+    ],
     ["hover", { line: 2, action: "hover", selector: "#a" }, { action: "hover", element: { selector: "#a" } }],
     [
       "input",
@@ -188,7 +200,11 @@ describe("runStep results", () => {
   });
 
   it("sends the Adapter the step with its Variables filled in", async () => {
-    const { calls } = await run({ line: 2, action: "input", selector: "#p", value: "{{PASSWORD}}" }, {}, { PASSWORD: "s3cret" });
+    const { calls } = await run(
+      { line: 2, action: "input", selector: "#p", value: "{{PASSWORD}}" },
+      {},
+      { PASSWORD: "s3cret" },
+    );
 
     expect(calls).toContainEqual({
       method: "perform",
@@ -222,7 +238,10 @@ describe("runStep results", () => {
   it("lists the dialogs of ready() before those of the step's call", async () => {
     const { result } = await run(
       { line: 2, action: "click", selector: "#go" },
-      { ready: () => ({ ok: true, dialogs: [alert("first")] }), perform: () => ({ ok: true, dialogs: [alert("second")] }) },
+      {
+        ready: () => ({ ok: true, dialogs: [alert("first")] }),
+        perform: () => ({ ok: true, dialogs: [alert("second")] }),
+      },
     );
 
     expect(result).toMatchObject({ status: "passed", dialogs: [alert("first"), alert("second")] });
@@ -244,7 +263,10 @@ describe("runStep results", () => {
   it("keeps the step's reason and has no screenshot when the screenshot cannot be read", async () => {
     const { result } = await run(
       { line: 2, action: "back" },
-      { perform: () => failed("No page to go back to"), screenshot: () => ({ ok: false, reason: "The current tab was closed" }) },
+      {
+        perform: () => failed("No page to go back to"),
+        screenshot: () => ({ ok: false, reason: "The current tab was closed" }),
+      },
     );
 
     expect(result).toMatchObject({ status: "failed", reason: "No page to go back to" });
@@ -395,7 +417,11 @@ describe("runStep locator integration", () => {
 
   it("a non-LocateError thrown by the adapter propagates from runStep", async () => {
     const jev = makeJev();
-    const { adapter } = fakeAdapter({ snapshot: () => { throw new Error("Browser disconnected"); } });
+    const { adapter } = fakeAdapter({
+      snapshot: () => {
+        throw new Error("Browser disconnected");
+      },
+    });
 
     const step: Step = { line: 2, action: "click", target: "The Go button" };
     const redact = createRedact({ name: "t", timeoutMs: 1000, runTimeoutMs: 600000, steps: [step] }, {});
@@ -482,7 +508,12 @@ describe("runStep asserter integration", () => {
     const noul = vi.fn<JevClient["noul"]>(async () => ({ ok: true as const, data: { probability: 0.9 } }));
     const jev = makeJevWithNoul(noul);
     const { adapter } = fakeAdapter();
-    const step: Step = { line: 2, action: "assert", check: { selector: "h1", text: "Hi" }, statement: "A greeting is shown" };
+    const step: Step = {
+      line: 2,
+      action: "assert",
+      check: { selector: "h1", text: "Hi" },
+      statement: "A greeting is shown",
+    };
     const redact = createRedact({ name: "t", timeoutMs: 1000, runTimeoutMs: 600000, steps: [step] }, {});
 
     const result = await runStep(step, 3, { browser: adapter, vars: {}, redact, jev, timeoutMs: 1000 });
@@ -496,7 +527,12 @@ describe("runStep asserter integration", () => {
     const jev = makeJevWithNoul(noul);
     const checkDialogs = [alert("Check said no")];
     const { adapter } = fakeAdapter({ check: () => failed('Text of "h1" did not contain "Hi"', checkDialogs) });
-    const step: Step = { line: 2, action: "assert", check: { selector: "h1", text: "Hi" }, statement: "A greeting is shown" };
+    const step: Step = {
+      line: 2,
+      action: "assert",
+      check: { selector: "h1", text: "Hi" },
+      statement: "A greeting is shown",
+    };
     const redact = createRedact({ name: "t", timeoutMs: 1000, runTimeoutMs: 600000, steps: [step] }, {});
 
     const result = await runStep(step, 3, { browser: adapter, vars: {}, redact, jev, timeoutMs: 1000 });
@@ -509,7 +545,12 @@ describe("runStep asserter integration", () => {
     const jev = makeJevWithNoul(noul);
     const checkDialogs = [alert("Check said no")];
     const { adapter } = fakeAdapter({ check: () => failed('Text of "h1" did not contain "Hi"', checkDialogs) });
-    const step: Step = { line: 2, action: "assert", check: { selector: "h1", text: "Hi" }, statement: "A greeting is shown" };
+    const step: Step = {
+      line: 2,
+      action: "assert",
+      check: { selector: "h1", text: "Hi" },
+      statement: "A greeting is shown",
+    };
     const redact = createRedact({ name: "t", timeoutMs: 1000, runTimeoutMs: 600000, steps: [step] }, {});
 
     const result = await runStep(step, 3, { browser: adapter, vars: {}, redact, jev, timeoutMs: 1000 });

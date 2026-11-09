@@ -55,7 +55,9 @@ describe("buildReport", () => {
       reason: "Timed out after 1000 ms waiting for #go",
       screenshot: PNG,
     };
-    const { report, files } = buildReport(outcome({ steps: [passed(0, 3), failed, { index: 2, line: 7, action: "back", status: "pending" }] }));
+    const { report, files } = buildReport(
+      outcome({ steps: [passed(0, 3), failed, { index: 2, line: 7, action: "back", status: "pending" }] }),
+    );
 
     expect(report.status).toBe("failed");
     expect(report.summary).toEqual({ total: 3, passed: 1, failed: 1, pending: 1 });
@@ -109,4 +111,3 @@ describe("buildReport", () => {
     expect(files).toEqual([]);
   });
 });
-

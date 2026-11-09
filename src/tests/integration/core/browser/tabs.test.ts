@@ -69,7 +69,11 @@ describe("switchTab", () => {
       await browser.perform({ action: "click", element: { selector: "#help" } });
       await browser.perform({ action: "switchTab", url: "**/help.html" });
 
-      const result = await browser.perform({ action: "click", element: { selector: "#reset" }, dialog: { accept: true } });
+      const result = await browser.perform({
+        action: "click",
+        element: { selector: "#reset" },
+        dialog: { accept: true },
+      });
 
       expect(result).toEqual({
         ok: true,

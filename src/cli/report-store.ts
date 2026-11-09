@@ -28,10 +28,7 @@ export function createFileReportStore(dir: string): ReportStore {
         }
       } catch (error) {
         const code =
-          typeof error === "object" &&
-            error !== null &&
-            "code" in error &&
-            typeof error.code === "string"
+          typeof error === "object" && error !== null && "code" in error && typeof error.code === "string"
             ? error.code
             : "UNKNOWN";
         throw new ReportStoreError(dir, code);

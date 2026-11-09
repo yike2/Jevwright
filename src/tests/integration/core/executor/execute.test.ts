@@ -53,7 +53,12 @@ async function run(yaml: string): Promise<ExecuteResult> {
       throw new Error("Jev should not be called yet");
     },
   };
-  return execute(testCase, { headed: false, vars: { BASE: server.baseUrl, EMAIL: "student@x.com" }, onEvent: () => { }, jev });
+  return execute(testCase, {
+    headed: false,
+    vars: { BASE: server.baseUrl, EMAIL: "student@x.com" },
+    onEvent: () => {},
+    jev,
+  });
 }
 
 describe("execute", () => {
@@ -71,7 +76,11 @@ describe("execute", () => {
   it("fails an assert on a Variable with the value redacted, a screenshot, and the rest pending", async () => {
     const { steps } = await run(signIn("Goodbye {{EMAIL}}"));
 
-    expect(steps.map(({ status }) => status)).toEqual([...Array(4).fill("passed"), "failed", ...Array(3).fill("pending")]);
+    expect(steps.map(({ status }) => status)).toEqual([
+      ...Array(4).fill("passed"),
+      "failed",
+      ...Array(3).fill("pending"),
+    ]);
     const failed = steps[4]!;
     if (failed.status !== "failed") throw new Error("Step 5 did not fail");
     expect(failed.reason).toContain('did not contain "Goodbye {{EMAIL}}"');

@@ -59,7 +59,11 @@ async function act(step: Step, context: StepContext): Promise<Outcome> {
     case "hover": {
       if (step.target === undefined) {
         return {
-          result: await browser.perform({ action: step.action, element: { selector: step.selector }, dialog: step.dialog }),
+          result: await browser.perform({
+            action: step.action,
+            element: { selector: step.selector },
+            dialog: step.dialog,
+          }),
           locateMethod: "selector",
         };
       }

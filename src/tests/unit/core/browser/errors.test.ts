@@ -41,7 +41,12 @@ describe("withCleanup", () => {
     const cause = new Error("tracing.stop: Target closed");
     let cleaned = false;
 
-    await expect(withCleanup(() => Promise.reject(cause), async () => (cleaned = true))).rejects.toBe(cause);
+    await expect(
+      withCleanup(
+        () => Promise.reject(cause),
+        async () => (cleaned = true),
+      ),
+    ).rejects.toBe(cause);
     expect(cleaned).toBe(true);
   });
 
@@ -62,6 +67,11 @@ describe("withCleanup", () => {
   it("throws the cleanup error when only cleanup throws", async () => {
     const cleanupError = new Error("browser.close: Target closed");
 
-    await expect(withCleanup(async () => "trace", () => Promise.reject(cleanupError))).rejects.toBe(cleanupError);
+    await expect(
+      withCleanup(
+        async () => "trace",
+        () => Promise.reject(cleanupError),
+      ),
+    ).rejects.toBe(cleanupError);
   });
 });

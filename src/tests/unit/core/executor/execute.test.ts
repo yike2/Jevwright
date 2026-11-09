@@ -20,7 +20,11 @@ const testCase = (overrides: Partial<TestCase> = {}): TestCase => ({
 });
 
 // Runs `test` on a fake browser; returns the result, the Adapter calls, the launch options, and the events.
-async function run(test: TestCase, script: Parameters<typeof fakeAdapter>[0] = {}, options: Partial<ExecuteOptions> = {}) {
+async function run(
+  test: TestCase,
+  script: Parameters<typeof fakeAdapter>[0] = {},
+  options: Partial<ExecuteOptions> = {},
+) {
   const { adapter, calls } = fakeAdapter(script);
   const launches: LaunchOptions[] = [];
   const events: StepEvent[] = [];
@@ -35,7 +39,8 @@ async function run(test: TestCase, script: Parameters<typeof fakeAdapter>[0] = {
 
 // Fails the step whose action is `action`.
 const failOn = (action: string) => ({
-  perform: (step: { action: string }) => (step.action === action ? failed(`${action} failed`) : { ok: true as const, dialogs: [] }),
+  perform: (step: { action: string }) =>
+    step.action === action ? failed(`${action} failed`) : { ok: true as const, dialogs: [] },
 });
 
 afterEach(() => vi.useRealTimers());
@@ -50,11 +55,9 @@ describe("execute", () => {
   it("runs every step in order and returns their results with the trace", async () => {
     const { result, calls } = await run(testCase());
 
-    expect(calls.filter((call) => call.method === "perform").map((call) => "action" in call && call.action.action)).toEqual([
-      "open",
-      "click",
-      "back",
-    ]);
+    expect(
+      calls.filter((call) => call.method === "perform").map((call) => "action" in call && call.action.action),
+    ).toEqual(["open", "click", "back"]);
     expect(result.steps.map(({ index, line, status }) => ({ index, line, status }))).toEqual([
       { index: 0, line: 3, status: "passed" },
       { index: 1, line: 5, status: "passed" },
@@ -131,7 +134,10 @@ describe("execute", () => {
       { vars: { PASSWORD: "s3cret" } },
     );
 
-    expect(events.at(-1)).toMatchObject({ type: "finished", result: { reason: "Typed {{PASSWORD}} into a disabled field" } });
+    expect(events.at(-1)).toMatchObject({
+      type: "finished",
+      result: { reason: "Typed {{PASSWORD}} into a disabled field" },
+    });
   });
 
   it("leaves no Run timeout timer behind, so the process can exit", async () => {
@@ -145,9 +151,10 @@ describe("execute", () => {
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
     const launchError = new Error("Chromium did not start");
 
-    await execute(testCase(), { headed: false, vars: {}, onEvent: () => {}, jev: throwingJev }, () => Promise.reject(launchError)).catch(() => {});
+    await execute(testCase(), { headed: false, vars: {}, onEvent: () => {}, jev: throwingJev }, () =>
+      Promise.reject(launchError),
+    ).catch(() => {});
 
     expect(vi.getTimerCount()).toBe(0);
   });
 });
-

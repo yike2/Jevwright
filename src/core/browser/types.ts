@@ -31,8 +31,7 @@ export type DialogRecord = {
 };
 
 export type BrowserResult =
-  | { ok: true; dialogs: DialogRecord[] }
-  | { ok: false; reason: string; dialogs: DialogRecord[] };
+  { ok: true; dialogs: DialogRecord[] } | { ok: false; reason: string; dialogs: DialogRecord[] };
 
 export type ReadResult<T> = { ok: true; data: T } | { ok: false; reason: string };
 

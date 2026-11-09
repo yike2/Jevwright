@@ -18,7 +18,12 @@ export function buildReport(run: RunOutcome): ReportBundle {
   const files: ReportFile[] = hasTrace ? [{ path: TRACE_PATH, data: run.trace }] : [];
   const steps = run.steps.map((step) => toReportStep(step, files));
   const count = (status: StepResult["status"]) => run.steps.filter((step) => step.status === status).length;
-  const summary = { total: run.steps.length, passed: count("passed"), failed: count("failed"), pending: count("pending") };
+  const summary = {
+    total: run.steps.length,
+    passed: count("passed"),
+    failed: count("failed"),
+    pending: count("pending"),
+  };
   const report: Report = {
     file: run.file,
     name: run.testCase.name,

@@ -8,9 +8,17 @@ const testCase = (...steps: Step[]): TestCase => ({ name: "t", timeoutMs: 1000, 
 
 describe("substitute", () => {
   it.each<[string, Step, Step]>([
-    ["open url", { line: 1, action: "open", url: "{{BASE}}/login" }, { line: 1, action: "open", url: "https://demo.test/login" }],
+    [
+      "open url",
+      { line: 1, action: "open", url: "{{BASE}}/login" },
+      { line: 1, action: "open", url: "https://demo.test/login" },
+    ],
     ["press key", { line: 1, action: "press", key: "{{PASSWORD}}" }, { line: 1, action: "press", key: "s3cret" }],
-    ["switchTab url", { line: 1, action: "switchTab", url: "{{BASE}}/*" }, { line: 1, action: "switchTab", url: "https://demo.test/*" }],
+    [
+      "switchTab url",
+      { line: 1, action: "switchTab", url: "{{BASE}}/*" },
+      { line: 1, action: "switchTab", url: "https://demo.test/*" },
+    ],
     [
       "element selector and target",
       { line: 1, action: "click", selector: "[title='{{EMAIL}}']", target: "Row of {{EMAIL}}" },
@@ -23,19 +31,43 @@ describe("substitute", () => {
     ],
     [
       "dialog text and message",
-      { line: 1, action: "click", selector: "#go", dialog: { accept: true, text: "{{EMAIL}}", message: "Hi {{EMAIL}}" } },
-      { line: 1, action: "click", selector: "#go", dialog: { accept: true, text: "student@x.com", message: "Hi student@x.com" } },
+      {
+        line: 1,
+        action: "click",
+        selector: "#go",
+        dialog: { accept: true, text: "{{EMAIL}}", message: "Hi {{EMAIL}}" },
+      },
+      {
+        line: 1,
+        action: "click",
+        selector: "#go",
+        dialog: { accept: true, text: "student@x.com", message: "Hi student@x.com" },
+      },
     ],
     [
       "waitFor condition",
       { line: 1, action: "waitFor", condition: "{{EMAIL}} is shown" },
       { line: 1, action: "waitFor", condition: "student@x.com is shown" },
     ],
-    ["waitFor url", { line: 1, action: "waitFor", url: "{{BASE}}/home" }, { line: 1, action: "waitFor", url: "https://demo.test/home" }],
+    [
+      "waitFor url",
+      { line: 1, action: "waitFor", url: "{{BASE}}/home" },
+      { line: 1, action: "waitFor", url: "https://demo.test/home" },
+    ],
     [
       "assert check and statement",
-      { line: 1, action: "assert", check: { selector: "#user", text: "{{EMAIL}}" }, statement: "{{EMAIL}} is logged in" },
-      { line: 1, action: "assert", check: { selector: "#user", text: "student@x.com" }, statement: "student@x.com is logged in" },
+      {
+        line: 1,
+        action: "assert",
+        check: { selector: "#user", text: "{{EMAIL}}" },
+        statement: "{{EMAIL}} is logged in",
+      },
+      {
+        line: 1,
+        action: "assert",
+        check: { selector: "#user", text: "student@x.com" },
+        statement: "student@x.com is logged in",
+      },
     ],
     [
       "assert url check",
@@ -74,7 +106,10 @@ describe("substitute", () => {
 
 describe("createRedact", () => {
   it("puts {{NAME}} back for the value of a Variable used in the TestCase", () => {
-    const redact = createRedact(testCase({ line: 1, action: "assert", check: { selector: "#u", text: "{{EMAIL}}" } }), vars);
+    const redact = createRedact(
+      testCase({ line: 1, action: "assert", check: { selector: "#u", text: "{{EMAIL}}" } }),
+      vars,
+    );
 
     expect(redact('Text of "#u" did not contain "student@x.com"')).toBe('Text of "#u" did not contain "{{EMAIL}}"');
   });
@@ -116,7 +151,9 @@ describe("createRedact", () => {
       TOKEN: "a b&c",
     });
 
-    expect(redact("Timeout waiting for http://x.test/cb?t=a%20b%26c")).toBe("Timeout waiting for http://x.test/cb?t={{TOKEN}}");
+    expect(redact("Timeout waiting for http://x.test/cb?t=a%20b%26c")).toBe(
+      "Timeout waiting for http://x.test/cb?t={{TOKEN}}",
+    );
   });
 
   it("matches values with regular expression characters literally", () => {
@@ -134,7 +171,9 @@ describe("createRedact", () => {
   });
 
   it("ignores Variables whose value is empty", () => {
-    const redact = createRedact(testCase({ line: 1, action: "input", selector: "#n", value: "{{EMPTY}}" }), { EMPTY: "" });
+    const redact = createRedact(testCase({ line: 1, action: "input", selector: "#n", value: "{{EMPTY}}" }), {
+      EMPTY: "",
+    });
 
     expect(redact("reason")).toBe("reason");
   });

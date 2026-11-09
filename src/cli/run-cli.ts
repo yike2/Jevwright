@@ -161,10 +161,7 @@ async function runValidate(invocation: ValidateInvocation, io: CliIo): Promise<n
     if (invalidCount === 0) {
       writeStdoutLine(io, formatValidatePassed(expanded.files.length));
     } else {
-      const diagnosticCount = diagnosticsByFile.reduce(
-        (sum, result) => sum + result.diagnostics.length,
-        0,
-      );
+      const diagnosticCount = diagnosticsByFile.reduce((sum, result) => sum + result.diagnostics.length, 0);
       writeStdoutLine(io, formatValidateFailed(diagnosticCount));
     }
   }

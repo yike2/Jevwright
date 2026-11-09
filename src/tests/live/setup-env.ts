@@ -4,5 +4,5 @@ import { resolve } from "node:path";
 const envFilePath = resolve(process.cwd(), ".env");
 
 if (existsSync(envFilePath) && typeof process.loadEnvFile === "function") {
-    process.loadEnvFile(envFilePath);
+  process.loadEnvFile(envFilePath);
 }
