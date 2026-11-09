@@ -8,7 +8,7 @@ import json
 import os
 
 P = [
-    ("api", "backend", "API + Worker", "queue · WebSocket"),
+    ("api", "backend", "Express Backend", "Run Queue · WebSocket"),
     ("pipeline", "backend", "Run Pipeline", "orchestration"),
     ("syntax", "backend", "Syntax", "YAML parsing"),
     ("executor", "backend", "Executor", "runs a TestCase"),
@@ -23,11 +23,11 @@ P = [
 # "Alt —" stages are failure branches; the main path continues after them.
 M = [
     ("Dequeue",),
-    ("api", "pipeline", "run(yaml, onEvent)", "emphasis", "Web UI POSTs /runs; Worker calls after dequeue"),
+    ("api", "pipeline", "run(yaml, onEvent)", "emphasis", "POST /test-files/:id/runs queues it; the Run Queue calls after dequeue"),
     ("pipeline", "syntax", "analyze(yaml)", "default", None),
     ("Alt — invalid YAML",),
     ("syntax", "pipeline", "Diagnostic[] (line)", "return", None),
-    ("pipeline", "api", "Run failed: diagnostics", "return", "Run ends here; no browser is launched"),
+    ("pipeline", "api", "Run failed: diagnostics", "return", "The Backend answers 422 before queuing; the CLI prints them"),
     ("Parse OK",),
     ("syntax", "pipeline", "TestCase", "return", None),
     ("Step 1: click (selector misses, visual fails)",),
@@ -49,7 +49,7 @@ M = [
     ("executor", "driver", "click(position)", "default", None),
     ("driver", "executor", "ok", "return", None),
     ("executor", "pipeline", "onEvent(step1 passed)", "dashed", None),
-    ("pipeline", "api", "onEvent(step1 passed)", "dashed", "Pushed to Web UI over WebSocket"),
+    ("pipeline", "api", "onEvent(step1 passed)", "dashed", "Step screenshot saved; pushed over WebSocket with its URL"),
     ("Alt — DOM locate or action fails",),
     ("locator", "executor", "not found", "return", "Or the adapter returns a timeout on the action"),
     ("executor", "driver", "screenshot()", "default", None),
@@ -83,7 +83,7 @@ M = [
     ("executor", "pipeline", "StepResult[] · trace", "return", None),
     ("pipeline", "report", "buildReport(steps, trace, error?)", "default", None),
     ("report", "pipeline", "Report Bundle (passed / failed)", "return", "report.json · trace.zip · screenshots"),
-    ("pipeline", "api", "Report Bundle", "return", "Worker saves it with its Report Store and pushes Run passed / failed"),
+    ("pipeline", "api", "Report Bundle", "return", "Report into Postgres, files onto the volume; final status pushed"),
 ]
 
 STEP, NOTE_STEP, SEG_GAP = 44, 84, 26
