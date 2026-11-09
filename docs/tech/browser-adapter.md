@@ -52,10 +52,10 @@ Each method returns a `ReadResult`: `{ ok: true, data }`, or `{ ok: false, reaso
 
 `snapshot()` runs one script in the current tab:
 
-1. Remove `data-jev-id` from every element, so ids from the previous snapshot cannot match.
-2. Collect the elements matching `INTERACTIVE_SELECTOR` (links with `href`, buttons, inputs other than `hidden`, `select`, `textarea`, `summary`, elements with an interactive ARIA `role`, and elements with a non-negative `tabindex`).
+1. Remove `data-jev-id` from every element, inside open shadow roots too, so ids from the previous snapshot cannot match.
+2. Collect the elements matching `INTERACTIVE_SELECTOR`, in the document and in every open shadow root, nested ones included (links with `href`, buttons, inputs other than `hidden`, `select`, `textarea`, `summary`, elements with an interactive ARIA `role`, and elements with a non-negative `tabindex`).
 3. Keep an element only when its box has a non-zero size, intersects the viewport, and `checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })` is true.
-4. Number the kept elements from `0` in DOM order and write the number to `data-jev-id`.
+4. Number the kept elements from `0` in DOM order, with a shadow root's elements right after its host, and write the number to `data-jev-id`. Playwright CSS selectors pierce open shadow roots, so `[data-jev-id="<id>"]` reaches them.
 
 Each element is described by:
 
@@ -68,11 +68,11 @@ Each element is described by:
 | `text` | Visible text with whitespace collapsed; omitted when empty or equal to `name` |
 | `attrs` | `type`, `placeholder`, `href`, `aria-checked`, `aria-selected`, `aria-current`, `aria-invalid` when present; `value` of a field when non-empty (not of checkboxes, radios, or button inputs); `checked` for checkboxes and radios; `disabled: true` when disabled |
 | `bbox` | `{ x, y, width, height }` in CSS pixels relative to the viewport, rounded |
-| `hittable` | `true` when `elementFromPoint` at the center of the box's part inside the viewport is the element, a descendant, or a `<label>` whose control is the element; `false` when something covers it (e.g. a modal backdrop) |
+| `hittable` | `true` when `elementFromPoint` at the center of the box's part inside the viewport, followed into open shadow roots, is the element, a descendant, or a `<label>` whose control is the element; `false` when something covers it (e.g. a modal backdrop) |
 
 Only the viewport is captured, matching the viewport screenshot. To reach an element below the fold, the test scrolls first.
 
-Known limitations: elements inside iframes and closed shadow roots are not collected.
+Known limitations: elements inside iframes and closed shadow roots are not collected; page scripts cannot reach a closed shadow root.
 
 ### 1.6 Actions
 
@@ -365,8 +365,8 @@ Browser tests launch real headless Chromium against local HTML pages served by `
 | Unit | `errors`: `TimeoutError` and selector errors become results; errors after disconnect are thrown | `src/tests/unit/core/browser/errors.test.ts` |
 | Unit | `dialogs`: a dialog that cannot be answered fails the step and still releases the waiting action | `src/tests/unit/core/browser/dialogs.test.ts` |
 | Integration | Lifecycle: screenshot size equals the viewport, trace zip returned by `close()`, `ready()` waiting for `load` after a click, calls after the browser is gone throw, Chromium closed when launching fails | `src/tests/integration/core/browser/launch.test.ts` |
-| Integration | Every action in 1.6, including `back` with no history, `back` across origins, an invalid key, and a click on a covered element timing out | `src/tests/integration/core/browser/actions.test.ts` |
-| Integration | Reads: `isVisible` visible, hidden, invalid selector; every read after the current tab closed; reads leave dialogs for the step result. Snapshot: viewport-only, hidden elements skipped, roles, names, text and attrs, `hittable: false` when covered, ids cleared between snapshots | `src/tests/integration/core/browser/snapshot.test.ts` |
+| Integration | Every action in 1.6, including `back` with no history, `back` across origins, an invalid key, a click on a covered element timing out, and a click by snapshot id inside a nested shadow root | `src/tests/integration/core/browser/actions.test.ts` |
+| Integration | Reads: `isVisible` visible, hidden, invalid selector; every read after the current tab closed; reads leave dialogs for the step result. Snapshot: viewport-only, hidden elements skipped, roles, names, text and attrs, `hittable: false` when covered, ids cleared between snapshots; elements inside open and nested shadow roots collected and hittable, closed ones not | `src/tests/integration/core/browser/snapshot.test.ts` |
 | Integration | Dialogs: accept, dismiss, prompt text, `message` match and mismatch, expected dialog missing, Unexpected dialog during a step and between steps | `src/tests/integration/core/browser/dialogs.test.ts` |
 | Integration | Tabs: switch to a `target=_blank` tab and back, ambiguous match, timeout, closed current tab | `src/tests/integration/core/browser/tabs.test.ts` |
 | Integration | Checks: `visible`, `text`, and `url` pass and fail; first-match rule; `url` matches like `switchTab` | `src/tests/integration/core/browser/checks.test.ts` |

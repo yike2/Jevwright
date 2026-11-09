@@ -212,3 +212,30 @@ describe("an element action on a covered element", () => {
       expect(result).toEqual({ ok: false, reason: expect.stringContaining("Timeout 2000ms"), dialogs: [] });
     }));
 });
+
+describe("click by snapshot id inside a shadow root", () => {
+  it("clicks the element in the nested shadow root", () =>
+    run(async (browser) => {
+      await browser.perform({ action: "open", url: "/shadow.html" });
+      const { elements } = data(await browser.snapshot());
+      const inner = elements.find((e) => e.name === "Inner");
+
+      expect(inner).toBeDefined();
+      expect(await browser.perform({ action: "click", element: { snapshotId: inner?.id ?? -1 } })).toEqual(passed);
+      expect(await browser.check({ check: "text", selector: "#clicked", text: "Clicked Inner" })).toEqual(passed);
+    }));
+
+  it("clears the ids an earlier snapshot wrote inside shadow roots", () =>
+    run(async (browser) => {
+      await browser.perform({ action: "open", url: "/shadow.html" });
+      await browser.snapshot();
+      await browser.perform({ action: "click", element: { selector: "#hide-outer" } });
+      const { elements } = data(await browser.snapshot());
+      const inner = elements.find((e) => e.name === "Inner");
+
+      // Outer is hidden now, so Inner takes its id; a stale mark on Outer would make the id match two elements.
+      expect(inner?.id).toBe(2);
+      expect(await browser.perform({ action: "click", element: { snapshotId: 2 } })).toEqual(passed);
+      expect(await browser.check({ check: "text", selector: "#clicked", text: "Clicked Inner" })).toEqual(passed);
+    }));
+});
