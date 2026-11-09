@@ -10,7 +10,7 @@ describe("judge", () => {
     it("holds at exactly the pass threshold", async () => {
         const image = Buffer.from("shot-1");
         const screenshot = vi.fn<BrowserAdapter["screenshot"]>(async () => ({ ok: true, data: image }));
-        const noul = vi.fn<JevClient["noul"]>(async (_question: string, context: { image: Buffer } | { text: string }) => ({
+        const noul = vi.fn<JevClient["noul"]>(async (_question: string, _context: { image: Buffer } | { text: string }) => ({
             ok: true,
             data: { probability: 0.8 },
         }));

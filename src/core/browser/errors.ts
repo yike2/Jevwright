@@ -19,6 +19,7 @@ export async function withCleanup<T>(run: () => Promise<T>, cleanup: () => Promi
     try {
       await cleanup();
     } catch (cleanupError) {
+      // eslint-disable-next-line preserve-caught-error -- both errors are kept in `errors`      
       throw new AggregateError([error, cleanupError], firstLine(error));
     }
     throw error;

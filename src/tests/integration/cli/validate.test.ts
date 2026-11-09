@@ -100,7 +100,7 @@ describe("cli validate", () => {
 
             expect(exitCode).toBe(2);
             expect(stdout()).toBe(
-                '[\n  {\n    "file": "broken.yaml",\n    "code": "E005",\n    "message": "Unknown action \\\"aiAct\\\"",\n    "line": 3\n  }\n]\n',
+                '[\n  {\n    "file": "broken.yaml",\n    "code": "E005",\n    "message": "Unknown action \\"aiAct\\"",\n    "line": 3\n  }\n]\n',
             );
             expect(stderr()).toBe("");
         } finally {

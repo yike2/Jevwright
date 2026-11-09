@@ -12,7 +12,6 @@ import { execute } from "@/core/executor/index.js";
 import { runTest } from "@/core/pipeline/run-test.js";
 import type { RunTestResult } from "@/core/pipeline/types.js";
 import type { Report, ReportStore } from "@/core/report/index.js";
-import { analyze } from "@/core/syntax/index.js";
 
 const VALID_SOURCE = `name: "Demo"
 steps:

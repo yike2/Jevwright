@@ -7,5 +7,13 @@ export default defineConfig(
   globalIgnores(["jevwright-reports/", "scratch/", "src/tests/benchmark/demo-app/"]),
   js.configs.recommended,
   tseslint.configs.recommended,
+  {
+    rules: {
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_", ignoreRestSiblings: true },
+      ],
+    },
+  },  
   prettier,
 );

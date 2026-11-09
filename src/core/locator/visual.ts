@@ -1,4 +1,4 @@
-import type { BoundingBox, BrowserAdapter, ElementRef, PageSnapshot, SnapshotElement } from "@/core/browser/index.js";
+import type { BoundingBox, BrowserAdapter, SnapshotElement } from "@/core/browser/index.js";
 import type { JevClient } from "@/core/jev/index.js";
 import { CONFIDENCE_THRESHOLD } from "./constants.js";
 import type { LocateRequest, StageResult } from "./types.js";
