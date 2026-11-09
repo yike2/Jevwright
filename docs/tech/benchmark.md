@@ -13,6 +13,7 @@ The Benchmark is the Demo App and the suite of `.yaml` test files that run again
 | **Flow** | One user journey through the Demo App, such as checking out, written as one test file |
 | **Locating mode** | How a suite file finds its elements: `selector` only, `target` only, or `both` (`syntax-analyzer.md` 1.1) |
 | **Atomic case** | A test file that tests locating one hard element by `target`, with every other step by `selector` |
+| **Tag** | A word in a case's `# tags:` comment that names what makes the case hard, such as `offscreen` |
 | **Assert case** | A test file whose elements are found by `selector` and whose last step is judged by Jev |
 | **Stale selector** | A `selector` in `both/` that names its element the way an older version of the page might have, so it matches nothing and Jev locates the `target` |
 | **Benchmark run** | One run of every file of the suite, summed up as pass rates, judging accuracy, and latency |
@@ -88,22 +89,24 @@ Sorting uses the keyboard, because the syntax has no action that picks a `<selec
 
 #### Atomic Cases
 
-An Atomic case signs in and navigates by `selector`, then runs one element action by `target`, then checks its effect with a Playwright `assert`, so its outcome shows whether the right element was found. About 40 Atomic cases are named `<page>-<element>.yaml`:
+An Atomic case signs in and navigates by `selector`, then runs one element action by `target`, then checks its effect with a Playwright `assert`, so its outcome shows whether the right element was found. About 80 Atomic cases are named `<page>-<element>.yaml`, or `<page>-<element>-<style>.yaml` when one element is described in several Description styles:
 
 | Page | Hard elements |
 | ---- | ------------- |
 | Sign-in | The fields and button, the close button of the error |
-| Product list | The "Add to cart" of one product among six alike, a product image, the sort box, the cart icon and badge, the menu button |
-| Product detail, cart, checkout | "Back to products", "Remove" of one item among several, the form fields, "Continue", "Cancel", "Finish" |
-| Side menu | Each menu item, the close button |
+| Product list | The "Add to cart", image, and name of one product among six alike, the sort box, the cart icon and badge, the menu button |
+| Product detail, cart, checkout | "Back to products", "Remove" of one item among several, the form fields, "Continue", "Cancel", "Finish", "Checkout" below a long cart |
+| Side menu | Each menu item right after the menu opens, the close button |
+| Dynamic pages | The slider dots while the slider turns |
+| `visual_user` pages | The moved cart icon, the rotated menu button, the misaligned "Add to cart", the moved "Checkout" |
 | Shadow roots | An element inside an open shadow root, and one inside a nested shadow root (`/shadow-dom/`) |
-| Extra pages | A menu item that shows on hover, an item of the right-click menu |
+| Extra pages | A menu item that shows on hover, an item of the right-click menu, a file to double-click |
 
 Elements inside iframes are not part of the suite, because the Page Snapshot does not enter frames. The shadow-root cases need the Page Snapshot to enter open shadow roots (#59); closed shadow roots stay out.
 
 #### Assert Cases
 
-An Assert case signs in and navigates by `selector`, then ends with one step that Jev judges: an `assert` with only a `statement`, or in `holds/` a `waitFor` with a `condition`. About 10 Assert cases in each folder are named `<page>-<what>.yaml`:
+An Assert case signs in and navigates by `selector`, then ends with one step that Jev judges: an `assert` with only a `statement`, or in `holds/` a `waitFor` with a `condition`. About 20 Assert cases in each folder are named `<page>-<what>.yaml`:
 
 | Folder | Last step | Judged right when |
 | ------ | --------- | ----------------- |
@@ -112,20 +115,58 @@ An Assert case signs in and navigates by `selector`, then ends with one step tha
 
 `fails/` has no `waitFor` `condition`: Jev polls a false condition until the step times out.
 
+#### Tags
+
+Every Atomic and Assert case starts with a `# tags:` comment that lists what makes it hard, so the Benchmark run can give a rate per tag:
+
+```yaml
+# tags: button, repeated, offscreen, by-relation
+name: "Add the Onesie among six products"
+```
+
+| Dimension | Tag | The case |
+| --------- | --- | -------- |
+| Element (Atomic, exactly one) | `button`, `link`, `field`, `icon`, `image`, `dropdown`, `menu-item` | Acts on that kind of element; `icon` is a control with no visible text |
+| Crowd | `repeated` | Has several elements alike, such as six "Add to cart" buttons |
+| | `small` | Acts on an element under 24 px on a side |
+| Place | `offscreen` | Acts on an element outside the viewport when the step starts |
+| | `overlay` | Acts inside a side menu, a hover menu, or a right-click menu |
+| | `shadow` | Acts inside a shadow root |
+| Page state | `animating` | Starts while the page still moves, such as a menu sliding in |
+| | `dynamic` | Acts on content that changes by itself, such as a turning slider |
+| | `changed-layout` | Runs on a `visual_user` page |
+| Description (Atomic, exactly one) | `by-text` | The `target` names the element's visible text or label |
+| | `by-look` | The `target` names its look and place, not its text |
+| | `by-relation` | The `target` names it through another element, such as "of the Onesie card" |
+| | `vague` | The `target` is short and loose, as a hurried user would write it |
+| Fact (Assert, at least one) | `count`, `price`, `state`, `text`, `visual`, `negation` | Judges a number of things, a price or total, a control's state, words on the page, colors or layout, or a "no" or "not" statement |
+
+Every tag is on at least five cases.
+
 #### Variables
 
 Test files use two Variables: `{{BASE}}`, the Demo App's base URL, and `{{SWAG_PASSWORD}}`, the password. `.env.example` lists `SWAG_PASSWORD`.
 
 ### 1.6 Benchmark Run
 
-`pnpm benchmark` serves the Demo App, sets `BASE` to its URL, runs every folder of the suite once with the CLI (#11), and sums up the Reports it writes:
+`pnpm benchmark` serves the Demo App, sets `BASE` to its URL, runs every folder of the suite once with the CLI (#11), and sums up the Reports it writes. `pnpm benchmark target both` runs only the folders it names.
+
+A file is right when it passes, or, in `assert/fails/`, when it fails at its last step. A file that is not right on its first try runs once more, so each file ends:
+
+| Outcome | Means |
+| ------- | ----- |
+| `stable` | Right on the first try |
+| `flaky` | Right only on the retry |
+| `wrong` | Not right on either try |
 
 | Metric | Per | From |
 | ------ | --- | ---- |
-| Pass rate | Folder (`selector/`, `target/`, `both/`, `atomic/`) and Flow group | Report `status` |
-| Judging accuracy | `assert/` | Whether each file passed (`holds/`) or failed at its last step (`fails/`) |
-| Jev step latency | Average and slowest, by `visual`, `dom`, and judged step | `durationMs` of every Jev step |
-| Failures | Each failed file | Its failed step and `reason` |
+| Pass rate | Folder (`selector/`, `target/`, `both/`, `atomic/`) and Flow group | Outcomes: `stable` and `flaky` count as passed, and `flaky` is also counted alone |
+| Judging accuracy | `holds/`, `fails/`, both | Outcomes, as for pass rate |
+| Tag rate | Each tag | Outcomes of the Atomic and Assert cases with that tag |
+| Jev step latency | Average and slowest, by `visual`, `dom`, and judged step | `durationMs` of every Jev step of every try |
+| Cases | Each file | Its tags and outcome, so two Benchmark runs can be compared file by file |
+| Failures | Each `wrong` or `flaky` file | The failed step and `reason` of its first try |
 
 A Jev step is an element action whose `locateMethod` is `visual` or `dom`, an `assert` with only a `statement`, or a `waitFor` with a `condition`. Its latency is the whole step's `durationMs`; in `both/` it includes the selector probe, since that is what a user waits for.
 
@@ -169,7 +210,7 @@ function serveDemoApp(): Promise<{ baseUrl: string; stop: () => Promise<void> }>
 | `demo-app/backtrace-stub.jsx` | Stands in for `@backtrace/react` in the build |
 | `demo-app/vite.config.jevwright.mjs` | Adds the stub to the upstream Vite config |
 | `suite.test.ts` | Checks the suite (5) |
-| `benchmark.ts` | `pnpm benchmark`: serves the Demo App, runs each folder with the CLI, writes the summary |
+| `benchmark.ts` | `pnpm benchmark`: serves the Demo App, runs each folder with the CLI, retries the files that are not right, writes the summary |
 | `summary.ts` | Sums up Reports into the metrics of 1.6; no I/O |
 
 ### 4.2 Directory Layout
@@ -207,8 +248,8 @@ src/tests/benchmark/
 | ---- | -------- | -------- |
 | Integration | `serveDemoApp()`: `index.html` at the root, a script with a JavaScript type, `index.html` for a client route, an extra page under `/extras/` | `src/tests/benchmark/server.test.ts` |
 | Integration | With the Executor and the real browser: signing in as `standard_user`; the alert, prompt, and confirm; a new tab; hover, right-click, and double-click. No page or stylesheet of the build loads anything from outside localhost | `src/tests/benchmark/demo-app.test.ts` |
-| Integration | The suite: every file has no diagnostics; every Flow of `selector/` is also in `target/` and `both/` with the same steps apart from locating; every `both/` Flow has one to three `# stale` selectors; every `selector/` file passes with the Executor against the Demo App | `src/tests/benchmark/suite.test.ts` |
-| Unit | `summary.ts`: pass rate per folder and Flow group, judging accuracy of `holds/` and `fails/` (a `fails/` file that fails before its last step is judged wrong), Jev step latency by method, the failed files | `src/tests/benchmark/summary.test.ts` |
+| Integration | The suite: every file has no diagnostics; every Flow of `selector/` is also in `target/` and `both/` with the same steps apart from locating; every `both/` Flow has one to three `# stale` selectors; every Atomic and Assert case has tags as in 1.5, and every tag is on at least five cases; every `selector/` file passes with the Executor against the Demo App | `src/tests/benchmark/suite.test.ts` |
+| Unit | `summary.ts`: outcomes from the first try and the retry, pass rate per folder and Flow group, judging accuracy of `holds/` and `fails/` (a `fails/` file that fails before its last step is not right), tag rates, Jev step latency by method, the cases, the failures | `src/tests/benchmark/summary.test.ts` |
 | Benchmark | `pnpm benchmark` with the real Jev; not run in CI | `src/tests/benchmark/benchmark.ts` |
 
 ## 6. Delivery
