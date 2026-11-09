@@ -21,6 +21,7 @@ This document describes what the product must do and how users interact with it.
 | 0.3.2   | 2026-10-30 | Zhimin Gan          | Linked the architecture and run sequence diagrams; moved the UI prototype link to GitHub Pages |
 | 0.3.3   | 2026-11-02 | Zhimin Gan          | Validation errors report file and line only, no column |
 | 0.3.4   | 2026-11-02 | Zhimin Gan          | Removed the indentation rules from the YAML syntax definition |
+| 0.4     | 2026-11-09 | Zhimin Gan          | Removed the Run rate limit; access to another user's data answers not found |
 
 ### 1.4 Key Concepts
 
@@ -142,10 +143,10 @@ However, existing AI testing tools (such as Midscene) rely on heavy general-purp
     - **Given** a local test file, **When** the developer runs the CLI `run` command, **Then** the Core runner executes locally, persists a structured `.json` report, a Playwright trace file, and error information (if an error occurs) to disk, and exits with code `0` on pass or non-zero on failure.
 
 #### 4.3.7 Authentication and Access
-- **US-4.3.7 (Must)**: *As a Platform Owner, I want users to authenticate with email and password and be rate-limited when triggering cloud runs, so that each user's projects are isolated and the platform's shared Jev API key is protected.*
+- **US-4.3.7 (Must)**: *As a Platform Owner, I want users to authenticate with email and password before they reach projects or trigger cloud runs, so that each user's projects are isolated and only known users spend the platform's shared Jev API key.*
   - **Acceptance Criteria**:
     - **Given** an unauthenticated visitor, **When** they attempt to access projects or trigger a cloud Run via Web UI or API, **Then** access is denied (`401 Unauthorized`) and redirected to Login.
-    - **Given** a logged-in user who exceeds the configured Run rate limit, **When** they trigger another Run, **Then** the request is rejected with `429 Too Many Requests` and a clear cooldown message.
+    - **Given** a logged-in user, **When** they request another user's project, test file, or Run, **Then** it is answered as not found (`404`).
 
 #### 4.3.8 Public API for AI Agents and CI
 - **US-4.3.8 (Must)**: *As an External Agent or CI script, I want a documented REST API to upload test files, trigger runs, and fetch reports, so that AI coding agents and automated pipelines can generate and run tests programmatically.*
@@ -217,7 +218,7 @@ The Core Module is the shared execution engine used by both the local CLI and th
 - **Screenshots and Reports (`test screenshots and reports`)**: Store step screenshots, logs, and generated reports for historical viewing and download.
 
 #### 5.3.3 User Account and Access Control
-- **Authentication & Usage Protection**: Support user registration and login, isolate project data by account, and restrict cloud test runs to authenticated users with usage limits.
+- **Authentication & Access Control**: Support user registration and login, isolate project data by account, and restrict cloud test runs to authenticated users.
 
 #### 5.3.4 Public API
 - **Programmatic Access & API Documentation**: Expose documented HTTP APIs (with OpenAPI/Swagger documentation) so frontend clients, scripts, and External Agents can manage `.yaml` test files, trigger runs, and retrieve reports.
@@ -272,7 +273,7 @@ The Core Module is the shared execution engine used by both the local CLI and th
 | Must     | Test File Storage (`Project -> Module -> Test File`)               | 5.3.2       | Persists the test suite hierarchy; required by US-4.3.3.                                                                                                                                                                                                            |
 | Must     | Run History Storage                                                | 5.3.2       | Backs the Test History view; required by US-4.3.5.                                                                                                                                                                                                                  |
 | Must     | Screenshots, Logs, and Reports Storage                             | 5.3.2       | Provides visual evidence for diagnosing failures; required by US-4.3.5.                                                                                                                                                                                             |
-| Must     | User Authentication, Account Isolation & Run Rate Limiting         | 5.3.3       | Protects user data and the shared Jev API key; required by US-4.3.7.                                                                                                                                                                                                |
+| Must     | User Authentication & Account Isolation                            | 5.3.3       | Protects user data and the shared Jev API key; required by US-4.3.7.                                                                                                                                                                                                |
 | Must     | Public API with OpenAPI/Swagger Documentation                      | 5.3.4       | Enables External Agents and CI scripts to integrate programmatically; required by US-4.3.8.                                                                                                                                                                         |
 | Must     | Workspace Sidebar (Project / Module / File Tree)                   | 5.4.1       | Primary navigation for test management in the Web UI; required by US-4.3.3.                                                                                                                                                                                         |
 | Must     | In-Browser YAML File Editor                                        | 5.4.2       | Lets Testers create, edit, upload, validate, and run Test Cases; required by US-4.3.3.                                                                                                                                                                              |
