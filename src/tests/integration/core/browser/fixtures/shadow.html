@@ -19,6 +19,6 @@
   closed.innerHTML = "<button>Closed</button>";
   document.getElementById("hide-outer").addEventListener("click", () => (open.getElementById("outer").hidden = true));
   for (const root of [open, inner]) {
-    root.addEventListener("click", (event) => (clicked.textContent = `Clicked ${event.target.textContent}`));
+    root.addEventListener("click", (event) => (clicked.textContent = `Clicked ${event.composedPath()[0].textContent}`));
   }
 </script>
