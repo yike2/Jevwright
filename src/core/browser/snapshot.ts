@@ -54,7 +54,7 @@ function collect(interactive: string): SnapshotElement[] {
       clean(
         labelledBy
           ?.split(/\s+/)
-          .map((id) => document.getElementById(id)?.textContent)
+          .map((id) => (el.getRootNode() as Document | ShadowRoot).getElementById(id)?.textContent)
           .join(" "),
       ) ||
       clean([...(labels ?? [])].map((label) => label.textContent).join(" ")) ||
@@ -90,13 +90,26 @@ function collect(interactive: string): SnapshotElement[] {
     // The center of the part inside the viewport, since elementFromPoint finds nothing outside it.
     const x = (Math.max(r.left, 0) + Math.min(r.right, innerWidth)) / 2;
     const y = (Math.max(r.top, 0) + Math.min(r.bottom, innerHeight)) / 2;
-    const hit = document.elementFromPoint(x, y);
+    // elementFromPoint stops at a shadow host, so look on inside each open shadow root.
+    let hit = document.elementFromPoint(x, y);
+    while (hit?.shadowRoot) {
+      const inner = hit.shadowRoot.elementFromPoint(x, y);
+      if (!inner || inner === hit) break;
+      hit = inner;
+    }
     // A click on a <label> reaches its control, so a label on top still counts.
     return !!hit && (el === hit || el.contains(hit) || (hit instanceof HTMLLabelElement && hit.control === el));
   };
+  // Every element matching `selector`, in document order, including inside open shadow roots; closed ones are
+  // out of reach of page scripts.
+  const deepQuery = (root: Document | ShadowRoot, selector: string): HTMLElement[] =>
+    [...root.querySelectorAll<HTMLElement>("*")].flatMap((el) => [
+      ...(el.matches(selector) ? [el] : []),
+      ...(el.shadowRoot ? deepQuery(el.shadowRoot, selector) : []),
+    ]);
   // Ids from an earlier snapshot would make `[data-jev-id]` match two elements.
-  for (const el of document.querySelectorAll("[data-jev-id]")) el.removeAttribute("data-jev-id");
-  const kept = [...document.querySelectorAll<HTMLElement>(interactive)].filter(
+  for (const el of deepQuery(document, "[data-jev-id]")) el.removeAttribute("data-jev-id");
+  const kept = deepQuery(document, interactive).filter(
     (el) =>
       inViewport(el.getBoundingClientRect()) && el.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true }),
   );
