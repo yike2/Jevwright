@@ -35,10 +35,16 @@ describe("buildOpenApi", () => {
     expect(Object.keys(create?.responses as object).sort()).toEqual(["201", "400", "401", "404", "409"]);
   });
 
-  it("asks for a Bearer token on every route except health, register, login, and docs", () => {
+  it("asks for a Bearer token on every route except health, docs, register, login, and the WebSocket", () => {
     const open = ROUTES.filter((r) => !r.auth).map((r) => `${r.method} ${r.path}`);
 
-    expect(open.sort()).toEqual(["get /health", "get /openapi.json", "post /auth/login", "post /auth/register"]);
+    expect(open.sort()).toEqual([
+      "get /health",
+      "get /openapi.json",
+      "get /runs/:runId/live",
+      "post /auth/login",
+      "post /auth/register",
+    ]);
     expect(operation("/projects", "get")?.security).toEqual([{ bearer: [] }]);
     expect(operation("/health", "get")?.security).toEqual([]);
   });

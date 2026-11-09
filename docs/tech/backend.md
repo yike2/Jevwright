@@ -93,6 +93,7 @@ Every error answers JSON `{ "error": { "code": string, "message": string, "detai
 | `413` | `too_large` | A source over `MAX_SOURCE_BYTES` |
 | `422` | `invalid_test` | A Run of a Test File with diagnostics; `details` is the diagnostics |
 | `500` | `internal` | Anything else; the message is generic and the error is logged without request bodies |
+| `501` | `not_implemented` | A route of the contract (3.1) whose handler is not built yet |
 
 ### 1.8 Configuration
 
@@ -145,7 +146,7 @@ sequenceDiagram
 
 ### 3.1 REST API
 
-All routes are under `/api/v1`. Bodies are JSON. `GET /api/v1/openapi.json` is the OpenAPI 3.1 document generated from the zod schemas, and `GET /api/v1/docs` serves it in Swagger UI.
+All routes are under `/api/v1`. Bodies are JSON, at most 300 KB. `api/contract.ts` lists every route with its zod schemas for params, query, body, and answers; the app validates each request against them, and `GET /api/v1/openapi.json` is the OpenAPI 3.1 document built from them, served in Swagger UI at `GET /api/v1/docs`. The Live Progress messages are components of the same document (`LiveMessage` and the messages it unions), and the WebSocket route describes its upgrade, `token`, and close codes. A route without a handler answers `501`, so the frontend can build against the whole contract before each route is implemented.
 
 | Method | Path | Body | Answer |
 | ------ | ---- | ---- | ------ |
@@ -234,8 +235,8 @@ Unique: `User.email`; `(Project.userId, name)`; `(Module.projectId, name)`; `(Te
 | ------ | -------------- |
 | `main.ts` | Reads the env, connects Prisma, recovers interrupted Runs, starts HTTP and WebSocket |
 | `env.ts` | The zod schema of 1.8 |
-| `app.ts` | `createApp(deps)`: Express app with JSON parsing, CORS, routes, and the error handler; deps are injected for tests |
-| `http/` | `errors.ts` (the `ApiError` type and handler of 1.7), `validate.ts` (zod parsing of body, query, params), `auth.ts` (the Bearer middleware) |
+| `app.ts` | `createApp(deps)`: Express app with CORS, JSON parsing, the API docs, every route of `ROUTES` validated and dispatched to its handler (or `501`), and the error handler; deps are injected for tests |
+| `http/` | `errors.ts` (the `ApiError` type and handler of 1.7), `auth.ts` (the Bearer middleware) |
 | `auth/` | `password.ts` (bcrypt), `token.ts` (sign and verify with `jose`), `routes.ts` |
 | `workspace/` | Routes for projects, modules, test files, variables, and the tree |
 | `runs/queue.ts` | `RunQueue`: FIFO with a concurrency limit, `enqueue(runId)`, `recover()` |
@@ -243,7 +244,9 @@ Unique: `User.email`; `(Project.userId, name)`; `(Module.projectId, name)`; `(Te
 | `runs/run-files.ts` | The disk `ReportStore` and safe file paths under `RUNS_DIR/<runId>/` |
 | `runs/live.ts` | `LiveHub`: per-Run state and subscribers; the WebSocket upgrade handler |
 | `runs/routes.ts` | Trigger, history, run, and file routes |
-| `openapi.ts` | Builds the OpenAPI document from the route schemas with `z.toJSONSchema` |
+| `api/schemas.ts` | The zod schemas of the API's shapes and Live Progress messages; the named ones become OpenAPI components |
+| `api/contract.ts` | `ROUTES`: method, path, auth, and schemas of every route in 3.1 |
+| `openapi.ts` | Builds the OpenAPI document from `ROUTES` and the components with `z.toJSONSchema` |
 
 ### 4.2 Directory Layout
 
@@ -261,6 +264,7 @@ src/app/backend/
     ├── env.ts
     ├── app.ts
     ├── openapi.ts
+    ├── api/             # schemas.ts, contract.ts
     ├── http/
     ├── auth/
     ├── workspace/
@@ -284,5 +288,6 @@ Integration tests need PostgreSQL: CI runs a `postgres` service container, and l
 | Integration | Runs: `422` for an invalid file, `202` and `queued`, a second Run stays `queued` while one runs, the final row and Report, files served and traversal rejected, history order, restart recovery | `src/tests/integration/app/backend/runs.test.ts` |
 | Integration | Live Progress over a real WebSocket: snapshot, steps with screenshot URLs, final status, `4401` and `4404` | `src/tests/integration/app/backend/live.test.ts` |
 | Integration | Core with `network: "public"`: a page on `127.0.0.1` is blocked | `src/tests/integration/core/browser/` |
-| Integration | OpenAPI: every route of 3.1 is in the document, and the document is valid OpenAPI 3.1 | `src/tests/integration/app/backend/openapi.test.ts` |
+| Unit | OpenAPI: every route of `ROUTES` with `{name}` parameters, parameters and bodies from the schemas, Bearer security except on open routes, the Live Progress messages as components | `src/tests/unit/app/backend/openapi.test.ts` |
+| Integration | App: health, OpenAPI and Swagger UI, `501` without a handler, `400` for a failing schema or bad JSON, `413` over the body limit, `404` for an unknown route, CORS for the frontend's origin, a handler gets the parsed input | `src/tests/integration/app/backend/app.test.ts` |
 | E2E | Login → edit → validate → run → history through the frontend (Epic 6) | `src/tests/e2e/` |

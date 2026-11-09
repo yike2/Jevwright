@@ -7,6 +7,7 @@
   "scripts": {
     "prepare": "git config core.hooksPath .githooks && git config commit.template .gitmessage",
     "jevwright": "tsx src/cli/main.ts",
+    "backend": "tsx watch src/app/backend/src/main.ts",
     "test": "vitest run",
     "test:unit": "vitest run src/tests/unit",
     "test:integration": "vitest run src/tests/integration",
