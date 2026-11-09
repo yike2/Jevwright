@@ -4,6 +4,7 @@ import { COMPONENTS } from "./api/schemas.js";
 
 export type OpenApiDocument = {
   openapi: string;
+  info: { title: string; version: string; description: string };
   servers: { url: string }[];
   paths: Record<string, unknown>;
   components: { schemas: Record<string, unknown>; securitySchemes: Record<string, unknown> };
@@ -60,6 +61,12 @@ export function buildOpenApi(): OpenApiDocument {
   }
   return {
     openapi: "3.1.0",
+    info: {
+      title: "Jevwright API",
+      version: "1.0.0",
+      description:
+        "Projects, Test Files, and Runs of Jevwright (docs/tech/backend.md). Send the JWT from /auth/login as a Bearer token.",
+    },
     servers: [{ url: "/api/v1" }],
     paths,
     components: {

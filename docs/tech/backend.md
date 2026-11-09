@@ -146,7 +146,7 @@ sequenceDiagram
 
 ### 3.1 REST API
 
-All routes are under `/api/v1`. Bodies are JSON, at most 300 KB. `api/contract.ts` lists every route with its zod schemas for params, query, body, and answers; the app validates each request against them, and `GET /api/v1/openapi.json` is the OpenAPI 3.1 document built from them, served in Swagger UI at `GET /api/v1/docs`. The Live Progress messages are components of the same document (`LiveMessage` and the messages it unions), and the WebSocket route describes its upgrade, `token`, and close codes. A route without a handler answers `501`, so the frontend can build against the whole contract before each route is implemented.
+All routes are under `/api/v1`. Bodies are JSON, at most 300 KB. `api/contract.ts` lists every route with its zod schemas for params, query, body, and answers; the app validates each request against them, and `GET /api/v1/openapi.json` is the OpenAPI 3.1 document built from them, served in Swagger UI at `GET /api/v1/docs`. The Live Progress messages are components of the same document (`LiveMessage` and the messages it unions), and the WebSocket route describes its upgrade, `token`, and close codes. A route without a handler answers `501`, so the frontend can build against the whole contract before each route is implemented. `pnpm api:docs` exports the document to `docs/api/openapi.json`, which `docs/api/index.html` shows in Swagger UI on GitHub Pages (`https://yike2.github.io/Jevwright/api/`), so it can be read without running the backend; a test fails when the export is out of date.
 
 | Method | Path | Body | Answer |
 | ------ | ---- | ---- | ------ |
@@ -247,6 +247,7 @@ Unique: `User.email`; `(Project.userId, name)`; `(Module.projectId, name)`; `(Te
 | `api/schemas.ts` | The zod schemas of the API's shapes and Live Progress messages; the named ones become OpenAPI components |
 | `api/contract.ts` | `ROUTES`: method, path, auth, and schemas of every route in 3.1 |
 | `openapi.ts` | Builds the OpenAPI document from `ROUTES` and the components with `z.toJSONSchema` |
+| `export-openapi.ts` | `pnpm api:docs`: writes the document to `docs/api/openapi.json` |
 
 ### 4.2 Directory Layout
 
@@ -288,6 +289,6 @@ Integration tests need PostgreSQL: CI runs a `postgres` service container, and l
 | Integration | Runs: `422` for an invalid file, `202` and `queued`, a second Run stays `queued` while one runs, the final row and Report, files served and traversal rejected, history order, restart recovery | `src/tests/integration/app/backend/runs.test.ts` |
 | Integration | Live Progress over a real WebSocket: snapshot, steps with screenshot URLs, final status, `4401` and `4404` | `src/tests/integration/app/backend/live.test.ts` |
 | Integration | Core with `network: "public"`: a page on `127.0.0.1` is blocked | `src/tests/integration/core/browser/` |
-| Unit | OpenAPI: every route of `ROUTES` with `{name}` parameters, parameters and bodies from the schemas, Bearer security except on open routes, the Live Progress messages as components | `src/tests/unit/app/backend/openapi.test.ts` |
+| Unit | OpenAPI: `info`, every route of `ROUTES` with `{name}` parameters, parameters and bodies from the schemas, Bearer security except on open routes, the Live Progress messages as components, `docs/api/openapi.json` up to date | `src/tests/unit/app/backend/openapi.test.ts` |
 | Integration | App: health, OpenAPI and Swagger UI, `501` without a handler, `400` for a failing schema or bad JSON, `413` over the body limit, `404` for an unknown route, CORS for the frontend's origin, a handler gets the parsed input | `src/tests/integration/app/backend/app.test.ts` |
 | E2E | Login → edit → validate → run → history through the frontend (Epic 6) | `src/tests/e2e/` |
