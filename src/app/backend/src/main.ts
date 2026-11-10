@@ -18,7 +18,7 @@ const db = createDb(env.DATABASE_URL);
 
 const app = createApp({
   corsOrigin: env.CORS_ORIGIN,
-  handlers: createHandlers({ db, jwtSecret: env.JWT_SECRET }),
+  handlers: createHandlers({ db, jwtSecret: env.JWT_SECRET, runsDir: env.RUNS_DIR, enqueue: () => {} }),
   verifyToken: (token) => verifyToken(token, env.JWT_SECRET),
 });
 app.listen(env.PORT, () => {
