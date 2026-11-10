@@ -175,6 +175,17 @@ Every method except `close()` goes through the same handling. `ready()`, `perfor
 
 All constants live in `constants.ts`.
 
+### 1.12 Private Network Blocking
+
+`LaunchOptions.network` is `"any"` by default, which loads every URL, as the CLI needs for local pages. With `"public"`, which the Backend uses for Runs on its server (`backend.md` 1.6), the context routes every request and every WebSocket and lets one through only when its URL is public:
+
+1. The scheme is `http:` or `https:` (a WebSocket's `ws:` or `wss:` is checked as `http:` or `https:`).
+2. Every address the host resolves to (`dns.lookup` with `all: true`), or the host itself when it is an IP literal, is public: not in `0.0.0.0/8`, `10.0.0.0/8`, `100.64.0.0/10`, `127.0.0.0/8`, `169.254.0.0/16`, `172.16.0.0/12`, `192.168.0.0/16`, `224.0.0.0/4`, `240.0.0.0/4`, `::`, `::1`, `fc00::/7`, `fe80::/10`, or `ff00::/8`. An IPv4-mapped IPv6 address (`::ffff:a.b.c.d`) is checked as its IPv4 address. A host that does not resolve is blocked.
+
+A blocked request is aborted with `failed`, so the step that made it fails with Playwright's `net::ERR_FAILED` reason; a blocked WebSocket is closed. Service workers are blocked too, since Playwright does not route their requests.
+
+This is not a sandbox. Two gaps remain: DNS can change between the check and Chromium's own lookup (DNS rebinding), and Playwright routes only the first request of a redirect chain, so a public URL that redirects to a private address is followed.
+
 ## 2. Internal Flow
 
 Where the Adapter sits in one Run:
@@ -222,7 +233,10 @@ type LaunchOptions = {
   headed: boolean;
   baseUrl?: string; // TestCase.baseUrl
   timeoutMs: number; // TestCase.timeoutMs
+  network?: Network; // default "any" (1.12)
 };
+
+type Network = "any" | "public";
 
 interface BrowserAdapter {
   ready(): Promise<BrowserResult>;
@@ -327,6 +341,7 @@ flowchart LR
 | Module | Responsibility |
 | ------ | -------------- |
 | `launch.ts` | `launchBrowser()`: browser, context, trace, the `BrowserAdapter` implementation, `ready()` and `close()` |
+| `network.ts` | `isPublicAddress()`, `isPublicUrl()`, and the routes of `network: "public"` (1.12) |
 | `tabs.ts` | Open tabs in order, current tab, `switchTab` (1.8) |
 | `dialogs.ts` | Dialog listener per tab, armed response, Unexpected dialog records (1.7) |
 | `actions.ts` | `perform()`: one function per action, Element reference to locator (1.6) |
@@ -352,6 +367,7 @@ src/core/browser/
 ├── checks.ts
 ├── snapshot.ts
 ├── url-match.ts
+├── network.ts
 └── errors.ts
 ```
 
@@ -364,11 +380,13 @@ Browser tests launch real headless Chromium against local HTML pages served by `
 | Unit | `url-match`: glob `*` and `**`, exact match, relative URL resolved against `baseUrl` | `src/tests/unit/core/browser/url-match.test.ts` |
 | Unit | `errors`: `TimeoutError` and selector errors become results; errors after disconnect are thrown | `src/tests/unit/core/browser/errors.test.ts` |
 | Unit | `dialogs`: a dialog that cannot be answered fails the step and still releases the waiting action | `src/tests/unit/core/browser/dialogs.test.ts` |
+| Unit | `network`: every blocked range and public addresses, IPv4-mapped IPv6; URLs by scheme, IP literal, and every resolved address; a host that does not resolve | `src/tests/unit/core/browser/network.test.ts` |
 | Integration | Lifecycle: screenshot size equals the viewport, trace zip returned by `close()`, `ready()` waiting for `load` after a click, calls after the browser is gone throw, Chromium closed when launching fails | `src/tests/integration/core/browser/launch.test.ts` |
 | Integration | Every action in 1.6, including `back` with no history, `back` across origins, an invalid key, a click on a covered element timing out, and a click by snapshot id inside a nested shadow root | `src/tests/integration/core/browser/actions.test.ts` |
 | Integration | Reads: `isVisible` visible, hidden, invalid selector; every read after the current tab closed; reads leave dialogs for the step result. Snapshot: viewport-only, hidden elements skipped, roles, names, text and attrs, `hittable: false` when covered, ids cleared between snapshots; elements inside open and nested shadow roots collected and hittable, closed ones not; a snapshot after a screenshot taken mid-transition sees the end positions | `src/tests/integration/core/browser/snapshot.test.ts` |
 | Integration | Dialogs: accept, dismiss, prompt text, `message` match and mismatch, expected dialog missing, Unexpected dialog during a step and between steps | `src/tests/integration/core/browser/dialogs.test.ts` |
 | Integration | Tabs: switch to a `target=_blank` tab and back, ambiguous match, timeout, closed current tab | `src/tests/integration/core/browser/tabs.test.ts` |
 | Integration | Checks: `visible`, `text`, and `url` pass and fail; first-match rule; `url` matches like `switchTab` | `src/tests/integration/core/browser/checks.test.ts` |
+| Integration | `network: "public"`: a page on `127.0.0.1` fails with `net::ERR_FAILED`; with `"any"` it loads | `src/tests/integration/core/browser/network.test.ts` |
 
 HTML pages live in `src/tests/integration/core/browser/fixtures/`, one page per scenario, named after it (e.g. `confirm-delete.html`, `open-new-tab.html`).

@@ -18,7 +18,7 @@ The Executor runs one validated `TestCase`: it launches the Browser Adapter, run
 
 ### 1.2 Run Lifecycle
 
-1. Fill the Variables in `TestCase.baseUrl` (1.5), start the Run timeout (1.7), then launch the browser with `launchBrowser({ headed, baseUrl, timeoutMs })`. If a Variable in `baseUrl` is missing, the browser is not launched: the first step, if there is one, fails with `MISSING_VARIABLE` and no screenshot, the other steps are `pending`, and `trace` is empty.
+1. Fill the Variables in `TestCase.baseUrl` (1.5), start the Run timeout (1.7), then launch the browser with `launchBrowser({ headed, baseUrl, timeoutMs, network })`. If a Variable in `baseUrl` is missing, the browser is not launched: the first step, if there is one, fails with `MISSING_VARIABLE` and no screenshot, the other steps are `pending`, and `trace` is empty.
 2. Run each step in order (1.3). Send a `started` event before it and a `finished` event with its Step result after it.
 3. After the first failed step, stop. Every step after it gets `{ status: "pending" }`; no event is sent for those steps.
 4. Stop the Run timeout, close the browser in a `finally` block, and return the Step results with the trace from `close()`. The time `close()` takes is not part of the Run timeout. A `TestCase` with no steps returns no Step results.
@@ -31,7 +31,7 @@ When the Run timeout expires or the browser crashes, the Run is aborted and `exe
 2. **`ready()`**. If it fails (for example, an Unexpected dialog appeared between steps), the step fails.
 3. **Run the step** with one Adapter call, chosen by the mapping in 1.4.
 4. **Collect dialogs** from `ready()` and the step's call, in that order.
-5. **On failure, take a screenshot** with `screenshot()`. If the screenshot cannot be read, the result has no screenshot and keeps the step's own reason.
+5. **On failure, take a screenshot** with `screenshot()`; with `screenshotEveryStep`, take one after every executed step, passed or failed. If the screenshot cannot be read, the result has no screenshot and keeps the step's own reason and status.
 6. **Redact** the reason and every dialog message (1.5).
 
 A step passes only when `ready()` and its call both return `ok: true`.
@@ -140,6 +140,7 @@ type StepContext = {
   redact: (text: string) => string;
   jev: JevClient;
   timeoutMs: number;
+  screenshotEveryStep?: boolean;
 };
 
 type ExecuteOptions = {
@@ -147,6 +148,8 @@ type ExecuteOptions = {
   vars: Record<string, string>;
   onEvent: (event: StepEvent) => void;
   jev: JevClient;
+  screenshotEveryStep?: boolean; // a screenshot after every executed step, not only a failed one (1.3)
+  network?: Network; // passed to launchBrowser (browser-adapter.md 1.12)
 };
 
 type ExecuteResult = {
@@ -181,6 +184,7 @@ type StepResult =
       durationMs: number;
       locateMethod?: LocateMethod; // element actions only
       dialogs: DialogRecord[];
+      screenshot?: Buffer; // with screenshotEveryStep; absent when it could not be read
     })
   | (StepInfo & {
       status: "failed";
@@ -199,7 +203,7 @@ type StepEvent =
   | { type: "finished"; result: StepResult };
 ```
 
-`index` is the step's 0-based position in `TestCase.steps`; `line` is its source line. `durationMs` runs from the start of Variable substitution to the end of the step's Adapter call and does not include the failure screenshot. `locateMethod` is set when an element is located, also when the action that follows fails.
+`index` is the step's 0-based position in `TestCase.steps`; `line` is its source line. `durationMs` runs from the start of Variable substitution to the end of the step's Adapter call and does not include the screenshot. `locateMethod` is set when an element is located, also when the action that follows fails.
 
 Expected failures are Step results. The Executor throws only a `RunAbortedError` (1.7).
 
@@ -217,7 +221,7 @@ flowchart LR
 | Module | Responsibility |
 | ------ | -------------- |
 | `execute.ts` | `execute()`: launch, step loop, events, `pending` steps, `close()` in `finally` (1.2) |
-| `run-step.ts` | `runStep()`: `ready()`, the step-to-Adapter mapping, dialogs, failure screenshot, and `StepContext` with `browser`, `vars`, `redact`, `jev`, and `timeoutMs` (1.3, 1.4) |
+| `run-step.ts` | `runStep()`: `ready()`, the step-to-Adapter mapping, dialogs, the screenshot, and `StepContext` with `browser`, `vars`, `redact`, `jev`, `timeoutMs`, and `screenshotEveryStep` (1.3, 1.4) |
 | `variables.ts` | Variable substitution and Redaction (1.5) |
 | `reasons.ts` | Failure reasons in 1.6 |
 | `errors.ts` | `RunAbortedError` (1.7) |
@@ -243,8 +247,8 @@ Unit tests use a fake `BrowserAdapter` that records every call and returns scrip
 | Type | Coverage | Location |
 | ---- | -------- | -------- |
 | Unit | `variables`: substitution in every string field, including the Dialog response; missing names listed in order; Redaction of reasons and dialog messages, longest value first, empty values ignored, only Variables used in the `TestCase` | `src/tests/unit/core/executor/variables.test.ts` |
-| Unit | `runStep`: each row of 1.4 makes the stated Adapter call with substituted values; `ready()` failure skips the call; a missing Variable calls no Adapter method before the screenshot; dialogs from `ready()` and the call are merged in order; failure takes a screenshot and keeps the reason when the screenshot fails; `locateMethod` is recorded for element actions (`selector`, `visual`, or `dom`); `LocateError` fails the step; `WaitForCondition` and `AssertStatement` are judged by Asserter; a failed check with a `statement` falls back to Asserter and either passes (holds) or fails with a combined reason | `src/tests/unit/core/executor/run-step.test.ts` |
-| Unit | `execute`: launch options from the `TestCase` and `headed`; steps run in order; stop at the first failure with the rest `pending`; `started` and `finished` events per executed step and none for `pending` steps; `close()` runs after success, failure, and a thrown error | `src/tests/unit/core/executor/execute.test.ts` |
+| Unit | `runStep`: each row of 1.4 makes the stated Adapter call with substituted values; `ready()` failure skips the call; a missing Variable calls no Adapter method before the screenshot; dialogs from `ready()` and the call are merged in order; failure takes a screenshot and keeps the reason when the screenshot fails; with `screenshotEveryStep` a passed step takes one after its call, a failed step still takes one, and an unreadable one leaves the step passed; `locateMethod` is recorded for element actions (`selector`, `visual`, or `dom`); `LocateError` fails the step; `WaitForCondition` and `AssertStatement` are judged by Asserter; a failed check with a `statement` falls back to Asserter and either passes (holds) or fails with a combined reason | `src/tests/unit/core/executor/run-step.test.ts` |
+| Unit | `execute`: launch options from the `TestCase`, `headed`, and `network`; `screenshotEveryStep` screenshots in results and events; steps run in order; stop at the first failure with the rest `pending`; `started` and `finished` events per executed step and none for `pending` steps; `close()` runs after success, failure, and a thrown error | `src/tests/unit/core/executor/execute.test.ts` |
 | Unit | Aborted Runs, each row of 1.7: the `RunAbortedError`'s kind, redacted message, `cause`, Step results, and trace; the running step failed with its timing; a `finished` event for it and none after; a late Adapter result dropped; the Adapter of a late launch closed; an empty trace when `close()` throws after a crash; the Run timeout counts `runTimeoutMs`, not the step `timeoutMs`; an `onEvent` that throws still closes the browser and fails its step | `src/tests/unit/core/executor/abort.test.ts` |
 | Integration | A `TestCase` against local HTML pages with the real Browser Adapter: a passing run with actions, a dialog, `switchTab`, `waitFor`, and `assert`; a failing `assert` whose `text` is a Variable, with its value redacted from the reason | `src/tests/integration/core/executor/execute.test.ts` |
 

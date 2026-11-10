@@ -26,7 +26,14 @@ export async function runTest(
   try {
     const outcome = await execute(
       testCase,
-      { headed: options.headed, vars: options.vars, onEvent, jev: options.jev },
+      {
+        headed: options.headed,
+        vars: options.vars,
+        onEvent,
+        jev: options.jev,
+        screenshotEveryStep: options.screenshotEveryStep,
+        network: options.network,
+      },
       launch,
     );
     steps = outcome.steps;

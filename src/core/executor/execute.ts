@@ -30,7 +30,7 @@ export async function execute(
   options: ExecuteOptions,
   launch: typeof launchBrowser = launchBrowser,
 ): Promise<ExecuteResult> {
-  const { headed, vars, onEvent, jev } = options;
+  const { headed, vars, onEvent, jev, screenshotEveryStep, network } = options;
   const redact = createRedact(testCase, vars);
   const state: RunState = {
     results: testCase.steps.map((step, index) => ({ index, line: step.line, action: step.action, status: "pending" })),
@@ -64,7 +64,7 @@ export async function execute(
   const expired = new Promise<typeof TIMED_OUT>((resolve) => {
     timer = setTimeout(() => resolve(TIMED_OUT), testCase.runTimeoutMs);
   });
-  const launching = launch({ headed, baseUrl: baseUrl.value, timeoutMs: testCase.timeoutMs });
+  const launching = launch({ headed, baseUrl: baseUrl.value, timeoutMs: testCase.timeoutMs, network });
   let browser: BrowserAdapter | typeof TIMED_OUT;
   try {
     browser = await Promise.race([launching, expired]);
@@ -82,7 +82,8 @@ export async function execute(
   let aborted: Aborted | undefined;
   try {
     // After a timeout, closing the browser rejects the pending Adapter call; the race has already settled, so it is ignored.
-    const steps = runSteps(testCase, { browser, vars, redact, jev, timeoutMs: testCase.timeoutMs }, state);
+    const context = { browser, vars, redact, jev, timeoutMs: testCase.timeoutMs, screenshotEveryStep };
+    const steps = runSteps(testCase, context, state);
     if ((await Promise.race([steps, expired])) === TIMED_OUT) aborted = timedOut;
   } catch (error) {
     aborted = infrastructure(error);

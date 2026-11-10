@@ -1,4 +1,4 @@
-import type { FailedStep, RunError, StepResult } from "../executor/index.js";
+import type { FailedStep, PassedStep, RunError, StepResult } from "../executor/index.js";
 import type { TestCase } from "../syntax/index.js";
 
 export type RunOutcome = {
@@ -11,7 +11,8 @@ export type RunOutcome = {
   error?: RunError;
 };
 
-export type ReportStep = Exclude<StepResult, FailedStep> | (Omit<FailedStep, "screenshot"> & { screenshot?: string }); // path in the Bundle
+type WithPath<T> = Omit<T, "screenshot"> & { screenshot?: string }; // path in the Bundle
+export type ReportStep = Exclude<StepResult, FailedStep | PassedStep> | WithPath<PassedStep> | WithPath<FailedStep>;
 
 export type Report = {
   file: string;

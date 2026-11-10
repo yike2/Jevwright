@@ -1,6 +1,6 @@
 # Report
 
-The Report turns the outcome of one Run into a Report Bundle: the Report itself, which is written as `report.json`, and the files it points to (the Playwright trace and the failure screenshots). It does no I/O. A Report Store, implemented by the caller, saves the Bundle.
+The Report turns the outcome of one Run into a Report Bundle: the Report itself, which is written as `report.json`, and the files it points to (the Playwright trace and the step screenshots). It does no I/O. A Report Store, implemented by the caller, saves the Bundle.
 
 ## 1. Functional Definition
 
@@ -28,7 +28,7 @@ The Report turns the outcome of one Run into a Report Bundle: the Report itself,
 | ---- | ------- | ------- |
 | `report.json` | The Report, written by the Store (`REPORT_PATH`) | Always |
 | `trace.zip` | Playwright trace from `BrowserAdapter.close()`; open it with `npx playwright show-trace` | When the trace is not empty |
-| `screenshots/step-<index>.png` | PNG of the viewport when step `<index>` failed (0-based, as `steps[].index`) | For each failed step that has a screenshot |
+| `screenshots/step-<index>.png` | PNG of the viewport after step `<index>` ran (0-based, as `steps[].index`) | For each step whose Step result has a screenshot: a failed step's, or every executed step's with `screenshotEveryStep` (`executor.md` 1.3) |
 
 The trace is empty when the browser never launched, or when `close()` failed after a crash. The Report then has no `trace` field and the Bundle no `trace.zip`.
 
@@ -76,7 +76,7 @@ Reasons, dialog messages, and the Run error message come redacted from the Execu
 ```mermaid
 flowchart LR
   I[Run outcome] --> S[Map Step results]
-  S -->|failed with screenshot| P["screenshots/step-i.png"]
+  S -->|with screenshot| P["screenshots/step-i.png"]
   I --> T{trace empty?}
   T -->|no| Z[trace.zip]
   S --> C[Count summary and status]
@@ -87,7 +87,7 @@ flowchart LR
   B --> St["ReportStore.save()"]
 ```
 
-1. Map each Step result to a ReportStep; a failed step's screenshot becomes a file and its path.
+1. Map each Step result to a ReportStep; a passed or failed step's screenshot becomes a file and its path.
 2. Add `trace.zip` when the trace is not empty.
 3. Count the summary and set `status` from the steps and the Run error.
 4. The caller passes the Bundle to its Report Store.
@@ -119,10 +119,9 @@ interface ReportStore {
 ### 3.2 Types
 
 ```ts
-// RunError, StepResult, and FailedStep come from the Executor (executor.md 3.2).
-type ReportStep =
-  | Exclude<StepResult, FailedStep>
-  | (Omit<FailedStep, "screenshot"> & { screenshot?: string }); // path in the Bundle
+// RunError, StepResult, PassedStep, and FailedStep come from the Executor (executor.md 3.2).
+type WithPath<T> = Omit<T, "screenshot"> & { screenshot?: string }; // path in the Bundle
+type ReportStep = Exclude<StepResult, FailedStep | PassedStep> | WithPath<PassedStep> | WithPath<FailedStep>;
 
 type Report = {
   file: string;
@@ -147,7 +146,7 @@ type ReportBundle = { report: Report; files: ReportFile[] }; // files: trace fir
 | -------- | ----- |
 | `REPORT_PATH` | `report.json` |
 | `TRACE_PATH` | `trace.zip` |
-| `screenshotPath(index)` | `screenshots/step-<index>.png` |
+| `screenshotPath(index)` | `screenshots/step-<index>.png`, for a passed or failed step |
 
 ## 4. Class Architecture
 
@@ -173,5 +172,5 @@ src/core/report/
 
 | Type | Coverage | Location |
 | ---- | -------- | -------- |
-| Unit | `buildReport`: a passing Run; a failed step with its screenshot as a file and a path; a failed step without a screenshot; `pending` steps; summary counts; `status` failed from a step and from a Run error alone; `error` copied; `trace` and `trace.zip` present only for a non-empty trace; `file`, `name`, `startedAt`, `durationMs` copied; the Report survives `JSON.stringify` with no Buffer in it | `src/tests/unit/core/report/build.test.ts` |
+| Unit | `buildReport`: a passing Run; a failed step with its screenshot as a file and a path; a passed step with a screenshot likewise; a failed step without a screenshot; `pending` steps; summary counts; `status` failed from a step and from a Run error alone; `error` copied; `trace` and `trace.zip` present only for a non-empty trace; `file`, `name`, `startedAt`, `durationMs` copied; the Report survives `JSON.stringify` with no Buffer in it | `src/tests/unit/core/report/build.test.ts` |
 | Integration | A Run of the Executor against a local HTML page with a failing step, built into a Bundle whose screenshot is a PNG and whose trace is a zip | `src/tests/integration/core/report/build.test.ts` |

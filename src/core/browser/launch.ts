@@ -8,6 +8,7 @@ import { runCheck } from "./checks.js";
 import { DIALOG_MIN_WAIT_MS, VIEWPORT } from "./constants.js";
 import { DialogGuard } from "./dialogs.js";
 import { failureReason, withCleanup } from "./errors.js";
+import { blockPrivateNetwork } from "./network.js";
 import { takeSnapshot } from "./snapshot.js";
 import { Tabs } from "./tabs.js";
 import type {
@@ -24,8 +25,16 @@ import type {
 export async function launchBrowser(options: LaunchOptions): Promise<BrowserAdapter> {
   const browser = await chromium.launch({ headless: !options.headed });
   try {
-    const context = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: 1, baseURL: options.baseUrl });
+    const isPublic = options.network === "public";
+    const context = await browser.newContext({
+      viewport: VIEWPORT,
+      deviceScaleFactor: 1,
+      baseURL: options.baseUrl,
+      // Requests a service worker makes are not routed, so blocking private networks also blocks service workers.
+      ...(isPublic ? { serviceWorkers: "block" as const } : {}),
+    });
     context.setDefaultTimeout(options.timeoutMs);
+    if (isPublic) await blockPrivateNetwork(context);
     await context.tracing.start({ screenshots: true, snapshots: true });
     return new PlaywrightAdapter(browser, context, await context.newPage(), options);
   } catch (error) {

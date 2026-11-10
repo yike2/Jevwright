@@ -65,7 +65,7 @@ The snapshot comes from the Run's analyzed source and the steps so far, so a cli
 
 ### 1.6 Private Network Blocking
 
-Users' tests run on the server, so a test could open `http://postgres:5432`, `http://localhost`, or a cloud metadata address and capture what it shows. With `network: "public"`, the Browser Adapter routes every request and aborts it unless its URL is `http:` or `https:` and every address its host resolves to is public: not loopback, private (RFC 1918, `fc00::/7`), link-local, carrier-grade NAT, unspecified, or multicast. The step that made the request fails with Playwright's `net::ERR_FAILED` reason. This is not a sandbox (PRD 3.2 *Won't*): DNS rebinding between the check and Chromium's own lookup is not prevented.
+Users' tests run on the server, so a test could open `http://postgres:5432`, `http://localhost`, or a cloud metadata address and capture what it shows. With `network: "public"`, the Browser Adapter routes every request and WebSocket and aborts it unless its URL is `http:` or `https:` and every address its host resolves to is public: not loopback, private (RFC 1918, `fc00::/7`), link-local, carrier-grade NAT, unspecified, reserved, or multicast (`browser-adapter.md` 1.12). The step that made the request fails with Playwright's `net::ERR_FAILED` reason. This is not a sandbox (PRD 3.2 *Won't*): DNS rebinding between the check and Chromium's own lookup is not prevented, and since Playwright routes only the first request of a redirect chain, a public URL that redirects to a private address is followed.
 
 The Benchmark Demo App therefore runs at a public address in production, for example `https://demo.<domain>`, set as the Project Variable `BASE`.
 
@@ -184,7 +184,7 @@ type RunTestOptions = {
 };
 ```
 
-With `screenshotEveryStep`, Core's passed steps carry a `screenshot` too, and `report.md` (1.3, the bundle's screenshot files) no longer limits screenshots to failed steps. `executor.md`, `browser-adapter.md`, `pipeline.md`, and `report.md` describe the options in the PR that adds them.
+With `screenshotEveryStep`, Core's passed steps carry a `screenshot` too, in their Step results, `finished` events, and the Report (`executor.md` 1.3, `report.md` 1.3). `network` is the Browser Adapter's private network blocking (`browser-adapter.md` 1.12).
 
 ### 3.3 Database
 

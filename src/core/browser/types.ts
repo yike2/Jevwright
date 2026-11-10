@@ -5,7 +5,7 @@ export type LaunchOptions = {
   network?: Network; // default "any"
 };
 
-// "public" aborts every request to a non-public address (browser-adapter.md 1.10).
+// "public" aborts every request to a non-public address (browser-adapter.md 1.12).
 export type Network = "any" | "public";
 
 export type ElementRef = { selector: string } | { snapshotId: number };
