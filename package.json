@@ -7,6 +7,8 @@
   "scripts": {
     "prepare": "git config core.hooksPath .githooks && git config commit.template .gitmessage",
     "jevwright": "tsx src/cli/main.ts",
+    "backend": "tsx watch src/app/backend/src/main.ts",
+    "api:docs": "tsx src/app/backend/src/export-openapi.ts",
     "test": "vitest run",
     "test:unit": "vitest run src/tests/unit",
     "test:integration": "vitest run src/tests/integration",
@@ -31,9 +33,11 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/node": "^22.20.5",
+    "@types/supertest": "7.2.1",
     "eslint": "^10.14.0",
     "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.9.10",
+    "supertest": "7.3.2",
     "tsx": "^4.23.15",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.72.1",

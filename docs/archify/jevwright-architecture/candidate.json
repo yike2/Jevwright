@@ -28,7 +28,7 @@
       "id": "webui",
       "type": "frontend",
       "label": "Web UI",
-      "sublabel": "Editor · Dashboard · live progress",
+      "sublabel": "Next.js · Editor · Dashboard",
       "pos": [
         240,
         200
@@ -55,8 +55,8 @@
     {
       "id": "api",
       "type": "backend",
-      "label": "Backend API + Worker",
-      "sublabel": "Auth · rate limit · queue · push",
+      "label": "Express Backend",
+      "sublabel": "REST · JWT · Run Queue · WebSocket",
       "pos": [
         240,
         360
@@ -69,8 +69,8 @@
     {
       "id": "store",
       "type": "database",
-      "label": "Data Store",
-      "sublabel": "Tests · history · reports",
+      "label": "Postgres + Volume",
+      "sublabel": "Rows · Reports · screenshots",
       "pos": [
         600,
         360
@@ -204,7 +204,7 @@
     },
     {
       "kind": "region",
-      "label": "Service",
+      "label": "Backend · VPS (docker compose · Caddy)",
       "wraps": [
         "api",
         "store"
@@ -255,7 +255,7 @@
       "id": "webui-api",
       "from": "webui",
       "to": "api",
-      "label": "YAML · Run request",
+      "label": "REST (JWT) · WebSocket",
       "variant": "emphasis",
       "fromSide": "bottom",
       "toSide": "top"
@@ -264,7 +264,7 @@
       "id": "api-store",
       "from": "api",
       "to": "store",
-      "label": "tests · reports · shots"
+      "label": "rows · Run Files"
     },
     {
       "id": "api-pipeline",

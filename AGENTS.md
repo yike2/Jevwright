@@ -31,10 +31,11 @@ The PRD's YAML example (`xpath`, `open: "<url>"`, per-step `timeoutMs`) is **obs
 
 | Area | Choice |
 | --- | --- |
-| Runtime | Node.js 22 LTS, TypeScript `~5.9` (`strict: true`), pnpm 9 workspaces |
-| Web + API | Next.js (App Router) + Tailwind + shadcn/ui, Auth.js Credentials + JWT — Vercel |
-| Data | PostgreSQL (Neon) + Prisma; screenshots/reports in Vercel Blob, never in Postgres |
-| Runner | Express wrapping Core, official Playwright Docker image, `ws` — Render or Railway |
+| Runtime | Node.js 22 LTS, TypeScript `~5.9` (`strict: true`), pnpm 9; `src/app/backend` and `src/app/frontend` are workspace packages, everything else is the root package |
+| Web | Next.js (App Router) + Tailwind + shadcn/ui; pages only, data through the Backend REST API |
+| Data | PostgreSQL + Prisma; Run Files (screenshots, traces, reports) on a docker volume, never in Postgres |
+| Backend | Express 5 on the official Playwright Docker image: REST API, JWT (`jose`, `bcryptjs`), Run Queue, `ws`, OpenAPI from zod |
+| Deploy | Contabo VPS, docker compose, Caddy for HTTPS |
 | CLI | `jevwright` (`commander`), wraps Core |
 | Testing / lint | Vitest, Playwright Test (E2E), ESLint + Prettier — GitHub Actions |
 
@@ -47,8 +48,8 @@ installing, check majors against this table and pin them. Don't upgrade a major 
 src/
 ├── core/            # engine, no HTTP/DB/UI: syntax/ jev/ browser/ locator/ assert/ executor/ report/ pipeline/
 ├── cli/             # jevwright validate | run
-├── app/frontend/    # Next.js: auth, sidebar, editor, dashboard, REST API, OpenAPI
-├── app/backend/     # Express runner: queue, WebSocket progress; db/ = Prisma (shared)
+├── app/frontend/    # Next.js: login, sidebar, editor, dashboard; calls the Backend API
+├── app/backend/     # Express: REST API, auth, Run Queue, Live Progress, OpenAPI, prisma/
 └── tests/           # unit/ (mirrors src/), integration/ (hw3/ = Locator demo pages, fixtures, scripts),
                      # e2e/, benchmark/ (Epic 3 demo-app + .yaml suite)
 docs/                # PRD.md, tech/ (TEMPLATE.md + one doc per module), references/, archify/
@@ -103,7 +104,7 @@ docs/                # PRD.md, tech/ (TEMPLATE.md + one doc per module), referen
 | Package | Framework | Coverage | Focus |
 | --- | --- | --- | --- |
 | `core` | Vitest | ≥ 80% lines | Every module; Syntax Analyzer via fixtures |
-| `backend` | Vitest + supertest | ≥ 60% lines | Queue order, auth header, event emission |
+| `backend` | Vitest + supertest, real Postgres | ≥ 60% lines | Auth, `userId` scoping, Run Queue, Live Progress |
 | `cli` | Vitest | key paths | Output, `--json`, exit codes 0/1/2 |
 | `frontend` | Vitest + Playwright Test | critical flows | Login → edit → validate → run → history |
 
@@ -156,9 +157,9 @@ docs/                # PRD.md, tech/ (TEMPLATE.md + one doc per module), referen
 
 - Secrets come from env only; keep `.env.example` with names, never values; never `NEXT_PUBLIC_` a
   secret. Never log passwords, tokens, or resolved `{{VAR}}` values. Hash passwords (bcrypt/argon2).
-- Every route and server action checks authentication **and ownership** (scope queries by `userId`):
-  `401` when unauthenticated, `429` with a cooldown message over the Run rate limit.
-- The runner requires `RUNNER_SHARED_SECRET`; WebSocket tokens are short-lived and Run-scoped.
+- Every route checks authentication **and ownership** (scope queries by `userId`): `401` when
+  unauthenticated, `404` for another user's data. Runs have no rate limit (PRD 4.3.7).
+- Cloud Runs use Core's `network: "public"`, so a user's test cannot reach the server's private network.
 - Validate and size-limit uploaded `.yaml`; Prisma queries only, no raw SQL strings.
 - Server-side sandboxing is out of scope (PRD `Won't`); don't build it, don't weaken existing checks.
 
