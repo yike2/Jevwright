@@ -150,3 +150,6 @@ vite.config.ts.timestamp-*
 
 # Benchmark runs (docs/tech/benchmark.md 1.6)
 benchmark-results/
+
+# Archify local check receipts (docs/archify/rule.md)
+docs/archify/*/index.*.json
