@@ -4,7 +4,7 @@ import { defineConfig, globalIgnores } from "eslint/config";
 import tseslint from "typescript-eslint";
 
 export default defineConfig(
-  globalIgnores(["jevwright-reports/", "scratch/", "src/tests/benchmark/demo-app/"]),
+  globalIgnores(["jevwright-reports/", "scratch/", "src/tests/benchmark/demo-app/", "src/app/backend/src/generated/"]),
   js.configs.recommended,
   tseslint.configs.recommended,
   {

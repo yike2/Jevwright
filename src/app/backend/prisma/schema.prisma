@@ -1,0 +1,108 @@
+// The Backend's tables (docs/tech/backend.md 3.3). Run Files live in RUNS_DIR, never here.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String    @id @default(uuid()) @db.Uuid
+  email        String    @unique
+  passwordHash String
+  createdAt    DateTime  @default(now())
+  projects     Project[]
+  runs         Run[]
+}
+
+model Project {
+  id        String     @id @default(uuid()) @db.Uuid
+  userId    String     @db.Uuid
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  modules   Module[]
+  variables Variable[]
+  runs      Run[]
+
+  @@unique([userId, name])
+}
+
+model Variable {
+  id        String  @id @default(uuid()) @db.Uuid
+  projectId String  @db.Uuid
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name      String
+  value     String
+
+  @@unique([projectId, name])
+}
+
+model Module {
+  id        String     @id @default(uuid()) @db.Uuid
+  projectId String     @db.Uuid
+  project   Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name      String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  testFiles TestFile[]
+  runs      Run[]
+
+  @@unique([projectId, name])
+}
+
+model TestFile {
+  id        String   @id @default(uuid()) @db.Uuid
+  moduleId  String   @db.Uuid
+  module    Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  name      String
+  source    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  runs      Run[]
+
+  @@unique([moduleId, name])
+}
+
+enum RunStatus {
+  queued
+  running
+  passed
+  failed
+}
+
+// Runs outlive their Test File, Module, and Project: those ids become null, the copied source stays.
+model Run {
+  id           String    @id @default(uuid()) @db.Uuid
+  userId       String    @db.Uuid
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  testFileId   String?   @db.Uuid
+  testFile     TestFile? @relation(fields: [testFileId], references: [id], onDelete: SetNull)
+  moduleId     String?   @db.Uuid
+  module       Module?   @relation(fields: [moduleId], references: [id], onDelete: SetNull)
+  projectId    String?   @db.Uuid
+  project      Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  fileName     String
+  name         String
+  source       String
+  status       RunStatus @default(queued)
+  createdAt    DateTime  @default(now())
+  startedAt    DateTime?
+  finishedAt   DateTime?
+  durationMs   Int?
+  total        Int?
+  passed       Int?
+  failed       Int?
+  pending      Int?
+  errorKind    String?
+  errorMessage String?
+  report       Json?
+
+  @@index([testFileId, createdAt])
+  @@index([projectId, createdAt])
+  @@index([status])
+}
