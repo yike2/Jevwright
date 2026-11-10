@@ -34,6 +34,7 @@ The Backend is one Express service that stores users' test files, runs them with
 | Moving | `PATCH /test-files/:id` with a `moduleId` moves the Test File to another of the user's Modules |
 | Deleting | Deleting a Project deletes its Modules, Test Files, and Variables; deleting a Module deletes its Test Files. Runs are kept: their `testFileId`, `moduleId`, or `projectId` becomes `null`, and they keep their source, file name, and test name. `GET /runs?projectId=` still lists a deleted file's Runs while the Project exists |
 | Variables | Names follow `[A-Z_][A-Z0-9_]*`. The API returns names only, never values |
+| Order | Projects, Modules, Test Files, and Variable names are listed by name, in `/tree` as in their own lists |
 
 ### 1.4 Runs
 
@@ -218,7 +219,7 @@ Unique: `User.email`; `(Project.userId, name)`; `(Module.projectId, name)`; `(Te
 | `handlers.ts` | `createHandlers(deps)`: every implemented handler, keyed `"<method> <path>"` like `ROUTES` |
 | `http/` | `errors.ts` (the `ApiError` type and handler of 1.7), `auth.ts` (the token middleware: Bearer, `?token=`, or both, per the route's `auth`), `prisma-errors.ts` (unique violations become `409`) |
 | `auth/` | `password.ts` (bcrypt), `token.ts` (sign and verify with `jose`), `routes.ts` |
-| `workspace/` | Routes for projects, modules, test files, variables, and the tree |
+| `workspace/` | `routes.ts`: routes for projects, modules, test files, variables, and the tree; `owned.ts`: lookups scoped to the user (`404` otherwise) and the rows' API shapes |
 | `runs/queue.ts` | `RunQueue`: FIFO with a concurrency limit, `enqueue(runId)`, `recover()` |
 | `runs/execute-run.ts` | Runs one Run with Core, writes Run Files, updates the row, publishes progress |
 | `runs/run-files.ts` | The disk `ReportStore` and safe file paths under `RUNS_DIR/<runId>/` |
