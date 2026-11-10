@@ -12,6 +12,6 @@ if (!parsed.ok) {
 }
 const { env } = parsed;
 
-createApp({ corsOrigin: env.CORS_ORIGIN, handlers: {} }).listen(env.PORT, () => {
+createApp({ corsOrigin: env.CORS_ORIGIN, handlers: {}, verifyToken: async () => undefined }).listen(env.PORT, () => {
   console.log(`Backend on http://localhost:${env.PORT}/api/v1, API docs at /api/v1/docs`);
 });

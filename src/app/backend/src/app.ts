@@ -4,12 +4,15 @@ import { ROUTES, type Route } from "./api/contract.js";
 import { ApiError, errorHandler } from "./http/errors.js";
 import { buildOpenApi } from "./openapi.js";
 
-export type HandlerInput = { params: unknown; query: unknown; body: unknown };
+// userId is the token's user on every route that takes a token; routes with auth "none" get none.
+export type HandlerInput = { params: unknown; query: unknown; body: unknown; userId?: string };
 export type Handler = (input: HandlerInput, res: Response, req: Request) => unknown;
+export type Handlers = Partial<Record<string, Handler>>; // keyed "<method> <path>", e.g. "get /projects"
 
 export type AppDeps = {
   corsOrigin: string;
-  handlers: Partial<Record<string, Handler>>; // keyed "<method> <path>", e.g. "get /projects"
+  handlers: Handlers;
+  verifyToken: (token: string) => Promise<string | undefined>; // the token's user id
 };
 
 // A 256 Ki character source can double in JSON escaping; the source schema enforces its own limit.

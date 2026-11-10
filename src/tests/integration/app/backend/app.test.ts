@@ -2,7 +2,14 @@ import request from "supertest";
 import { describe, expect, it, vi } from "vitest";
 import { createApp } from "@/app/backend/src/app.js";
 
-const app = createApp({ corsOrigin: "http://localhost:3000", handlers: {} });
+const USER_ID = "3a2b1c0d-9e8f-4a7b-8c6d-5e4f3a2b1c0d";
+const TOKEN = "good-token";
+const BEARER = `Bearer ${TOKEN}`;
+const base = {
+  corsOrigin: "http://localhost:3000",
+  verifyToken: async (token: string) => (token === TOKEN ? USER_ID : undefined),
+};
+const app = createApp({ ...base, handlers: {} });
 const PROJECT_ID = "6f1c2a4e-9b3d-4c5e-8f7a-1b2c3d4e5f60";
 const RUN_ID = "0b1c2d3e-4f50-4a6b-8c7d-9e0f1a2b3c4d";
 
@@ -25,7 +32,7 @@ describe("the backend app", () => {
   });
 
   it("answers 501 for a contract route that has no handler yet", async () => {
-    const res = await request(app).get("/api/v1/projects");
+    const res = await request(app).get("/api/v1/projects").set("authorization", BEARER);
 
     expect(res.status).toBe(501);
     expect(res.body).toEqual({ error: { code: "not_implemented", message: "GET /projects is not implemented yet" } });
@@ -33,7 +40,7 @@ describe("the backend app", () => {
 
   it("answers 400 with each failing field, without calling the handler", async () => {
     const handler = vi.fn();
-    const strict = createApp({ corsOrigin: "http://localhost:3000", handlers: { "post /auth/register": handler } });
+    const strict = createApp({ ...base, handlers: { "post /auth/register": handler } });
 
     const res = await request(strict).post("/api/v1/auth/register").send({ email: "not-an-email", password: "short" });
 
@@ -48,7 +55,7 @@ describe("the backend app", () => {
   });
 
   it("answers 400 for a path id that is not a uuid", async () => {
-    const res = await request(app).get("/api/v1/projects/p1/modules");
+    const res = await request(app).get("/api/v1/projects/p1/modules").set("authorization", BEARER);
 
     expect(res.status).toBe(400);
     expect(res.body.error.details.map((issue: { path: string }) => issue.path)).toEqual(["params.projectId"]);
@@ -57,6 +64,7 @@ describe("the backend app", () => {
   it("answers 400 for a source over 256 KiB characters", async () => {
     const res = await request(app)
       .post("/api/v1/test-files/validate")
+      .set("authorization", BEARER)
       .send({ source: "a".repeat(256 * 1024 + 1) });
 
     expect(res.status).toBe(400);
@@ -73,6 +81,7 @@ describe("the backend app", () => {
   it("answers 413 for a body over the 1 MB limit", async () => {
     const res = await request(app)
       .post("/api/v1/test-files/validate")
+      .set("authorization", BEARER)
       .send({ source: "a".repeat(1100 * 1024) });
 
     expect(res.status).toBe(413);
@@ -100,7 +109,7 @@ describe("the backend app", () => {
 
   it("calls the handler a route has, with the parsed params and body", async () => {
     const withHandler = createApp({
-      corsOrigin: "http://localhost:3000",
+      ...base,
       handlers: {
         "post /projects/:projectId/modules": ({ params, body }, res) => {
           res.status(201).json({ params, body });
@@ -108,7 +117,10 @@ describe("the backend app", () => {
       },
     });
 
-    const res = await request(withHandler).post(`/api/v1/projects/${PROJECT_ID}/modules`).send({ name: "Checkout" });
+    const res = await request(withHandler)
+      .post(`/api/v1/projects/${PROJECT_ID}/modules`)
+      .set("authorization", BEARER)
+      .send({ name: "Checkout" });
 
     expect(res.status).toBe(201);
     expect(res.body).toEqual({ params: { projectId: PROJECT_ID }, body: { name: "Checkout" } });
@@ -123,7 +135,7 @@ describe("the backend app", () => {
   it("answers an unexpected error as a generic 500, without its message", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const failing = createApp({
-      corsOrigin: "http://localhost:3000",
+      ...base,
       handlers: {
         "get /projects": () => {
           throw new Error("connection to db-secret-host failed");
@@ -131,7 +143,7 @@ describe("the backend app", () => {
       },
     });
 
-    const res = await request(failing).get("/api/v1/projects");
+    const res = await request(failing).get("/api/v1/projects").set("authorization", BEARER);
 
     expect(res.status).toBe(500);
     expect(res.body).toEqual({ error: { code: "internal", message: "Internal server error" } });
@@ -139,12 +151,36 @@ describe("the backend app", () => {
 
   it("hands a Run File handler the whole wildcard path", async () => {
     const files = createApp({
-      corsOrigin: "http://localhost:3000",
+      ...base,
       handlers: { "get /runs/:runId/files/*path": ({ params }, res) => void res.json(params) },
     });
 
-    const res = await request(files).get(`/api/v1/runs/${RUN_ID}/files/screenshots/step-0.png`);
+    const res = await request(files).get(`/api/v1/runs/${RUN_ID}/files/screenshots/step-0.png?token=${TOKEN}`);
 
     expect(res.body).toEqual({ runId: RUN_ID, path: "screenshots/step-0.png" });
+  });
+
+  it("answers 401 without calling the handler when the token is missing or bad", async () => {
+    const handler = vi.fn();
+    const guarded = createApp({ ...base, handlers: { "get /projects": handler } });
+
+    const missing = await request(guarded).get("/api/v1/projects");
+    const bad = await request(guarded).get("/api/v1/projects").set("authorization", "Bearer bad-token");
+
+    expect(missing.status).toBe(401);
+    expect(bad.status).toBe(401);
+    expect(bad.body).toEqual({ error: { code: "unauthorized", message: expect.any(String) } });
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it("hands the handler the token's user id", async () => {
+    const withUser = createApp({
+      ...base,
+      handlers: { "get /projects": ({ userId }, res) => void res.json({ userId }) },
+    });
+
+    const res = await request(withUser).get("/api/v1/projects").set("authorization", BEARER);
+
+    expect(res.body).toEqual({ userId: USER_ID });
   });
 });
