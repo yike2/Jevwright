@@ -143,7 +143,7 @@ Conventions every route follows:
 | ---- | - |
 | Ids | uuid strings; a path id that is not one answers `400` |
 | Times | ISO 8601 strings in UTC |
-| Lists | `{ items }`; `GET /runs` adds `nextCursor` (`null` on the last page) and takes `limit` (1–100, default 20) and `cursor` |
+| Lists | `{ items }`; `GET /runs` adds `nextCursor` (`null` on the last page) and takes `limit` (1–100, default 20) and `cursor`. Runs are ordered by `createdAt`, newest first, then by `id`, so Runs created at the same time page without gaps; `nextCursor` is opaque, and a cursor the server did not give out answers `400` at `query.cursor` |
 | Single resources | Answered bare, e.g. `Project`; wrapped only with data beside them, e.g. `{ testFile, diagnostics }`, `{ token, user }` |
 | Names | camelCase fields; routes are plural kebab-case nouns |
 
@@ -220,9 +220,10 @@ Unique: `User.email`; `(Project.userId, name)`; `(Module.projectId, name)`; `(Te
 | `http/` | `errors.ts` (the `ApiError` type and handler of 1.7), `auth.ts` (the token middleware: Bearer, `?token=`, or both, per the route's `auth`), `prisma-errors.ts` (unique violations become `409`) |
 | `auth/` | `password.ts` (bcrypt), `token.ts` (sign and verify with `jose`), `routes.ts` |
 | `workspace/` | `routes.ts`: routes for projects, modules, test files, variables, and the tree; `owned.ts`: lookups scoped to the user (`404` otherwise) and the rows' API shapes |
-| `runs/queue.ts` | `RunQueue`: FIFO with a concurrency limit, `enqueue(runId)`, `recover()` |
-| `runs/execute-run.ts` | Runs one Run with Core, writes Run Files, updates the row, publishes progress |
-| `runs/run-files.ts` | The disk `ReportStore` and safe file paths under `RUNS_DIR/<runId>/` |
+| `runs/queue.ts` | `RunQueue`: FIFO with a concurrency limit, `enqueue(runId)`, and `idle()` for tests; a Run that throws is logged and the queue goes on |
+| `runs/execute-run.ts` | `executeRun()`: runs one queued Run with Core, writes Run Files, updates the row, and publishes its progress to a `RunProgress` (the `LiveHub`); `recoverInterruptedRuns()` of 1.4 step 6, called by `main.ts` before the queue starts |
+| `runs/to-run.ts` | The API's `Run` of a row: `toRun()` for lists, `toRunDetail()` with `source` and `report` |
+| `runs/run-files.ts` | The disk `ReportStore`, `writeRunFile()` for each step's screenshot, and `resolveRunFile()`: a path that resolves outside `RUNS_DIR/<runId>/`, or to the folder itself, is rejected |
 | `runs/live.ts` | `LiveHub`: per-Run state and subscribers; the WebSocket upgrade handler |
 | `runs/routes.ts` | Trigger, history, run, and file routes |
 | `api/schemas.ts` | The zod schemas of the API's shapes and Live Progress messages; the named ones become OpenAPI components |

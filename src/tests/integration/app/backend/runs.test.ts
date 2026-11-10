@@ -27,9 +27,8 @@ steps:
   - click:
       selector: "#add"
   - assert:
-      check:
-        selector: "#count"
-        text: "1"
+      selector: "#count"
+      text: "1"
 `;
 
 describeDb("run routes", () => {

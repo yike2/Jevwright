@@ -1,9 +1,12 @@
 import { existsSync } from "node:fs";
+import { createJevClient } from "@/core/jev/index.js";
 import { createApp } from "./app.js";
 import { verifyToken } from "./auth/token.js";
 import { createDb } from "./db.js";
 import { parseEnv } from "./env.js";
 import { createHandlers } from "./handlers.js";
+import { executeRun, recoverInterruptedRuns } from "./runs/execute-run.js";
+import { RunQueue } from "./runs/queue.js";
 
 // Like the CLI, read .env from the working directory without overriding variables already set.
 if (existsSync(".env")) process.loadEnvFile(".env");
@@ -16,9 +19,25 @@ if (!parsed.ok) {
 const { env } = parsed;
 const db = createDb(env.DATABASE_URL);
 
+// Before the queue starts: a Run left queued or running by the last process never finishes (backend.md 1.4).
+const recovered = await recoverInterruptedRuns(db);
+if (recovered > 0) console.log(`Marked ${recovered} interrupted Run(s) as failed`);
+
+const jev = createJevClient({ apiKey: env.OPENROUTER_API_KEY, fetch: globalThis.fetch });
+const progress = { status: () => {}, step: () => {} };
+const queue = new RunQueue(
+  (runId) => executeRun(runId, { db, runsDir: env.RUNS_DIR, jev, network: "public", progress }),
+  env.RUN_CONCURRENCY,
+);
+
 const app = createApp({
   corsOrigin: env.CORS_ORIGIN,
-  handlers: createHandlers({ db, jwtSecret: env.JWT_SECRET, runsDir: env.RUNS_DIR, enqueue: () => {} }),
+  handlers: createHandlers({
+    db,
+    jwtSecret: env.JWT_SECRET,
+    runsDir: env.RUNS_DIR,
+    enqueue: (runId) => queue.enqueue(runId),
+  }),
   verifyToken: (token) => verifyToken(token, env.JWT_SECRET),
 });
 app.listen(env.PORT, () => {
