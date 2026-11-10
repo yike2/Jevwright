@@ -229,12 +229,12 @@ Unique: `User.email`; `(Project.userId, name)`; `(Module.projectId, name)`; `(Te
 
 ### 4.2 Directory Layout
 
-`src/app/backend` is a pnpm workspace package with its own `package.json`; it imports Core through the root `@/core/...` path.
+`src/app/backend` is a pnpm workspace package with its own `package.json`; it imports Core through the root `@/core/...` path. It runs from source with `tsx`, like the CLI, so there is no compile step and `tsx` resolves `@/` from the root `tsconfig.json`.
 
 ```text
 src/app/backend/
 ├── package.json         # express, ws, zod, @prisma/client, jose, bcryptjs, swagger-ui-express
-├── Dockerfile           # FROM the Playwright image; prisma migrate deploy, then node
+├── Dockerfile           # FROM the Playwright image; prisma migrate deploy, then pnpm start (tsx, no build step)
 ├── prisma/
 │   ├── schema.prisma
 │   └── migrations/
