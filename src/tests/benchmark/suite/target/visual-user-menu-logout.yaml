@@ -1,0 +1,24 @@
+name: "Visual user logout"
+description: "visual_user signs out through a rotated menu button"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/"
+  - input:
+      target: "Username text field in the login form"
+      value: "visual_user"
+  - input:
+      target: "Password text field in the login form"
+      value: "{{SWAG_PASSWORD}}"
+  - click:
+      target: "Green 'Login' button below the password field"
+  - waitFor:
+      url: "**/inventory.html"
+  - click:
+      target: "Hamburger menu button at the top left of the header"
+  - waitFor:
+      selector: '[data-test="logout-sidebar-link"]'
+  - click:
+      target: "'Logout' link in the side menu"
+  - assert:
+      selector: '[data-test="login-button"]'

@@ -1,0 +1,13 @@
+# tags: link, vague
+name: "Shipping link, vague"
+description: "Atomic case: shipping link, vague, found by target"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/extras/tabs.html"
+  - click:
+      target: "shipping"
+  - switchTab:
+      url: "**/extras/shipping.html"
+  - assert:
+      url: "**/extras/shipping.html"

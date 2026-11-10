@@ -39,6 +39,20 @@ export function findElementAtPoint(
   return best?.element ?? null;
 }
 
+/** Returns the element whose bbox overlaps `box` the most, the earliest on a tie; `null` when none overlaps. */
+export function findElementOverlapping(elements: SnapshotElement[], box: BoundingBox): SnapshotElement | null {
+  let best: { element: SnapshotElement; overlap: number } | null = null;
+  for (const element of elements) {
+    const { x, y, width, height } = element.bbox;
+    const overlapWidth = Math.min(x + width, box.x + box.width) - Math.max(x, box.x);
+    const overlapHeight = Math.min(y + height, box.y + box.height) - Math.max(y, box.y);
+    if (overlapWidth <= 0 || overlapHeight <= 0) continue;
+    const overlap = overlapWidth * overlapHeight;
+    if (best === null || overlap > best.overlap) best = { element, overlap };
+  }
+  return best?.element ?? null;
+}
+
 export async function runVisual(
   request: LocateRequest,
   adapter: Pick<BrowserAdapter, "screenshot" | "snapshot">,
@@ -116,7 +130,8 @@ export async function runVisual(
 
   const center = getBoundingBoxCenter(bbox.data.box);
   const candidates = filterUsable(snapshot.data.elements, request.action);
-  const element = findElementAtPoint(candidates, center);
+  // A box a few pixels off misses a small target such as a slider dot, so fall back to what the box covers most.
+  const element = findElementAtPoint(candidates, center) ?? findElementOverlapping(candidates, bbox.data.box);
   if (element === null) {
     return {
       attempt: {

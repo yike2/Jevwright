@@ -1,0 +1,11 @@
+# tags: button, shadow, by-look
+name: "Button in a shadow root by its look"
+description: "Atomic case: button in a shadow root by its look, found by target"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/shadow-dom/shadow-root.html"
+  - click:
+      target: "Button inside the green card"
+  - assert:
+      selector: "#shadow-button:focus"

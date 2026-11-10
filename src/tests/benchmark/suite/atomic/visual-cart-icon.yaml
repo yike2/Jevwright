@@ -1,0 +1,22 @@
+# tags: icon, changed-layout, by-look
+name: "Moved cart icon"
+description: "Atomic case: moved cart icon, found by target"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/"
+  - input:
+      selector: '[data-test="username"]'
+      value: "visual_user"
+  - input:
+      selector: '[data-test="password"]'
+      value: "{{SWAG_PASSWORD}}"
+  - click:
+      selector: '[data-test="login-button"]'
+  - waitFor:
+      url: "**/inventory.html"
+  - click:
+      target: "Shopping cart icon in the header"
+  - assert:
+      selector: '[data-test="title"]'
+      text: "Your Cart"

@@ -1,0 +1,32 @@
+name: "Product detail"
+description: "A product's detail page adds it to the cart and goes back to the list"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/"
+  - input:
+      target: "Username text field in the login form"
+      value: "standard_user"
+  - input:
+      target: "Password text field in the login form"
+      value: "{{SWAG_PASSWORD}}"
+  - click:
+      target: "Green 'Login' button below the password field"
+  - waitFor:
+      url: "**/inventory.html"
+  - click:
+      target: "Product name link 'Sauce Labs Bike Light' in the product list"
+  - assert:
+      selector: '[data-test="inventory-item-name"]'
+      text: "Sauce Labs Bike Light"
+  - click:
+      target: "'Add to cart' button on the product detail page"
+  - assert:
+      selector: '[data-test="shopping-cart-badge"]'
+      text: "1"
+  - click:
+      target: "'Back to products' button at the top left"
+  - waitFor:
+      url: "**/inventory.html"
+  - assert:
+      selector: '[data-test="remove-sauce-labs-bike-light"]'

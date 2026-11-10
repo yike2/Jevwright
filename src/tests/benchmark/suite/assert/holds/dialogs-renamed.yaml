@@ -1,0 +1,12 @@
+# tags: text
+name: "Display name changed"
+description: "Assert case: the last step holds"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/extras/dialogs.html"
+  - click:
+      selector: "#rename"
+      dialog: { accept: true, text: "Swag Lover" }
+  - waitFor:
+      condition: "The display name reads 'Swag Lover'"

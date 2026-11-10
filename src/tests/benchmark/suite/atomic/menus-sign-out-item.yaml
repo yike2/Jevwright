@@ -1,0 +1,14 @@
+# tags: menu-item, overlay, by-text
+name: "Sign out in the hover menu"
+description: "Atomic case: sign out in the hover menu, found by target"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/extras/menus.html"
+  - hover:
+      selector: "#account-menu"
+  - click:
+      target: "'Sign out' item in the Account menu"
+  - assert:
+      selector: "#status"
+      text: "You are signed out."

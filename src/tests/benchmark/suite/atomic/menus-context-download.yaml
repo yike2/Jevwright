@@ -1,0 +1,14 @@
+# tags: menu-item, overlay, by-text
+name: "Download in the right-click menu"
+description: "Atomic case: download in the right-click menu, found by target"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/extras/menus.html"
+  - rightClick:
+      selector: '[data-file="invoice-2026.pdf"]'
+  - click:
+      target: "'Download' item in the right-click menu"
+  - assert:
+      selector: "#status"
+      text: "Downloading invoice-2026.pdf."

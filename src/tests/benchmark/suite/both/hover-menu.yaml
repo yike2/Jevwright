@@ -1,0 +1,15 @@
+name: "Hover menu"
+description: "Hovering the account menu shows its items"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/extras/menus.html"
+  - hover:
+      selector: "#account-btn" # stale
+      target: "'Account' menu button"
+  - click:
+      selector: "#sign-out-link"
+      target: "'Sign out' item in the Account menu"
+  - assert:
+      selector: "#status"
+      text: "You are signed out."

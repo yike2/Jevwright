@@ -1,0 +1,14 @@
+# tags: item, by-text
+name: "Right-click the invoice"
+description: "Atomic case: right-click the invoice, found by target"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/extras/menus.html"
+  - rightClick:
+      target: "File 'invoice-2026.pdf' in the file list"
+  - click:
+      selector: "#download-file"
+  - assert:
+      selector: "#status"
+      text: "Downloading invoice-2026.pdf."

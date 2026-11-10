@@ -173,3 +173,42 @@ describe("snapshot hittable", () => {
       ]);
     }));
 });
+
+describe("snapshot of shadow roots", () => {
+  it("collects the elements inside open shadow roots, nested ones too, but not inside closed ones", () =>
+    run(async (browser) => {
+      await browser.perform({ action: "open", url: "/shadow.html" });
+
+      const { elements } = data(await browser.snapshot());
+
+      expect(elements.map((e) => e.name)).toEqual(["Light", "Hide Outer", "Outer", "Inner"]);
+    }));
+
+  it("finds an element inside a shadow root hittable, not covered by its host", () =>
+    run(async (browser) => {
+      await browser.perform({ action: "open", url: "/shadow.html" });
+
+      const { elements } = data(await browser.snapshot());
+
+      expect(elements.filter((e) => ["Outer", "Inner"].includes(e.name)).map((e) => e.hittable)).toEqual([true, true]);
+    }));
+});
+
+describe("screenshot of a page in a CSS transition", () => {
+  it("finishes the transition first, so the snapshot after it sees the end positions", () =>
+    run(async (browser) => {
+      await browser.perform({ action: "open", url: "/slide.html" });
+      await browser.perform({ action: "click", element: { selector: "#open" } });
+
+      data(await browser.screenshot());
+      const { elements } = data(await browser.snapshot());
+
+      // Mid-way through its 5 s slide the panel item would sit off the left edge, out of the snapshot.
+      expect(elements.find((e) => e.name === "Panel item")?.bbox).toEqual({
+        x: 10,
+        y: 100,
+        width: expect.any(Number),
+        height: expect.any(Number),
+      });
+    }));
+});

@@ -1,0 +1,11 @@
+# tags: button, shadow, by-relation
+name: "Nested shadow button by its paragraph"
+description: "Atomic case: nested shadow button by its paragraph, found by target"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/shadow-dom/nested-shadow-root.html"
+  - click:
+      target: "Button below the paragraph about the inner shadow root"
+  - assert:
+      selector: "#inner-button:focus"

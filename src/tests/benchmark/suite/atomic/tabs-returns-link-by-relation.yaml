@@ -1,0 +1,13 @@
+# tags: link, by-relation
+name: "First guide link"
+description: "Atomic case: first guide link, found by target"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/extras/tabs.html"
+  - click:
+      target: "First link in the list of guides"
+  - switchTab:
+      url: "**/extras/returns.html"
+  - assert:
+      url: "**/extras/returns.html"

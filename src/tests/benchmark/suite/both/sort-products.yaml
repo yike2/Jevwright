@@ -1,0 +1,32 @@
+name: "Sort products"
+description: "Sorting by name from Z to A puts the red T-shirt first"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/"
+  - input:
+      selector: '[data-test="username"]'
+      target: "Username text field in the login form"
+      value: "standard_user"
+  - input:
+      selector: '[data-test="password"]'
+      target: "Password text field in the login form"
+      value: "{{SWAG_PASSWORD}}"
+  - click:
+      selector: '[data-test="login-button"]'
+      target: "Green 'Login' button below the password field"
+  - waitFor:
+      url: "**/inventory.html"
+  - click:
+      selector: "#sort-select" # stale
+      target: "Sort dropdown showing 'Name (A to Z)' at the top right of the product list"
+  - press:
+      key: "ArrowDown"
+  - press:
+      key: "Enter"
+  - assert:
+      selector: '[data-test="active-option"]'
+      text: "Name (Z to A)"
+  - assert:
+      selector: '[data-test="inventory-item-name"]'
+      text: "Test.allTheThings() T-Shirt (Red)"

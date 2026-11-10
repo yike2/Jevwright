@@ -1,0 +1,43 @@
+# tags: field, by-text
+name: "First name field"
+description: "Atomic case: first name field, found by target"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/"
+  - input:
+      selector: '[data-test="username"]'
+      value: "standard_user"
+  - input:
+      selector: '[data-test="password"]'
+      value: "{{SWAG_PASSWORD}}"
+  - click:
+      selector: '[data-test="login-button"]'
+  - waitFor:
+      url: "**/inventory.html"
+  - click:
+      selector: '[data-test="add-to-cart-sauce-labs-backpack"]'
+  - click:
+      selector: '[data-test="shopping-cart-link"]'
+  - assert:
+      selector: '[data-test="title"]'
+      text: "Your Cart"
+  - click:
+      selector: '[data-test="checkout"]'
+  - assert:
+      selector: '[data-test="title"]'
+      text: "Checkout: Your Information"
+  - input:
+      target: "'First Name' text field of the checkout form"
+      value: "Ada"
+  - input:
+      selector: '[data-test="lastName"]'
+      value: "Lovelace"
+  - input:
+      selector: '[data-test="postalCode"]'
+      value: "10001"
+  - click:
+      selector: '[data-test="continue"]'
+  - assert:
+      selector: '[data-test="title"]'
+      text: "Checkout: Overview"

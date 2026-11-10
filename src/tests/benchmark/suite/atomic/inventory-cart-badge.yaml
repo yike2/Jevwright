@@ -1,0 +1,24 @@
+# tags: icon, small, by-look
+name: "Cart badge"
+description: "Atomic case: cart badge, found by target"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/"
+  - input:
+      selector: '[data-test="username"]'
+      value: "standard_user"
+  - input:
+      selector: '[data-test="password"]'
+      value: "{{SWAG_PASSWORD}}"
+  - click:
+      selector: '[data-test="login-button"]'
+  - waitFor:
+      url: "**/inventory.html"
+  - click:
+      selector: '[data-test="add-to-cart-sauce-labs-backpack"]'
+  - click:
+      target: "Red badge with the number 1 on the cart icon"
+  - assert:
+      selector: '[data-test="title"]'
+      text: "Your Cart"

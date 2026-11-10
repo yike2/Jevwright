@@ -1,0 +1,12 @@
+# tags: item, by-relation
+name: "Double-click the second file"
+description: "Atomic case: double-click the second file, found by target"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/extras/menus.html"
+  - doubleClick:
+      target: "Second file in the file list"
+  - assert:
+      selector: "#status"
+      text: "Opened packing-list.txt."

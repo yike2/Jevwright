@@ -147,3 +147,6 @@ vite.config.ts.timestamp-*
 
 # Turbo Repo
 .turbo
+
+# Benchmark runs (docs/tech/benchmark.md 1.6)
+benchmark-results/

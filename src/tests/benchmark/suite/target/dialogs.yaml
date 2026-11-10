@@ -1,0 +1,21 @@
+name: "Dialogs"
+description: "The alert, prompt, and confirm of the account page are answered"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/extras/dialogs.html"
+  - click:
+      target: "'Save profile' button"
+      dialog: { accept: true, message: "Profile saved" }
+  - click:
+      target: "'Change display name' button"
+      dialog: { accept: true, text: "Swag Lover" }
+  - assert:
+      selector: "#display-name"
+      text: "Swag Lover"
+  - click:
+      target: "Red 'Delete account' button in the Danger zone"
+      dialog: { accept: false }
+  - assert:
+      selector: "#status"
+      text: "Your account was kept."
