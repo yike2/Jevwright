@@ -29,6 +29,9 @@ export class LiveHub implements RunProgress {
 
   step(_runId: string, _step: ApiStep): void {}
 
+  /** Stops sending to a socket the client closed. */
+  unsubscribe(_runId: string, _socket: LiveSocket): void {}
+
   /** Sends the Run's snapshot, then its messages until the final status; false when the Run is not the user's. */
   async subscribe(_runId: string, _userId: string, _socket: LiveSocket): Promise<boolean> {
     return false;

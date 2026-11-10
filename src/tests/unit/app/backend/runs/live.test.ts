@@ -137,6 +137,17 @@ describe("LiveHub", () => {
     }
   });
 
+  it("sends nothing more to a subscriber that left", async () => {
+    const hub = new LiveHub(loads(row()));
+    const { socket, messages } = fakeSocket();
+    await hub.subscribe(RUN_ID, USER_ID, socket);
+
+    hub.unsubscribe(RUN_ID, socket);
+    hub.step(RUN_ID, passed(0, 3, "open"));
+
+    expect(messages.map((message) => message.type)).toEqual(["snapshot"]);
+  });
+
   it("closes every subscriber after the final status, and forgets the Run", async () => {
     const hub = new LiveHub(loads(row()));
     const { socket, messages, closed } = fakeSocket();
