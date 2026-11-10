@@ -64,23 +64,27 @@ export async function executeRun(runId: string, deps: RunDeps): Promise<void> {
 async function runWithCore(run: Run, deps: RunDeps): Promise<Report> {
   const { db, runsDir, progress } = deps;
   const variables = run.projectId ? await db.variable.findMany({ where: { projectId: run.projectId } }) : [];
-  // Step events are synchronous, so screenshot writes chain here and each step is published after its file exists.
+  // Step events are synchronous, so their messages chain here: each step is published after its screenshot exists,
+  // and in the order Core sent them.
   // The first write error is kept and thrown once Core is done, so it fails the Run instead of going unhandled.
   let written: Promise<void> = Promise.resolve();
   let writeError: { error: unknown } | undefined;
+  const publish = (next: () => Promise<void> | void) => {
+    written = written.then(next).catch((error: unknown) => void (writeError ??= { error }));
+  };
   const onEvent = (event: StepEvent) => {
     if (event.type === "started") {
-      progress.step(run.id, { ...event.step, status: "running", startedAt: new Date().toISOString() });
+      // Through the chain too, so a step starts after the step before it has been published as finished.
+      const startedAt = new Date().toISOString();
+      publish(() => progress.step(run.id, { ...event.step, status: "running", startedAt }));
       return;
     }
     const { result } = event;
-    written = written
-      .then(async () => {
-        if (result.status !== "pending" && result.screenshot)
-          await writeRunFile(runsDir, run.id, screenshotPath(result.index), result.screenshot);
-        progress.step(run.id, toApiStep(result));
-      })
-      .catch((error: unknown) => void (writeError ??= { error }));
+    publish(async () => {
+      if (result.status !== "pending" && result.screenshot)
+        await writeRunFile(runsDir, run.id, screenshotPath(result.index), result.screenshot);
+      progress.step(run.id, toApiStep(result));
+    });
   };
 
   let outcome: Awaited<ReturnType<typeof runTest>>;

@@ -1,4 +1,5 @@
 import { existsSync } from "node:fs";
+import { createServer } from "node:http";
 import { createJevClient } from "@/core/jev/index.js";
 import { createApp } from "./app.js";
 import { verifyToken } from "./auth/token.js";
@@ -6,6 +7,7 @@ import { createDb } from "./db.js";
 import { parseEnv } from "./env.js";
 import { createHandlers } from "./handlers.js";
 import { executeRun, recoverInterruptedRuns } from "./runs/execute-run.js";
+import { attachLive, LiveHub, loadRunFrom } from "./runs/live.js";
 import { RunQueue } from "./runs/queue.js";
 
 // Like the CLI, read .env from the working directory without overriding variables already set.
@@ -24,12 +26,13 @@ const recovered = await recoverInterruptedRuns(db);
 if (recovered > 0) console.log(`Marked ${recovered} interrupted Run(s) as failed`);
 
 const jev = createJevClient({ apiKey: env.OPENROUTER_API_KEY, fetch: globalThis.fetch });
-const progress = { status: () => {}, step: () => {} };
+const hub = new LiveHub(loadRunFrom(db));
 const queue = new RunQueue(
-  (runId) => executeRun(runId, { db, runsDir: env.RUNS_DIR, jev, network: "public", progress }),
+  (runId) => executeRun(runId, { db, runsDir: env.RUNS_DIR, jev, network: "public", progress: hub }),
   env.RUN_CONCURRENCY,
 );
 
+const tokenUser = (token: string) => verifyToken(token, env.JWT_SECRET);
 const app = createApp({
   corsOrigin: env.CORS_ORIGIN,
   handlers: createHandlers({
@@ -38,8 +41,11 @@ const app = createApp({
     runsDir: env.RUNS_DIR,
     enqueue: (runId) => queue.enqueue(runId),
   }),
-  verifyToken: (token) => verifyToken(token, env.JWT_SECRET),
+  verifyToken: tokenUser,
 });
-app.listen(env.PORT, () => {
+// One port for HTTP and Live Progress's WebSocket upgrades.
+const server = createServer(app);
+attachLive(server, { hub, verifyToken: tokenUser });
+server.listen(env.PORT, () => {
   console.log(`Backend on http://localhost:${env.PORT}/api/v1, API docs at /api/v1/docs`);
 });

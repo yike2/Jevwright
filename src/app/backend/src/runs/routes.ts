@@ -109,6 +109,13 @@ export function runsHandlers({ db, runsDir, enqueue }: RunsDeps): Handlers {
       res.json(toRunDetail(await ownedRun(db, requireUserId(input), runId)));
     },
 
+    // Live Progress is a WebSocket served by live.ts; a plain GET reaches the app instead.
+    "get /runs/:runId/live": () => {
+      throw new ApiError("invalid_request", "Open Live Progress as a WebSocket", [
+        { path: "headers.upgrade", message: "Expected a WebSocket upgrade" },
+      ]);
+    },
+
     "get /runs/:runId/files/*path": async (input, res) => {
       const { runId, path } = input.params as { runId: string; path: string };
       await ownedRun(db, requireUserId(input), runId);

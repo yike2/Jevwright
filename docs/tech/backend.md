@@ -61,7 +61,7 @@ Steps have one shape everywhere: the `Step` schema, which is Core's Report step 
 | `step` | A step starts (`running`) or finishes (`passed` or `failed`) | `step` |
 | `status` | The Run's status changes | `run`, as it is after the change, with `durationMs`, `summary`, and `error` once final |
 
-The snapshot comes from the Run's analyzed source and the steps so far, so a client that connects late misses nothing. The server closes the socket after the final `status`; for a Run that has already finished, after the snapshot. Steps a Run never reached stay `pending`.
+The snapshot comes from the Run's analyzed source and the steps so far, so a client that connects late misses nothing; a finished Run's snapshot takes its steps from the Report. Messages sent while the snapshot is being built follow it, so a step may arrive once in the snapshot and once as a `step` message; a later message for the same step replaces the earlier one. Step messages keep Core's order: a step's finished message, sent once its screenshot is on disk, comes before the next step's `running`. The server closes the socket with `1000` after the final `status`; for a Run that has already finished, after the snapshot. Steps a Run never reached stay `pending`, as do the steps of a Run that ended without a Report (`interrupted` or `internal`). A plain `GET` without a WebSocket upgrade answers `400`, and a server error while subscribing closes with `1011`.
 
 ### 1.6 Private Network Blocking
 
@@ -212,7 +212,7 @@ Unique: `User.email`; `(Project.userId, name)`; `(Module.projectId, name)`; `(Te
 
 | Module | Responsibility |
 | ------ | -------------- |
-| `main.ts` | Reads the env, connects Prisma, recovers interrupted Runs, starts HTTP and WebSocket |
+| `main.ts` | Reads the env, connects Prisma, recovers interrupted Runs, builds the Run Queue and `LiveHub`, and starts HTTP and WebSocket on one port |
 | `env.ts` | The zod schema of 1.8 |
 | `db.ts` | `createDb()`: the Prisma client over `@prisma/adapter-pg` |
 | `app.ts` | `createApp(deps)`: Express app with CORS, JSON parsing, the API docs, every route of `ROUTES` token-checked, validated, and dispatched to its handler (or `501`) with the token's `userId`, and the error handler; deps (handlers, `verifyToken`) are injected for tests |
@@ -224,7 +224,7 @@ Unique: `User.email`; `(Project.userId, name)`; `(Module.projectId, name)`; `(Te
 | `runs/execute-run.ts` | `executeRun()`: runs one queued Run with Core, writes Run Files, updates the row, and publishes its progress to a `RunProgress` (the `LiveHub`); `recoverInterruptedRuns()` of 1.4 step 6, called by `main.ts` before the queue starts |
 | `runs/to-run.ts` | The API's `Run` of a row: `toRun()` for lists, `toRunDetail()` with `source` and `report` |
 | `runs/run-files.ts` | The disk `ReportStore`, `writeRunFile()` for each step's screenshot, and `resolveRunFile()`: a path that resolves outside `RUNS_DIR/<runId>/`, or to the folder itself, is rejected |
-| `runs/live.ts` | `LiveHub`: per-Run state and subscribers; the WebSocket upgrade handler |
+| `runs/live.ts` | `LiveHub`: the `RunProgress` of every Run, with each running Run's steps so far and subscribers; `attachLive()`: the WebSocket upgrade handler on the HTTP server, with the `?token=` check |
 | `runs/routes.ts` | Trigger, history, run, and file routes |
 | `api/schemas.ts` | The zod schemas of the API's shapes and Live Progress messages; the named ones become OpenAPI components |
 | `api/contract.ts` | `ROUTES`: method, path, auth, and schemas of every route in 3.1 |
