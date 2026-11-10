@@ -213,6 +213,7 @@ Unique: `User.email`; `(Project.userId, name)`; `(Module.projectId, name)`; `(Te
 | ------ | -------------- |
 | `main.ts` | Reads the env, connects Prisma, recovers interrupted Runs, starts HTTP and WebSocket |
 | `env.ts` | The zod schema of 1.8 |
+| `db.ts` | `createDb()`: the Prisma client over `@prisma/adapter-pg` |
 | `app.ts` | `createApp(deps)`: Express app with CORS, JSON parsing, the API docs, every route of `ROUTES` validated and dispatched to its handler (or `501`), and the error handler; deps are injected for tests |
 | `http/` | `errors.ts` (the `ApiError` type and handler of 1.7), `auth.ts` (the Bearer middleware) |
 | `auth/` | `password.ts` (bcrypt), `token.ts` (sign and verify with `jose`), `routes.ts` |
@@ -235,12 +236,15 @@ Unique: `User.email`; `(Project.userId, name)`; `(Module.projectId, name)`; `(Te
 src/app/backend/
 ├── package.json         # express, ws, zod, @prisma/client, jose, bcryptjs, swagger-ui-express
 ├── Dockerfile           # FROM the Playwright image; prisma migrate deploy, then pnpm start (tsx, no build step)
+├── prisma.config.ts     # Prisma 7 config: schema, migrations, DATABASE_URL
 ├── prisma/
-│   ├── schema.prisma
-│   └── migrations/
+│   ├── schema.prisma    # generator "prisma-client", output src/generated/prisma
+│   └── migrations/      # committed; applied with prisma migrate deploy
 └── src/
+    ├── generated/       # Prisma Client from prisma generate, run on pnpm install; not committed
     ├── main.ts
     ├── env.ts
+    ├── db.ts
     ├── app.ts
     ├── openapi.ts
     ├── api/             # schemas.ts, contract.ts
@@ -252,7 +256,7 @@ src/app/backend/
 
 ## 5. Test Plan
 
-Integration tests need PostgreSQL: CI runs a `postgres` service container, and locally `docker compose -f compose.dev.yaml up -d postgres` starts one. Without `DATABASE_URL` they are skipped. Each test file uses its own schema and truncates tables between tests. Runs use a fake `JevClient` and local HTML fixtures, never the real Jev.
+Integration tests need PostgreSQL: CI runs a `postgres` service container, and locally `docker compose -f compose.dev.yaml up -d postgres` starts one (`DATABASE_URL=postgresql://jevwright:jevwright@localhost:5432/jevwright`). Without `DATABASE_URL` they are skipped. Each test file migrates its own schema with `prisma migrate deploy` and empties it between tests by deleting every User, which cascades to every other row. Runs use a fake `JevClient` and local HTML fixtures, never the real Jev.
 
 | Type | Coverage | Location |
 | ---- | -------- | -------- |
@@ -262,6 +266,7 @@ Integration tests need PostgreSQL: CI runs a `postgres` service container, and l
 | Unit | `run-files`: paths outside the Run's folder rejected | `src/tests/unit/app/backend/runs/run-files.test.ts` |
 | Unit | `LiveHub`: snapshot for a late subscriber, step and status messages, close after the final status | `src/tests/unit/app/backend/runs/live.test.ts` |
 | Unit | Core: `screenshotEveryStep`, `network: "public"` address checks | `src/tests/unit/core/...` |
+| Integration | Database: unique names per parent, cascade deletes, Runs kept with `null` ids | `src/tests/integration/app/backend/db.test.ts` |
 | Integration | Auth: register, duplicate email, login, wrong password, `401` without or with a bad token | `src/tests/integration/app/backend/auth.test.ts` |
 | Integration | Workspace: CRUD of every level, unique names, moving a Test File, cascade deletes, `404` for another user's data, saving a source with diagnostics, variables return names only | `src/tests/integration/app/backend/workspace.test.ts` |
 | Integration | Runs: `422` for an invalid file, `202` and `queued`, a second Run stays `queued` while one runs, the final row and Report, Run errors, files served with Bearer or `?token=` and traversal rejected, `GET /runs` filters, order, and cursor paging, restart recovery | `src/tests/integration/app/backend/runs.test.ts` |
