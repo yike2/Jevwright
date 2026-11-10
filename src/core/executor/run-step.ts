@@ -14,6 +14,7 @@ export type StepContext = {
   redact: (text: string) => string;
   jev: JevClient;
   timeoutMs: number;
+  screenshotEveryStep?: boolean;
 };
 
 type Outcome = { result: BrowserResult; locateMethod?: LocateMethod };

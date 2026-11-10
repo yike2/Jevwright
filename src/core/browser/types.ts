@@ -2,7 +2,11 @@ export type LaunchOptions = {
   headed: boolean;
   baseUrl?: string; // TestCase.baseUrl
   timeoutMs: number; // TestCase.timeoutMs
+  network?: Network; // default "any"
 };
+
+// "public" aborts every request to a non-public address (browser-adapter.md 1.10).
+export type Network = "any" | "public";
 
 export type ElementRef = { selector: string } | { snapshotId: number };
 

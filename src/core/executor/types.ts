@@ -1,4 +1,4 @@
-import type { DialogRecord } from "../browser/index.js";
+import type { DialogRecord, Network } from "../browser/index.js";
 import type { JevClient } from "../jev/index.js";
 import type { Step } from "../syntax/index.js";
 
@@ -13,7 +13,11 @@ type Ran = {
   dialogs: DialogRecord[];
 };
 
-export type PassedStep = StepInfo & Ran & { status: "passed" };
+export type PassedStep = StepInfo &
+  Ran & {
+    status: "passed";
+    screenshot?: Buffer; // with screenshotEveryStep; absent when it could not be read
+  };
 export type FailedStep = StepInfo &
   Ran & {
     status: "failed";
@@ -29,6 +33,8 @@ export type ExecuteOptions = {
   vars: Record<string, string>;
   onEvent: (event: StepEvent) => void;
   jev: JevClient;
+  screenshotEveryStep?: boolean; // a screenshot after every executed step, not only a failed one
+  network?: Network; // passed to launchBrowser
 };
 
 export type ExecuteResult = {

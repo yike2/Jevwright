@@ -70,4 +70,46 @@ steps:
     expect(traceFile!.data.length).toBeGreaterThan(0);
     expect(traceFile!.data.subarray(0, 2)).toEqual(ZIP_SIGNATURE);
   });
+
+  it("saves a PNG for every executed step with screenshotEveryStep", async () => {
+    const bundles: ReportBundle[] = [];
+    const result = await runTest(
+      {
+        file: "every-step.yaml",
+        source: `
+name: "Every step"
+timeoutMs: 500
+steps:
+  - open:
+      url: "${server.baseUrl}/missing-button.html"
+  - reload: {}
+  - click:
+      selector: "#go"
+`,
+      },
+      {
+        headed: false,
+        vars: {},
+        jev: throwingJev,
+        store: { save: async (bundle) => void bundles.push(bundle) },
+        screenshotEveryStep: true,
+      },
+    );
+
+    expect(
+      result.kind === "completed" &&
+        result.report.steps.map((step) => [step.status, "screenshot" in step && step.screenshot]),
+    ).toEqual([
+      ["passed", "screenshots/step-0.png"],
+      ["passed", "screenshots/step-1.png"],
+      ["failed", "screenshots/step-2.png"],
+    ]);
+    const pngs = bundles[0]!.files.filter((file) => file.path.endsWith(".png"));
+    expect(pngs.map((file) => file.path)).toEqual([
+      "screenshots/step-0.png",
+      "screenshots/step-1.png",
+      "screenshots/step-2.png",
+    ]);
+    for (const file of pngs) expect(file.data.subarray(0, 4)).toEqual(PNG_SIGNATURE);
+  });
 });

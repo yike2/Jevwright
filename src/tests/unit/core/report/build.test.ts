@@ -69,6 +69,27 @@ describe("buildReport", () => {
     expect(JSON.stringify(report)).not.toContain("Buffer");
   });
 
+  it("writes a passed step's screenshot as a file and puts its path in the Report", () => {
+    const shot: StepResult = {
+      index: 0,
+      line: 3,
+      action: "open",
+      status: "passed",
+      startedAt: "2026-11-05T10:00:00.100Z",
+      durationMs: 40,
+      dialogs: [],
+      screenshot: PNG,
+    };
+
+    const { report, files } = buildReport(outcome({ steps: [shot, passed(1, 5)] }));
+
+    expect(report.steps).toEqual([{ ...passed(0, 3), screenshot: "screenshots/step-0.png" }, passed(1, 5)]);
+    expect(files).toEqual([
+      { path: "trace.zip", data: TRACE },
+      { path: "screenshots/step-0.png", data: PNG },
+    ]);
+  });
+
   it("keeps a failed step without a screenshot as it is, with no file", () => {
     const failed: StepResult = {
       index: 0,
