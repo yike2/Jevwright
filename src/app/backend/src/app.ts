@@ -1,6 +1,7 @@
 import express, { type Express, type Request, type RequestHandler, type Response } from "express";
 import swaggerUi from "swagger-ui-express";
 import { ROUTES, type Route } from "./api/contract.js";
+import { requireToken } from "./http/auth.js";
 import { ApiError, errorHandler } from "./http/errors.js";
 import { buildOpenApi } from "./openapi.js";
 
@@ -27,7 +28,13 @@ export function createApp(deps: AppDeps): Express {
   api.use(cors(deps.corsOrigin));
   api.use(express.json({ limit: BODY_LIMIT }));
   api.use("/docs", swaggerUi.serve, swaggerUi.setup(openApi));
-  for (const route of ROUTES) api[route.method](route.path, validate(route), handle(route, deps, openApi));
+  for (const route of ROUTES)
+    api[route.method](
+      route.path,
+      requireToken(route.auth, deps.verifyToken),
+      validate(route),
+      handle(route, deps, openApi),
+    );
   api.use((req) => {
     throw new ApiError("not_found", `${req.method} ${req.originalUrl} does not exist`);
   });
@@ -61,7 +68,12 @@ function validate(route: Route): RequestHandler {
       ["query", route.query, req.query],
       ["body", route.body, req.body],
     ] as const;
-    const input: Record<string, unknown> = { params: rawParams, query: req.query, body: req.body };
+    const input: Record<string, unknown> = {
+      params: rawParams,
+      query: req.query,
+      body: req.body,
+      userId: res.locals.userId,
+    };
     const issues = [];
     for (const [part, schema, value] of parts) {
       if (!schema) continue;

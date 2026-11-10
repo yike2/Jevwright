@@ -19,7 +19,7 @@ The Backend is one Express service that stores users' test files, runs them with
 
 - A user registers and logs in with an email and a password of at least 8 characters. Emails are compared in lower case. Passwords are hashed with bcrypt (`bcryptjs`, cost 12) and never logged or returned.
 - Register and login return a JWT (HS256, signed with `JWT_SECRET`, `sub` = user id, valid `TOKEN_TTL` = 7 days). The frontend, CI scripts, and External Agents all send it as `Authorization: Bearer <token>`. Run Files and Live Progress also take the same token as `?token=<jwt>`, because `<img>`, download links, and browser WebSockets cannot set headers. A token in a URL can end up in proxy logs; that is accepted to keep auth simple.
-- Every route except register, login, health, and the API docs needs a valid token, or answers `401`.
+- Every route except register, login, health, and the API docs needs a valid token, or answers `401`. The token is checked before the request's schema, so a request without one answers `401`, not `400`.
 - Every query is scoped to the token's user. Another user's Project, Module, Test File, or Run answers `404`, never `403`, so ids of other users' data are not revealed.
 - There is no Run rate limit (PRD 4.3.7).
 
@@ -214,8 +214,9 @@ Unique: `User.email`; `(Project.userId, name)`; `(Module.projectId, name)`; `(Te
 | `main.ts` | Reads the env, connects Prisma, recovers interrupted Runs, starts HTTP and WebSocket |
 | `env.ts` | The zod schema of 1.8 |
 | `db.ts` | `createDb()`: the Prisma client over `@prisma/adapter-pg` |
-| `app.ts` | `createApp(deps)`: Express app with CORS, JSON parsing, the API docs, every route of `ROUTES` validated and dispatched to its handler (or `501`), and the error handler; deps are injected for tests |
-| `http/` | `errors.ts` (the `ApiError` type and handler of 1.7), `auth.ts` (the Bearer middleware) |
+| `app.ts` | `createApp(deps)`: Express app with CORS, JSON parsing, the API docs, every route of `ROUTES` token-checked, validated, and dispatched to its handler (or `501`) with the token's `userId`, and the error handler; deps (handlers, `verifyToken`) are injected for tests |
+| `handlers.ts` | `createHandlers(deps)`: every implemented handler, keyed `"<method> <path>"` like `ROUTES` |
+| `http/` | `errors.ts` (the `ApiError` type and handler of 1.7), `auth.ts` (the token middleware: Bearer, `?token=`, or both, per the route's `auth`), `prisma-errors.ts` (unique violations become `409`) |
 | `auth/` | `password.ts` (bcrypt), `token.ts` (sign and verify with `jose`), `routes.ts` |
 | `workspace/` | Routes for projects, modules, test files, variables, and the tree |
 | `runs/queue.ts` | `RunQueue`: FIFO with a concurrency limit, `enqueue(runId)`, `recover()` |
