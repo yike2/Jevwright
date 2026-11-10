@@ -10,7 +10,7 @@ The Report turns the outcome of one Run into a Report Bundle: the Report itself,
 | ---- | ------- |
 | **Report** | The structured result of one Run: its outcome, a summary, every Step result, and the Run error if there is one. It is a plain object that serializes to `report.json` |
 | **Report Bundle** | The Report together with its files, each with a path relative to the Run's folder |
-| **Report Store** | The interface that saves a Report Bundle. The CLI saves it to the file system; the backend saves the Report to Postgres and the files to Vercel Blob |
+| **Report Store** | The interface that saves a Report Bundle. The CLI saves it to the file system; the backend saves the Report to Postgres and the files to its Run Files directory (`backend.md`) |
 | **Run error** | Why a Run ended before its steps did: `timeout` when it exceeded `runTimeoutMs`, `infrastructure` when the browser crashed or could not start (`executor.md` 1.7) |
 
 ### 1.2 When a Report Is Built
