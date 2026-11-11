@@ -114,7 +114,7 @@ The Backend runs on the team's VPS with docker compose. `compose.yaml` and `Cadd
 
 The Dockerfile builds from the repository root on `mcr.microsoft.com/playwright:v<playwright version>-noble`, whose Chromium matches the pinned `playwright` package. That image ships a newer Node, so Node 22 and corepack are copied from `node:22.x-bookworm-slim`, matching `.nvmrc`. It installs every dependency, since the Backend runs from source with `tsx` and `prisma` is a dev dependency, generates the Prisma Client, and runs as `pwuser`. At start it runs `prisma migrate deploy`, then `pnpm start`. compose reads `POSTGRES_PASSWORD`, `API_DOMAIN`, `JWT_SECRET`, `OPENROUTER_API_KEY`, `CORS_ORIGIN`, and `RUN_CONCURRENCY` from `.env` (`.env.example`, Deploy section) and fails before starting when a required one is missing. The same Postgres version runs in `compose.dev.yaml` and CI.
 
-Project Variable values are stored in plain text, and Run Files are never deleted; both are deliberate simplifications. Postgres needs off-box backups of the `postgres-data` volume.
+Project Variable values are stored in plain text, and Run Files are never deleted; both are deliberate simplifications. Postgres needs off-box backups of the `postgres-data` volume. `docs/deploy.md` is the step-by-step guide from a fresh VPS, including backups.
 
 ## 2. Internal Flow
 

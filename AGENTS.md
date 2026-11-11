@@ -24,6 +24,7 @@ The PRD's YAML example (`xpath`, `open: "<url>"`, per-step `timeoutMs`) is **obs
 | Components, data flow, run sequence | `docs/archify/*/index.html` ([architecture](https://yike2.github.io/Jevwright/archify/jevwright-architecture/), [run sequence](https://yike2.github.io/Jevwright/archify/jevwright-sequence/)), `docs/references/arch.svg` |
 | User journeys, CLI commands, exit codes, UI pages | `docs/PRD.md` §4.2, §7 |
 | Screens and layout | `docs/references/workspace.svg`, `dashboard.svg`, [`ui-prototype.html`](https://yike2.github.io/Jevwright/references/ui-prototype.html) |
+| Deploying to the VPS | `docs/deploy.md` |
 | Commit format | `README.md`, `.gitmessage`, `.githooks/commit-msg` (enforced) |
 | Editing diagrams | `docs/archify/rule.md` |
 
