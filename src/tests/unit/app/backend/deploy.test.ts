@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { NON_PUBLIC_RANGES } from "@/core/browser/network.js";
 
 const root = new URL("../../../../../", import.meta.url);
 const read = (path: string) => (existsSync(new URL(path, root)) ? readFileSync(new URL(path, root), "utf8") : "");
@@ -38,5 +39,40 @@ describe("deploy files", () => {
     expect(production).toMatch(/^postgres:\d+\.\d+-alpine$/);
     expect(image.exec(read("compose.dev.yaml"))?.[1]).toBe(production);
     expect(image.exec(read(".github/workflows/ci.yml"))?.[1]).toBe(production);
+  });
+
+  describe("the browser container", () => {
+    const browserfile = read("src/app/backend/browser.Dockerfile");
+    const firewall = read("src/app/backend/browser-firewall.sh");
+    const compose = read("compose.yaml");
+    const service = (name: string) => new RegExp(`^  ${name}:\n((?:    .*\n|\n)*)`, "m").exec(compose)?.[1] ?? "";
+
+    it("serves the pinned playwright version's browser with run-server", () => {
+      const { playwright } = JSON.parse(read("package.json")).dependencies as Record<string, string>;
+
+      expect(browserfile).toContain(`FROM mcr.microsoft.com/playwright:v${playwright}-`);
+      expect(browserfile).toContain(`playwright@${playwright}`);
+      expect(firewall).toMatch(/playwright run-server --port 3000 --host 0\.0\.0\.0/);
+    });
+
+    it("blocks every non-public range of network.ts for outgoing connections, IPv4 and IPv6", () => {
+      for (const [prefix, bits] of NON_PUBLIC_RANGES.ipv4)
+        expect(firewall).toMatch(new RegExp(`^\\s*${prefix.replaceAll(".", "\\.")}/${bits}\\b`, "m"));
+      for (const [prefix, bits] of NON_PUBLIC_RANGES.ipv6) expect(firewall).toContain(`${prefix}/${bits}`);
+    });
+
+    it("drops root and every capability before it starts the browser server", () => {
+      expect(firewall).toMatch(/^set -eu$/m);
+      expect(firewall).toMatch(
+        /exec setpriv --reuid=pwuser --regid=pwuser --init-groups --inh-caps=-all --bounding-set=-all/,
+      );
+    });
+
+    it("runs with NET_ADMIN for its firewall, only on the browser network, and the backend drives it", () => {
+      expect(service("browser")).toMatch(/cap_add: \[NET_ADMIN\]/);
+      expect(service("browser")).toMatch(/networks: \[browser\]/);
+      expect(service("backend")).toMatch(/BROWSER_ENDPOINT: ws:\/\/browser:3000\//);
+      expect(service("backend")).toMatch(/networks: \[data, web, browser\]/);
+    });
   });
 });

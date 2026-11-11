@@ -5,28 +5,32 @@ import type { BrowserContext } from "playwright";
 /** Resolves a host name to every address it has. */
 export type Lookup = (hostname: string) => Promise<string[]>;
 
-// Non-public ranges (browser-adapter.md 1.12). IPv4-mapped IPv6 addresses are checked as their IPv4 address.
+/** Non-public ranges (browser-adapter.md 1.12); the browser container's firewall blocks the same ones. */
+export const NON_PUBLIC_RANGES = {
+  ipv4: [
+    ["0.0.0.0", 8], // unspecified, "this network"
+    ["10.0.0.0", 8], // private
+    ["100.64.0.0", 10], // carrier-grade NAT
+    ["127.0.0.0", 8], // loopback
+    ["169.254.0.0", 16], // link-local, cloud metadata
+    ["172.16.0.0", 12], // private
+    ["192.168.0.0", 16], // private
+    ["224.0.0.0", 4], // multicast
+    ["240.0.0.0", 4], // reserved, broadcast
+  ],
+  ipv6: [
+    ["::", 128], // unspecified
+    ["::1", 128], // loopback
+    ["fc00::", 7], // unique local
+    ["fe80::", 10], // link-local
+    ["ff00::", 8], // multicast
+  ],
+} as const;
+
+// IPv4-mapped IPv6 addresses are checked as their IPv4 address.
 const BLOCKED = new BlockList();
-for (const [prefix, bits] of [
-  ["0.0.0.0", 8], // unspecified, "this network"
-  ["10.0.0.0", 8], // private
-  ["100.64.0.0", 10], // carrier-grade NAT
-  ["127.0.0.0", 8], // loopback
-  ["169.254.0.0", 16], // link-local, cloud metadata
-  ["172.16.0.0", 12], // private
-  ["192.168.0.0", 16], // private
-  ["224.0.0.0", 4], // multicast
-  ["240.0.0.0", 4], // reserved, broadcast
-] as const)
-  BLOCKED.addSubnet(prefix, bits, "ipv4");
-for (const [prefix, bits] of [
-  ["::", 128], // unspecified
-  ["::1", 128], // loopback
-  ["fc00::", 7], // unique local
-  ["fe80::", 10], // link-local
-  ["ff00::", 8], // multicast
-] as const)
-  BLOCKED.addSubnet(prefix, bits, "ipv6");
+for (const family of ["ipv4", "ipv6"] as const)
+  for (const [prefix, bits] of NON_PUBLIC_RANGES[family]) BLOCKED.addSubnet(prefix, bits, family);
 
 const MAPPED_IPV4 = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/i;
 

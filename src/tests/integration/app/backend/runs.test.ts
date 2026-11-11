@@ -5,8 +5,10 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import request from "supertest";
 import { afterAll, beforeAll, expect, it } from "vitest";
+import { browserLauncher } from "@/app/backend/src/runs/browser.js";
 import { recoverInterruptedRuns } from "@/app/backend/src/runs/execute-run.js";
 import { analyze } from "@/core/syntax/index.js";
+import { startRunServer } from "../../core/browser/run-server.js";
 import { serveFixtures } from "../../core/browser/server.js";
 import { createTestBackend, createUser, type TestBackendOptions } from "./test-app.js";
 import { describeDb, useTestDb } from "./test-db.js";
@@ -221,6 +223,21 @@ describeDb("run routes", () => {
     expect(run).toMatchObject({ status: "failed", finishedAt: expect.any(String), error: { kind: "internal" } });
     expect(run.error.message).not.toContain(notADir);
     expect(run.error.message).toMatch(/^\w*Error$/);
+  });
+
+  it("runs on the browser at BROWSER_ENDPOINT when it is set", async () => {
+    const runServer = await startRunServer();
+    try {
+      const as = await setup(passing(), { launch: browserLauncher(runServer.endpoint) });
+
+      const { id } = (await as.trigger()).body;
+      await as.queue.idle();
+
+      expect((await as.get(`/runs/${id}`)).body).toMatchObject({ status: "passed", summary: { passed: 3 } });
+      expect(runServer.connections()).toBe(1);
+    } finally {
+      runServer.stop();
+    }
   });
 
   it('blocks a page on a private address with network: "public"', async () => {

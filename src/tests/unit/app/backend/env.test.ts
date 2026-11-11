@@ -27,4 +27,14 @@ describe("parseEnv", () => {
     ]);
     expect(JSON.stringify(result)).not.toContain("too-short");
   });
+
+  it("takes an optional ws:// BROWSER_ENDPOINT", () => {
+    expect(parseEnv(required)).toMatchObject({ ok: true, env: { BROWSER_ENDPOINT: undefined } });
+    expect(parseEnv({ ...required, BROWSER_ENDPOINT: "ws://browser:3000/" })).toMatchObject({
+      ok: true,
+      env: { BROWSER_ENDPOINT: "ws://browser:3000/" },
+    });
+    const invalid = parseEnv({ ...required, BROWSER_ENDPOINT: "http://browser:3000/" });
+    expect(!invalid.ok && invalid.problems.map((problem) => problem.split(":")[0])).toEqual(["BROWSER_ENDPOINT"]);
+  });
 });

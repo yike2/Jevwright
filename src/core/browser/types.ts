@@ -3,6 +3,7 @@ export type LaunchOptions = {
   baseUrl?: string; // TestCase.baseUrl
   timeoutMs: number; // TestCase.timeoutMs
   network?: Network; // default "any"
+  endpoint?: string; // ws:// URL of a Playwright run-server to drive instead of a local Chromium (1.2)
 };
 
 // "public" aborts every request to a non-public address (browser-adapter.md 1.12).
