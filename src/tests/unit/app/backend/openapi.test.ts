@@ -42,6 +42,16 @@ describe("buildOpenApi", () => {
     expect(Object.keys(create?.responses as object).sort()).toEqual(["201", "400", "401", "404", "409"]);
   });
 
+  it("documents 413 on the routes whose body has a size-limited field", () => {
+    const codes = (path: string, method: string) => Object.keys(operation(path, method)?.responses as object);
+
+    expect(codes("/modules/{moduleId}/test-files", "post")).toContain("413");
+    expect(codes("/test-files/{testFileId}", "patch")).toContain("413");
+    expect(codes("/test-files/validate", "post")).toContain("413");
+    expect(codes("/projects/{projectId}/variables/{name}", "put")).toContain("413");
+    expect(codes("/projects", "post")).not.toContain("413");
+  });
+
   it("asks for the login token as a Bearer header, or as ?token= where a browser cannot set headers", () => {
     const open = ROUTES.filter((r) => r.auth === "none").map((r) => `${r.method} ${r.path}`);
 

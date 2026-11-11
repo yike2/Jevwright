@@ -61,14 +61,38 @@ describe("the backend app", () => {
     expect(res.body.error.details.map((issue: { path: string }) => issue.path)).toEqual(["params.projectId"]);
   });
 
-  it("answers 400 for a source over 256 KiB characters", async () => {
-    const res = await request(app)
+  it("answers 413 too_large for a source over 256 Ki characters, naming the field, without calling the handler", async () => {
+    const handler = vi.fn();
+    const sized = createApp({ ...base, handlers: { "post /test-files/validate": handler } });
+
+    const res = await request(sized)
       .post("/api/v1/test-files/validate")
       .set("authorization", BEARER)
       .send({ source: "a".repeat(256 * 1024 + 1) });
 
+    expect(res.status).toBe(413);
+    expect(res.body).toEqual({ error: { code: "too_large", message: expect.stringContaining("body.source") } });
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it("answers 413 too_large for a Variable value over 10,000 characters", async () => {
+    const res = await request(app)
+      .put(`/api/v1/projects/${PROJECT_ID}/variables/BASE`)
+      .set("authorization", BEARER)
+      .send({ value: "a".repeat(10_001) });
+
+    expect(res.status).toBe(413);
+    expect(res.body.error.code).toBe("too_large");
+  });
+
+  it("keeps 400 for a field that is too long but not a size limit, like a name", async () => {
+    const res = await request(app)
+      .post("/api/v1/projects")
+      .set("authorization", BEARER)
+      .send({ name: "a".repeat(101) });
+
     expect(res.status).toBe(400);
-    expect(res.body.error.details.map((issue: { path: string }) => issue.path)).toEqual(["body.source"]);
+    expect(res.body.error.details.map((issue: { path: string }) => issue.path)).toEqual(["body.name"]);
   });
 
   it("answers 400 for a body that is not JSON", async () => {
