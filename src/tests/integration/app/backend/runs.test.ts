@@ -182,7 +182,7 @@ describeDb("run routes", () => {
   });
 
   it("fails a Run at its failed step, with the step's reason and no Run error", async () => {
-    const source = `name: "Missing"\ntimeoutMs: 500\nsteps:\n  - open:\n      url: "${server.baseUrl}/page.html"\n  - click:\n      selector: "#missing"\n  - back: {}\n`;
+    const source = `name: "Missing"\ntimeoutMs: 1500\nsteps:\n  - open:\n      url: "${server.baseUrl}/page.html"\n  - click:\n      selector: "#missing"\n  - back: {}\n`;
     const as = await setup(source);
 
     const { id } = (await as.trigger()).body;
