@@ -18,7 +18,7 @@ The Backend is one Express service that stores users' test files, runs them with
 ### 1.2 Accounts and Tokens
 
 - A user registers and logs in with an email and a password of at least 8 characters. Emails are compared in lower case. Passwords are hashed with bcrypt (`bcryptjs`, cost 12) and never logged or returned.
-- Register and login return a JWT (HS256, signed with `JWT_SECRET`, `sub` = user id, valid `TOKEN_TTL` = 7 days). The frontend, CI scripts, and External Agents all send it as `Authorization: Bearer <token>`. Run Files and Live Progress also take the same token as `?token=<jwt>`, because `<img>`, download links, and browser WebSockets cannot set headers. A token in a URL can end up in proxy logs; that is accepted to keep auth simple.
+- Register and login return a JWT (HS256, signed with `JWT_SECRET`, `sub` = user id). It never expires, which keeps auth simple: there is no refresh and no re-login. Logging out drops the token on the client; changing `JWT_SECRET` invalidates every token. The frontend, CI scripts, and External Agents all send it as `Authorization: Bearer <token>`. Run Files and Live Progress also take the same token as `?token=<jwt>`, because `<img>`, download links, and browser WebSockets cannot set headers. A token in a URL can end up in proxy logs; that is accepted to keep auth simple.
 - Every route except register, login, health, and the API docs needs a valid token, or answers `401`. The token is checked before the request's schema, so a request without one answers `401`, not `400`.
 - Every query is scoped to the token's user. Another user's Project, Module, Test File, or Run answers `404`, never `403`, so ids of other users' data are not revealed.
 - There is no Run rate limit (PRD 4.3.7).
@@ -78,7 +78,7 @@ Every error answers JSON `{ "error": { "code": string, "message": string, "detai
 | Status | Code | When |
 | ------ | ---- | ---- |
 | `400` | `invalid_request` | A body, query, or path parameter fails its zod schema, including a path id that is not a uuid; `details` is `{ path, message }[]`, with `path` like `body.email` |
-| `401` | `unauthorized` | No token, a bad or expired token, or a wrong email or password at login |
+| `401` | `unauthorized` | No token, a bad token, or a wrong email or password at login |
 | `404` | `not_found` | No such resource for this user |
 | `409` | `conflict` | A duplicate email or name |
 | `413` | `too_large` | A request body over 1 MB, or a field over its size limit (1.3); the message names the field, e.g. `body.source`. A route lists its size-limited fields in the contract (`sizeLimited`), and a size limit wins over other schema failures |
@@ -285,7 +285,7 @@ Integration tests need PostgreSQL: CI runs a `postgres` service container, and l
 | Type | Coverage | Location |
 | ---- | -------- | -------- |
 | Unit | `env`: missing and invalid variables stop start-up | `src/tests/unit/app/backend/env.test.ts` |
-| Unit | `password`, `token`: hash and verify, wrong password, expired and tampered tokens | `src/tests/unit/app/backend/auth/` |
+| Unit | `password`, `token`: hash and verify, wrong password, no expiry, tampered tokens and other secrets | `src/tests/unit/app/backend/auth/` |
 | Unit | `RunQueue`: FIFO order, the concurrency limit, a failing Run does not stop the queue | `src/tests/unit/app/backend/runs/queue.test.ts` |
 | Unit | `run-files`: paths outside the Run's folder rejected | `src/tests/unit/app/backend/runs/run-files.test.ts` |
 | Unit | `LiveHub`: snapshot for a late subscriber, step and status messages, close after the final status | `src/tests/unit/app/backend/runs/live.test.ts` |
