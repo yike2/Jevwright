@@ -27,6 +27,8 @@ export type Route = {
   params?: z.ZodObject;
   query?: z.ZodObject;
   body?: ZodType;
+  // Fields whose max length is a size limit: going over it answers 413 too_large, not 400 (backend.md 1.7).
+  sizeLimited?: string[]; // e.g. "body.source"
   responses: Record<number, { description: string; schema?: ZodType }>;
 };
 
@@ -56,6 +58,7 @@ function route(spec: Route): Route {
   if (spec.params || spec.query || spec.body) common[400] = ok("The request fails its schema", ValidationError);
   if (spec.auth !== "none") common[401] = error("No valid token");
   if (spec.params) common[404] = error("No such resource for this user");
+  if (spec.sizeLimited) common[413] = error(`${spec.sizeLimited.join(" or ")} is over its size limit`);
   return { ...spec, responses: { ...common, ...spec.responses } };
 }
 
@@ -156,7 +159,8 @@ export const ROUTES: readonly Route[] = [
     summary: "Set a Project Variable",
     auth: "bearer",
     params: z.object({ projectId: id, name: variableName }),
-    body: z.object({ value: z.string().max(10_000) }),
+    body: z.object({ value: z.string().max(10_000).meta({ description: "At most 10,000 characters" }) }),
+    sizeLimited: ["body.value"],
     responses: { 204: ok("Set") },
   }),
   route({
@@ -216,6 +220,7 @@ export const ROUTES: readonly Route[] = [
     auth: "bearer",
     params: moduleParams,
     body: z.object({ name: fileName, source }),
+    sizeLimited: ["body.source"],
     responses: { 201: ok("Created, with the source's diagnostics", saved), 409: error("The name is taken") },
   }),
   route({
@@ -224,6 +229,7 @@ export const ROUTES: readonly Route[] = [
     summary: "Analyze a source without saving it",
     auth: "bearer",
     body: z.object({ source }),
+    sizeLimited: ["body.source"],
     responses: { 200: ok("The diagnostics; empty when valid", z.object({ diagnostics: z.array(Diagnostic) })) },
   }),
   route({
@@ -241,6 +247,7 @@ export const ROUTES: readonly Route[] = [
     auth: "bearer",
     params: testFileParams,
     body: z.object({ name: fileName.optional(), moduleId: id.optional(), source: source.optional() }),
+    sizeLimited: ["body.source"],
     responses: {
       200: ok("Saved, with the source's diagnostics", saved),
       404: error("No such Test File, or no such target Module, for this user"),

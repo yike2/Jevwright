@@ -74,17 +74,32 @@ function validate(route: Route): RequestHandler {
       body: req.body,
       userId: res.locals.userId,
     };
-    const issues = [];
+    const issues: { path: string; message: string; tooBig: boolean }[] = [];
     for (const [part, schema, value] of parts) {
       if (!schema) continue;
       const parsed = schema.safeParse(value ?? {});
       if (parsed.success) input[part] = parsed.data;
       else
         issues.push(
-          ...parsed.error.issues.map((issue) => ({ path: [part, ...issue.path].join("."), message: issue.message })),
+          ...parsed.error.issues.map((issue) => ({
+            path: [part, ...issue.path].join("."),
+            message: issue.message,
+            tooBig: issue.code === "too_big",
+          })),
         );
     }
-    if (issues.length > 0) return next(new ApiError("invalid_request", "The request fails its schema", issues));
+    // Content over a size limit is 413 like a body over 1 MB; it wins over other issues, as that check does.
+    const tooLarge = issues.find((issue) => issue.tooBig && route.sizeLimited?.includes(issue.path));
+    if (tooLarge)
+      return next(new ApiError("too_large", `${tooLarge.path} is over its size limit: ${tooLarge.message}`));
+    if (issues.length > 0)
+      return next(
+        new ApiError(
+          "invalid_request",
+          "The request fails its schema",
+          issues.map(({ path, message }) => ({ path, message })),
+        ),
+      );
     res.locals.input = input;
     next();
   };

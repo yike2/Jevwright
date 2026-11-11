@@ -28,7 +28,7 @@ The Backend is one Express service that stores users' test files, runs them with
 | Rule | |
 | ---- | - |
 | Names | Project and Module names are 1–100 characters and unique within their parent. A Test File name ends in `.yaml` and is unique within its Module |
-| Source size | A source is at most `MAX_SOURCE_CHARS` (262,144 characters); a longer one fails its schema with `400`. A request body over 1 MB answers `413` |
+| Size limits | A source is at most `MAX_SOURCE_CHARS` (262,144 characters) and a Variable value at most 10,000 characters; a longer one answers `413`, like a request body over 1 MB |
 | Saving | A Test File is saved even when its source has diagnostics. Saving answers the Syntax Analyzer's `diagnostics`, so the editor can mark the lines |
 | Validating | `POST /test-files/validate` analyzes a source without saving it |
 | Moving | `PATCH /test-files/:id` with a `moduleId` moves the Test File to another of the user's Modules |
@@ -71,7 +71,7 @@ The Benchmark Demo App therefore runs at a public address in production, for exa
 
 ### 1.7 Errors
 
-Every error answers JSON `{ "error": { "code": string, "message": string, "details"?: ... } }`. Only `400` and `422` carry `details`. Clients should treat an unknown `code` like `internal`, since codes may be added:
+Every error answers JSON `{ "error": { "code": string, "message": string, "details"?: ... } }`. The status follows HTTP's meaning; `code` is the Backend's own name for the failure, which clients branch on, and `message` is for people. Only `400` and `422` carry `details`. Clients should treat an unknown `code` like `internal`, since codes may be added:
 
 | Status | Code | When |
 | ------ | ---- | ---- |
@@ -79,7 +79,7 @@ Every error answers JSON `{ "error": { "code": string, "message": string, "detai
 | `401` | `unauthorized` | No token, a bad or expired token, or a wrong email or password at login |
 | `404` | `not_found` | No such resource for this user |
 | `409` | `conflict` | A duplicate email or name |
-| `413` | `too_large` | A request body over 1 MB |
+| `413` | `too_large` | A request body over 1 MB, or a field over its size limit (1.3); the message names the field, e.g. `body.source`. A route lists its size-limited fields in the contract (`sizeLimited`), and a size limit wins over other schema failures |
 | `422` | `invalid_test` | A Run of a Test File with diagnostics; `details` is `Diagnostic[]` |
 | `500` | `internal` | Anything else; the message is generic and the error is logged without request bodies |
 | `501` | `not_implemented` | A route of the contract (3.1) whose handler is not built yet |
@@ -291,5 +291,5 @@ Integration tests need PostgreSQL: CI runs a `postgres` service container, and l
 | Integration | Live Progress over a real WebSocket: snapshot with every step `pending`, `running` and finished steps with screenshots, final status, a finished Run's snapshot, `4401` and `4404` | `src/tests/integration/app/backend/live.test.ts` |
 | Integration | Core with `network: "public"`: a page on `127.0.0.1` is blocked | `src/tests/integration/core/browser/` |
 | Unit | OpenAPI: `info`, every route of `ROUTES` with `{name}` parameters, parameters and bodies from the schemas, Bearer and `?token=` security per route, `{ items }` lists and Run paging, typed error details, one `Step` shape for the Report and Live Progress, the Live Progress messages as components, `docs/api/openapi.json` up to date | `src/tests/unit/app/backend/openapi.test.ts` |
-| Integration | App: health, OpenAPI and Swagger UI, `501` without a handler, `400` with `{ path, message }` details before the handler, a non-uuid id, an over-long source, bad JSON, `413` over 1 MB, `404` for an unknown route, CORS only for the frontend's origin, a generic `500`, a handler gets the parsed input and the whole files wildcard | `src/tests/integration/app/backend/app.test.ts` |
+| Integration | App: health, OpenAPI and Swagger UI, `501` without a handler, `400` with `{ path, message }` details before the handler, a non-uuid id, bad JSON, `413` over 1 MB and for an over-long source or Variable value while a long name stays `400`, `404` for an unknown route, CORS only for the frontend's origin, a generic `500`, a handler gets the parsed input and the whole files wildcard | `src/tests/integration/app/backend/app.test.ts` |
 | E2E | Login → edit → validate → run → history through the frontend (Epic 6) | `src/tests/e2e/` |
