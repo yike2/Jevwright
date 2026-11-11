@@ -21,9 +21,12 @@ import type {
   ReadResult,
 } from "./types.js";
 
-/** Launches Chromium for one Run and returns its Browser Adapter. */
+/** Launches Chromium for one Run, or connects to a run-server's at `endpoint`, and returns its Browser Adapter. */
 export async function launchBrowser(options: LaunchOptions): Promise<BrowserAdapter> {
-  const browser = await chromium.launch({ headless: !options.headed });
+  // Each connection to a run-server gets a browser of its own, which close() shuts down like a local one.
+  const browser = options.endpoint
+    ? await chromium.connect(options.endpoint, { timeout: options.timeoutMs })
+    : await chromium.launch({ headless: !options.headed });
   try {
     const isPublic = options.network === "public";
     const context = await browser.newContext({

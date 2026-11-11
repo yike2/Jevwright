@@ -20,8 +20,8 @@ The Browser Adapter owns the browser for one Run. It is the only module in Jevwr
 
 | Rule | Value |
 | ---- | ----- |
-| Browser | Chromium from the `playwright` package, launched once per Run; never shared between Runs |
-| Mode | Headless by default; headed when the caller asks (CLI `--headed`) |
+| Browser | Chromium from the `playwright` package, launched once per Run; never shared between Runs. With `endpoint`, the Adapter connects to a Playwright `run-server` at that `ws://` URL instead (`chromium.connect()`, timing out after `timeoutMs`); each connection gets a browser of its own, which `close()` shuts down. The server must run the same Playwright version |
+| Mode | Headless by default; headed when the caller asks (CLI `--headed`), unless the browser is remote |
 | Context | One context per browser, with `viewport` `VIEWPORT`, `deviceScaleFactor` 1, and `baseURL` set to the TestCase `baseUrl` |
 | Default timeout | `TestCase.timeoutMs`, set with `context.setDefaultTimeout()`; every wait below uses it unless stated otherwise |
 | Trace | Always recorded: `context.tracing.start({ screenshots: true, snapshots: true })` at launch, stopped by `close()` |
@@ -184,7 +184,7 @@ All constants live in `constants.ts`.
 
 A blocked request is aborted with `failed`, so the step that made it fails with Playwright's `net::ERR_FAILED` reason; a blocked WebSocket is closed. Service workers are blocked too, since Playwright does not route their requests.
 
-This is not a sandbox. Two gaps remain: DNS can change between the check and Chromium's own lookup (DNS rebinding), and Playwright routes only the first request of a redirect chain, so a public URL that redirects to a private address is followed.
+This check alone is not a sandbox. Two gaps remain: DNS can change between the check and Chromium's own lookup (DNS rebinding), and Playwright routes only the first request of a redirect chain, so a public URL that redirects to a private address is followed. The Backend closes both at the network layer by running the browser in a container whose firewall refuses connections to these ranges (`backend.md` 1.6); `NON_PUBLIC_RANGES` in `network.ts` is the list both use.
 
 ## 2. Internal Flow
 
@@ -234,6 +234,7 @@ type LaunchOptions = {
   baseUrl?: string; // TestCase.baseUrl
   timeoutMs: number; // TestCase.timeoutMs
   network?: Network; // default "any" (1.12)
+  endpoint?: string; // ws:// URL of a Playwright run-server to connect to instead of launching Chromium (1.2)
 };
 
 type Network = "any" | "public";
@@ -388,5 +389,6 @@ Browser tests launch real headless Chromium against local HTML pages served by `
 | Integration | Tabs: switch to a `target=_blank` tab and back, ambiguous match, timeout, closed current tab | `src/tests/integration/core/browser/tabs.test.ts` |
 | Integration | Checks: `visible`, `text`, and `url` pass and fail; first-match rule; `url` matches like `switchTab` | `src/tests/integration/core/browser/checks.test.ts` |
 | Integration | `network: "public"`: a page on `127.0.0.1` fails with `net::ERR_FAILED`; with `"any"` it loads | `src/tests/integration/core/browser/network.test.ts` |
+| Integration | `endpoint`: actions, screenshot, and trace through a real `playwright run-server` (counted by a proxy in front of it), `network: "public"` still applied, and a failed launch when nothing listens | `src/tests/integration/core/browser/remote.test.ts` |
 
 HTML pages live in `src/tests/integration/core/browser/fixtures/`, one page per scenario, named after it (e.g. `confirm-delete.html`, `open-new-tab.html`).

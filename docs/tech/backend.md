@@ -65,7 +65,9 @@ The snapshot comes from the Run's analyzed source and the steps so far, so a cli
 
 ### 1.6 Private Network Blocking
 
-Users' tests run on the server, so a test could open `http://postgres:5432`, `http://localhost`, or a cloud metadata address and capture what it shows. With `network: "public"`, the Browser Adapter routes every request and WebSocket and aborts it unless its URL is `http:` or `https:` and every address its host resolves to is public: not loopback, private (RFC 1918, `fc00::/7`), link-local, carrier-grade NAT, unspecified, reserved, or multicast (`browser-adapter.md` 1.12). The step that made the request fails with Playwright's `net::ERR_FAILED` reason. This is not a sandbox (PRD 3.2 *Won't*): DNS rebinding between the check and Chromium's own lookup is not prevented, and since Playwright routes only the first request of a redirect chain, a public URL that redirects to a private address is followed.
+Users' tests run on the server, so a test could open `http://postgres:5432`, `http://localhost`, or a cloud metadata address and capture what it shows. With `network: "public"`, the Browser Adapter routes every request and WebSocket and aborts it unless its URL is `http:` or `https:` and every address its host resolves to is public: not loopback, private (RFC 1918, `fc00::/7`), link-local, carrier-grade NAT, unspecified, reserved, or multicast (`browser-adapter.md` 1.12). The step that made the request fails with Playwright's `net::ERR_FAILED` reason.
+
+That check has two gaps: DNS rebinding between the check and Chromium's own lookup, and redirects, since Playwright routes only the first request of a redirect chain, so a public URL that redirects to `http://backend:4000` would be followed. In production the network layer closes both. Runs drive a separate `browser` container (`BROWSER_ENDPOINT=ws://browser:3000/`) that runs Playwright's `run-server`. Its entry point, `browser-firewall.sh`, adds `iptables` and `ip6tables` rules that refuse every outgoing connection to the same ranges (`NON_PUBLIC_RANGES`), keeping only loopback (the server and Docker's DNS) and replies to the Backend's incoming connection open. It then starts the server as `pwuser` with no capabilities, so the browser cannot change the rules. However a page reaches a private address, the connection is refused (`net::ERR_CONNECTION_REFUSED`). The container shares only the `browser` network with the Backend, so it cannot even resolve `postgres`. This is still not a sandbox (PRD 3.2 *Won't*): a compromised browser can do anything a public client can. Without `BROWSER_ENDPOINT`, as in local development, Runs launch Chromium in the Backend's process with only the route check.
 
 The Benchmark Demo App therefore runs at a public address in production, for example `https://demo.<domain>`, set as the Project Variable `BASE`.
 
@@ -97,6 +99,7 @@ Environment variables are validated with zod at start-up; a missing or invalid o
 | `RUN_CONCURRENCY` | `1` | Runs at a time, 1–8 |
 | `PORT` | `4000` | HTTP and WebSocket port |
 | `CORS_ORIGIN` | – | The frontend's origin, allowed by CORS |
+| `BROWSER_ENDPOINT` | – | `ws://` URL of the browser container's run-server (1.6); without it, Runs launch Chromium locally |
 
 ### 1.9 Deployment
 
@@ -105,7 +108,8 @@ The Backend runs on the team's VPS with docker compose. `compose.yaml` and `Cadd
 | Service | Image | Role |
 | ------- | ----- | ---- |
 | `postgres` | `postgres:17.9-alpine` | The database, on the `data` network only, with no published port; volume `postgres-data` |
-| `backend` | Built from `src/app/backend/Dockerfile` | On the `data` and `web` networks; volume `runs` at `RUNS_DIR=/data/runs`; `shm_size: 1gb` for Chromium |
+| `backend` | Built from `src/app/backend/Dockerfile` | On the `data`, `web`, and `browser` networks; volume `runs` at `RUNS_DIR=/data/runs`; `BROWSER_ENDPOINT=ws://browser:3000/` |
+| `browser` | Built from `src/app/backend/browser.Dockerfile` | The Playwright image with `iptables` and the same `playwright` version's `run-server`; `cap_add: [NET_ADMIN]` for its firewall only (1.6); on the `browser` network only; `shm_size: 1gb` for Chromium |
 | `caddy` | `caddy:2.11.2-alpine` | HTTPS for `API_DOMAIN`, proxied to `backend:4000`, WebSocket upgrades included; no access log, since URLs may carry `?token=` |
 
 The Dockerfile builds from the repository root on `mcr.microsoft.com/playwright:v<playwright version>-noble`, whose Chromium matches the pinned `playwright` package. That image ships a newer Node, so Node 22 and corepack are copied from `node:22.x-bookworm-slim`, matching `.nvmrc`. It installs every dependency, since the Backend runs from source with `tsx` and `prisma` is a dev dependency, generates the Prisma Client, and runs as `pwuser`. At start it runs `prisma migrate deploy`, then `pnpm start`. compose reads `POSTGRES_PASSWORD`, `API_DOMAIN`, `JWT_SECRET`, `OPENROUTER_API_KEY`, `CORS_ORIGIN`, and `RUN_CONCURRENCY` from `.env` (`.env.example`, Deploy section) and fails before starting when a required one is missing. The same Postgres version runs in `compose.dev.yaml` and CI.
@@ -236,6 +240,7 @@ Unique: `User.email`; `(Project.userId, name)`; `(Module.projectId, name)`; `(Te
 | `workspace/` | `routes.ts`: routes for projects, modules, test files, variables, and the tree; `owned.ts`: lookups scoped to the user (`404` otherwise) and the rows' API shapes |
 | `runs/queue.ts` | `RunQueue`: FIFO with a concurrency limit, `enqueue(runId)`, and `idle()` for tests; a Run that throws is logged and the queue goes on |
 | `runs/execute-run.ts` | `executeRun()`: runs one queued Run with Core, writes Run Files, updates the row, and publishes its progress to a `RunProgress` (the `LiveHub`); `recoverInterruptedRuns()` of 1.4 step 6, called by `main.ts` before the queue starts |
+| `runs/browser.ts` | `browserLauncher(endpoint)`: the launch every Run uses, connecting to `BROWSER_ENDPOINT` when set |
 | `runs/to-run.ts` | The API's `Run` of a row: `toRun()` for lists, `toRunDetail()` with `source` and `report` |
 | `runs/run-files.ts` | The disk `ReportStore`, `writeRunFile()` for each step's screenshot, and `resolveRunFile()`: a path that resolves outside `RUNS_DIR/<runId>/`, or to the folder itself, is rejected |
 | `runs/live.ts` | `LiveHub`: the `RunProgress` of every Run, with each running Run's steps so far and subscribers; `attachLive()`: the WebSocket upgrade handler on the HTTP server, with the `?token=` check |
@@ -253,6 +258,8 @@ Unique: `User.email`; `(Project.userId, name)`; `(Module.projectId, name)`; `(Te
 src/app/backend/
 ├── package.json         # express, ws, zod, @prisma/client, jose, bcryptjs, swagger-ui-express
 ├── Dockerfile           # FROM the Playwright image; prisma migrate deploy, then pnpm start (tsx, no build step)
+├── browser.Dockerfile   # the browser container: Playwright image, iptables, playwright run-server
+├── browser-firewall.sh  # its entry point: the firewall of 1.6, then run-server as pwuser
 ├── prisma.config.ts     # Prisma 7 config: schema, migrations, DATABASE_URL
 ├── prisma/
 │   ├── schema.prisma    # generator "prisma-client", output src/generated/prisma
@@ -283,11 +290,11 @@ Integration tests need PostgreSQL: CI runs a `postgres` service container, and l
 | Unit | `run-files`: paths outside the Run's folder rejected | `src/tests/unit/app/backend/runs/run-files.test.ts` |
 | Unit | `LiveHub`: snapshot for a late subscriber, step and status messages, close after the final status | `src/tests/unit/app/backend/runs/live.test.ts` |
 | Unit | Core: `screenshotEveryStep`, `network: "public"` address checks | `src/tests/unit/core/...` |
-| Unit | Deploy files: the Playwright image of the pinned `playwright`, Node of `.nvmrc`, migrate before start, Caddy to `backend:4000`, one Postgres version in compose, `compose.dev.yaml`, and CI | `src/tests/unit/app/backend/deploy.test.ts` |
+| Unit | Deploy files: the Playwright image of the pinned `playwright`, Node of `.nvmrc`, migrate before start, Caddy to `backend:4000`, one Postgres version in compose, `compose.dev.yaml`, and CI; the browser container's `run-server` version, a firewall rule for every range of `NON_PUBLIC_RANGES`, root and capabilities dropped, `NET_ADMIN` and its own network | `src/tests/unit/app/backend/deploy.test.ts` |
 | Integration | Database: unique names per parent, cascade deletes, Runs kept with `null` ids | `src/tests/integration/app/backend/db.test.ts` |
 | Integration | Auth: register, duplicate email, login, wrong password, `401` without or with a bad token | `src/tests/integration/app/backend/auth.test.ts` |
 | Integration | Workspace: CRUD of every level, unique names, moving a Test File, cascade deletes, `404` for another user's data, saving a source with diagnostics, variables return names only | `src/tests/integration/app/backend/workspace.test.ts` |
-| Integration | Runs: `422` for an invalid file, `202` and `queued`, a second Run stays `queued` while one runs, the final row and Report, Run errors, files served with Bearer or `?token=` and traversal rejected, `GET /runs` filters, order, and cursor paging, restart recovery | `src/tests/integration/app/backend/runs.test.ts` |
+| Integration | Runs: `422` for an invalid file, `202` and `queued`, a second Run stays `queued` while one runs, the final row and Report, Run errors, files served with Bearer or `?token=` and traversal rejected, a Run on a `run-server` at `BROWSER_ENDPOINT`, `GET /runs` filters, order, and cursor paging, restart recovery | `src/tests/integration/app/backend/runs.test.ts` |
 | Integration | Live Progress over a real WebSocket: snapshot with every step `pending`, `running` and finished steps with screenshots, final status, a finished Run's snapshot, `4401` and `4404` | `src/tests/integration/app/backend/live.test.ts` |
 | Integration | Core with `network: "public"`: a page on `127.0.0.1` is blocked | `src/tests/integration/core/browser/` |
 | Unit | OpenAPI: `info`, every route of `ROUTES` with `{name}` parameters, parameters and bodies from the schemas, Bearer and `?token=` security per route, `{ items }` lists and Run paging, typed error details, one `Step` shape for the Report and Live Progress, the Live Progress messages as components, `docs/api/openapi.json` up to date | `src/tests/unit/app/backend/openapi.test.ts` |

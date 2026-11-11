@@ -29,7 +29,8 @@ describe("parseEnv", () => {
   });
 
   it("takes an optional ws:// BROWSER_ENDPOINT", () => {
-    expect(parseEnv(required)).toMatchObject({ ok: true, env: { BROWSER_ENDPOINT: undefined } });
+    const unset = parseEnv(required);
+    expect(unset.ok && unset.env.BROWSER_ENDPOINT).toBeUndefined();
     expect(parseEnv({ ...required, BROWSER_ENDPOINT: "ws://browser:3000/" })).toMatchObject({
       ok: true,
       env: { BROWSER_ENDPOINT: "ws://browser:3000/" },

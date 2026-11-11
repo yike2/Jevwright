@@ -8,6 +8,7 @@ const ENV = z.object({
   RUNS_DIR: z.string().min(1).default("./data/runs"),
   RUN_CONCURRENCY: z.coerce.number().int().min(1).max(8).default(1),
   PORT: z.coerce.number().int().min(1).max(65535).default(4000),
+  BROWSER_ENDPOINT: z.url({ protocol: /^wss?$/ }).optional(),
 });
 
 export type Env = z.infer<typeof ENV>;

@@ -1,4 +1,4 @@
-# Production on the VPS (backend.md 1.9): the backend, Postgres, and Caddy for HTTPS.
+# Production on the VPS (backend.md 1.9): the backend, its browser container, Postgres, and Caddy for HTTPS.
 #   cp .env.example .env   # fill in the Deploy section
 #   docker compose up -d --build
 # The frontend and the public Demo App are added by their own services and Caddy sites.
@@ -28,6 +28,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      browser:
+        condition: service_started
     environment:
       DATABASE_URL: postgresql://jevwright:${POSTGRES_PASSWORD}@postgres:5432/jevwright
       JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
@@ -36,12 +38,25 @@ services:
       RUN_CONCURRENCY: ${RUN_CONCURRENCY:-1}
       RUNS_DIR: /data/runs
       PORT: 4000
+      # Runs drive the browser container, never a Chromium inside the backend (backend.md 1.6).
+      BROWSER_ENDPOINT: ws://browser:3000/
     volumes:
       - runs:/data/runs
+    init: true
+    networks: [data, web, browser]
+
+  browser:
+    build:
+      context: .
+      dockerfile: src/app/backend/browser.Dockerfile
+    restart: unless-stopped
+    # For its own firewall at start; the server then runs without capabilities (browser-firewall.sh).
+    cap_add: [NET_ADMIN]
     # Chromium uses /dev/shm; Docker's default 64 MB makes it crash on large pages.
     shm_size: 1gb
     init: true
-    networks: [data, web]
+    # Only the backend shares this network; the firewall refuses the browser's own connections to it anyway.
+    networks: [browser]
 
   caddy:
     image: caddy:2.11.2-alpine
@@ -68,3 +83,4 @@ volumes:
 networks:
   data:
   web:
+  browser:

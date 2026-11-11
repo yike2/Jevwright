@@ -6,6 +6,7 @@ import { verifyToken } from "./auth/token.js";
 import { createDb } from "./db.js";
 import { parseEnv } from "./env.js";
 import { createHandlers } from "./handlers.js";
+import { browserLauncher } from "./runs/browser.js";
 import { executeRun, recoverInterruptedRuns } from "./runs/execute-run.js";
 import { attachLive, LiveHub, loadRunFrom } from "./runs/live.js";
 import { RunQueue } from "./runs/queue.js";
@@ -27,8 +28,9 @@ if (recovered > 0) console.log(`Marked ${recovered} interrupted Run(s) as failed
 
 const jev = createJevClient({ apiKey: env.OPENROUTER_API_KEY, fetch: globalThis.fetch });
 const hub = new LiveHub(loadRunFrom(db));
+const launch = browserLauncher(env.BROWSER_ENDPOINT);
 const queue = new RunQueue(
-  (runId) => executeRun(runId, { db, runsDir: env.RUNS_DIR, jev, network: "public", progress: hub }),
+  (runId) => executeRun(runId, { db, runsDir: env.RUNS_DIR, jev, network: "public", progress: hub, launch }),
   env.RUN_CONCURRENCY,
 );
 
