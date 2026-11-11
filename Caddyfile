@@ -1,0 +1,6 @@
+# HTTPS for the backend (backend.md 1.9); Caddy gets and renews the certificate for API_DOMAIN.
+# reverse_proxy also carries Live Progress's WebSocket upgrades. No access log is written, since Run File
+# and Live Progress URLs carry the login token as ?token= (backend.md 1.2).
+{$API_DOMAIN} {
+	reverse_proxy backend:4000
+}

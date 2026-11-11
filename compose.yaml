@@ -1,0 +1,70 @@
+# Production on the VPS (backend.md 1.9): the backend, Postgres, and Caddy for HTTPS.
+#   cp .env.example .env   # fill in the Deploy section
+#   docker compose up -d --build
+# The frontend and the public Demo App are added by their own services and Caddy sites.
+services:
+  postgres:
+    image: postgres:17.9-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: jevwright
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: jevwright
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jevwright"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    # Only the backend reaches Postgres; no port is published.
+    networks: [data]
+
+  backend:
+    build:
+      context: .
+      dockerfile: src/app/backend/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://jevwright:${POSTGRES_PASSWORD}@postgres:5432/jevwright
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:?set OPENROUTER_API_KEY in .env}
+      CORS_ORIGIN: ${CORS_ORIGIN:?set CORS_ORIGIN in .env}
+      RUN_CONCURRENCY: ${RUN_CONCURRENCY:-1}
+      RUNS_DIR: /data/runs
+      PORT: 4000
+    volumes:
+      - runs:/data/runs
+    # Chromium uses /dev/shm; Docker's default 64 MB makes it crash on large pages.
+    shm_size: 1gb
+    init: true
+    networks: [data, web]
+
+  caddy:
+    image: caddy:2.11.2-alpine
+    restart: unless-stopped
+    depends_on: [backend]
+    environment:
+      API_DOMAIN: ${API_DOMAIN:?set API_DOMAIN in .env}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks: [web]
+
+volumes:
+  postgres-data:
+  runs:
+  caddy-data:
+  caddy-config:
+
+networks:
+  data:
+  web:

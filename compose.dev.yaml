@@ -3,7 +3,7 @@
 #   DATABASE_URL=postgresql://jevwright:jevwright@localhost:5432/jevwright
 services:
   postgres:
-    image: postgres:17-alpine
+    image: postgres:17.9-alpine
     environment:
       POSTGRES_USER: jevwright
       POSTGRES_PASSWORD: jevwright

@@ -98,6 +98,20 @@ Environment variables are validated with zod at start-up; a missing or invalid o
 | `PORT` | `4000` | HTTP and WebSocket port |
 | `CORS_ORIGIN` | – | The frontend's origin, allowed by CORS |
 
+### 1.9 Deployment
+
+The Backend runs on the team's VPS with docker compose. `compose.yaml` and `Caddyfile` at the repository root hold the Backend's part; the frontend and the public Demo App add their own services and Caddy sites. The frontend and the API have separate domains, so the Backend keeps CORS for `CORS_ORIGIN`.
+
+| Service | Image | Role |
+| ------- | ----- | ---- |
+| `postgres` | `postgres:17.9-alpine` | The database, on the `data` network only, with no published port; volume `postgres-data` |
+| `backend` | Built from `src/app/backend/Dockerfile` | On the `data` and `web` networks; volume `runs` at `RUNS_DIR=/data/runs`; `shm_size: 1gb` for Chromium |
+| `caddy` | `caddy:2.11.2-alpine` | HTTPS for `API_DOMAIN`, proxied to `backend:4000`, WebSocket upgrades included; no access log, since URLs may carry `?token=` |
+
+The Dockerfile builds from the repository root on `mcr.microsoft.com/playwright:v<playwright version>-noble`, whose Chromium matches the pinned `playwright` package. That image ships a newer Node, so Node 22 and corepack are copied from `node:22.x-bookworm-slim`, matching `.nvmrc`. It installs every dependency, since the Backend runs from source with `tsx` and `prisma` is a dev dependency, generates the Prisma Client, and runs as `pwuser`. At start it runs `prisma migrate deploy`, then `pnpm start`. compose reads `POSTGRES_PASSWORD`, `API_DOMAIN`, `JWT_SECRET`, `OPENROUTER_API_KEY`, `CORS_ORIGIN`, and `RUN_CONCURRENCY` from `.env` (`.env.example`, Deploy section) and fails before starting when a required one is missing. The same Postgres version runs in `compose.dev.yaml` and CI.
+
+Project Variable values are stored in plain text, and Run Files are never deleted; both are deliberate simplifications. Postgres needs off-box backups of the `postgres-data` volume.
+
 ## 2. Internal Flow
 
 ```mermaid
@@ -269,6 +283,7 @@ Integration tests need PostgreSQL: CI runs a `postgres` service container, and l
 | Unit | `run-files`: paths outside the Run's folder rejected | `src/tests/unit/app/backend/runs/run-files.test.ts` |
 | Unit | `LiveHub`: snapshot for a late subscriber, step and status messages, close after the final status | `src/tests/unit/app/backend/runs/live.test.ts` |
 | Unit | Core: `screenshotEveryStep`, `network: "public"` address checks | `src/tests/unit/core/...` |
+| Unit | Deploy files: the Playwright image of the pinned `playwright`, Node of `.nvmrc`, migrate before start, Caddy to `backend:4000`, one Postgres version in compose, `compose.dev.yaml`, and CI | `src/tests/unit/app/backend/deploy.test.ts` |
 | Integration | Database: unique names per parent, cascade deletes, Runs kept with `null` ids | `src/tests/integration/app/backend/db.test.ts` |
 | Integration | Auth: register, duplicate email, login, wrong password, `401` without or with a bad token | `src/tests/integration/app/backend/auth.test.ts` |
 | Integration | Workspace: CRUD of every level, unique names, moving a Test File, cascade deletes, `404` for another user's data, saving a source with diagnostics, variables return names only | `src/tests/integration/app/backend/workspace.test.ts` |

@@ -1,0 +1,14 @@
+# Keep secrets, local data, and build output out of the backend image (src/app/backend/Dockerfile).
+**/node_modules
+**/.env
+**/.env.*
+!.env.example
+.git
+.github
+docs
+data
+benchmark-results
+jevwright-reports
+coverage
+src/app/backend/src/generated
+src/app/frontend/.next
