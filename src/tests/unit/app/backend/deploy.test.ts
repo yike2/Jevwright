@@ -25,6 +25,16 @@ describe("deploy files", () => {
     expect(dockerfile).toMatch(/^ENV .*\bHOST=0\.0\.0\.0\b/m);
   });
 
+  it("starts the backend in dev mode only from the development scripts, never in production", () => {
+    const root = JSON.parse(read("package.json")).scripts as Record<string, string>;
+    const backend = JSON.parse(read("src/app/backend/package.json")).scripts as Record<string, string>;
+
+    expect(root.backend).toMatch(/ --dev$/);
+    expect(backend.dev).toMatch(/ --dev$/);
+    expect(backend.start).not.toContain("--dev");
+    expect(dockerfile).toContain("pnpm --filter @jevwright/backend start");
+  });
+
   it("migrates the database before starting the backend", () => {
     expect(dockerfile).toMatch(/prisma migrate deploy && exec pnpm --filter @jevwright\/backend start/);
   });

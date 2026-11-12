@@ -13,6 +13,7 @@ describe("parseEnv", () => {
     expect(parseEnv(required)).toEqual({
       ok: true,
       env: { ...required, RUNS_DIR: "./data/runs", RUN_CONCURRENCY: 1, PORT: 4000, HOST: "127.0.0.1" },
+      runNetwork: "public",
     });
   });
 
@@ -43,5 +44,25 @@ describe("parseEnv", () => {
     });
     const invalid = parseEnv({ ...required, BROWSER_ENDPOINT: "http://browser:3000/" });
     expect(!invalid.ok && invalid.problems.map((problem) => problem.split(":")[0])).toEqual(["BROWSER_ENDPOINT"]);
+  });
+
+  it("lets dev mode's Runs reach any address, local pages included", () => {
+    expect(parseEnv(required, { dev: true })).toMatchObject({ ok: true, runNetwork: "any" });
+  });
+
+  it.each(["127.0.0.1", "127.0.0.2", "::1", "localhost"])("allows dev mode on the loopback HOST %s", (host) => {
+    expect(parseEnv({ ...required, HOST: host }, { dev: true })).toMatchObject({ ok: true, runNetwork: "any" });
+  });
+
+  it("refuses dev mode on a HOST other machines can reach, since its Runs could reach this machine", () => {
+    const result = parseEnv({ ...required, HOST: "0.0.0.0" }, { dev: true });
+
+    expect(result.ok).toBe(false);
+    expect(!result.ok && result.problems).toEqual([expect.stringMatching(/^HOST: .*dev mode/)]);
+  });
+
+  it("keeps Runs on public addresses outside dev mode, whatever HOST is", () => {
+    expect(parseEnv({ ...required, HOST: "127.0.0.1" })).toMatchObject({ ok: true, runNetwork: "public" });
+    expect(parseEnv({ ...required, HOST: "0.0.0.0" })).toMatchObject({ ok: true, runNetwork: "public" });
   });
 });

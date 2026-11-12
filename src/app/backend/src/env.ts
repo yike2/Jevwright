@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { Network } from "@/core/browser/index.js";
 
 const ENV = z.object({
   DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
@@ -15,12 +16,16 @@ const ENV = z.object({
 
 export type Env = z.infer<typeof ENV>;
 
-/** Validates the backend's environment variables (backend.md 1.8); problems name variables, never values. */
+/**
+ * Validates the backend's environment variables (backend.md 1.8) and picks the Runs' network: "public", or "any"
+ * in dev mode. Problems name variables, never values.
+ */
 export function parseEnv(
   source: Record<string, string | undefined>,
-): { ok: true; env: Env } | { ok: false; problems: string[] } {
+  _options: { dev?: boolean } = {},
+): { ok: true; env: Env; runNetwork: Network } | { ok: false; problems: string[] } {
   const parsed = ENV.safeParse(source);
-  if (parsed.success) return { ok: true, env: parsed.data };
+  if (parsed.success) return { ok: true, env: parsed.data, runNetwork: "public" };
   // zod messages describe the rule ("Too small: expected ..."), not the input, so they are safe to print.
   return { ok: false, problems: parsed.error.issues.map((issue) => `${issue.path.join(".")}: ${issue.message}`) };
 }
