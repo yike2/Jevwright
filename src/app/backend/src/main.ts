@@ -4,15 +4,16 @@ import { createJevClient } from "@/core/jev/index.js";
 import { createApp } from "./app.js";
 import { verifyToken } from "./auth/token.js";
 import { createDb } from "./db.js";
-import { parseEnv } from "./env.js";
+import { ENV_FILE, parseEnv } from "./env.js";
 import { createHandlers } from "./handlers.js";
 import { browserLauncher } from "./runs/browser.js";
 import { executeRun, recoverInterruptedRuns } from "./runs/execute-run.js";
 import { attachLive, LiveHub, loadRunFrom } from "./runs/live.js";
 import { RunQueue } from "./runs/queue.js";
 
-// Like the CLI, read .env from the working directory without overriding variables already set.
-if (existsSync(".env")) process.loadEnvFile(".env");
+// Read the repository's .env wherever the backend starts, without overriding variables already set; the
+// image has none, so compose's variables apply.
+if (existsSync(ENV_FILE)) process.loadEnvFile(ENV_FILE);
 
 // The development scripts pass --dev; `pnpm start`, which production runs, never does (backend.md 1.6).
 const dev = process.argv.includes("--dev");

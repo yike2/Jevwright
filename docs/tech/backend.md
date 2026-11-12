@@ -91,7 +91,7 @@ Every error answers JSON `{ "error": { "code": string, "message": string, "detai
 
 ### 1.8 Configuration
 
-Environment variables are validated with zod at start-up; a missing or invalid one stops the process before it listens. `.env.example` lists them.
+Environment variables are validated with zod at start-up; a missing or invalid one stops the process before it listens. `.env.example` lists them. A local backend also reads the repository's `.env` (`ENV_FILE`), wherever it starts, without overriding variables already set; the image has no `.env`, so in production compose sets them.
 
 | Variable | Default | Use |
 | -------- | ------- | --- |
