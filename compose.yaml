@@ -1,4 +1,5 @@
-# Production on the VPS (backend.md 1.9): the backend, its browser container, Postgres, and Caddy for HTTPS.
+# Production on the VPS (backend.md 1.9): the backend, its browser container, Postgres, and Caddy for HTTPS,
+# which also serves the benchmark Demo App.
 #   cp .env.example .env   # fill in the Deploy section
 #   docker compose up -d --build
 # The frontend and the public Demo App are added by their own services and Caddy sites.
@@ -69,12 +70,16 @@ services:
     depends_on: [backend]
     environment:
       API_DOMAIN: ${API_DOMAIN:?set API_DOMAIN in .env}
+      DEMO_DOMAIN: ${DEMO_DOMAIN:?set DEMO_DOMAIN in .env}
     ports:
       - "80:80"
       - "443:443"
       - "443:443/udp"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # The Demo App's static files, straight from the checkout: git pull updates them without a restart.
+      - ./src/tests/benchmark/demo-app/site:/srv/demo/site:ro
+      - ./src/tests/benchmark/demo-app/extras:/srv/demo/extras:ro
       - caddy-data:/data
       - caddy-config:/config
     networks: [web]
