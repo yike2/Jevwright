@@ -21,6 +21,10 @@ describe("deploy files", () => {
     expect(dockerfile).toMatch(new RegExp(`^FROM node:${major}\\.\\d+\\.\\d+-\\S+ AS node$`, "m"));
   });
 
+  it("listens on every interface inside its container, so Caddy can reach it", () => {
+    expect(dockerfile).toMatch(/^ENV .*\bHOST=0\.0\.0\.0\b/m);
+  });
+
   it("migrates the database before starting the backend", () => {
     expect(dockerfile).toMatch(/prisma migrate deploy && exec pnpm --filter @jevwright\/backend start/);
   });

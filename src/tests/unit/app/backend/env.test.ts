@@ -12,7 +12,7 @@ describe("parseEnv", () => {
   it("reads the required variables and fills in the defaults", () => {
     expect(parseEnv(required)).toEqual({
       ok: true,
-      env: { ...required, RUNS_DIR: "./data/runs", RUN_CONCURRENCY: 1, PORT: 4000 },
+      env: { ...required, RUNS_DIR: "./data/runs", RUN_CONCURRENCY: 1, PORT: 4000, HOST: "127.0.0.1" },
     });
   });
 
@@ -26,6 +26,12 @@ describe("parseEnv", () => {
       "RUN_CONCURRENCY",
     ]);
     expect(JSON.stringify(result)).not.toContain("too-short");
+  });
+
+  it("listens on 127.0.0.1 unless HOST says otherwise, so a local backend is not reachable from the network", () => {
+    expect(parseEnv({ ...required, HOST: "0.0.0.0" })).toMatchObject({ ok: true, env: { HOST: "0.0.0.0" } });
+    const empty = parseEnv({ ...required, HOST: "" });
+    expect(!empty.ok && empty.problems.map((problem) => problem.split(":")[0])).toEqual(["HOST"]);
   });
 
   it("takes an optional ws:// BROWSER_ENDPOINT", () => {
