@@ -54,6 +54,11 @@ services:
     cap_add: [NET_ADMIN]
     # Chromium uses /dev/shm; Docker's default 64 MB makes it crash on large pages.
     shm_size: 1gb
+    # One heavy or hostile page must not exhaust the server. These fit RUN_CONCURRENCY=1 on a 4 GB VPS;
+    # raise them with RUN_CONCURRENCY. Chromium counts its threads against pids_limit.
+    mem_limit: 2g
+    cpus: "1.5"
+    pids_limit: 1024
     init: true
     # Only the backend shares this network; the firewall refuses the browser's own connections to it anyway.
     networks: [browser]

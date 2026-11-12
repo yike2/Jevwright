@@ -71,7 +71,7 @@ Edit `.env`. compose reads it from this folder; the deploy needs these variables
 | `POSTGRES_PASSWORD` | A new random password: `openssl rand -hex 24` |
 | `JWT_SECRET` | A new random secret of at least 32 characters: `openssl rand -hex 32`. Changing it logs every user out |
 | `OPENROUTER_API_KEY` | The OpenRouter key Runs use for Jev |
-| `RUN_CONCURRENCY` | Runs at a time, 1–8; keep `1` unless `docker stats` shows memory to spare |
+| `RUN_CONCURRENCY` | Runs at a time, 1–8; keep `1` unless `docker stats` shows memory to spare. The `browser` service is limited to 2 GB of memory and 1.5 CPUs in `compose.yaml`; raise `mem_limit` and `cpus` there with it, about 1 GB per extra Run |
 
 Leave `DATABASE_URL`, `RUNS_DIR`, `PORT`, and `BROWSER_ENDPOINT` unset; compose sets them. compose refuses to start when a required variable is missing.
 
