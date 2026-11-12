@@ -28,6 +28,7 @@ export function createTestBackend(db: Db, options: TestBackendOptions = {}) {
     network: options.network ?? "any",
     progress: options.progress ?? { status: () => {}, step: () => {} },
     ...(options.launch ? { launch: options.launch } : {}),
+    ...(options.maxRunTimeoutMs ? { maxRunTimeoutMs: options.maxRunTimeoutMs } : {}),
   };
   const queue = new RunQueue((runId) => executeRun(runId, deps), options.concurrency ?? 1);
   const app = createApp({

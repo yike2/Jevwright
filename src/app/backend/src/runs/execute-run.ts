@@ -103,6 +103,7 @@ async function runWithCore(run: Run, deps: RunDeps): Promise<Report> {
         onEvent,
         screenshotEveryStep: true,
         network: deps.network,
+        maxRunTimeoutMs: deps.maxRunTimeoutMs ?? MAX_RUN_TIMEOUT_MS,
       },
       deps.launch,
     );

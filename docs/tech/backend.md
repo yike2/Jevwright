@@ -44,6 +44,7 @@ The Backend is one Express service that stores users' test files, runs them with
    - the Project Variables as `vars`;
    - `screenshotEveryStep: true`, so every executed step has a screenshot;
    - `network: "public"`, so the browser reaches only public addresses (1.6);
+   - `maxRunTimeoutMs: MAX_RUN_TIMEOUT_MS` (10 minutes), so one Run cannot hold the global queue for longer, whatever its `runTimeoutMs`; a Run cut short ends with a `timeout` error naming the cap;
    - a Run Files store that writes the bundle to `RUNS_DIR/<runId>/`.
 4. On each step event the Backend writes the step's screenshot to the Run Files right away and publishes the step on the Run's Live Progress.
 5. When `runTest()` returns, the Run takes the Report's `status`, `durationMs`, step counts, and the whole Report; a Report `error` (Core's `timeout` or `infrastructure`, message already redacted) becomes the Run's `error`. When `runTest()` throws, the Run becomes `failed` with `error: { kind: "internal", message: <the error's name> }`; the error's message never reaches the API, since it may hold a Variable value.
@@ -192,17 +193,18 @@ A `Run` carries its `testFileId`, `moduleId`, `projectId`, `fileName`, TestCase 
 
 ### 3.2 Core Changes
 
-The Backend needs two options in Core, both off by default so the CLI keeps its behavior:
+The Backend needs three options in Core, all off by default so the CLI keeps its behavior:
 
 ```ts
 type RunTestOptions = {
   // ...existing fields
   screenshotEveryStep?: boolean; // Executor: a screenshot after every executed step, not only a failed one
   network?: "any" | "public";    // Browser Adapter: abort requests to non-public addresses (1.6)
+  maxRunTimeoutMs?: number;      // Executor: cap runTimeoutMs (1.4)
 };
 ```
 
-With `screenshotEveryStep`, Core's passed steps carry a `screenshot` too, in their Step results, `finished` events, and the Report (`executor.md` 1.3, `report.md` 1.3). `network` is the Browser Adapter's private network blocking (`browser-adapter.md` 1.12).
+With `screenshotEveryStep`, Core's passed steps carry a `screenshot` too, in their Step results, `finished` events, and the Report (`executor.md` 1.3, `report.md` 1.3). `network` is the Browser Adapter's private network blocking (`browser-adapter.md` 1.12). `maxRunTimeoutMs` caps the Run timeout (`executor.md` 1.7).
 
 ### 3.3 Database
 
@@ -294,7 +296,7 @@ Integration tests need PostgreSQL: CI runs a `postgres` service container, and l
 | Integration | Database: unique names per parent, cascade deletes, Runs kept with `null` ids | `src/tests/integration/app/backend/db.test.ts` |
 | Integration | Auth: register, duplicate email, login, wrong password, `401` without or with a bad token | `src/tests/integration/app/backend/auth.test.ts` |
 | Integration | Workspace: CRUD of every level, unique names, moving a Test File, cascade deletes, `404` for another user's data, saving a source with diagnostics, variables return names only | `src/tests/integration/app/backend/workspace.test.ts` |
-| Integration | Runs: `422` for an invalid file, `202` and `queued`, a second Run stays `queued` while one runs, the final row and Report, Run errors, files served with Bearer or `?token=` and traversal rejected, a Run on a `run-server` at `BROWSER_ENDPOINT`, `GET /runs` filters, order, and cursor paging, restart recovery | `src/tests/integration/app/backend/runs.test.ts` |
+| Integration | Runs: `422` for an invalid file, `202` and `queued`, a second Run stays `queued` while one runs, the final row and Report, Run errors, files served with Bearer or `?token=` and traversal rejected, a Run on a `run-server` at `BROWSER_ENDPOINT`, a Run capped at the longest run time, `GET /runs` filters, order, and cursor paging, restart recovery | `src/tests/integration/app/backend/runs.test.ts` |
 | Integration | Live Progress over a real WebSocket: snapshot with every step `pending`, `running` and finished steps with screenshots, final status, a finished Run's snapshot, `4401` and `4404` | `src/tests/integration/app/backend/live.test.ts` |
 | Integration | Core with `network: "public"`: a page on `127.0.0.1` is blocked | `src/tests/integration/core/browser/` |
 | Unit | OpenAPI: `info`, every route of `ROUTES` with `{name}` parameters, parameters and bodies from the schemas, Bearer and `?token=` security per route, `{ items }` lists and Run paging, typed error details, one `Step` shape for the Report and Live Progress, the Live Progress messages as components, `docs/api/openapi.json` up to date | `src/tests/unit/app/backend/openapi.test.ts` |

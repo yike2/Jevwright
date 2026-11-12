@@ -33,6 +33,7 @@ export async function runTest(
         jev: options.jev,
         screenshotEveryStep: options.screenshotEveryStep,
         network: options.network,
+        maxRunTimeoutMs: options.maxRunTimeoutMs,
       },
       launch,
     );

@@ -6,3 +6,6 @@ export const missingVariables = (names: string[]) =>
 
 /** Failure reason, and Run error message, when the Run outlasts `runTimeoutMs`. */
 export const runTimedOut = (ms: number) => `The run did not finish within runTimeoutMs (${ms} ms)`;
+
+/** The same, when the caller's maxRunTimeoutMs cut a longer `runTimeoutMs` short. */
+export const runCapped = (ms: number) => `The run did not finish within the longest run time allowed (${ms} ms)`;

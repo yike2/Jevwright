@@ -13,7 +13,7 @@ The Executor runs one validated `TestCase`: it launches the Browser Adapter, run
 | **Step event** | A progress message sent through `onEvent`: one when a step starts, one when it ends |
 | **Variable** | A `{{NAME}}` placeholder in a test file string, filled in from the caller's `vars` before the Adapter sees the step |
 | **Redaction** | Replacing a Variable's value with its `{{NAME}}` in reasons, dialog messages, events, and the Run error, so the value never reaches a report or log |
-| **Run timeout** | `TestCase.runTimeoutMs`: the time the launch and all steps together may take, separate from the per-step `timeoutMs` |
+| **Run timeout** | `TestCase.runTimeoutMs`: the time the launch and all steps together may take, separate from the per-step `timeoutMs`. A caller's `maxRunTimeoutMs` caps it |
 | **Run error** | Why a Run was aborted: `timeout` when the Run timeout expired, `infrastructure` when the browser crashed or could not start (1.7) |
 
 ### 1.2 Run Lifecycle
@@ -74,6 +74,7 @@ Values are never logged.
 | ------------------ | ------------------------------------------------------------------------------------------------ |
 | `MISSING_VARIABLE` | `Variable {{NAME}} is not set`, or `Variables {{A}}, {{B}} are not set` when several are missing |
 | `runTimedOut(ms)` | `The run did not finish within runTimeoutMs (<ms> ms)` |
+| `runCapped(ms)` | `The run did not finish within the longest run time allowed (<ms> ms)`, when `maxRunTimeoutMs` is below `runTimeoutMs` and cut the Run short |
 
 Every other reason comes from the Browser Adapter unchanged, apart from Redaction.
 
@@ -83,8 +84,8 @@ A Run is aborted in two cases; both throw a `RunAbortedError` (3.1) instead of r
 
 | Case | Run error | The running step | Trace |
 | ---- | --------- | ---------------- | ----- |
-| The Run timeout expires during launch | `timeout`, message `runTimedOut(runTimeoutMs)` | – (every step `pending`) | Empty |
-| The Run timeout expires during a step | `timeout`, message `runTimedOut(runTimeoutMs)` | `failed` with that message as its reason | From `close()` |
+| The Run timeout expires during launch | `timeout`, message `runTimedOut(runTimeoutMs)`, or `runCapped(maxRunTimeoutMs)` when the cap applied | – (every step `pending`) | Empty |
+| The Run timeout expires during a step | `timeout`, message `runTimedOut(runTimeoutMs)`, or `runCapped(maxRunTimeoutMs)` when the cap applied | `failed` with that message as its reason | From `close()` |
 | `launchBrowser()` throws | `infrastructure`, message from the error | – (every step `pending`) | Empty |
 | An Adapter call throws (the browser crashed or disconnected, `browser-adapter.md` 1.10), or anything else throws while a step runs, including `onEvent` | `infrastructure`, message from the error | `failed` with that message as its reason | From `close()`, or empty when `close()` throws too |
 | `close()` throws after the steps ended | `infrastructure`, message from the error | – (the steps keep their results) | Empty |
@@ -150,6 +151,7 @@ type ExecuteOptions = {
   jev: JevClient;
   screenshotEveryStep?: boolean; // a screenshot after every executed step, not only a failed one (1.3)
   network?: Network; // passed to launchBrowser (browser-adapter.md 1.12)
+  maxRunTimeoutMs?: number; // the longest Run timeout allowed; a larger runTimeoutMs is capped to it (1.7)
 };
 
 type ExecuteResult = {
@@ -249,7 +251,7 @@ Unit tests use a fake `BrowserAdapter` that records every call and returns scrip
 | Unit | `variables`: substitution in every string field, including the Dialog response; missing names listed in order; Redaction of reasons and dialog messages, longest value first, empty values ignored, only Variables used in the `TestCase` | `src/tests/unit/core/executor/variables.test.ts` |
 | Unit | `runStep`: each row of 1.4 makes the stated Adapter call with substituted values; `ready()` failure skips the call; a missing Variable calls no Adapter method before the screenshot; dialogs from `ready()` and the call are merged in order; failure takes a screenshot and keeps the reason when the screenshot fails; with `screenshotEveryStep` a passed step takes one after its call, a failed step still takes one, and an unreadable one leaves the step passed; `locateMethod` is recorded for element actions (`selector`, `visual`, or `dom`); `LocateError` fails the step; `WaitForCondition` and `AssertStatement` are judged by Asserter; a failed check with a `statement` falls back to Asserter and either passes (holds) or fails with a combined reason | `src/tests/unit/core/executor/run-step.test.ts` |
 | Unit | `execute`: launch options from the `TestCase`, `headed`, and `network`; `screenshotEveryStep` screenshots in results and events; steps run in order; stop at the first failure with the rest `pending`; `started` and `finished` events per executed step and none for `pending` steps; `close()` runs after success, failure, and a thrown error | `src/tests/unit/core/executor/execute.test.ts` |
-| Unit | Aborted Runs, each row of 1.7: the `RunAbortedError`'s kind, redacted message, `cause`, Step results, and trace; the running step failed with its timing; a `finished` event for it and none after; a late Adapter result dropped; the Adapter of a late launch closed; an empty trace when `close()` throws after a crash; the Run timeout counts `runTimeoutMs`, not the step `timeoutMs`; an `onEvent` that throws still closes the browser and fails its step | `src/tests/unit/core/executor/abort.test.ts` |
+| Unit | Aborted Runs, each row of 1.7: the `RunAbortedError`'s kind, redacted message, `cause`, Step results, and trace; the running step failed with its timing; a `finished` event for it and none after; a late Adapter result dropped; the Adapter of a late launch closed; an empty trace when `close()` throws after a crash; the Run timeout counts `runTimeoutMs`, not the step `timeoutMs`; `maxRunTimeoutMs` caps it with the `runCapped` message and leaves a smaller `runTimeoutMs` as it is; an `onEvent` that throws still closes the browser and fails its step | `src/tests/unit/core/executor/abort.test.ts` |
 | Integration | A `TestCase` against local HTML pages with the real Browser Adapter: a passing run with actions, a dialog, `switchTab`, `waitFor`, and `assert`; a failing `assert` whose `text` is a Variable, with its value redacted from the reason | `src/tests/integration/core/executor/execute.test.ts` |
 
 HTML pages live in `src/tests/integration/core/executor/fixtures/`, one page per scenario, named after it.

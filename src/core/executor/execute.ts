@@ -2,7 +2,7 @@ import { launchBrowser, type BrowserAdapter } from "../browser/index.js";
 import { firstLine } from "../browser/errors.js";
 import type { Step, TestCase } from "../syntax/index.js";
 import { RunAbortedError } from "./errors.js";
-import { missingVariables, runTimedOut } from "./reasons.js";
+import { missingVariables, runCapped, runTimedOut } from "./reasons.js";
 import { failure, runStep, toStepResult, type StepContext } from "./run-step.js";
 import type { ExecuteOptions, ExecuteResult, RunError, StepResult } from "./types.js";
 import { createRedact, substitute } from "./variables.js";
@@ -43,7 +43,12 @@ export async function execute(
     message: redact(firstLine(error)),
     cause: error,
   });
-  const timedOut: Aborted = { kind: "timeout", message: runTimedOut(testCase.runTimeoutMs) };
+  const capped = options.maxRunTimeoutMs !== undefined && options.maxRunTimeoutMs < testCase.runTimeoutMs;
+  const runTimeoutMs = capped ? (options.maxRunTimeoutMs ?? testCase.runTimeoutMs) : testCase.runTimeoutMs;
+  const timedOut: Aborted = {
+    kind: "timeout",
+    message: capped ? runCapped(runTimeoutMs) : runTimedOut(runTimeoutMs),
+  };
   const abortWith = (aborted: Aborted, trace: Buffer) =>
     new RunAbortedError(aborted.kind, aborted.message, results, trace, { cause: aborted.cause });
 
@@ -62,7 +67,7 @@ export async function execute(
 
   let timer: NodeJS.Timeout | undefined;
   const expired = new Promise<typeof TIMED_OUT>((resolve) => {
-    timer = setTimeout(() => resolve(TIMED_OUT), testCase.runTimeoutMs);
+    timer = setTimeout(() => resolve(TIMED_OUT), runTimeoutMs);
   });
   const launching = launch({ headed, baseUrl: baseUrl.value, timeoutMs: testCase.timeoutMs, network });
   let browser: BrowserAdapter | typeof TIMED_OUT;
