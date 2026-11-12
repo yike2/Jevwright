@@ -113,7 +113,7 @@ for (const url of ["http://backend:4000/api/v1/health", "https://example.com/"])
 
 ## 6. Demo App
 
-The Demo App is the benchmark's static Swag Labs site (`docs/tech/benchmark.md` 1.2). Caddy serves it at `DEMO_DOMAIN` straight from the checkout, `src/tests/benchmark/demo-app/site/` with our extra pages from `extras/` under `/extras/`, the same way `pnpm benchmark` serves it locally; there is no separate service or build step.
+The Demo App is the benchmark's static Swag Labs site (`docs/tech/benchmark.md` 1.2); `docs/deploy-demo-app.md` deploys it on its own, without the rest of the platform. Here Caddy serves it at `DEMO_DOMAIN` straight from the checkout, with the site in `demo-app.Caddyfile`, `src/tests/benchmark/demo-app/site/` with our extra pages from `extras/` under `/extras/`, the same way `pnpm benchmark` serves it locally; there is no separate service or build step.
 
 Runs refuse private addresses, so tests must reach the Demo App at its public URL, never at `localhost` or a container name. In each Project that tests it, set two Project Variables (in the frontend, or with `PUT /api/v1/projects/<projectId>/variables/<name>`):
 
