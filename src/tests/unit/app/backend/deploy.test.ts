@@ -47,7 +47,7 @@ describe("deploy files", () => {
   });
 
   it("serves the Demo App on DEMO_DOMAIN like serveDemoApp: extras, the build, and index.html for client routes", () => {
-    const caddyfile = read("Caddyfile");
+    const caddyfile = read("demo-app.Caddyfile");
     const demo = /^\{\$DEMO_DOMAIN\} \{\n([\s\S]*?)^\}$/m.exec(caddyfile)?.[1] ?? "";
 
     expect(demo).toMatch(/handle_path \/extras\/\* \{\s+root \* \/srv\/demo\/extras\s+file_server\s+\}/);
@@ -56,6 +56,12 @@ describe("deploy files", () => {
     expect(compose).toContain("./src/tests/benchmark/demo-app/site:/srv/demo/site:ro");
     expect(compose).toContain("./src/tests/benchmark/demo-app/extras:/srv/demo/extras:ro");
     expect(compose).toMatch(/DEMO_DOMAIN: \$\{DEMO_DOMAIN:\?/);
+  });
+
+  it("keeps the Demo App's site in one file, which the full Caddyfile imports and compose mounts beside it", () => {
+    expect(read("Caddyfile")).toMatch(/^import \/etc\/caddy\/demo-app\.Caddyfile$/m);
+    expect(read("Caddyfile")).not.toContain("{$DEMO_DOMAIN}");
+    expect(read("compose.yaml")).toContain("./demo-app.Caddyfile:/etc/caddy/demo-app.Caddyfile:ro");
   });
 
   it("uses one Postgres version for production, local development, and CI", () => {
