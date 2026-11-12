@@ -68,6 +68,12 @@ describe("deploy files", () => {
       );
     });
 
+    it("limits the browser's memory, CPU, and processes, so one page cannot exhaust the server", () => {
+      expect(service("browser")).toMatch(/^    mem_limit: \d+[mg]$/m);
+      expect(service("browser")).toMatch(/^    cpus: "\d+(\.\d+)?"$/m);
+      expect(service("browser")).toMatch(/^    pids_limit: \d+$/m);
+    });
+
     it("runs with NET_ADMIN for its firewall, only on the browser network, and the backend drives it", () => {
       expect(service("browser")).toMatch(/cap_add: \[NET_ADMIN\]/);
       expect(service("browser")).toMatch(/networks: \[browser\]/);
