@@ -9,6 +9,7 @@
     "jevwright": "tsx src/cli/main.ts",
     "backend": "tsx watch src/app/backend/src/main.ts --dev",
     "backend:debug": "tsx --inspect src/app/backend/src/main.ts --dev",
+    "frontend": "pnpm --filter @jevwright/frontend dev",
     "api:docs": "tsx src/app/backend/src/export-openapi.ts",
     "test": "vitest run",
     "test:unit": "vitest run src/tests/unit",
@@ -16,9 +17,9 @@
     "test:live": "vitest run --config vitest.live.config.ts src/tests/live",
     "benchmark": "tsx src/tests/benchmark/benchmark.ts",
     "lint": "eslint .",
-    "format": "prettier --write \"src/**/*.ts\"",
-    "format:check": "prettier --check \"src/**/*.ts\"",
-    "typecheck": "tsc"
+    "format": "prettier --write \"src/**/*.{ts,tsx}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx}\"",
+    "typecheck": "tsc && pnpm --filter @jevwright/frontend typecheck"
   },
   "keywords": [],
   "author": "",

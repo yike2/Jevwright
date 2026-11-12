@@ -4,7 +4,15 @@ import { defineConfig, globalIgnores } from "eslint/config";
 import tseslint from "typescript-eslint";
 
 export default defineConfig(
-  globalIgnores(["jevwright-reports/", "scratch/", "src/tests/benchmark/demo-app/", "src/app/backend/src/generated/"]),
+  globalIgnores([
+    "jevwright-reports/",
+    "scratch/",
+    "src/tests/benchmark/demo-app/",
+    "src/app/backend/src/generated/",
+    "**/.next/",
+    "src/app/frontend/lib/api-schema.ts",
+    "src/app/frontend/next-env.d.ts",
+  ]),
   js.configs.recommended,
   tseslint.configs.recommended,
   {
@@ -14,6 +22,6 @@ export default defineConfig(
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_", ignoreRestSiblings: true },
       ],
     },
-  },  
+  },
   prettier,
 );

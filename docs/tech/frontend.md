@@ -103,13 +103,19 @@ The frontend package uses these exact versions:
 
 The shadcn dependencies are recorded after running `shadcn init`; they are pinned exactly with no `^` and are kept in the frontend package manifest after the init step.
 
+
+
+- `cn@0.5.2`
+- `shadcn@4.23.0`
+- `tw-animate-css@1.4.0`
+
 The repo does not use `eslint-config-next`; instead the root `eslint.config.js` is extended to include `.tsx` and the frontend package files.
 
 ### 1.7 Scripts and config
 
 The root workspace exposes the frontend app with `pnpm frontend`, which starts the Next.js dev server on port `3000`.
 
-The frontend package also includes a generation script that regenerates `lib/api-schema.ts` from the published OpenAPI document in [docs/api/openapi.json](../api/openapi.json). The root and package scripts are used to keep the API schema in sync after the backend contract changes.
+The frontend package also includes a generation script named `api:types` that regenerates `lib/api-schema.ts` from the published OpenAPI document in [docs/api/openapi.json](../api/openapi.json). The root and package scripts are used to keep the API schema in sync after the backend contract changes.
 
 Lint, format, and type-check coverage include the frontend package:
 
