@@ -46,6 +46,18 @@ describe("deploy files", () => {
     expect(read("Caddyfile")).toMatch(/^\{\$API_DOMAIN\} \{\n\treverse_proxy backend:4000\n\}$/m);
   });
 
+  it("serves the Demo App on DEMO_DOMAIN like serveDemoApp: extras, the build, and index.html for client routes", () => {
+    const caddyfile = read("Caddyfile");
+    const demo = /^\{\$DEMO_DOMAIN\} \{\n([\s\S]*?)^\}$/m.exec(caddyfile)?.[1] ?? "";
+
+    expect(demo).toMatch(/handle_path \/extras\/\* \{\s+root \* \/srv\/demo\/extras\s+file_server\s+\}/);
+    expect(demo).toMatch(/root \* \/srv\/demo\/site\s+try_files \{path\} \/index\.html\s+file_server/);
+    const compose = read("compose.yaml");
+    expect(compose).toContain("./src/tests/benchmark/demo-app/site:/srv/demo/site:ro");
+    expect(compose).toContain("./src/tests/benchmark/demo-app/extras:/srv/demo/extras:ro");
+    expect(compose).toMatch(/DEMO_DOMAIN: \$\{DEMO_DOMAIN:\?/);
+  });
+
   it("uses one Postgres version for production, local development, and CI", () => {
     const image = /image: (postgres:\S+)/;
     const production = image.exec(read("compose.yaml"))?.[1];
