@@ -43,7 +43,7 @@ The Backend is one Express service that stores users' test files, runs them with
 3. A started Run becomes `running` and calls Core's `runTest()` with:
    - the Project Variables as `vars`;
    - `screenshotEveryStep: true`, so every executed step has a screenshot;
-   - `network: "public"`, so the browser reaches only public addresses (1.6);
+   - `network: "public"`, so the browser reaches only public addresses (1.6); `"any"` in dev mode;
    - `maxRunTimeoutMs: MAX_RUN_TIMEOUT_MS` (10 minutes), so one Run cannot hold the global queue for longer, whatever its `runTimeoutMs`; a Run cut short ends with a `timeout` error naming the cap;
    - a Run Files store that writes the bundle to `RUNS_DIR/<runId>/`.
 4. On each step event the Backend writes the step's screenshot to the Run Files right away and publishes the step on the Run's Live Progress.
@@ -69,6 +69,8 @@ The snapshot comes from the Run's analyzed source and the steps so far, so a cli
 Users' tests run on the server, so a test could open `http://postgres:5432`, `http://localhost`, or a cloud metadata address and capture what it shows. With `network: "public"`, the Browser Adapter routes every request and WebSocket and aborts it unless its URL is `http:` or `https:` and every address its host resolves to is public: not loopback, private (RFC 1918, `fc00::/7`), link-local, carrier-grade NAT, unspecified, reserved, or multicast (`browser-adapter.md` 1.12). The step that made the request fails with Playwright's `net::ERR_FAILED` reason.
 
 That check has two gaps: DNS rebinding between the check and Chromium's own lookup, and redirects, since Playwright routes only the first request of a redirect chain, so a public URL that redirects to `http://backend:4000` would be followed. In production the network layer closes both. Runs drive a separate `browser` container (`BROWSER_ENDPOINT=ws://browser:3000/`) that runs Playwright's `run-server`. Its entry point, `browser-firewall.sh`, adds `iptables` and `ip6tables` rules that refuse every outgoing connection to the same ranges (`NON_PUBLIC_RANGES`), keeping only loopback (the server and Docker's DNS) and replies to the Backend's incoming connection open. It then starts the server as `pwuser` with no capabilities, so the browser cannot change the rules. However a page reaches a private address, the connection is refused (`net::ERR_CONNECTION_REFUSED`). The container shares only the `browser` network with the Backend, so it cannot even resolve `postgres`. This is still not a sandbox (PRD 3.2 *Won't*): a compromised browser can do anything a public client can. Without `BROWSER_ENDPOINT`, as in local development, Runs launch Chromium in the Backend's process with only the route check.
+
+**Dev mode.** A frontend developer runs the Backend on their own machine against a local Demo App, which `network: "public"` would block. The development scripts (`pnpm backend`, and `pnpm dev` in `src/app/backend`) start it with `--dev`: its Runs use `network: "any"`, like the CLI. Dev mode is refused at start unless `HOST` is a loopback address (`127.0.0.1`, `::1`, `localhost`), so a backend whose Runs can open private addresses is never reachable from another machine. `pnpm start`, which the image runs, never passes `--dev`, so cloud Runs always use `network: "public"`.
 
 The Benchmark Demo App therefore runs at a public address in production, for example `https://demo.<domain>`, set as the Project Variable `BASE`.
 
@@ -287,13 +289,13 @@ Integration tests need PostgreSQL: CI runs a `postgres` service container, and l
 
 | Type | Coverage | Location |
 | ---- | -------- | -------- |
-| Unit | `env`: missing and invalid variables stop start-up | `src/tests/unit/app/backend/env.test.ts` |
+| Unit | `env`: missing and invalid variables stop start-up; dev mode picks `network: "any"` only on a loopback `HOST` | `src/tests/unit/app/backend/env.test.ts` |
 | Unit | `password`, `token`: hash and verify, wrong password, no expiry, tampered tokens and other secrets | `src/tests/unit/app/backend/auth/` |
 | Unit | `RunQueue`: FIFO order, the concurrency limit, a failing Run does not stop the queue | `src/tests/unit/app/backend/runs/queue.test.ts` |
 | Unit | `run-files`: paths outside the Run's folder rejected | `src/tests/unit/app/backend/runs/run-files.test.ts` |
 | Unit | `LiveHub`: snapshot for a late subscriber, step and status messages, close after the final status | `src/tests/unit/app/backend/runs/live.test.ts` |
 | Unit | Core: `screenshotEveryStep`, `network: "public"` address checks | `src/tests/unit/core/...` |
-| Unit | Deploy files: the Playwright image of the pinned `playwright`, Node of `.nvmrc`, migrate before start, Caddy to `backend:4000`, one Postgres version in compose, `compose.dev.yaml`, and CI; the browser container's `run-server` version, a firewall rule for every range of `NON_PUBLIC_RANGES`, root and capabilities dropped, memory, CPU, and process limits, `NET_ADMIN` and its own network | `src/tests/unit/app/backend/deploy.test.ts` |
+| Unit | Deploy files: the Playwright image of the pinned `playwright`, Node of `.nvmrc`, `--dev` only in the development scripts, migrate before start, Caddy to `backend:4000`, one Postgres version in compose, `compose.dev.yaml`, and CI; the browser container's `run-server` version, a firewall rule for every range of `NON_PUBLIC_RANGES`, root and capabilities dropped, memory, CPU, and process limits, `NET_ADMIN` and its own network | `src/tests/unit/app/backend/deploy.test.ts` |
 | Integration | Database: unique names per parent, cascade deletes, Runs kept with `null` ids | `src/tests/integration/app/backend/db.test.ts` |
 | Integration | Auth: register, duplicate email, login, wrong password, `401` without or with a bad token | `src/tests/integration/app/backend/auth.test.ts` |
 | Integration | Workspace: CRUD of every level, unique names, moving a Test File, cascade deletes, `404` for another user's data, saving a source with diagnostics, variables return names only | `src/tests/integration/app/backend/workspace.test.ts` |

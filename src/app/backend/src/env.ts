@@ -22,10 +22,18 @@ export type Env = z.infer<typeof ENV>;
  */
 export function parseEnv(
   source: Record<string, string | undefined>,
-  _options: { dev?: boolean } = {},
+  options: { dev?: boolean } = {},
 ): { ok: true; env: Env; runNetwork: Network } | { ok: false; problems: string[] } {
   const parsed = ENV.safeParse(source);
-  if (parsed.success) return { ok: true, env: parsed.data, runNetwork: "public" };
+  if (parsed.success) {
+    if (!options.dev) return { ok: true, env: parsed.data, runNetwork: "public" };
+    // Dev mode's Runs can open this machine's private addresses, so only this machine may reach the backend.
+    if (!isLoopback(parsed.data.HOST))
+      return { ok: false, problems: ["HOST: dev mode needs a loopback HOST, such as 127.0.0.1"] };
+    return { ok: true, env: parsed.data, runNetwork: "any" };
+  }
   // zod messages describe the rule ("Too small: expected ..."), not the input, so they are safe to print.
   return { ok: false, problems: parsed.error.issues.map((issue) => `${issue.path.join(".")}: ${issue.message}`) };
 }
+
+const isLoopback = (host: string) => host === "localhost" || host === "::1" || /^127\.\d+\.\d+\.\d+$/.test(host);

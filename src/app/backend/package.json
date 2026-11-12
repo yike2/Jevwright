@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "postinstall": "prisma generate",
-    "dev": "tsx watch src/main.ts",
+    "dev": "tsx watch src/main.ts --dev",
     "start": "tsx src/main.ts"
   },
   "dependencies": {

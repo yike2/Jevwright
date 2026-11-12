@@ -14,12 +14,15 @@ import { RunQueue } from "./runs/queue.js";
 // Like the CLI, read .env from the working directory without overriding variables already set.
 if (existsSync(".env")) process.loadEnvFile(".env");
 
-const parsed = parseEnv(process.env);
+// The development scripts pass --dev; `pnpm start`, which production runs, never does (backend.md 1.6).
+const dev = process.argv.includes("--dev");
+const parsed = parseEnv(process.env, { dev });
 if (!parsed.ok) {
   console.error(`Invalid environment (see .env.example):\n  ${parsed.problems.join("\n  ")}`);
   process.exit(1);
 }
-const { env } = parsed;
+const { env, runNetwork } = parsed;
+if (dev) console.log("Dev mode: Runs can open local and private addresses; the backend listens on this machine only");
 const db = createDb(env.DATABASE_URL);
 
 // Before the queue starts: a Run left queued or running by the last process never finishes (backend.md 1.4).
@@ -30,7 +33,7 @@ const jev = createJevClient({ apiKey: env.OPENROUTER_API_KEY, fetch: globalThis.
 const hub = new LiveHub(loadRunFrom(db));
 const launch = browserLauncher(env.BROWSER_ENDPOINT);
 const queue = new RunQueue(
-  (runId) => executeRun(runId, { db, runsDir: env.RUNS_DIR, jev, network: "public", progress: hub, launch }),
+  (runId) => executeRun(runId, { db, runsDir: env.RUNS_DIR, jev, network: runNetwork, progress: hub, launch }),
   env.RUN_CONCURRENCY,
 );
 
