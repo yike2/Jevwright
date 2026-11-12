@@ -54,7 +54,7 @@ The build also holds pages that upstream ships for locating tests: iframes (`/fr
 - A path with no file gets `index.html`, because the app routes on the client at paths such as `/inventory.html`.
 - Each file gets the content type of its extension; browsers run the app's module scripts only with a JavaScript type.
 
-In production, Caddy serves the same files by the same rules at the public `DEMO_DOMAIN`, so cloud Runs, which refuse private addresses, can reach it through `BASE` (`docs/deploy.md` 6, or alone with `docs/deploy-demo-app.md`).
+In production, Caddy serves the same files by the same rules at the public `DEMO_DOMAIN`, so cloud Runs, which refuse private addresses, can reach it through `BASE` (`docs/deploy/backend-prod.md` 6, or alone with `docs/deploy/demo-app.md`).
 
 ### 1.5 Suite
 

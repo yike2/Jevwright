@@ -41,6 +41,10 @@ pnpm jevwright run tests/login.yaml        # run it; add --headed to watch the b
 
 `run` writes each file's report, trace, and screenshots to `jevwright-reports/<timestamp>/`. See [docs/tech/cli.md](docs/tech/cli.md) for the output and exit codes.
 
+### Backend
+
+The backend serves the REST API and Live Progress that the frontend uses, and runs tests on the server. To run it locally for development, with PostgreSQL in Docker and a debugger, see [docs/deploy/backend-local.md](docs/deploy/backend-local.md); to deploy it to a server, [docs/deploy/backend-prod.md](docs/deploy/backend-prod.md).
+
 ### Benchmark
 
 The benchmark runs the suite in [`src/tests/benchmark/suite/`](src/tests/benchmark/suite/) against a local copy of the Swag Labs demo shop, with the real Jev:

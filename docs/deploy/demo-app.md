@@ -4,7 +4,7 @@ The Demo App is Swag Labs, a small shopping site for test automation practice, w
 
 There are two ways to deploy it:
 
-- **With the whole platform**: `docs/deploy.md` already includes it; set `DEMO_DOMAIN` there and skip this guide.
+- **With the whole platform**: `docs/deploy/backend-prod.md` already includes it; set `DEMO_DOMAIN` there and skip this guide.
 - **On its own**: follow this guide, for example before the backend is ready or on a different server. It needs only Docker; no backend, database, or build step.
 
 Both use the same Caddy site, `demo-app.Caddyfile` at the repository root, which serves the files like `pnpm benchmark` does locally: our pages under `/extras/`, the build everywhere else, and `index.html` for the app's own routes such as `/inventory.html`.
@@ -13,7 +13,7 @@ Both use the same Caddy site, `demo-app.Caddyfile` at the repository root, which
 
 You need:
 
-- A server with Docker (`docs/deploy.md` 2 installs it on Ubuntu) and ports 80 and 443 open (`docs/deploy.md` 1).
+- A server with Docker (`docs/deploy/backend-prod.md` 2 installs it on Ubuntu) and ports 80 and 443 open (`docs/deploy/backend-prod.md` 1).
 - A domain for the Demo App, such as `demo.example.com`, with an `A` record pointing to the server's public IPv4 address (and an `AAAA` record for IPv6). Caddy cannot get a certificate until the record resolves; check with `dig +short demo.example.com`.
 
 Get the repository:
@@ -76,7 +76,7 @@ Every file in `src/tests/benchmark/suite/` uses exactly these, so it runs unchan
 
 - **Update**: `cd /opt/jevwright && git pull`. Caddy serves the files straight from the checkout, so changes are live at once, without a restart.
 - **Stop**: `docker stop jevwright-demo`; start again with `docker start jevwright-demo`.
-- **Move to the whole platform** on the same server: the platform's Caddy serves the Demo App too and needs ports 80 and 443, so remove this container first with `docker rm -f jevwright-demo`, then follow `docs/deploy.md` with the same `DEMO_DOMAIN`.
+- **Move to the whole platform** on the same server: the platform's Caddy serves the Demo App too and needs ports 80 and 443, so remove this container first with `docker rm -f jevwright-demo`, then follow `docs/deploy/backend-prod.md` with the same `DEMO_DOMAIN`.
 
 ## 6. Preview it locally
 

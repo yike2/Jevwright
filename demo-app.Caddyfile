@@ -1,7 +1,7 @@
 # The benchmark Demo App (docs/tech/benchmark.md 1.2), served from the repository like serveDemoApp(): our extra
 # pages under /extras/, the static build elsewhere, and index.html for the app's client routes. Runs block private
 # addresses, so tests reach it here, at its public domain, through the Project Variable BASE. The full Caddyfile
-# imports this file; docs/deploy-demo-app.md also runs Caddy with it alone.
+# imports this file; docs/deploy/demo-app.md also runs Caddy with it alone.
 {$DEMO_DOMAIN} {
 	handle_path /extras/* {
 		root * /srv/demo/extras
