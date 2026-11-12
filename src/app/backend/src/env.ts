@@ -8,6 +8,8 @@ const ENV = z.object({
   RUNS_DIR: z.string().min(1).default("./data/runs"),
   RUN_CONCURRENCY: z.coerce.number().int().min(1).max(8).default(1),
   PORT: z.coerce.number().int().min(1).max(65535).default(4000),
+  // Only this machine by default, so a local backend is not open to its network; the image sets 0.0.0.0.
+  HOST: z.string().min(1).default("127.0.0.1"),
   BROWSER_ENDPOINT: z.url({ protocol: /^wss?$/ }).optional(),
 });
 

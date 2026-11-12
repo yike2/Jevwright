@@ -73,7 +73,7 @@ Edit `.env`. compose reads it from this folder; the deploy needs these variables
 | `OPENROUTER_API_KEY` | The OpenRouter key Runs use for Jev |
 | `RUN_CONCURRENCY` | Runs at a time, 1–8; keep `1` unless `docker stats` shows memory to spare. The `browser` service is limited to 2 GB of memory and 1.5 CPUs in `compose.yaml`; raise `mem_limit` and `cpus` there with it, about 1 GB per extra Run |
 
-Leave `DATABASE_URL`, `RUNS_DIR`, `PORT`, and `BROWSER_ENDPOINT` unset; compose sets them. compose refuses to start when a required variable is missing.
+Leave `DATABASE_URL`, `RUNS_DIR`, `PORT`, `HOST`, and `BROWSER_ENDPOINT` unset; compose and the image set them. compose refuses to start when a required variable is missing.
 
 ## 4. Start it
 
@@ -83,7 +83,7 @@ docker compose ps
 docker compose logs -f backend   # Ctrl+C to stop following
 ```
 
-The first build downloads the Playwright image and takes a few minutes. When it is done, `backend` logs `All migrations have been successfully applied` and `Backend on http://localhost:4000/api/v1`, and `browser` logs `Listening on ws://0.0.0.0:3000/`.
+The first build downloads the Playwright image and takes a few minutes. When it is done, `backend` logs `All migrations have been successfully applied` and `Backend on http://0.0.0.0:4000/api/v1`, and `browser` logs `Listening on ws://0.0.0.0:3000/`.
 
 ## 5. Check it
 

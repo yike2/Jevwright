@@ -99,6 +99,7 @@ Environment variables are validated with zod at start-up; a missing or invalid o
 | `RUNS_DIR` | `./data/runs` | Run Files; a docker volume in production |
 | `RUN_CONCURRENCY` | `1` | Runs at a time, 1–8 |
 | `PORT` | `4000` | HTTP and WebSocket port |
+| `HOST` | `127.0.0.1` | Interface to listen on. The default keeps a local backend off the machine's network, since anyone who reaches it can register and run tests on the developer's OpenRouter key; the Docker image sets `0.0.0.0` for Caddy |
 | `CORS_ORIGIN` | – | The frontend's origin, allowed by CORS |
 | `BROWSER_ENDPOINT` | – | `ws://` URL of the browser container's run-server (1.6); without it, Runs launch Chromium locally |
 

@@ -22,6 +22,7 @@ RUN pnpm install --frozen-lockfile --ignore-scripts \
   && chown pwuser:pwuser /data/runs
 
 USER pwuser
-ENV RUNS_DIR=/data/runs PORT=4000
+# Every interface inside the container, so Caddy reaches it; the backend publishes no port of its own.
+ENV RUNS_DIR=/data/runs PORT=4000 HOST=0.0.0.0
 EXPOSE 4000
 CMD ["sh", "-c", "pnpm --filter @jevwright/backend exec prisma migrate deploy && exec pnpm --filter @jevwright/backend start"]

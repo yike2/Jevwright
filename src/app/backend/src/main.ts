@@ -48,6 +48,6 @@ const app = createApp({
 // One port for HTTP and Live Progress's WebSocket upgrades.
 const server = createServer(app);
 attachLive(server, { hub, verifyToken: tokenUser });
-server.listen(env.PORT, () => {
-  console.log(`Backend on http://localhost:${env.PORT}/api/v1, API docs at /api/v1/docs`);
+server.listen(env.PORT, env.HOST, () => {
+  console.log(`Backend on http://${env.HOST}:${env.PORT}/api/v1, API docs at /api/v1/docs`);
 });
