@@ -26,7 +26,11 @@ export type RunDeps = {
   network: Network; // "public" on the server (backend.md 1.6)
   progress: RunProgress;
   launch?: typeof launchBrowser;
+  maxRunTimeoutMs?: number; // default MAX_RUN_TIMEOUT_MS
 };
+
+/** The longest a Run may take on the server, whatever its runTimeoutMs (backend.md 1.4). */
+export const MAX_RUN_TIMEOUT_MS = 10 * 60 * 1000;
 
 const INTERRUPTED = "Interrupted by a server restart";
 

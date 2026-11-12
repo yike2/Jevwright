@@ -12,6 +12,7 @@ export type RunTestOptions = {
   onEvent?: (event: StepEvent) => void;
   screenshotEveryStep?: boolean; // Executor: a screenshot after every executed step, not only a failed one
   network?: Network; // Browser Adapter: "public" aborts requests to non-public addresses
+  maxRunTimeoutMs?: number; // Executor: caps the TestCase's runTimeoutMs
 };
 
 export type RunTestResult = { kind: "invalid"; diagnostics: Diagnostic[] } | { kind: "completed"; report: Report };

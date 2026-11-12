@@ -35,6 +35,7 @@ export type ExecuteOptions = {
   jev: JevClient;
   screenshotEveryStep?: boolean; // a screenshot after every executed step, not only a failed one
   network?: Network; // passed to launchBrowser
+  maxRunTimeoutMs?: number; // the longest Run timeout allowed; a larger runTimeoutMs is capped to it
 };
 
 export type ExecuteResult = {

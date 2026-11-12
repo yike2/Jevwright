@@ -97,7 +97,7 @@ describe("runTest", () => {
     expect(executeLaunch).toBe(launch);
   });
 
-  it("passes screenshotEveryStep and network to execute", async () => {
+  it("passes screenshotEveryStep, network, and maxRunTimeoutMs to execute", async () => {
     const store = makeReportStore();
     vi.mocked(execute).mockResolvedValue({ steps: [], trace: Buffer.alloc(0) });
 
@@ -110,10 +110,15 @@ describe("runTest", () => {
         store: store as unknown as ReportStore,
         screenshotEveryStep: true,
         network: "public",
+        maxRunTimeoutMs: 600_000,
       },
     );
 
-    expect(vi.mocked(execute).mock.calls[0]![1]).toMatchObject({ screenshotEveryStep: true, network: "public" });
+    expect(vi.mocked(execute).mock.calls[0]![1]).toMatchObject({
+      screenshotEveryStep: true,
+      network: "public",
+      maxRunTimeoutMs: 600_000,
+    });
   });
 
   it("passes a noop callback when onEvent is omitted", async () => {

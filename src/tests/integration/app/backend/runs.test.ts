@@ -211,6 +211,19 @@ describeDb("run routes", () => {
     });
   });
 
+  it("caps a Run at the server's longest run time, whatever its runTimeoutMs", async () => {
+    const source = `name: "Forever"\nrunTimeoutMs: 2147483647\nsteps:\n  - sleep:\n      ms: 2147483647\n`;
+    const as = await setup(source, { maxRunTimeoutMs: 1000 });
+
+    const { id } = (await as.trigger()).body;
+    await as.queue.idle();
+
+    expect((await as.get(`/runs/${id}`)).body).toMatchObject({
+      status: "failed",
+      error: { kind: "timeout", message: "The run did not finish within the longest run time allowed (1000 ms)" },
+    });
+  });
+
   it("fails a Run that throws with an internal error naming only the error, never its message", async () => {
     const notADir = join(await mkdtemp(join(tmpdir(), "runs-")), "file");
     await writeFile(notADir, "");
