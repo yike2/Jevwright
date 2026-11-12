@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { parseEnv } from "@/app/backend/src/env.js";
+import { fileURLToPath } from "node:url";
+import { ENV_FILE, parseEnv } from "@/app/backend/src/env.js";
 
 const required = {
   DATABASE_URL: "postgresql://jevwright:secret@localhost:5432/jevwright",
@@ -64,5 +65,9 @@ describe("parseEnv", () => {
   it("keeps Runs on public addresses outside dev mode, whatever HOST is", () => {
     expect(parseEnv({ ...required, HOST: "127.0.0.1" })).toMatchObject({ ok: true, runNetwork: "public" });
     expect(parseEnv({ ...required, HOST: "0.0.0.0" })).toMatchObject({ ok: true, runNetwork: "public" });
+  });
+
+  it("reads the repository's .env, so the backend finds it from any working directory", () => {
+    expect(fileURLToPath(ENV_FILE)).toBe(fileURLToPath(new URL("../../../../../.env", import.meta.url)));
   });
 });

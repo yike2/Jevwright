@@ -16,6 +16,9 @@ const ENV = z.object({
 
 export type Env = z.infer<typeof ENV>;
 
+/** The repository's .env, which a local backend reads wherever it starts (backend.md 1.8). */
+export const ENV_FILE = new URL("../../../../.env", import.meta.url);
+
 /**
  * Validates the backend's environment variables (backend.md 1.8) and picks the Runs' network: "public", or "any"
  * in dev mode. Problems name variables, never values.

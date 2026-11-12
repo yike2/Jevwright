@@ -30,6 +30,7 @@ describe("deploy files", () => {
     const backend = JSON.parse(read("src/app/backend/package.json")).scripts as Record<string, string>;
 
     expect(root.backend).toMatch(/ --dev$/);
+    expect(root["backend:debug"]).toMatch(/^tsx --inspect\S* src\/app\/backend\/src\/main\.ts --dev$/);
     expect(backend.dev).toMatch(/ --dev$/);
     expect(backend.start).not.toContain("--dev");
     expect(dockerfile).toContain("pnpm --filter @jevwright/backend start");
