@@ -1,15 +1,19 @@
 import express, { type Express, type Request, type RequestHandler, type Response } from "express";
 import swaggerUi from "swagger-ui-express";
 import { ROUTES, type Route } from "./api/contract.js";
+import { requireToken } from "./http/auth.js";
 import { ApiError, errorHandler } from "./http/errors.js";
 import { buildOpenApi } from "./openapi.js";
 
-export type HandlerInput = { params: unknown; query: unknown; body: unknown };
+// userId is the token's user on every route that takes a token; routes with auth "none" get none.
+export type HandlerInput = { params: unknown; query: unknown; body: unknown; userId?: string };
 export type Handler = (input: HandlerInput, res: Response, req: Request) => unknown;
+export type Handlers = Partial<Record<string, Handler>>; // keyed "<method> <path>", e.g. "get /projects"
 
 export type AppDeps = {
   corsOrigin: string;
-  handlers: Partial<Record<string, Handler>>; // keyed "<method> <path>", e.g. "get /projects"
+  handlers: Handlers;
+  verifyToken: (token: string) => Promise<string | undefined>; // the token's user id
 };
 
 // A 256 Ki character source can double in JSON escaping; the source schema enforces its own limit.
@@ -24,7 +28,13 @@ export function createApp(deps: AppDeps): Express {
   api.use(cors(deps.corsOrigin));
   api.use(express.json({ limit: BODY_LIMIT }));
   api.use("/docs", swaggerUi.serve, swaggerUi.setup(openApi));
-  for (const route of ROUTES) api[route.method](route.path, validate(route), handle(route, deps, openApi));
+  for (const route of ROUTES)
+    api[route.method](
+      route.path,
+      requireToken(route.auth, deps.verifyToken),
+      validate(route),
+      handle(route, deps, openApi),
+    );
   api.use((req) => {
     throw new ApiError("not_found", `${req.method} ${req.originalUrl} does not exist`);
   });
@@ -58,18 +68,38 @@ function validate(route: Route): RequestHandler {
       ["query", route.query, req.query],
       ["body", route.body, req.body],
     ] as const;
-    const input: Record<string, unknown> = { params: rawParams, query: req.query, body: req.body };
-    const issues = [];
+    const input: Record<string, unknown> = {
+      params: rawParams,
+      query: req.query,
+      body: req.body,
+      userId: res.locals.userId,
+    };
+    const issues: { path: string; message: string; tooBig: boolean }[] = [];
     for (const [part, schema, value] of parts) {
       if (!schema) continue;
       const parsed = schema.safeParse(value ?? {});
       if (parsed.success) input[part] = parsed.data;
       else
         issues.push(
-          ...parsed.error.issues.map((issue) => ({ path: [part, ...issue.path].join("."), message: issue.message })),
+          ...parsed.error.issues.map((issue) => ({
+            path: [part, ...issue.path].join("."),
+            message: issue.message,
+            tooBig: issue.code === "too_big",
+          })),
         );
     }
-    if (issues.length > 0) return next(new ApiError("invalid_request", "The request fails its schema", issues));
+    // Content over a size limit is 413 like a body over 1 MB; it wins over other issues, as that check does.
+    const tooLarge = issues.find((issue) => issue.tooBig && route.sizeLimited?.includes(issue.path));
+    if (tooLarge)
+      return next(new ApiError("too_large", `${tooLarge.path} is over its size limit: ${tooLarge.message}`));
+    if (issues.length > 0)
+      return next(
+        new ApiError(
+          "invalid_request",
+          "The request fails its schema",
+          issues.map(({ path, message }) => ({ path, message })),
+        ),
+      );
     res.locals.input = input;
     next();
   };

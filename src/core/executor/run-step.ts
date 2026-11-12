@@ -14,6 +14,7 @@ export type StepContext = {
   redact: (text: string) => string;
   jev: JevClient;
   timeoutMs: number;
+  screenshotEveryStep?: boolean;
 };
 
 type Outcome = { result: BrowserResult; locateMethod?: LocateMethod };
@@ -145,7 +146,7 @@ async function act(step: Step, context: StepContext): Promise<Outcome> {
   }
 }
 
-/** Runs one step on the browser: Variables, `ready()`, its Adapter call, and a screenshot on failure. */
+/** Runs one step on the browser: Variables, `ready()`, its Adapter call, and a screenshot on failure or every step. */
 export async function runStep(step: Step, index: number, context: StepContext): Promise<PassedStep | FailedStep> {
   const { browser, redact } = context;
   const startedAt = new Date();
@@ -164,7 +165,7 @@ export async function runStep(step: Step, index: number, context: StepContext): 
   }
 
   const durationMs = Date.now() - startedAt.getTime();
-  const screenshot = outcome.result.ok ? undefined : await browser.screenshot();
+  const screenshot = outcome.result.ok && !context.screenshotEveryStep ? undefined : await browser.screenshot();
   const ran = { startedAt, durationMs, ...outcome, screenshot: screenshot?.ok ? screenshot.data : undefined };
   return toStepResult(step, index, ran, redact);
 }
@@ -188,6 +189,6 @@ export function toStepResult(
     ...(locateMethod ? { locateMethod } : {}),
     dialogs: result.dialogs.map((dialog) => ({ ...dialog, message: redact(dialog.message) })),
   };
-  if (result.ok) return { ...base, status: "passed" };
+  if (result.ok) return { ...base, status: "passed", ...(screenshot ? { screenshot } : {}) };
   return { ...base, status: "failed", reason: redact(result.reason), ...(screenshot ? { screenshot } : {}) };
 }

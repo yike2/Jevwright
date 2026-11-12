@@ -23,11 +23,16 @@ const never = <T>() => new Promise<T>(() => {});
 const later = <T>(ms: number, value: T) => new Promise<T>((resolve) => setTimeout(() => resolve(value), ms));
 
 // Runs `test` and returns the RunAbortedError it throws, with the events it sent.
-async function abort(test: TestCase, launch: (options: LaunchOptions) => Promise<BrowserAdapter>, vars = {}) {
+async function abort(
+  test: TestCase,
+  launch: (options: LaunchOptions) => Promise<BrowserAdapter>,
+  vars = {},
+  maxRunTimeoutMs?: number,
+) {
   const events: StepEvent[] = [];
   const error = await execute(
     test,
-    { headed: false, vars, onEvent: (event) => events.push(event), jev: throwingJev },
+    { headed: false, vars, onEvent: (event) => events.push(event), jev: throwingJev, maxRunTimeoutMs },
     launch,
   ).then(
     () => undefined,
@@ -194,6 +199,29 @@ describe("execute, aborted Runs", () => {
 
     expect((error as RunAbortedError).steps.map(({ status }) => status)).toEqual(["passed", "failed", "pending"]);
     expect((error as RunAbortedError).steps[1]).toMatchObject({ reason: "WebSocket is closed" });
+  });
+
+  it("caps the Run timeout at maxRunTimeoutMs, naming the cap", async () => {
+    const { adapter } = fakeAdapter({ perform: () => never() });
+
+    vi.useFakeTimers();
+    const aborted = abort(testCase({ runTimeoutMs: 1000 }), async () => adapter, {}, 50);
+    await vi.advanceTimersByTimeAsync(50);
+    const { error } = await aborted;
+
+    expect(error.kind).toBe("timeout");
+    expect(error.message).toBe("The run did not finish within the longest run time allowed (50 ms)");
+  });
+
+  it("keeps runTimeoutMs when it is under maxRunTimeoutMs", async () => {
+    const { adapter } = fakeAdapter({ perform: () => never() });
+
+    vi.useFakeTimers();
+    const aborted = abort(testCase({ runTimeoutMs: 50 }), async () => adapter, {}, 1000);
+    await vi.advanceTimersByTimeAsync(50);
+    const { error } = await aborted;
+
+    expect(error.message).toBe("The run did not finish within runTimeoutMs (50 ms)");
   });
 
   it("times the Run with runTimeoutMs, not the step timeout", async () => {

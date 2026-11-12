@@ -2,9 +2,9 @@ import type { StepResult } from "../executor/index.js";
 import { screenshotPath, TRACE_PATH } from "./paths.js";
 import type { Report, ReportBundle, ReportFile, ReportStep, RunOutcome } from "./types.js";
 
-// A failed step's screenshot moves into `files`; the ReportStep keeps only its path.
+// A step's screenshot moves into `files`; the ReportStep keeps only its path.
 function toReportStep(step: StepResult, files: ReportFile[]): ReportStep {
-  if (step.status !== "failed") return step;
+  if (step.status === "pending") return step;
   const { screenshot, ...rest } = step;
   if (screenshot === undefined) return rest;
   const path = screenshotPath(step.index);

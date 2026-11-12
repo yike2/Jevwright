@@ -18,8 +18,8 @@ The Backend is one Express service that stores users' test files, runs them with
 ### 1.2 Accounts and Tokens
 
 - A user registers and logs in with an email and a password of at least 8 characters. Emails are compared in lower case. Passwords are hashed with bcrypt (`bcryptjs`, cost 12) and never logged or returned.
-- Register and login return a JWT (HS256, signed with `JWT_SECRET`, `sub` = user id, valid `TOKEN_TTL` = 7 days). The frontend, CI scripts, and External Agents all send it as `Authorization: Bearer <token>`. Run Files and Live Progress also take the same token as `?token=<jwt>`, because `<img>`, download links, and browser WebSockets cannot set headers. A token in a URL can end up in proxy logs; that is accepted to keep auth simple.
-- Every route except register, login, health, and the API docs needs a valid token, or answers `401`.
+- Register and login return a JWT (HS256, signed with `JWT_SECRET`, `sub` = user id). It never expires, which keeps auth simple: there is no refresh and no re-login. Logging out drops the token on the client; changing `JWT_SECRET` invalidates every token. The frontend, CI scripts, and External Agents all send it as `Authorization: Bearer <token>`. Run Files and Live Progress also take the same token as `?token=<jwt>`, because `<img>`, download links, and browser WebSockets cannot set headers. A token in a URL can end up in proxy logs; that is accepted to keep auth simple.
+- Every route except register, login, health, and the API docs needs a valid token, or answers `401`. The token is checked before the request's schema, so a request without one answers `401`, not `400`.
 - Every query is scoped to the token's user. Another user's Project, Module, Test File, or Run answers `404`, never `403`, so ids of other users' data are not revealed.
 - There is no Run rate limit (PRD 4.3.7).
 
@@ -28,12 +28,13 @@ The Backend is one Express service that stores users' test files, runs them with
 | Rule | |
 | ---- | - |
 | Names | Project and Module names are 1–100 characters and unique within their parent. A Test File name ends in `.yaml` and is unique within its Module |
-| Source size | A source is at most `MAX_SOURCE_CHARS` (262,144 characters); a longer one fails its schema with `400`. A request body over 1 MB answers `413` |
+| Size limits | A source is at most `MAX_SOURCE_CHARS` (262,144 characters) and a Variable value at most 10,000 characters; a longer one answers `413`, like a request body over 1 MB |
 | Saving | A Test File is saved even when its source has diagnostics. Saving answers the Syntax Analyzer's `diagnostics`, so the editor can mark the lines |
 | Validating | `POST /test-files/validate` analyzes a source without saving it |
 | Moving | `PATCH /test-files/:id` with a `moduleId` moves the Test File to another of the user's Modules |
 | Deleting | Deleting a Project deletes its Modules, Test Files, and Variables; deleting a Module deletes its Test Files. Runs are kept: their `testFileId`, `moduleId`, or `projectId` becomes `null`, and they keep their source, file name, and test name. `GET /runs?projectId=` still lists a deleted file's Runs while the Project exists |
 | Variables | Names follow `[A-Z_][A-Z0-9_]*`. The API returns names only, never values |
+| Order | Projects, Modules, Test Files, and Variable names are listed by name, in `/tree` as in their own lists |
 
 ### 1.4 Runs
 
@@ -42,7 +43,8 @@ The Backend is one Express service that stores users' test files, runs them with
 3. A started Run becomes `running` and calls Core's `runTest()` with:
    - the Project Variables as `vars`;
    - `screenshotEveryStep: true`, so every executed step has a screenshot;
-   - `network: "public"`, so the browser reaches only public addresses (1.6);
+   - `network: "public"`, so the browser reaches only public addresses (1.6); `"any"` in dev mode;
+   - `maxRunTimeoutMs: MAX_RUN_TIMEOUT_MS` (10 minutes), so one Run cannot hold the global queue for longer, whatever its `runTimeoutMs`; a Run cut short ends with a `timeout` error naming the cap;
    - a Run Files store that writes the bundle to `RUNS_DIR/<runId>/`.
 4. On each step event the Backend writes the step's screenshot to the Run Files right away and publishes the step on the Run's Live Progress.
 5. When `runTest()` returns, the Run takes the Report's `status`, `durationMs`, step counts, and the whole Report; a Report `error` (Core's `timeout` or `infrastructure`, message already redacted) becomes the Run's `error`. When `runTest()` throws, the Run becomes `failed` with `error: { kind: "internal", message: <the error's name> }`; the error's message never reaches the API, since it may hold a Variable value.
@@ -60,32 +62,36 @@ Steps have one shape everywhere: the `Step` schema, which is Core's Report step 
 | `step` | A step starts (`running`) or finishes (`passed` or `failed`) | `step` |
 | `status` | The Run's status changes | `run`, as it is after the change, with `durationMs`, `summary`, and `error` once final |
 
-The snapshot comes from the Run's analyzed source and the steps so far, so a client that connects late misses nothing. The server closes the socket after the final `status`; for a Run that has already finished, after the snapshot. Steps a Run never reached stay `pending`.
+The snapshot comes from the Run's analyzed source and the steps so far, so a client that connects late misses nothing; a finished Run's snapshot takes its steps from the Report. Messages sent while the snapshot is being built follow it, so a step may arrive once in the snapshot and once as a `step` message; a later message for the same step replaces the earlier one. Step messages keep Core's order: a step's finished message, sent once its screenshot is on disk, comes before the next step's `running`. The server closes the socket with `1000` after the final `status`; for a Run that has already finished, after the snapshot. Steps a Run never reached stay `pending`, as do the steps of a Run that ended without a Report (`interrupted` or `internal`). A plain `GET` without a WebSocket upgrade answers `400`, and a server error while subscribing closes with `1011`.
 
 ### 1.6 Private Network Blocking
 
-Users' tests run on the server, so a test could open `http://postgres:5432`, `http://localhost`, or a cloud metadata address and capture what it shows. With `network: "public"`, the Browser Adapter routes every request and aborts it unless its URL is `http:` or `https:` and every address its host resolves to is public: not loopback, private (RFC 1918, `fc00::/7`), link-local, carrier-grade NAT, unspecified, or multicast. The step that made the request fails with Playwright's `net::ERR_FAILED` reason. This is not a sandbox (PRD 3.2 *Won't*): DNS rebinding between the check and Chromium's own lookup is not prevented.
+Users' tests run on the server, so a test could open `http://postgres:5432`, `http://localhost`, or a cloud metadata address and capture what it shows. With `network: "public"`, the Browser Adapter routes every request and WebSocket and aborts it unless its URL is `http:` or `https:` and every address its host resolves to is public: not loopback, private (RFC 1918, `fc00::/7`), link-local, carrier-grade NAT, unspecified, reserved, or multicast (`browser-adapter.md` 1.12). The step that made the request fails with Playwright's `net::ERR_FAILED` reason.
+
+That check has two gaps: DNS rebinding between the check and Chromium's own lookup, and redirects, since Playwright routes only the first request of a redirect chain, so a public URL that redirects to `http://backend:4000` would be followed. In production the network layer closes both. Runs drive a separate `browser` container (`BROWSER_ENDPOINT=ws://browser:3000/`) that runs Playwright's `run-server`. Its entry point, `browser-firewall.sh`, adds `iptables` and `ip6tables` rules that refuse every outgoing connection to the same ranges (`NON_PUBLIC_RANGES`), keeping only loopback (the server and Docker's DNS) and replies to the Backend's incoming connection open. It then starts the server as `pwuser` with no capabilities, so the browser cannot change the rules. However a page reaches a private address, the connection is refused (`net::ERR_CONNECTION_REFUSED`). The container shares only the `browser` network with the Backend, so it cannot even resolve `postgres`. This is still not a sandbox (PRD 3.2 *Won't*): a compromised browser can do anything a public client can. Without `BROWSER_ENDPOINT`, as in local development, Runs launch Chromium in the Backend's process with only the route check.
+
+**Dev mode.** A frontend developer runs the Backend on their own machine against a local Demo App, which `network: "public"` would block. The development scripts (`pnpm backend`, and `pnpm dev` in `src/app/backend`) start it with `--dev`: its Runs use `network: "any"`, like the CLI. Dev mode is refused at start unless `HOST` is a loopback address (`127.0.0.1`, `::1`, `localhost`), so a backend whose Runs can open private addresses is never reachable from another machine. `pnpm start`, which the image runs, never passes `--dev`, so cloud Runs always use `network: "public"`.
 
 The Benchmark Demo App therefore runs at a public address in production, for example `https://demo.<domain>`, set as the Project Variable `BASE`.
 
 ### 1.7 Errors
 
-Every error answers JSON `{ "error": { "code": string, "message": string, "details"?: ... } }`. Only `400` and `422` carry `details`. Clients should treat an unknown `code` like `internal`, since codes may be added:
+Every error answers JSON `{ "error": { "code": string, "message": string, "details"?: ... } }`. The status follows HTTP's meaning; `code` is the Backend's own name for the failure, which clients branch on, and `message` is for people. Only `400` and `422` carry `details`. Clients should treat an unknown `code` like `internal`, since codes may be added:
 
 | Status | Code | When |
 | ------ | ---- | ---- |
 | `400` | `invalid_request` | A body, query, or path parameter fails its zod schema, including a path id that is not a uuid; `details` is `{ path, message }[]`, with `path` like `body.email` |
-| `401` | `unauthorized` | No token, a bad or expired token, or a wrong email or password at login |
+| `401` | `unauthorized` | No token, a bad token, or a wrong email or password at login |
 | `404` | `not_found` | No such resource for this user |
 | `409` | `conflict` | A duplicate email or name |
-| `413` | `too_large` | A request body over 1 MB |
+| `413` | `too_large` | A request body over 1 MB, or a field over its size limit (1.3); the message names the field, e.g. `body.source`. A route lists its size-limited fields in the contract (`sizeLimited`), and a size limit wins over other schema failures |
 | `422` | `invalid_test` | A Run of a Test File with diagnostics; `details` is `Diagnostic[]` |
 | `500` | `internal` | Anything else; the message is generic and the error is logged without request bodies |
 | `501` | `not_implemented` | A route of the contract (3.1) whose handler is not built yet |
 
 ### 1.8 Configuration
 
-Environment variables are validated with zod at start-up; a missing or invalid one stops the process before it listens. `.env.example` lists them.
+Environment variables are validated with zod at start-up; a missing or invalid one stops the process before it listens. `.env.example` lists them. A local backend also reads the repository's `.env` (`ENV_FILE`), wherever it starts, without overriding variables already set; the image has no `.env`, so in production compose sets them.
 
 | Variable | Default | Use |
 | -------- | ------- | --- |
@@ -95,7 +101,24 @@ Environment variables are validated with zod at start-up; a missing or invalid o
 | `RUNS_DIR` | `./data/runs` | Run Files; a docker volume in production |
 | `RUN_CONCURRENCY` | `1` | Runs at a time, 1–8 |
 | `PORT` | `4000` | HTTP and WebSocket port |
+| `HOST` | `127.0.0.1` | Interface to listen on. The default keeps a local backend off the machine's network, since anyone who reaches it can register and run tests on the developer's OpenRouter key; the Docker image sets `0.0.0.0` for Caddy |
 | `CORS_ORIGIN` | – | The frontend's origin, allowed by CORS |
+| `BROWSER_ENDPOINT` | – | `ws://` URL of the browser container's run-server (1.6); without it, Runs launch Chromium locally |
+
+### 1.9 Deployment
+
+The Backend runs on the team's VPS with docker compose. `compose.yaml` and `Caddyfile` at the repository root hold the Backend's part; the frontend and the public Demo App add their own services and Caddy sites. The frontend and the API have separate domains, so the Backend keeps CORS for `CORS_ORIGIN`.
+
+| Service | Image | Role |
+| ------- | ----- | ---- |
+| `postgres` | `postgres:17.9-alpine` | The database, on the `data` network only, with no published port; volume `postgres-data` |
+| `backend` | Built from `src/app/backend/Dockerfile` | On the `data`, `web`, and `browser` networks; volume `runs` at `RUNS_DIR=/data/runs`; `BROWSER_ENDPOINT=ws://browser:3000/` |
+| `browser` | Built from `src/app/backend/browser.Dockerfile` | The Playwright image with `iptables` and the same `playwright` version's `run-server`; `cap_add: [NET_ADMIN]` for its firewall only (1.6); on the `browser` network only; `shm_size: 1gb` for Chromium; limited to 2 GB of memory, 1.5 CPUs, and 1024 processes and threads, so one page cannot exhaust the server (a Run peaks near 500 MB and 80 threads). A browser over its memory limit is killed and restarted, and its Run fails with an `infrastructure` error |
+| `caddy` | `caddy:2.11.2-alpine` | HTTPS for `API_DOMAIN`, proxied to `backend:4000`, WebSocket upgrades included; no access log, since URLs may carry `?token=`. It also serves the benchmark Demo App at `DEMO_DOMAIN` from the checkout's `demo-app/site/` and `extras/`, read-only, with the site in `demo-app.Caddyfile`, which `Caddyfile` imports and `docs/deploy/demo-app.md` also serves alone, the way `serveDemoApp()` does, so tests reach it at a public address as the Project Variable `BASE` |
+
+The Dockerfile builds from the repository root on `mcr.microsoft.com/playwright:v<playwright version>-noble`, whose Chromium matches the pinned `playwright` package. That image ships a newer Node, so Node 22 and corepack are copied from `node:22.x-bookworm-slim`, matching `.nvmrc`. It installs every dependency, since the Backend runs from source with `tsx` and `prisma` is a dev dependency, generates the Prisma Client, and runs as `pwuser`. At start it runs `prisma migrate deploy`, then `pnpm start`. compose reads `POSTGRES_PASSWORD`, `API_DOMAIN`, `DEMO_DOMAIN`, `JWT_SECRET`, `OPENROUTER_API_KEY`, `CORS_ORIGIN`, and `RUN_CONCURRENCY` from `.env` (`.env.example`, Deploy section) and fails before starting when a required one is missing. The same Postgres version runs in `compose.dev.yaml` and CI.
+
+Project Variable values are stored in plain text, and Run Files are never deleted; both are deliberate simplifications. Postgres needs off-box backups of the `postgres-data` volume. `docs/deploy/backend-prod.md` is the step-by-step guide from a fresh VPS, including backups.
 
 ## 2. Internal Flow
 
@@ -142,7 +165,7 @@ Conventions every route follows:
 | ---- | - |
 | Ids | uuid strings; a path id that is not one answers `400` |
 | Times | ISO 8601 strings in UTC |
-| Lists | `{ items }`; `GET /runs` adds `nextCursor` (`null` on the last page) and takes `limit` (1–100, default 20) and `cursor` |
+| Lists | `{ items }`; `GET /runs` adds `nextCursor` (`null` on the last page) and takes `limit` (1–100, default 20) and `cursor`. Runs are ordered by `createdAt`, newest first, then by `id`, so Runs created at the same time page without gaps; `nextCursor` is opaque, and a cursor the server did not give out answers `400` at `query.cursor` |
 | Single resources | Answered bare, e.g. `Project`; wrapped only with data beside them, e.g. `{ testFile, diagnostics }`, `{ token, user }` |
 | Names | camelCase fields; routes are plural kebab-case nouns |
 
@@ -173,17 +196,18 @@ A `Run` carries its `testFileId`, `moduleId`, `projectId`, `fileName`, TestCase 
 
 ### 3.2 Core Changes
 
-The Backend needs two options in Core, both off by default so the CLI keeps its behavior:
+The Backend needs three options in Core, all off by default so the CLI keeps its behavior:
 
 ```ts
 type RunTestOptions = {
   // ...existing fields
   screenshotEveryStep?: boolean; // Executor: a screenshot after every executed step, not only a failed one
   network?: "any" | "public";    // Browser Adapter: abort requests to non-public addresses (1.6)
+  maxRunTimeoutMs?: number;      // Executor: cap runTimeoutMs (1.4)
 };
 ```
 
-With `screenshotEveryStep`, Core's passed steps carry a `screenshot` too, and `report.md` (1.3, the bundle's screenshot files) no longer limits screenshots to failed steps. `executor.md`, `browser-adapter.md`, `pipeline.md`, and `report.md` describe the options in the PR that adds them.
+With `screenshotEveryStep`, Core's passed steps carry a `screenshot` too, in their Step results, `finished` events, and the Report (`executor.md` 1.3, `report.md` 1.3). `network` is the Browser Adapter's private network blocking (`browser-adapter.md` 1.12). `maxRunTimeoutMs` caps the Run timeout (`executor.md` 1.7).
 
 ### 3.3 Database
 
@@ -211,16 +235,20 @@ Unique: `User.email`; `(Project.userId, name)`; `(Module.projectId, name)`; `(Te
 
 | Module | Responsibility |
 | ------ | -------------- |
-| `main.ts` | Reads the env, connects Prisma, recovers interrupted Runs, starts HTTP and WebSocket |
+| `main.ts` | Reads the env, connects Prisma, recovers interrupted Runs, builds the Run Queue and `LiveHub`, and starts HTTP and WebSocket on one port |
 | `env.ts` | The zod schema of 1.8 |
-| `app.ts` | `createApp(deps)`: Express app with CORS, JSON parsing, the API docs, every route of `ROUTES` validated and dispatched to its handler (or `501`), and the error handler; deps are injected for tests |
-| `http/` | `errors.ts` (the `ApiError` type and handler of 1.7), `auth.ts` (the Bearer middleware) |
+| `db.ts` | `createDb()`: the Prisma client over `@prisma/adapter-pg` |
+| `app.ts` | `createApp(deps)`: Express app with CORS, JSON parsing, the API docs, every route of `ROUTES` token-checked, validated, and dispatched to its handler (or `501`) with the token's `userId`, and the error handler; deps (handlers, `verifyToken`) are injected for tests |
+| `handlers.ts` | `createHandlers(deps)`: every implemented handler, keyed `"<method> <path>"` like `ROUTES` |
+| `http/` | `errors.ts` (the `ApiError` type and handler of 1.7), `auth.ts` (the token middleware: Bearer, `?token=`, or both, per the route's `auth`), `prisma-errors.ts` (unique violations become `409`) |
 | `auth/` | `password.ts` (bcrypt), `token.ts` (sign and verify with `jose`), `routes.ts` |
-| `workspace/` | Routes for projects, modules, test files, variables, and the tree |
-| `runs/queue.ts` | `RunQueue`: FIFO with a concurrency limit, `enqueue(runId)`, `recover()` |
-| `runs/execute-run.ts` | Runs one Run with Core, writes Run Files, updates the row, publishes progress |
-| `runs/run-files.ts` | The disk `ReportStore` and safe file paths under `RUNS_DIR/<runId>/` |
-| `runs/live.ts` | `LiveHub`: per-Run state and subscribers; the WebSocket upgrade handler |
+| `workspace/` | `routes.ts`: routes for projects, modules, test files, variables, and the tree; `owned.ts`: lookups scoped to the user (`404` otherwise) and the rows' API shapes |
+| `runs/queue.ts` | `RunQueue`: FIFO with a concurrency limit, `enqueue(runId)`, and `idle()` for tests; a Run that throws is logged and the queue goes on |
+| `runs/execute-run.ts` | `executeRun()`: runs one queued Run with Core, writes Run Files, updates the row, and publishes its progress to a `RunProgress` (the `LiveHub`); `recoverInterruptedRuns()` of 1.4 step 6, called by `main.ts` before the queue starts |
+| `runs/browser.ts` | `browserLauncher(endpoint)`: the launch every Run uses, connecting to `BROWSER_ENDPOINT` when set |
+| `runs/to-run.ts` | The API's `Run` of a row: `toRun()` for lists, `toRunDetail()` with `source` and `report` |
+| `runs/run-files.ts` | The disk `ReportStore`, `writeRunFile()` for each step's screenshot, and `resolveRunFile()`: a path that resolves outside `RUNS_DIR/<runId>/`, or to the folder itself, is rejected |
+| `runs/live.ts` | `LiveHub`: the `RunProgress` of every Run, with each running Run's steps so far and subscribers; `attachLive()`: the WebSocket upgrade handler on the HTTP server, with the `?token=` check |
 | `runs/routes.ts` | Trigger, history, run, and file routes |
 | `api/schemas.ts` | The zod schemas of the API's shapes and Live Progress messages; the named ones become OpenAPI components |
 | `api/contract.ts` | `ROUTES`: method, path, auth, and schemas of every route in 3.1 |
@@ -235,12 +263,17 @@ Unique: `User.email`; `(Project.userId, name)`; `(Module.projectId, name)`; `(Te
 src/app/backend/
 ├── package.json         # express, ws, zod, @prisma/client, jose, bcryptjs, swagger-ui-express
 ├── Dockerfile           # FROM the Playwright image; prisma migrate deploy, then pnpm start (tsx, no build step)
+├── browser.Dockerfile   # the browser container: Playwright image, iptables, playwright run-server
+├── browser-firewall.sh  # its entry point: the firewall of 1.6, then run-server as pwuser
+├── prisma.config.ts     # Prisma 7 config: schema, migrations, DATABASE_URL
 ├── prisma/
-│   ├── schema.prisma
-│   └── migrations/
+│   ├── schema.prisma    # generator "prisma-client", output src/generated/prisma
+│   └── migrations/      # committed; applied with prisma migrate deploy
 └── src/
+    ├── generated/       # Prisma Client from prisma generate, run on pnpm install; not committed
     ├── main.ts
     ├── env.ts
+    ├── db.ts
     ├── app.ts
     ├── openapi.ts
     ├── api/             # schemas.ts, contract.ts
@@ -252,21 +285,23 @@ src/app/backend/
 
 ## 5. Test Plan
 
-Integration tests need PostgreSQL: CI runs a `postgres` service container, and locally `docker compose -f compose.dev.yaml up -d postgres` starts one. Without `DATABASE_URL` they are skipped. Each test file uses its own schema and truncates tables between tests. Runs use a fake `JevClient` and local HTML fixtures, never the real Jev.
+Integration tests need PostgreSQL: CI runs a `postgres` service container, and locally `docker compose -f compose.dev.yaml up -d postgres` starts one (`DATABASE_URL=postgresql://jevwright:jevwright@localhost:5432/jevwright`). Without `DATABASE_URL` they are skipped. Each test file migrates its own schema with `prisma migrate deploy` and empties it between tests by deleting every User, which cascades to every other row. Runs use a fake `JevClient` and local HTML fixtures, never the real Jev.
 
 | Type | Coverage | Location |
 | ---- | -------- | -------- |
-| Unit | `env`: missing and invalid variables stop start-up | `src/tests/unit/app/backend/env.test.ts` |
-| Unit | `password`, `token`: hash and verify, wrong password, expired and tampered tokens | `src/tests/unit/app/backend/auth/` |
+| Unit | `env`: missing and invalid variables stop start-up; dev mode picks `network: "any"` only on a loopback `HOST` | `src/tests/unit/app/backend/env.test.ts` |
+| Unit | `password`, `token`: hash and verify, wrong password, no expiry, tampered tokens and other secrets | `src/tests/unit/app/backend/auth/` |
 | Unit | `RunQueue`: FIFO order, the concurrency limit, a failing Run does not stop the queue | `src/tests/unit/app/backend/runs/queue.test.ts` |
 | Unit | `run-files`: paths outside the Run's folder rejected | `src/tests/unit/app/backend/runs/run-files.test.ts` |
 | Unit | `LiveHub`: snapshot for a late subscriber, step and status messages, close after the final status | `src/tests/unit/app/backend/runs/live.test.ts` |
 | Unit | Core: `screenshotEveryStep`, `network: "public"` address checks | `src/tests/unit/core/...` |
+| Unit | Deploy files: the Playwright image of the pinned `playwright`, Node of `.nvmrc`, `--dev` only in the development scripts, migrate before start, Caddy to `backend:4000`, one Postgres version in compose, `compose.dev.yaml`, and CI; the Demo App served on `DEMO_DOMAIN` like `serveDemoApp()`; the browser container's `run-server` version, a firewall rule for every range of `NON_PUBLIC_RANGES`, root and capabilities dropped, memory, CPU, and process limits, `NET_ADMIN` and its own network | `src/tests/unit/app/backend/deploy.test.ts` |
+| Integration | Database: unique names per parent, cascade deletes, Runs kept with `null` ids | `src/tests/integration/app/backend/db.test.ts` |
 | Integration | Auth: register, duplicate email, login, wrong password, `401` without or with a bad token | `src/tests/integration/app/backend/auth.test.ts` |
 | Integration | Workspace: CRUD of every level, unique names, moving a Test File, cascade deletes, `404` for another user's data, saving a source with diagnostics, variables return names only | `src/tests/integration/app/backend/workspace.test.ts` |
-| Integration | Runs: `422` for an invalid file, `202` and `queued`, a second Run stays `queued` while one runs, the final row and Report, Run errors, files served with Bearer or `?token=` and traversal rejected, `GET /runs` filters, order, and cursor paging, restart recovery | `src/tests/integration/app/backend/runs.test.ts` |
+| Integration | Runs: `422` for an invalid file, `202` and `queued`, a second Run stays `queued` while one runs, the final row and Report, Run errors, files served with Bearer or `?token=` and traversal rejected, a Run on a `run-server` at `BROWSER_ENDPOINT`, a Run capped at the longest run time, `GET /runs` filters, order, and cursor paging, restart recovery | `src/tests/integration/app/backend/runs.test.ts` |
 | Integration | Live Progress over a real WebSocket: snapshot with every step `pending`, `running` and finished steps with screenshots, final status, a finished Run's snapshot, `4401` and `4404` | `src/tests/integration/app/backend/live.test.ts` |
 | Integration | Core with `network: "public"`: a page on `127.0.0.1` is blocked | `src/tests/integration/core/browser/` |
 | Unit | OpenAPI: `info`, every route of `ROUTES` with `{name}` parameters, parameters and bodies from the schemas, Bearer and `?token=` security per route, `{ items }` lists and Run paging, typed error details, one `Step` shape for the Report and Live Progress, the Live Progress messages as components, `docs/api/openapi.json` up to date | `src/tests/unit/app/backend/openapi.test.ts` |
-| Integration | App: health, OpenAPI and Swagger UI, `501` without a handler, `400` with `{ path, message }` details before the handler, a non-uuid id, an over-long source, bad JSON, `413` over 1 MB, `404` for an unknown route, CORS only for the frontend's origin, a generic `500`, a handler gets the parsed input and the whole files wildcard | `src/tests/integration/app/backend/app.test.ts` |
+| Integration | App: health, OpenAPI and Swagger UI, `501` without a handler, `400` with `{ path, message }` details before the handler, a non-uuid id, bad JSON, `413` over 1 MB and for an over-long source or Variable value while a long name stays `400`, `404` for an unknown route, CORS only for the frontend's origin, a generic `500`, a handler gets the parsed input and the whole files wildcard | `src/tests/integration/app/backend/app.test.ts` |
 | E2E | Login → edit → validate → run → history through the frontend (Epic 6) | `src/tests/e2e/` |

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { LaunchOptions } from "@/core/browser/index.js";
 import { execute, type ExecuteOptions, type StepEvent } from "@/core/executor/index.js";
 import type { Step, TestCase } from "@/core/syntax/index.js";
-import { failed, fakeAdapter, throwingJev, TRACE } from "./fake-adapter.js";
+import { failed, fakeAdapter, PNG, throwingJev, TRACE } from "./fake-adapter.js";
 
 const steps: Step[] = [
   { line: 3, action: "open", url: "/login" },
@@ -50,6 +50,20 @@ describe("execute", () => {
     const { launches } = await run(testCase({ timeoutMs: 4321 }), {}, { headed: true });
 
     expect(launches).toEqual([{ headed: true, baseUrl: "http://127.0.0.1:3000", timeoutMs: 4321 }]);
+  });
+
+  it("launches the browser with the network option", async () => {
+    const { launches } = await run(testCase(), {}, { network: "public" });
+
+    expect(launches).toEqual([{ headed: false, baseUrl: "http://127.0.0.1:3000", timeoutMs: 1000, network: "public" }]);
+  });
+
+  it("screenshots every executed step with screenshotEveryStep, in results and events", async () => {
+    const { result, events } = await run(testCase(), {}, { screenshotEveryStep: true });
+
+    expect(result.steps.map((step) => step.status === "passed" && step.screenshot)).toEqual([PNG, PNG, PNG]);
+    const finished = events.flatMap((event) => (event.type === "finished" ? [event.result] : []));
+    expect(finished.map((step) => step.status === "passed" && step.screenshot)).toEqual([PNG, PNG, PNG]);
   });
 
   it("runs every step in order and returns their results with the trace", async () => {

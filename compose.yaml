@@ -1,0 +1,97 @@
+# Production on the VPS (backend.md 1.9): the backend, its browser container, Postgres, and Caddy for HTTPS,
+# which also serves the benchmark Demo App.
+#   cp .env.example .env   # fill in the Deploy section
+#   docker compose up -d --build
+# The frontend and the public Demo App are added by their own services and Caddy sites.
+services:
+  postgres:
+    image: postgres:17.9-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: jevwright
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: jevwright
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jevwright"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    # Only the backend reaches Postgres; no port is published.
+    networks: [data]
+
+  backend:
+    build:
+      context: .
+      dockerfile: src/app/backend/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      browser:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgresql://jevwright:${POSTGRES_PASSWORD}@postgres:5432/jevwright
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:?set OPENROUTER_API_KEY in .env}
+      CORS_ORIGIN: ${CORS_ORIGIN:?set CORS_ORIGIN in .env}
+      RUN_CONCURRENCY: ${RUN_CONCURRENCY:-1}
+      RUNS_DIR: /data/runs
+      PORT: 4000
+      # Runs drive the browser container, never a Chromium inside the backend (backend.md 1.6).
+      BROWSER_ENDPOINT: ws://browser:3000/
+    volumes:
+      - runs:/data/runs
+    init: true
+    networks: [data, web, browser]
+
+  browser:
+    build:
+      context: .
+      dockerfile: src/app/backend/browser.Dockerfile
+    restart: unless-stopped
+    # For its own firewall at start; the server then runs without capabilities (browser-firewall.sh).
+    cap_add: [NET_ADMIN]
+    # Chromium uses /dev/shm; Docker's default 64 MB makes it crash on large pages.
+    shm_size: 1gb
+    # One heavy or hostile page must not exhaust the server. These fit RUN_CONCURRENCY=1 on a 4 GB VPS;
+    # raise them with RUN_CONCURRENCY. Chromium counts its threads against pids_limit.
+    mem_limit: 2g
+    cpus: "1.5"
+    pids_limit: 1024
+    init: true
+    # Only the backend shares this network; the firewall refuses the browser's own connections to it anyway.
+    networks: [browser]
+
+  caddy:
+    image: caddy:2.11.2-alpine
+    restart: unless-stopped
+    depends_on: [backend]
+    environment:
+      API_DOMAIN: ${API_DOMAIN:?set API_DOMAIN in .env}
+      DEMO_DOMAIN: ${DEMO_DOMAIN:?set DEMO_DOMAIN in .env}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./demo-app.Caddyfile:/etc/caddy/demo-app.Caddyfile:ro
+      # The Demo App's static files, straight from the checkout: git pull updates them without a restart.
+      - ./src/tests/benchmark/demo-app/site:/srv/demo/site:ro
+      - ./src/tests/benchmark/demo-app/extras:/srv/demo/extras:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks: [web]
+
+volumes:
+  postgres-data:
+  runs:
+  caddy-data:
+  caddy-config:
+
+networks:
+  data:
+  web:
+  browser:

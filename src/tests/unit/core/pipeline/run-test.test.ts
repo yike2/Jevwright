@@ -97,6 +97,30 @@ describe("runTest", () => {
     expect(executeLaunch).toBe(launch);
   });
 
+  it("passes screenshotEveryStep, network, and maxRunTimeoutMs to execute", async () => {
+    const store = makeReportStore();
+    vi.mocked(execute).mockResolvedValue({ steps: [], trace: Buffer.alloc(0) });
+
+    await runTest(
+      { file: "demo.yaml", source: VALID_SOURCE },
+      {
+        headed: false,
+        vars: {},
+        jev: { ping: vi.fn() } as never,
+        store: store as unknown as ReportStore,
+        screenshotEveryStep: true,
+        network: "public",
+        maxRunTimeoutMs: 600_000,
+      },
+    );
+
+    expect(vi.mocked(execute).mock.calls[0]![1]).toMatchObject({
+      screenshotEveryStep: true,
+      network: "public",
+      maxRunTimeoutMs: 600_000,
+    });
+  });
+
   it("passes a noop callback when onEvent is omitted", async () => {
     const launch = vi.fn();
     const store = makeReportStore();

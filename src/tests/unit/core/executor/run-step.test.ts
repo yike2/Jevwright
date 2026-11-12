@@ -11,10 +11,16 @@ import { failed, fakeAdapter, PNG, throwingJev } from "./fake-adapter.js";
 const alert = (message: string): DialogRecord => ({ type: "alert", message, answer: "accepted", expected: true });
 
 // Runs `step` as step 3 of a TestCase that holds only it.
-async function run(step: Step, script: Parameters<typeof fakeAdapter>[0] = {}, vars: Record<string, string> = {}) {
+async function run(
+  step: Step,
+  script: Parameters<typeof fakeAdapter>[0] = {},
+  vars: Record<string, string> = {},
+  screenshotEveryStep?: boolean,
+) {
   const { adapter, calls } = fakeAdapter(script);
   const redact = createRedact({ name: "t", timeoutMs: 1000, runTimeoutMs: 600000, steps: [step] }, vars);
-  const result = await runStep(step, 3, { browser: adapter, vars, redact, jev: throwingJev, timeoutMs: 1000 });
+  const context = { browser: adapter, vars, redact, jev: throwingJev, timeoutMs: 1000, screenshotEveryStep };
+  const result = await runStep(step, 3, context);
   return { result, calls };
 }
 
@@ -257,6 +263,37 @@ describe("runStep results", () => {
     const { result, calls } = await run({ line: 2, action: "back" });
 
     expect(calls.map((call) => call.method)).not.toContain("screenshot");
+    expect(result).not.toHaveProperty("screenshot");
+  });
+
+  it("attaches a screenshot to a passed step with screenshotEveryStep, after its Adapter call", async () => {
+    const { result, calls } = await run({ line: 2, action: "back" }, {}, {}, true);
+
+    expect(calls.map((call) => call.method)).toEqual(["ready", "perform", "screenshot"]);
+    expect(result).toMatchObject({ status: "passed", screenshot: PNG });
+  });
+
+  it("takes one screenshot of a failed step with screenshotEveryStep", async () => {
+    const { result, calls } = await run(
+      { line: 2, action: "back" },
+      { perform: () => failed("No page to go back to") },
+      {},
+      true,
+    );
+
+    expect(calls.filter((call) => call.method === "screenshot")).toHaveLength(1);
+    expect(result).toMatchObject({ status: "failed", screenshot: PNG });
+  });
+
+  it("passes a step without a screenshot when screenshotEveryStep cannot read one", async () => {
+    const { result } = await run(
+      { line: 2, action: "back" },
+      { screenshot: () => ({ ok: false, reason: "The current tab was closed" }) },
+      {},
+      true,
+    );
+
+    expect(result).toMatchObject({ status: "passed" });
     expect(result).not.toHaveProperty("screenshot");
   });
 
