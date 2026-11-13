@@ -118,6 +118,8 @@ shadcn tooling and UI primitives are pinned exactly (no `^`). Primitives are add
 - `cn@0.5.2`
 - `shadcn@4.23.0`
 - `tw-animate-css@1.4.0`
+- `@base-ui/react@1.9.0`
+- `class-variance-authority@0.7.1`
 
 The repo does not use `eslint-config-next`; instead the root `eslint.config.js` is extended to include `.tsx` and the frontend package files.
 
