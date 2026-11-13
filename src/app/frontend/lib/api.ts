@@ -115,7 +115,7 @@ export function createApiClient(config: ApiClientConfig = {}): {
   register(email: string, password: string): Promise<RegisterResponse>;
   getCurrentUser(): Promise<User>;
 } {
-  const defaultBaseUrl = "http://localhost:4000/api/v1";
+  const defaultBaseUrl = "http://127.0.0.1:4000/api/v1";
   const fetchImpl = config.fetchImpl ?? fetch;
   const defaultOnUnauthorized = () => {
     if (typeof window !== "undefined") {
@@ -243,6 +243,7 @@ export function createApiClient(config: ApiClientConfig = {}): {
 }
 
 export const apiClient = createApiClient({
+  baseUrl: process.env.NEXT_PUBLIC_API_URL,
   onUnauthorized: () => {
     if (typeof window !== "undefined") {
       window.location.assign("/login");
