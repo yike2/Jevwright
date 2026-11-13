@@ -12,7 +12,7 @@ This module covers the frontend package: the Next.js scaffold, generated API typ
 | ------- | -------------------------------------------------------------------------- |
 | Package | `@jevwright/frontend` in `src/app/frontend`                                |
 | Runtime | Next.js 15 App Router, TypeScript strict, Node 22, pnpm 9                  |
-| Styling | Tailwind v4 with `@tailwindcss/postcss`; no `tailwind.config.ts`           |
+| Styling | Tailwind v4 with `@tailwindcss/postcss`; no `tailwind.config.ts`; shadcn dark theme (darkclass on<html>)           |
 | API     | OpenAPI-generated types from `docs/api/openapi.json`; native fetch wrapper |
 | Auth    | Bearer token from login/register responses; token stored in `localStorage` |
 | Pages   | `/login` two-mode auth form and `/` authenticated placeholder              |
@@ -95,6 +95,7 @@ The pages behave as follows:
   - while pending, render minimal text `Loading…`;
   - when resolved, show the current user email and a Log out button;
   - Log out calls `apiClient.clearToken()` and navigates with `router.replace("/login")`.
+  - if `getCurrentUser()` fails with anything other than `401`, show the `formatAuthError` messages instead (a `401` is handled by the API client, which redirects to `/login`).
 
 The root layout remains a server component, while pages that need auth or data access are client components. This is a deliberate split because the auth token is browser state and the repo’s guidance says “Server Components by default,” but the token lives in the browser and the app needs client-side auth fetch behavior.
 
@@ -135,7 +136,9 @@ Lint, format, and type-check coverage include the frontend package:
 - `pnpm format` and `pnpm format:check` cover the frontend source files in the package
 - `pnpm typecheck` includes the frontend TypeScript project
 
-The frontend environment file sets `NEXT_PUBLIC_API_URL=http://localhost:4000/api/v1` so the browser talks to the backend API while the app itself runs on `http://localhost:3000`. The browser must use `http://localhost:3000`, not `127.0.0.1`, because the backend CORS default is `http://localhost:3000`.
+`apiClient` reads its base URL from `NEXT_PUBLIC_API_URL` (inlined at build time), falling back to `http://127.0.0.1:4000/api/v1`. The frontend environment file sets `NEXT_PUBLIC_API_URL=http://127.0.0.1:4000/api/v1`; use `127.0.0.1` because the backend listens on IPv4 only (`docs/deploy/backend-local.md`). The browser must open `http://localhost:3000`, not `127.0.0.1:3000`, because the backend CORS default is `http://localhost:3000`.
+
+`next.config.ts` maps `.js` imports to `.ts`/`.tsx` (`webpack.resolve.extensionAlias`), because lib files use `.js` relative imports for the root NodeNext typecheck.
 
 ## 2. Internal Flow
 
