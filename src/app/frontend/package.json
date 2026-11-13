@@ -4,6 +4,7 @@
   "scripts": {
     "dev": "next dev --port 3000",
     "build": "next build",
+    "start": "next start -H 0.0.0.0 -p 3000",
     "typecheck": "next typegen && tsc --noEmit",
     "api:types": "openapi-typescript ../../../docs/api/openapi.json -o lib/api-schema.ts"
   },
