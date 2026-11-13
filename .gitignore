@@ -159,3 +159,5 @@ src/app/backend/src/generated/
 
 # Run Files of a local backend (RUNS_DIR, docs/tech/backend.md 1.8)
 **/data/runs/
+test-results/
+playwright-report/
