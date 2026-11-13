@@ -64,13 +64,26 @@ services:
     # Only the backend shares this network; the firewall refuses the browser's own connections to it anyway.
     networks: [browser]
 
+  frontend:
+    build:
+      context: .
+      dockerfile: src/app/frontend/Dockerfile
+      args:
+        # Written into the JavaScript at build time (docs/deploy/frontend-prod.md).
+        NEXT_PUBLIC_API_URL: https://${API_DOMAIN:?set API_DOMAIN in .env}/api/v1
+    restart: unless-stopped
+    init: true
+    # Only Caddy reaches the frontend; no port is published.
+    networks: [web]
+
   caddy:
     image: caddy:2.11.2-alpine
     restart: unless-stopped
-    depends_on: [backend]
+    depends_on: [backend, frontend]
     environment:
       API_DOMAIN: ${API_DOMAIN:?set API_DOMAIN in .env}
       DEMO_DOMAIN: ${DEMO_DOMAIN:?set DEMO_DOMAIN in .env}
+      APP_DOMAIN: ${APP_DOMAIN:?set APP_DOMAIN in .env}
     ports:
       - "80:80"
       - "443:443"

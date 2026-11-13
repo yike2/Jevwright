@@ -5,5 +5,10 @@
 	reverse_proxy backend:4000
 }
 
+# The frontend (docs/deploy/frontend-prod.md); the browser calls the API at API_DOMAIN directly.
+{$APP_DOMAIN} {
+	reverse_proxy frontend:3000
+}
+
 # The benchmark Demo App's site, kept in its own file so it can also be served alone (docs/deploy/demo-app.md).
 import /etc/caddy/demo-app.Caddyfile
