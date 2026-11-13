@@ -6,7 +6,7 @@ The Frontend is the browser app for Jevwright: an App Router Next.js client that
 
 ### 1.1 Scope
 
-This issue only builds the scaffold and API client contract for the frontend package, not the full workspace UI. It creates the package, config, generated API types, auth-aware fetch client, placeholder pages, and tests for the API client’s failure handling.
+This module covers the frontend package: the Next.js scaffold, generated API types, the auth-aware fetch client, a two-mode login/register page, and a placeholder authenticated home page. The workspace UI (sidebar, editor, live run, history and reports) is not built yet.
 
 | Area    | Scope                                                                      |
 | ------- | -------------------------------------------------------------------------- |
@@ -15,8 +15,8 @@ This issue only builds the scaffold and API client contract for the frontend pac
 | Styling | Tailwind v4 with `@tailwindcss/postcss`; no `tailwind.config.ts`           |
 | API     | OpenAPI-generated types from `docs/api/openapi.json`; native fetch wrapper |
 | Auth    | Bearer token from login/register responses; token stored in `localStorage` |
-| Pages   | `/login` and `/` placeholder screens only                                  |
-| Tests   | Vitest for the API client only                                             |
+| Pages   | `/login` two-mode auth form and `/` authenticated placeholder              |
+| Tests   | Vitest for API client and auth-error formatter                             |
 
 ### 1.2 Token and auth rules
 
@@ -81,10 +81,20 @@ This keeps `User`, `Diagnostic`, `Run`, and the login response in sync with the 
 
 ### 1.5 Page requirements
 
-This issue only includes placeholder screens:
+The pages behave as follows:
 
-- `/login`: login page shell
-- `/`: workspace landing page shell
+- `/login` is a single client-component page with two modes: **Log in** and **Register**.
+- The UI has exactly the PRD 7.1.1 form shape: email, password, submit.
+- Submit calls `apiClient.login(email, password)` in Log in mode and `apiClient.register(email, password)` in Register mode.
+- On successful login/register, the page navigates with `router.replace("/")`.
+- While the submit request is in flight, the submit button is disabled.
+- Auth errors render backend-provided text only:
+  - always show `ApiError.message`;
+  - for `ApiError.status === 400`, also render each string message from `ApiError.details`.
+- `/` remains a placeholder page, but on load it calls `apiClient.getCurrentUser()`:
+  - while pending, render minimal text `Loading…`;
+  - when resolved, show the current user email and a Log out button;
+  - Log out calls `apiClient.clearToken()` and navigates with `router.replace("/login")`.
 
 The root layout remains a server component, while pages that need auth or data access are client components. This is a deliberate split because the auth token is browser state and the repo’s guidance says “Server Components by default,” but the token lives in the browser and the app needs client-side auth fetch behavior.
 
@@ -101,7 +111,7 @@ The frontend package uses these exact versions:
 - `@tailwindcss/postcss@4.3.5`
 - `openapi-typescript@7.13.0`
 
-The shadcn dependencies are recorded after running `shadcn init`; they are pinned exactly with no `^` and are kept in the frontend package manifest after the init step.
+shadcn tooling and UI primitives are pinned exactly (no `^`). Primitives are added with `shadcn add` only as pages need them (currently `button`, `input`, `label`); every dependency that command adds is pinned to its exact installed version and listed below.
 
 
 
@@ -130,30 +140,39 @@ The frontend environment file sets `NEXT_PUBLIC_API_URL=http://localhost:4000/ap
 ```mermaid
 sequenceDiagram
   participant U as User
-  participant P as Login Page
+  participant P as Auth Page (/login)
+  participant H as Home Placeholder (/)
   participant C as Api Client
   participant B as Backend API
   participant L as localStorage
 
+  U->>P: Choose Log in or Register
   U->>P: Submit email/password
-  P->>C: login(email, password)
-  C->>B: POST /auth/login
+  P->>C: login() or register()
+  C->>B: POST /auth/login or /auth/register
   B-->>C: { token, user }
   C->>L: store token
   C-->>P: session data
+  P->>H: router.replace("/")
 
-  P->>C: getCurrentUser()
+  H->>C: getCurrentUser()
   C->>B: GET /auth/me with Authorization header
   B-->>C: User
-  C-->>P: User
+  C-->>H: User
+  U->>H: Click Log out
+  H->>C: clearToken()
+  C->>L: remove token
+  H->>P: router.replace("/login")
 ```
 
-1. The page calls the API client with credentials.
+1. The `/login` page submits credentials through `apiClient.login` or `apiClient.register` based on the selected mode.
 2. The API client appends the bearer token to requests when present, otherwise it sends a plain request.
-3. A `401` from a non-login route clears the token and calls the configured `onUnauthorized` callback.
-4. A `401` from login/register throws `ApiError` without mutating the token.
-5. The `openapi-typescript` generator creates the frontend schema types from the published backend OpenAPI document.
-6. The API client normalizes backend errors into the `ApiError` contract and preserves the real HTTP status.
+3. A successful auth response stores the token, and `/login` transitions to `/` with `router.replace("/")`.
+4. The `/` page calls `apiClient.getCurrentUser()` on load and shows `Loading…` while in flight.
+5. A `401` from a non-login route clears the token and calls the configured `onUnauthorized` callback.
+6. A `401` from login/register throws `ApiError` without mutating the token.
+7. The `openapi-typescript` generator creates the frontend schema types from the published backend OpenAPI document.
+8. The API client normalizes backend errors into the `ApiError` contract and preserves the real HTTP status.
 
 ## 3. External Interface
 
@@ -244,11 +263,14 @@ This fallback is implemented in the client itself when the backend response is n
 
 | Module / Class                 | Responsibility                                                                      |
 | ------------------------------ | ----------------------------------------------------------------------------------- |
-| `app/`                         | App Router pages and layout; placeholder screens only                               |
+| `app/login/page.tsx`           | Two-mode auth form (Log in/Register), submit, in-flight disable, and navigation     |
+| `app/page.tsx`                 | Authenticated placeholder: load current user, show email, and log out               |
 | `lib/api.ts`                   | Native fetch wrapper, `ApiError`, auth normalization, login/register/getCurrentUser |
 | `lib/api-schema.ts`            | Generated OpenAPI types from `docs/api/openapi.json`                                |
+| `lib/format-auth-error.ts`     | Pure mapping from unknown auth error to UI-safe string array                        |
+| `components/ui/`               | shadcn primitives (`button`, `input`, `label`)                                      |
 | `lib/utils.ts`                 | `shadcn` utility helpers for class composition                                      |
-| `src/tests/unit/app/frontend/` | API client unit tests                                                               |
+| `src/tests/unit/app/frontend/` | API client and `formatAuthError` unit tests                                         |
 
 ### 4.2 Directory layout
 
@@ -261,9 +283,15 @@ src/app/frontend/
 │   └── login/
 │       └── page.tsx
 ├── components.json
+├── components/
+│   └── ui/
+│       ├── button.tsx
+│       ├── input.tsx
+│       └── label.tsx
 ├── lib/
 │   ├── api.ts
 │   ├── api-schema.ts
+│   ├── format-auth-error.ts
 │   └── utils.ts
 ├── .env.example
 ├── next-env.d.ts
@@ -276,11 +304,14 @@ src/app/frontend/
 
 ## 5. Test Plan
 
-| Type | Coverage                                                                                 | Location                                  |
-| ---- | ---------------------------------------------------------------------------------------- | ----------------------------------------- |
-| Unit | API client error parsing, 401 behavior, auth header behavior, 204 success, HTML fallback | `src/tests/unit/app/frontend/api.test.ts` |
+| Type | Coverage                                                                                 | Location                                                |
+| ---- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| Unit | API client error parsing, 401 behavior, auth header behavior, 204 success, HTML fallback | `src/tests/unit/app/frontend/api.test.ts`               |
+| Unit | Auth error formatter behavior for login/register and backend `400 details` rendering     | `src/tests/unit/app/frontend/format-auth-error.test.ts` |
 
-The tests use `fetchImpl`, `getToken`, `setToken`, and `onUnauthorized` injection; no DOM environment is required. The expected values are written by hand from the mocked payloads and the backend contract, never generated from the implementation.
+The tests use `fetchImpl`, `getToken`, `setToken`, and `onUnauthorized` injection where applicable; no DOM environment is required. The expected values are written by hand from mocked payloads and backend contract behavior, never generated from implementation output.
+
+`format-auth-error.test.ts` imports its lib module via the `@/` alias with a `.js` extension (`@/app/frontend/lib/format-auth-error.js`), matching the repo's test convention; lib files import each other with relative `./xxx.js` paths.
 
 ### 5.1 Exact unit-test cases
 
@@ -390,3 +421,63 @@ The tests use `fetchImpl`, `getToken`, `setToken`, and `onUnauthorized` injectio
    - expected value: `undefined`
 
 These exact values are the source of truth for the API client tests and are intentionally written by hand rather than read from generated responses.
+
+### 5.2 Exact `formatAuthError` unit-test cases
+
+1. `it("returns ApiError.message for a non-400 ApiError", () => { ... })`
+   - input:
+     ```ts
+     new ApiError(401, "unauthorized", "Wrong email or password")
+     ```
+   - expected output:
+     ```ts
+     ["Wrong email or password"]
+     ```
+
+2. `it("returns message and detail messages for 400 invalid_request", () => { ... })`
+   - input:
+     ```ts
+     new ApiError(400, "invalid_request", "Invalid request", [
+       { path: "body.password", message: "password shorter than 8 characters" },
+       { path: "body.email", message: "Invalid email address" },
+     ])
+     ```
+   - expected output:
+     ```ts
+     ["Invalid request", "password shorter than 8 characters", "Invalid email address"]
+     ```
+
+3. `it("ignores 400 details entries without a string message", () => { ... })`
+   - input:
+     ```ts
+     new ApiError(400, "invalid_request", "Invalid request", [
+       { path: "body.password", message: "password shorter than 8 characters" },
+       { path: "body.email" },
+       "not-an-object",
+       { path: "body.other", message: 123 },
+     ])
+     ```
+   - expected output:
+     ```ts
+     ["Invalid request", "password shorter than 8 characters"]
+     ```
+
+4. `it("returns Error.message for non-ApiError errors", () => { ... })`
+   - input:
+     ```ts
+     new Error("Network request failed")
+     ```
+   - expected output:
+     ```ts
+     ["Network request failed"]
+     ```
+
+5. `it("returns Internal server error for unknown throw values", () => { ... })`
+   - input:
+     ```ts
+     null
+     ```
+   - expected output:
+     ```ts
+     ["Internal server error"]
+     ```
