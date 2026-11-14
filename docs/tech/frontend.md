@@ -6,17 +6,17 @@ The Frontend is the browser app for Jevwright: an App Router Next.js client that
 
 ### 1.1 Scope
 
-This module covers the frontend package: the Next.js scaffold, generated API types, the auth-aware fetch client, a two-mode login/register page, and a placeholder authenticated home page. It also covers the workspace layout and sidebar; the editor, live run, history and reports are not built yet.
+This module covers the frontend package: the Next.js scaffold, generated API types, the auth-aware fetch client, a two-mode login/register page. It also covers the workspace layout and sidebar; the editor, live run, history and reports are not built yet.
 
-| Area    | Scope                                                                      |
-| ------- | -------------------------------------------------------------------------- |
-| Package | `@jevwright/frontend` in `src/app/frontend`                                |
-| Runtime | Next.js 15 App Router, TypeScript strict, Node 22, pnpm 9                  |
-| Styling | Tailwind v4 with `@tailwindcss/postcss`; no `tailwind.config.ts`; shadcn dark theme (darkclass on<html>)           |
-| API     | OpenAPI-generated types from `docs/api/openapi.json`; native fetch wrapper |
-| Auth    | Bearer token from login/register responses; token stored in `localStorage` |
-| Pages   | `/login` two-mode auth form and `/` authenticated placeholder              |
-| Tests   | Vitest for API client and auth-error formatter                             |
+| Area    | Scope                                                                                                    |
+| ------- | -------------------------------------------------------------------------------------------------------- |
+| Package | `@jevwright/frontend` in `src/app/frontend`                                                              |
+| Runtime | Next.js 15 App Router, TypeScript strict, Node 22, pnpm 9                                                |
+| Styling | Tailwind v4 with `@tailwindcss/postcss`; no `tailwind.config.ts`; shadcn dark theme (`dark` class on `<html>`) |
+| API     | OpenAPI-generated types from `docs/api/openapi.json`; native fetch wrapper                               |
+| Auth    | Bearer token from login/register responses; token stored in `localStorage`                               |
+| Pages   | `/login` two-mode auth form; workspace layout with sidebar; `/` empty state; `/files/[testFileId]` placeholder                                            |
+| Tests   | Vitest for API client, auth-error formatter, and sidebar helpers; Playwright E2E for auth and sidebar                                                           |
 
 
 
@@ -106,20 +106,20 @@ The root layout remains a server component, while pages that need auth or data a
 
 The workspace is every authenticated page. A shared layout guards auth, renders the sidebar on the left and the page on the right.
 
-| Route | Page |
-| ----- | ---- |
-| `/` | Empty state: "Pick a test file to edit" |
-| `/files/[testFileId]` | Editor (placeholder until #81) |
+| Route                 | Page                                    |
+| --------------------- | --------------------------------------- |
+| `/`                   | Empty state: "Pick a test file to edit" |
+| `/files/[testFileId]` | Editor (placeholder until #81)          |
 
-| Element | Behavior |
-| ------- | -------- |
-| Header | "Projects" with a "+" that opens the New Project dialog |
-| Tree | Projects → Modules → Test Files from `GET /tree`, in API order. Projects and Modules toggle open/closed; all open by default |
-| Row "+" | On a Project: New Module dialog. On a Module: New Test File dialog |
-| Status dot | From `latestRun.status`: `passed` green, `failed` red, `queued`/`running` amber, no run gray |
-| Selection | The Test File in the current route is highlighted |
-| Account | Initials, email from `me`, Log out (clears the token, goes to `/login`) |
-| Narrow screens | Sidebar hidden behind a ☰ button |
+| Element        | Behavior                                                                                                                     |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Header         | "Projects" with a "+" that opens the New Project dialog                                                                      |
+| Tree           | Projects → Modules → Test Files from `GET /tree`, in API order. Projects and Modules toggle open/closed; all open by default |
+| Row "+"        | On a Project: New Module dialog. On a Module: New Test File dialog                                                           |
+| Status dot     | From `latestRun.status`: `passed` green, `failed` red, `queued`/`running` amber, no run gray                                 |
+| Selection      | The Test File in the current route is highlighted                                                                            |
+| Account        | Initials, email from `me`, Log out (clears the token, goes to `/login`)                                                      |
+| Narrow screens | Sidebar hidden behind a ☰ button                                                                                             |
 
 Names follow the backend rules: Project and Module names are 1–100 characters, a Test File name ends in `.yaml`, and names are unique within their parent. The New Test File dialog normalizes the input with `toTestFileName`, and the new file is created with `starterSource(name)`. After creation the page navigates to the new file.
 
@@ -127,12 +127,12 @@ Create dialogs submit `POST /projects`, `POST /projects/:id/modules`, or `POST /
 
 The tree is loaded once in the layout and exposed through a `refreshTree()` context, so later pages (editor save, finished run) can update the status dots.
 
-| Helper | Rule |
-| ------ | ---- |
-| `statusOf(latestRun)` | `null` → `none`; `queued`/`running` → `active`; `passed` → `passed`; `failed` → `failed` |
+| Helper                  | Rule                                                                                                                                                            |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `statusOf(latestRun)`   | `null` → `none`; `queued`/`running` → `active`; `passed` → `passed`; `failed` → `failed`                                                                        |
 | `toTestFileName(input)` | Trims; appends `.yaml` when the trimmed name is non-empty and contains no `.`; otherwise returns the trimmed name unchanged (the backend rejects invalid names) |
-| `starterSource(name)` | A valid Test Case: `name` is the file name without `.yaml`, one `open` step with `url: "https://example.com"` |
-| `initials(email)` | First two characters of the part before `@`, upper-cased |
+| `starterSource(name)`   | A valid Test Case: `name` is the file name without `.yaml`, one `open` step with `url: "https://example.com"`                                                   |
+| `initials(email)`       | First two characters of the part before `@`, upper-cased                                                                                                        |
 
 `starterSource("login.yaml")` returns the following, ending with a newline:
 
@@ -143,9 +143,25 @@ steps:
       url: "https://example.com"
 ```
 
+#### Accessible names
+
+E2E tests locate elements by role and accessible name, so these names are part of the contract.
+
+| Element         | Role and name                                                                                                                                                                                  |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Sidebar         | `navigation` named "Projects"                                                                                                                                                                  |
+| Header "+"      | button "New project"                                                                                                                                                                           |
+| Project row "+" | button "New module in <project name>"                                                                                                                                                          |
+| Module row "+"  | button "New test file in <module name>"                                                                                                                                                        |
+| Dialogs         | `dialog` titled "New project", "New module", or "New test file"; text input labelled "Name"; buttons "Create" and "Cancel"; an API error renders in a `role="alert"` element inside the dialog |
+| Test File       | link named by the file name; the current one has `aria-current="page"`                                                                                                                         |
+| Status dot      | inside the Test File link; `data-status` of `none`, `active`, `passed`, or `failed`, with a title: "Never run", "Running", "Passed", "Failed"                                                  |
+| Account         | the user email as text; button "Log out"                                                                                                                                                       |
+
 #### Tests
 - Unit: the four helpers above.
-- E2E `sidebar.e2e.ts`: a new user creates a Project, a Module, and a Test File through the dialogs; each appears in the tree; the new file opens at `/files/<id>` and is highlighted with a gray dot; after a reload the tree is unchanged.
+- E2E `sidebar.e2e.ts`: a new user creates a Project, a Module, and a Test File through the dialogs; each appears in the tree; the new file opens at `/files/<id>`, is marked current, and has status `none`; after a reload the tree is unchanged.
+- E2E: creating a second Project with the same name keeps the dialog open and shows an alert.
 
 ### 1.7 Packages and exact pins
 
