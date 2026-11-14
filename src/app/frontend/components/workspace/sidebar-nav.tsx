@@ -4,11 +4,21 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { apiClient, type TreeResponse } from "@/lib/api";
-import { initials, starterSource, statusOf, toTestFileName } from "@/lib/sidebar";
+import {
+  confirmDeleteText,
+  deletesTestFile,
+  initials,
+  starterSource,
+  statusOf,
+  statusTitle,
+  toTestFileName,
+  type DeleteTarget,
+} from "@/lib/sidebar";
 import { Button } from "@/components/ui/button";
 import { CreateNameDialog } from "@/components/workspace/create-name-dialog";
+import { ConfirmDeleteDialog } from "@/components/workspace/confirm-delete-dialog";
 import { VariablesDialog } from "@/components/workspace/variables-dialog";
-import { KeyRound } from "lucide-react";
+import { KeyRound, Pencil, Trash2 } from "lucide-react";
 
 type WorkspaceSidebarProps = {
   email: string;
@@ -17,22 +27,6 @@ type WorkspaceSidebarProps = {
   onLogout: () => void;
   onNavigate?: () => void;
 };
-
-function statusTitle(dot: ReturnType<typeof statusOf>): string {
-  if (dot === "none") {
-    return "Never run";
-  }
-
-  if (dot === "active") {
-    return "Running";
-  }
-
-  if (dot === "passed") {
-    return "Passed";
-  }
-
-  return "Failed";
-}
 
 function statusClass(dot: ReturnType<typeof statusOf>): string {
   if (dot === "none") {
@@ -49,6 +43,16 @@ function statusClass(dot: ReturnType<typeof statusOf>): string {
 
   return "bg-red-400";
 }
+
+type RenameTarget = {
+  kind: "project" | "module" | "testFile";
+  id: string;
+  name: string;
+};
+
+type DeleteTargetWithName = DeleteTarget & {
+  name: string;
+};
 
 export function SidebarNav({ email, tree, refreshTree, onLogout, onNavigate }: WorkspaceSidebarProps) {
   const router = useRouter();
@@ -70,6 +74,8 @@ export function SidebarNav({ email, tree, refreshTree, onLogout, onNavigate }: W
   const [moduleProject, setModuleProject] = useState<{ id: string; name: string } | null>(null);
   const [testFileModule, setTestFileModule] = useState<{ id: string; name: string } | null>(null);
   const [variablesProject, setVariablesProject] = useState<{ id: string; name: string } | null>(null);
+  const [renameTarget, setRenameTarget] = useState<RenameTarget | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTargetWithName | null>(null);
 
   useEffect(() => {
     const newProjectIds: string[] = [];
@@ -164,6 +170,52 @@ export function SidebarNav({ email, tree, refreshTree, onLogout, onNavigate }: W
     onNavigate?.();
   };
 
+  const handleRename = async (name: string) => {
+    if (renameTarget === null) {
+      return;
+    }
+
+    if (renameTarget.kind === "project") {
+      await apiClient.renameProject(renameTarget.id, name);
+    } else if (renameTarget.kind === "module") {
+      await apiClient.renameModule(renameTarget.id, name);
+    } else {
+      await apiClient.renameTestFile(renameTarget.id, name);
+    }
+
+    try {
+      await refreshTree();
+    } catch {
+      // Ignore refresh errors for completed rename actions.
+    }
+  };
+
+  const handleDelete = async () => {
+    if (deleteTarget === null) {
+      return;
+    }
+
+    if (deleteTarget.kind === "project") {
+      await apiClient.deleteProject(deleteTarget.id);
+    } else if (deleteTarget.kind === "module") {
+      await apiClient.deleteModule(deleteTarget.id);
+    } else {
+      await apiClient.deleteTestFile(deleteTarget.id);
+    }
+
+    const shouldNavigateToHome = deletesTestFile({ items: tree }, deleteTarget, currentFileId);
+    if (shouldNavigateToHome) {
+      router.replace("/");
+      onNavigate?.();
+    }
+
+    try {
+      await refreshTree();
+    } catch {
+      // Ignore refresh errors for completed delete actions.
+    }
+  };
+
   return (
     <>
       <nav aria-label="Projects" className="flex h-full flex-col gap-4 p-4">
@@ -196,6 +248,24 @@ export function SidebarNav({ email, tree, refreshTree, onLogout, onNavigate }: W
                     onClick={() => toggleProject(project.id)}
                   >
                     {project.name}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon-sm"
+                    aria-label={`Rename project ${project.name}`}
+                    onClick={() => setRenameTarget({ kind: "project", id: project.id, name: project.name })}
+                  >
+                    <Pencil />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon-sm"
+                    aria-label={`Delete project ${project.name}`}
+                    onClick={() => setDeleteTarget({ kind: "project", id: project.id, name: project.name })}
+                  >
+                    <Trash2 />
                   </Button>
                   <Button
                     type="button"
@@ -240,6 +310,24 @@ export function SidebarNav({ email, tree, refreshTree, onLogout, onNavigate }: W
                               type="button"
                               variant="outline"
                               size="icon-sm"
+                              aria-label={`Rename module ${module.name}`}
+                              onClick={() => setRenameTarget({ kind: "module", id: module.id, name: module.name })}
+                            >
+                              <Pencil />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon-sm"
+                              aria-label={`Delete module ${module.name}`}
+                              onClick={() => setDeleteTarget({ kind: "module", id: module.id, name: module.name })}
+                            >
+                              <Trash2 />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon-sm"
                               aria-label={`New test file in ${module.name}`}
                               onClick={() => setTestFileModule({ id: module.id, name: module.name })}
                             >
@@ -254,21 +342,49 @@ export function SidebarNav({ email, tree, refreshTree, onLogout, onNavigate }: W
                                 const isCurrent = currentFileId === testFile.id;
 
                                 return (
-                                  <Link
+                                  <div
                                     key={testFile.id}
-                                    href={`/files/${testFile.id}`}
-                                    className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-slate-200 hover:bg-slate-800/70"
-                                    aria-current={isCurrent ? "page" : undefined}
-                                    onClick={() => onNavigate?.()}
+                                    className="group flex items-center gap-2 rounded-md pr-2 hover:bg-muted/60"
                                   >
-                                    <span
-                                      aria-hidden="true"
-                                      data-status={dot}
-                                      title={statusTitle(dot)}
-                                      className={`inline-block size-2 rounded-full ${statusClass(dot)}`}
-                                    />
-                                    <span>{testFile.name}</span>
-                                  </Link>
+                                    <Link
+                                      href={`/files/${testFile.id}`}
+                                      className="min-w-0 flex-1 rounded-md px-2 py-1.5 text-sm text-foreground"
+                                      aria-current={isCurrent ? "page" : undefined}
+                                      onClick={() => onNavigate?.()}
+                                    >
+                                      <span
+                                        aria-hidden="true"
+                                        data-status={dot}
+                                        title={statusTitle(dot)}
+                                        className={`mr-2 inline-block size-2 rounded-full ${statusClass(dot)}`}
+                                      />
+                                      <span>{testFile.name}</span>
+                                    </Link>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon-sm"
+                                      className="opacity-100 focus-visible:opacity-100 md:opacity-70 md:group-hover:opacity-100"
+                                      aria-label={`Rename test file ${testFile.name}`}
+                                      onClick={() =>
+                                        setRenameTarget({ kind: "testFile", id: testFile.id, name: testFile.name })
+                                      }
+                                    >
+                                      <Pencil />
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon-sm"
+                                      className="opacity-100 focus-visible:opacity-100 md:opacity-70 md:group-hover:opacity-100"
+                                      aria-label={`Delete test file ${testFile.name}`}
+                                      onClick={() =>
+                                        setDeleteTarget({ kind: "testFile", id: testFile.id, name: testFile.name })
+                                      }
+                                    >
+                                      <Trash2 />
+                                    </Button>
+                                  </div>
                                 );
                               })}
                             </div>
@@ -326,6 +442,47 @@ export function SidebarNav({ email, tree, refreshTree, onLogout, onNavigate }: W
           }
         }}
         onCreate={handleCreateTestFile}
+      />
+
+      <CreateNameDialog
+        key={renameTarget ? `${renameTarget.kind}-${renameTarget.id}` : "rename-none"}
+        open={renameTarget !== null}
+        title={
+          renameTarget?.kind === "project"
+            ? "Rename project"
+            : renameTarget?.kind === "module"
+              ? "Rename module"
+              : "Rename test file"
+        }
+        submitLabel="Save"
+        initialName={renameTarget?.name ?? ""}
+        normalizeName={renameTarget?.kind === "testFile" ? toTestFileName : undefined}
+        disableUnchangedSubmit
+        onOpenChange={(open) => {
+          if (!open) {
+            setRenameTarget(null);
+          }
+        }}
+        onCreate={handleRename}
+      />
+
+      <ConfirmDeleteDialog
+        key={deleteTarget ? `${deleteTarget.kind}-${deleteTarget.id}` : "delete-none"}
+        open={deleteTarget !== null}
+        title={
+          deleteTarget?.kind === "project"
+            ? "Delete project"
+            : deleteTarget?.kind === "module"
+              ? "Delete module"
+              : "Delete test file"
+        }
+        message={deleteTarget ? confirmDeleteText(deleteTarget.kind, deleteTarget.name) : ""}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteTarget(null);
+          }
+        }}
+        onDelete={handleDelete}
       />
 
       <VariablesDialog

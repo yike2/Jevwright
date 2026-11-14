@@ -50,18 +50,60 @@ export function starterSource(name: string): string {
   return `name: ${JSON.stringify(baseName)}\nsteps:\n  - open:\n      url: "https://example.com"\n`;
 }
 
-export function statusTitle(_status: ReturnType<typeof statusOf>): string {
-  throw new Error("Not implemented");
+export function statusTitle(status: ReturnType<typeof statusOf>): string {
+  if (status === "none") {
+    return "Never run";
+  }
+
+  if (status === "active") {
+    return "Running";
+  }
+
+  if (status === "passed") {
+    return "Passed";
+  }
+
+  return "Failed";
 }
 
-export function confirmDeleteText(_kind: DeleteTargetKind, _name: string): string {
-  throw new Error("Not implemented");
+export function confirmDeleteText(kind: DeleteTargetKind, name: string): string {
+  if (kind === "project") {
+    return `Delete project "${name}" and all its modules, test files and variables? Run history is kept.`;
+  }
+
+  if (kind === "module") {
+    return `Delete module "${name}" and all its test files? Run history is kept.`;
+  }
+
+  return `Delete test file "${name}"? Run history is kept.`;
 }
 
 export function deletesTestFile(
-  _tree: paths["/tree"]["get"]["responses"][200]["content"]["application/json"],
-  _target: DeleteTarget,
-  _testFileId: string | null,
+  tree: paths["/tree"]["get"]["responses"][200]["content"]["application/json"],
+  target: DeleteTarget,
+  testFileId: string | null,
 ): boolean {
-  throw new Error("Not implemented");
+  if (testFileId === null) {
+    return false;
+  }
+
+  if (target.kind === "testFile") {
+    return target.id === testFileId;
+  }
+
+  if (target.kind === "module") {
+    const moduleItem = tree.items.flatMap((project) => project.modules).find((module) => module.id === target.id);
+    if (!moduleItem) {
+      return false;
+    }
+
+    return moduleItem.testFiles.some((testFile) => testFile.id === testFileId);
+  }
+
+  const projectItem = tree.items.find((project) => project.id === target.id);
+  if (!projectItem) {
+    return false;
+  }
+
+  return projectItem.modules.some((module) => module.testFiles.some((testFile) => testFile.id === testFileId));
 }

@@ -367,28 +367,52 @@ export function createApiClient(config: ApiClientConfig = {}): {
     return request<Run>(`/runs/${runId}`);
   };
 
-  const renameProject = async (_projectId: string, _name: string): Promise<UpdateProjectResponse> => {
-    throw new Error("Not implemented");
+  const renameProject = async (projectId: string, name: string): Promise<UpdateProjectResponse> => {
+    return request<UpdateProjectResponse>(`/projects/${projectId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ name }),
+    });
   };
 
-  const renameModule = async (_moduleId: string, _name: string): Promise<UpdateModuleResponse> => {
-    throw new Error("Not implemented");
+  const renameModule = async (moduleId: string, name: string): Promise<UpdateModuleResponse> => {
+    return request<UpdateModuleResponse>(`/modules/${moduleId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ name }),
+    });
   };
 
-  const renameTestFile = async (_testFileId: string, _name: string): Promise<UpdateTestFileResponse> => {
-    throw new Error("Not implemented");
+  const renameTestFile = async (testFileId: string, name: string): Promise<UpdateTestFileResponse> => {
+    return request<UpdateTestFileResponse>(`/test-files/${testFileId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ name }),
+    });
   };
 
-  const deleteProject = async (_projectId: string): Promise<void> => {
-    throw new Error("Not implemented");
+  const deleteProject = async (projectId: string): Promise<void> => {
+    await request<void>(`/projects/${projectId}`, {
+      method: "DELETE",
+    });
   };
 
-  const deleteModule = async (_moduleId: string): Promise<void> => {
-    throw new Error("Not implemented");
+  const deleteModule = async (moduleId: string): Promise<void> => {
+    await request<void>(`/modules/${moduleId}`, {
+      method: "DELETE",
+    });
   };
 
-  const deleteTestFile = async (_testFileId: string): Promise<void> => {
-    throw new Error("Not implemented");
+  const deleteTestFile = async (testFileId: string): Promise<void> => {
+    await request<void>(`/test-files/${testFileId}`, {
+      method: "DELETE",
+    });
   };
 
   return {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type FormEvent } from "react";
+import { useEffect, useId, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -8,23 +8,43 @@ import { Label } from "@/components/ui/label";
 
 type CreateNameDialogProps = {
   open: boolean;
-  title: "New project" | "New module" | "New test file";
+  title: "New project" | "New module" | "New test file" | "Rename project" | "Rename module" | "Rename test file";
   onOpenChange: (open: boolean) => void;
   onCreate: (name: string) => Promise<void>;
   normalizeName?: (name: string) => string;
+  submitLabel?: "Create" | "Save";
+  initialName?: string;
+  disableUnchangedSubmit?: boolean;
 };
 
-export function CreateNameDialog({ open, title, onOpenChange, onCreate, normalizeName }: CreateNameDialogProps) {
+export function CreateNameDialog({
+  open,
+  title,
+  onOpenChange,
+  onCreate,
+  normalizeName,
+  submitLabel = "Create",
+  initialName = "",
+  disableUnchangedSubmit = false,
+}: CreateNameDialogProps) {
   const inputId = useId();
-  const [name, setName] = useState("");
+  const [name, setName] = useState(initialName);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const reset = () => {
-    setName("");
+    setName(initialName);
     setErrorMessage(null);
     setIsSubmitting(false);
   };
+
+  useEffect(() => {
+    if (open) {
+      setName(initialName);
+      setErrorMessage(null);
+      setIsSubmitting(false);
+    }
+  }, [open, initialName]);
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
@@ -55,6 +75,11 @@ export function CreateNameDialog({ open, title, onOpenChange, onCreate, normaliz
     }
   };
 
+  const normalizedName = normalizeName ? normalizeName(name) : name;
+  const normalizedInitialName = normalizeName ? normalizeName(initialName) : initialName;
+  const disableForRenameRules =
+    disableUnchangedSubmit && (normalizedName.length === 0 || normalizedName === normalizedInitialName);
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent showCloseButton={false}>
@@ -69,7 +94,7 @@ export function CreateNameDialog({ open, title, onOpenChange, onCreate, normaliz
           </div>
 
           {errorMessage && (
-            <p role="alert" className="text-sm text-red-400">
+            <p role="alert" className="text-sm text-destructive">
               {errorMessage}
             </p>
           )}
@@ -78,8 +103,8 @@ export function CreateNameDialog({ open, title, onOpenChange, onCreate, normaliz
             <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Please wait…" : "Create"}
+            <Button type="submit" disabled={isSubmitting || disableForRenameRules}>
+              {isSubmitting ? "Please wait…" : submitLabel}
             </Button>
           </DialogFooter>
         </form>

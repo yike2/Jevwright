@@ -12,7 +12,7 @@ import { RunList } from "@/components/workspace/run-list";
 
 export default function TestFilePage() {
   const params = useParams<{ testFileId: string }>();
-  const { refreshTree } = useWorkspace();
+  const { tree, refreshTree } = useWorkspace();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const testFileId = params.testFileId;
@@ -32,6 +32,11 @@ export default function TestFilePage() {
   const [isRunning, setIsRunning] = useState(false);
 
   const dirty = draft !== saved;
+  const treeFileName = tree
+    .flatMap((project) => project.modules)
+    .flatMap((module) => module.testFiles)
+    .find((testFile) => testFile.id === testFileId)?.name;
+  const headingName = treeFileName ?? fileName;
 
   useEffect(() => {
     let cancelled = false;
@@ -237,7 +242,7 @@ export default function TestFilePage() {
   return (
     <section className="space-y-4 rounded-lg border border-border bg-background p-6">
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">{fileName}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">{headingName}</h1>
         {dirty && <p className="text-sm text-muted-foreground">Unsaved changes</p>}
       </div>
 
