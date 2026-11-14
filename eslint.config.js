@@ -6,6 +6,8 @@ import tseslint from "typescript-eslint";
 export default defineConfig(
   globalIgnores([
     "jevwright-reports/",
+    "playwright-report/",
+    "test-results/",
     "scratch/",
     "src/tests/benchmark/demo-app/",
     "src/app/backend/src/generated/",
