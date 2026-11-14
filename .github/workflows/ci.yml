@@ -292,6 +292,10 @@ jobs:
         # playwright.config.ts serves this build with next start when CI is set.
         run: pnpm --filter @jevwright/frontend build
 
+      - name: Apply database migrations
+        # The production image runs this at start (src/app/backend/Dockerfile); the CI database starts empty.
+        run: pnpm --filter @jevwright/backend exec prisma migrate deploy        
+
       - name: Run E2E tests
         run: pnpm test:e2e
 
