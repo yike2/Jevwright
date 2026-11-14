@@ -1,0 +1,12 @@
+# Expect: failed at step 2; an alert on a step without `dialog` is dismissed and fails the step
+name: "Unexpected dialog"
+description: "A dialog the test does not expect fails the step"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/extras/dialogs.html"
+  - click:
+      selector: "#save"
+  - assert:
+      selector: "#status"
+      text: "Your profile was saved."

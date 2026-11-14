@@ -1,0 +1,1 @@
+# Expect: invalid; a file with no content has no root object (E002 at line 1)

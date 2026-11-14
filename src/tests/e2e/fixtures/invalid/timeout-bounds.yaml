@@ -1,0 +1,7 @@
+# Expect: invalid; 2147483647 is the largest timeoutMs, so only lines 5 and 7 are errors
+name: "Timeout bounds"
+timeoutMs: 2147483647
+steps:
+  - sleep: { ms: 2147483648 }
+  - sleep: { ms: 1 }
+  - sleep: { ms: 1e3 }

@@ -1,0 +1,11 @@
+# Expect: passed after about 8 s; long enough for a second Run to wait as "queued" (RUN_CONCURRENCY=1)
+name: "Slow"
+description: "Holds the Run Queue for about 8 seconds"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/"
+  - sleep:
+      ms: 8000
+  - assert:
+      selector: '[data-test="login-button"]'

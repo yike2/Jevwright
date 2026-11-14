@@ -1,0 +1,13 @@
+# Expect: failed at step 2; the alert says "Profile saved", not the expected message
+name: "Dialog message"
+description: "A dialog whose text differs from the expected message fails the step"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/extras/dialogs.html"
+  - click:
+      selector: "#save"
+      dialog: { accept: true, message: "Profile deleted" }
+  - assert:
+      selector: "#status"
+      text: "Your profile was saved."

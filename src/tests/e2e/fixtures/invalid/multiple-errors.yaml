@@ -1,0 +1,18 @@
+# Expect: invalid; every error is reported at once with its line, and Run answers 422
+name: "Multiple errors"
+timeoutMs: 0
+steps:
+  - open:
+      url: "/"
+  - aiAct: "sign in as the standard user"
+  - click:
+      selector: "#a"
+    input:
+      selector: "#b"
+      value: "x"
+  - input:
+      selector: '[data-test="username"]'
+  - click: {}
+  - assert:
+      selector: "#status"
+      colour: "green"

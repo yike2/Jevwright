@@ -1,0 +1,7 @@
+# Expect: invalid; one YAML syntax error (E001) at line 7
+name: "YAML syntax"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/"
+  - click: selector: '[data-test="login-button"]'

@@ -43,4 +43,19 @@ describe("serveDemoApp", () => {
     expect(response.headers.get("content-type")).toBe("text/html; charset=utf-8");
     expect(await response.text()).toContain("<title>Account settings</title>");
   });
+
+  it("listens on the port it is given, so E2E Runs can reach it at a fixed BASE", async () => {
+    // Borrow a port that was free a moment ago, so the test does not depend on 8080.
+    const probe = await serveDemoApp();
+    const port = Number(new URL(probe.baseUrl).port);
+    await probe.stop();
+
+    const fixed = await serveDemoApp(port);
+    try {
+      expect(fixed.baseUrl).toBe(`http://127.0.0.1:${port}`);
+      expect((await fetch(`${fixed.baseUrl}/`)).status).toBe(200);
+    } finally {
+      await fixed.stop();
+    }
+  });
 });
