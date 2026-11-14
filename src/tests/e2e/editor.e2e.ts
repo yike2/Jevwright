@@ -148,3 +148,28 @@ test("TC-ED-07 saves a source of up to 262,144 characters", async ({ page }) => 
   await expect(unsaved).toBeVisible();
   await expect(textarea).toHaveValue(`${largest}x`);
 });
+
+test("TC-ED-08 reports a file with no content", async ({ page }) => {
+  const { textarea, validation } = await openNewFile(page);
+  const validate = page.getByRole("button", { name: "Validate", exact: true });
+
+  for (const source of ["", fixture("invalid/empty.yaml")]) {
+    await textarea.fill(source);
+    await validate.click();
+    await expect(validation.getByText("1 validation error", { exact: true })).toBeVisible();
+    await expect(validation.getByRole("listitem")).toHaveText(["Line 1: The root must be an object"]);
+  }
+});
+
+test("TC-ED-09 accepts integers up to 2147483647 in plain digits only", async ({ page }) => {
+  const { textarea, validation } = await openNewFile(page);
+
+  await textarea.fill(fixture("invalid/timeout-bounds.yaml"));
+  await page.getByRole("button", { name: "Validate", exact: true }).click();
+
+  await expect(validation.getByText("2 validation errors", { exact: true })).toBeVisible();
+  await expect(validation.getByRole("listitem")).toHaveText([
+    'Line 5: "ms" must be a positive integer up to 2147483647',
+    'Line 7: "ms" must be a positive integer up to 2147483647',
+  ]);
+});

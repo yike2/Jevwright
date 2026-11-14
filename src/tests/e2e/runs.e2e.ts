@@ -2,6 +2,7 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 import {
   addTestFile,
   API_URL,
+  DEMO_URL,
   fixture,
   runFromEditor,
   setUpDemoProject,
@@ -229,4 +230,59 @@ test("TC-RUN-12 saves unsaved changes before running them", async ({ page }) => 
   await page.getByRole("region", { name: "Runs" }).getByRole("link").first().click();
   expect(await waitForFinalStatus(page)).toBe("Passed");
   await expect(stepsOf(page)).toHaveCount(16);
+});
+
+test("TC-RUN-15 queues one run for a double click", async ({ page }) => {
+  const { api, moduleId } = await setUpDemoProject(page);
+  const testFileId = await addTestFile(api, moduleId, "sign-in.yaml", fixture("pass/sign-in.yaml"));
+  await page.goto(`/files/${testFileId}`);
+
+  await page.getByRole("button", { name: "Run", exact: true }).dblclick();
+  await expect(page.getByRole("status")).toHaveText("Run queued.");
+
+  await page.reload();
+  await expect(page.getByRole("region", { name: "Runs" }).getByRole("listitem")).toHaveCount(1);
+  const { items } = await api<{ items: unknown[] }>("GET", `/runs?testFileId=${testFileId}`);
+  expect(items).toHaveLength(1);
+});
+
+test("TC-RUN-16 finishes a queued run whose file was deleted", async ({ page }) => {
+  const { api, moduleId } = await setUpDemoProject(page);
+  const slowId = await addTestFile(api, moduleId, "slow.yaml", fixture("pass/slow.yaml"));
+  const signInId = await addTestFile(api, moduleId, "sign-in.yaml", fixture("pass/sign-in.yaml"));
+  await startRun(api, slowId);
+  const runId = await startRun(api, signInId);
+  expect((await api<{ status: string }>("GET", `/runs/${runId}`)).status).toBe("queued");
+
+  await api("DELETE", `/test-files/${signInId}`);
+  await page.goto(`/runs/${runId}`);
+
+  expect(await waitForFinalStatus(page)).toBe("Passed");
+  await expect(page.getByText("6/6 passed", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: /^Back to / })).toHaveCount(0);
+});
+
+test("TC-RUN-17 fails a dialog whose text is not the expected message", async ({ page }) => {
+  expect(await runFixture(page, "fail/dialog-message.yaml", "dialog-message.yaml")).toBe("Failed");
+
+  const steps = stepsOf(page);
+  await expect(steps.nth(1)).toContainText('The dialog said "Profile saved", which does not contain "Profile deleted"');
+  await expect(steps.nth(2)).toContainText("Pending");
+});
+
+test("TC-RUN-18 fails switchTab when no tab matches, without showing BASE", async ({ page }) => {
+  expect(await runFixture(page, "fail/no-tab.yaml", "no-tab.yaml")).toBe("Failed");
+
+  const step = stepsOf(page).nth(1);
+  await expect(step).toContainText('No tab matched "**/extras/returns.html" within 3000ms');
+  await expect(step).toContainText("{{BASE}}/extras/tabs.html");
+  await expect(step).not.toContainText(DEMO_URL);
+});
+
+test("TC-RUN-19 fails back on the first page", async ({ page }) => {
+  expect(await runFixture(page, "fail/no-history.yaml", "no-history.yaml")).toBe("Failed");
+
+  const steps = stepsOf(page);
+  await expect(steps.nth(1)).toContainText("There is no previous page to go back to");
+  await expect(steps.nth(2)).toContainText("Pending");
 });

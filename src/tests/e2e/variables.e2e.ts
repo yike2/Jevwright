@@ -76,3 +76,35 @@ test("TC-VAR-04 uses only the variables of the file's own project", async ({ pag
   const firstStep = page.getByRole("list", { name: "Steps" }).getByRole("listitem").first();
   await expect(firstStep).toContainText("Variable {{BASE}} is not set");
 });
+
+test("TC-VAR-05 needs a name and a value of at most 10,000 characters", async ({ page }) => {
+  const dialog = await openVariables(page);
+  const name = dialog.getByLabel("Name");
+  const value = dialog.getByLabel("Value");
+  const save = dialog.getByRole("button", { name: "Save", exact: true });
+
+  await name.fill("LONG");
+  await expect(save).toBeDisabled();
+  await name.fill("");
+  await value.fill("x");
+  await expect(save).toBeDisabled();
+
+  await saveVariable(dialog, "LONG", "x".repeat(10_000));
+  await expect(dialog.getByRole("listitem").filter({ hasText: "LONG" })).toHaveCount(1);
+
+  await saveVariable(dialog, "LONG", "x".repeat(10_001));
+  await expect(dialog.getByRole("alert")).toContainText("body.value is over its size limit");
+  await expect(dialog).toBeVisible();
+});
+
+test("TC-VAR-06 passes a value with special characters to the page unchanged", async ({ page }) => {
+  const { api, projectId, moduleId } = await setUpDemoProject(page);
+  const value = 'Zoë "the <b>Swag</b>" Fan & 商店';
+  await api("PUT", `/projects/${projectId}/variables/DISPLAY_NAME`, { value });
+  const testFileId = await addTestFile(api, moduleId, "variable-value.yaml", fixture("pass/variable-value.yaml"));
+
+  expect(await runFromEditor(page, testFileId)).toBe("Passed");
+
+  await expect(page.getByText("3/3 passed", { exact: true })).toBeVisible();
+  await expect(page.locator("body")).not.toContainText("Zoë");
+});

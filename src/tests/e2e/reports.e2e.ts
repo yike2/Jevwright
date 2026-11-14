@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { addTestFile, fixture, runFromEditor, runToEnd, setUpDemoProject } from "./support.js";
+import { addTestFile, alertsOf, fixture, runFromEditor, runToEnd, setUpDemoProject, signUp } from "./support.js";
 
 type Report = {
   status: string;
@@ -115,4 +115,16 @@ test("TC-RPT-05 shows a run that does not exist as not found", async ({ page }) 
   await page.goto("/runs/00000000-0000-4000-8000-000000000000");
 
   await expect(page.getByText("Run not found", { exact: true })).toBeVisible();
+});
+
+test("TC-RPT-06 shows the backend's message for a malformed id", async ({ page }) => {
+  await signUp(page);
+
+  await page.goto("/runs/not-a-uuid");
+  await expect(alertsOf(page)).toHaveText("The request fails its schema");
+  await expect(page.getByRole("list", { name: "Steps" })).toHaveCount(0);
+
+  await page.goto("/files/not-a-uuid");
+  await expect(alertsOf(page)).toHaveText("The request fails its schema");
+  await expect(page.getByRole("textbox", { name: "Test file YAML" })).toHaveCount(0);
 });

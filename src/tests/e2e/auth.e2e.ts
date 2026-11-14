@@ -67,3 +67,26 @@ test("TC-AUTH-05 sends a visitor without a token to the login page", async ({ pa
     await expect(page.getByRole("navigation", { name: "Projects" })).toHaveCount(0);
   }
 });
+
+test("TC-AUTH-07 compares emails in lower case", async ({ page }) => {
+  const email = uniqueEmail();
+  await page.request.post(`${API_URL}/auth/register`, { data: { email, password: PASSWORD } });
+
+  await submit(page, "Log in", email.toUpperCase(), PASSWORD);
+
+  await expect(page).toHaveURL("/");
+  await expect(page.getByText(`Signed in as ${email}`)).toBeVisible();
+});
+
+test("TC-AUTH-08 sends another tab to the login page after logging out", async ({ page }) => {
+  await submit(page, "Register", uniqueEmail(), PASSWORD);
+  await expect(page).toHaveURL("/");
+  const other = await page.context().newPage();
+  await other.goto("/");
+  await expect(other.getByRole("button", { name: "Log out" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Log out" }).click();
+  await other.reload();
+
+  await expect(other).toHaveURL("/login");
+});
