@@ -4,6 +4,11 @@ export type LatestRun =
   paths["/tree"]["get"]["responses"][200]["content"]["application/json"]["items"][number]["modules"][number]["testFiles"][number]["latestRun"];
 
 export type RunDot = "none" | "active" | "passed" | "failed";
+export type DeleteTargetKind = "project" | "module" | "testFile";
+export type DeleteTarget = {
+  kind: DeleteTargetKind;
+  id: string;
+};
 
 export function statusOf(latestRun: LatestRun): RunDot {
   if (latestRun === null) {
@@ -43,4 +48,20 @@ export function starterSource(name: string): string {
   const baseName = name.endsWith(".yaml") ? name.slice(0, -5) : name;
 
   return `name: ${JSON.stringify(baseName)}\nsteps:\n  - open:\n      url: "https://example.com"\n`;
+}
+
+export function statusTitle(_status: ReturnType<typeof statusOf>): string {
+  throw new Error("Not implemented");
+}
+
+export function confirmDeleteText(_kind: DeleteTargetKind, _name: string): string {
+  throw new Error("Not implemented");
+}
+
+export function deletesTestFile(
+  _tree: paths["/tree"]["get"]["responses"][200]["content"]["application/json"],
+  _target: DeleteTarget,
+  _testFileId: string | null,
+): boolean {
+  throw new Error("Not implemented");
 }

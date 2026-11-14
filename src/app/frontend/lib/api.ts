@@ -17,6 +17,10 @@ export type Step = components["schemas"]["Step"];
 export type LiveMessage = components["schemas"]["LiveMessage"];
 export type UpdateTestFileResponse =
   paths["/test-files/{testFileId}"]["patch"]["responses"][200]["content"]["application/json"];
+export type UpdateProjectResponse =
+  paths["/projects/{projectId}"]["patch"]["responses"][200]["content"]["application/json"];
+export type UpdateModuleResponse =
+  paths["/modules/{moduleId}"]["patch"]["responses"][200]["content"]["application/json"];
 export type ValidateResponse = paths["/test-files/validate"]["post"]["responses"][200]["content"]["application/json"];
 export type VariableListResponse =
   paths["/projects/{projectId}/variables"]["get"]["responses"][200]["content"]["application/json"];
@@ -144,6 +148,12 @@ export function createApiClient(config: ApiClientConfig = {}): {
   deleteVariable(projectId: string, name: string): Promise<void>;
   listRuns(testFileId: string): Promise<RunListResponse>;
   getRun(runId: string): Promise<Run>;
+  renameProject(projectId: string, name: string): Promise<UpdateProjectResponse>;
+  renameModule(moduleId: string, name: string): Promise<UpdateModuleResponse>;
+  renameTestFile(testFileId: string, name: string): Promise<UpdateTestFileResponse>;
+  deleteProject(projectId: string): Promise<void>;
+  deleteModule(moduleId: string): Promise<void>;
+  deleteTestFile(testFileId: string): Promise<void>;
 } {
   const defaultBaseUrl = "http://127.0.0.1:4000/api/v1";
   const resolvedBaseUrl = (config.baseUrl ?? defaultBaseUrl).replace(/\/$/, "");
@@ -357,6 +367,30 @@ export function createApiClient(config: ApiClientConfig = {}): {
     return request<Run>(`/runs/${runId}`);
   };
 
+  const renameProject = async (_projectId: string, _name: string): Promise<UpdateProjectResponse> => {
+    throw new Error("Not implemented");
+  };
+
+  const renameModule = async (_moduleId: string, _name: string): Promise<UpdateModuleResponse> => {
+    throw new Error("Not implemented");
+  };
+
+  const renameTestFile = async (_testFileId: string, _name: string): Promise<UpdateTestFileResponse> => {
+    throw new Error("Not implemented");
+  };
+
+  const deleteProject = async (_projectId: string): Promise<void> => {
+    throw new Error("Not implemented");
+  };
+
+  const deleteModule = async (_moduleId: string): Promise<void> => {
+    throw new Error("Not implemented");
+  };
+
+  const deleteTestFile = async (_testFileId: string): Promise<void> => {
+    throw new Error("Not implemented");
+  };
+
   return {
     setToken,
     clearToken,
@@ -379,6 +413,12 @@ export function createApiClient(config: ApiClientConfig = {}): {
     deleteVariable,
     listRuns,
     getRun,
+    renameProject,
+    renameModule,
+    renameTestFile,
+    deleteProject,
+    deleteModule,
+    deleteTestFile,
   };
 }
 
