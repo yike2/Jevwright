@@ -193,7 +193,7 @@ test("TC-RUN-09 fails a step that meets an unexpected dialog", async ({ page }) 
 test("TC-RUN-10 ends a run at its runTimeoutMs", async ({ page }) => {
   expect(await runFixture(page, "fail/run-timeout.yaml", "run-timeout.yaml")).toBe("Failed");
 
-  const reason = "The run did not finish within runTimeoutMs (3000 ms)";
+  const reason = "The run did not finish within runTimeoutMs (10000 ms)";
   await expect(page.getByText(`timeout: ${reason}`, { exact: true })).toBeVisible();
   const steps = stepsOf(page);
   await expect(steps.nth(1)).toContainText("Failed");

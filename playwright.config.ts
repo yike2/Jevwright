@@ -5,6 +5,8 @@ export default defineConfig({
   testDir: "src/tests/e2e",
   testMatch: "**/*.e2e.ts",
   workers: 1,
+  // Tests that wait for one or more Runs need more than the default 30 s; waitForFinalStatus waits up to 60 s.
+  timeout: 120_000,
   forbidOnly: !!process.env.CI,
   reporter: [["list"], ["html", { open: "never" }]],
   expect: { timeout: 15_000 },

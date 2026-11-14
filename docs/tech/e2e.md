@@ -16,6 +16,7 @@ The cases they automate, and the test files they run, are in `docs/testing/test-
 | Servers | The backend (`pnpm backend`, dev mode), the frontend (`pnpm frontend`), and the Demo App (`src/tests/e2e/demo-app.ts`), started by Playwright's `webServer`, or reused when already running locally |
 | Target site | Runs open only the Demo App at `DEMO_URL` (`http://127.0.0.1:8080`); a dev-mode backend's Runs may open local addresses (`backend.md` 1.6). No test opens an external site |
 | Jev | No test calls Jev: every test file it runs locates by `selector` and asserts with Playwright checks. Cases that need Jev are **Live** in `test-cases.md` and stay out of this suite |
+| Timeout | 120 s per test, since a test may wait for several Runs; each Run page waits up to 60 s for a final status |
 | Workers | One. The Run Queue runs one Run at a time across all users (`RUN_CONCURRENCY=1`), and TC-RUN-07 needs no other Run active |
 | Data | Each test registers its own account with a unique email, so tests do not depend on each other or on existing data |
 | Setup | What a case lists as preconditions is set up through the REST API (`support.ts`); what a case tests is done through the UI |

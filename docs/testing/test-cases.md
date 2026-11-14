@@ -102,7 +102,7 @@ The test files are in `src/tests/e2e/fixtures/`, grouped by expected outcome. E2
 | `fail/missing-variable.yaml` | `selector` | Failed at step 2: `Variable {{NOT_SET}} is not set` | VAR-03 |
 | `fail/redaction.yaml` | `selector` | Failed at step 2; the reason shows `{{SWAG_PASSWORD}}` | SEC-03 |
 | `fail/unexpected-dialog.yaml` | `selector` | Failed at step 2: `Unexpected alert dialog` | RUN-09 |
-| `fail/run-timeout.yaml` | `selector` | Failed: Run error `timeout` after about 3 s | RUN-10 |
+| `fail/run-timeout.yaml` | `selector` | Failed: Run error `timeout` after about 10 s | RUN-10 |
 | `fail/dialog-message.yaml` | `selector` | Failed at step 2: the alert text is not the expected message | RUN-17 |
 | `fail/no-tab.yaml` | `selector` | Failed at step 2 within about 3 s: no tab matches | RUN-18 |
 | `fail/no-history.yaml` | `selector` | Failed at step 2: no page to go back to | RUN-19 |
@@ -524,7 +524,7 @@ Covers US-4.3.4. Pre: S1–S3.
 
 1. S4 with `fail/run-timeout.yaml`; S5.
 
-Expected: `Failed` after about 3 s; the header shows `timeout: The run did not finish within runTimeoutMs (3000 ms)`; step 2 Failed with the same reason; step 3 Pending.
+Expected: `Failed` after about 10 s; the header shows `timeout: The run did not finish within runTimeoutMs (10000 ms)`; step 2 Failed with the same reason; step 3 Pending.
 
 #### TC-RUN-11 Run an invalid file — P0, E2E
 
@@ -1207,16 +1207,16 @@ steps:
 ### `fail/run-timeout.yaml`
 
 ```yaml
-# Expect: failed after about 3 s; step 2 (sleep) fails with the Run error "timeout", step 3 stays pending
+# Expect: failed after about 10 s; step 2 (sleep) fails with the Run error "timeout", step 3 stays pending
 name: "Run timeout"
 description: "The whole Run is cut off by runTimeoutMs"
 baseUrl: "{{BASE}}"
-runTimeoutMs: 3000
+runTimeoutMs: 10000
 steps:
   - open:
       url: "/"
   - sleep:
-      ms: 8000
+      ms: 30000
   - assert:
       selector: '[data-test="login-button"]'
 ```
