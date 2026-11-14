@@ -8,15 +8,15 @@ The Frontend is the browser app for Jevwright: an App Router Next.js client that
 
 This module covers the frontend package: the Next.js scaffold, generated API types, the auth-aware fetch client, a two-mode login/register page. It also covers the workspace layout and sidebar; the editor, live run, history and reports are not built yet.
 
-| Area    | Scope                                                                                                    |
-| ------- | -------------------------------------------------------------------------------------------------------- |
-| Package | `@jevwright/frontend` in `src/app/frontend`                                                              |
-| Runtime | Next.js 15 App Router, TypeScript strict, Node 22, pnpm 9                                                |
+| Area    | Scope                                                                                                          |
+| ------- | -------------------------------------------------------------------------------------------------------------- |
+| Package | `@jevwright/frontend` in `src/app/frontend`                                                                    |
+| Runtime | Next.js 15 App Router, TypeScript strict, Node 22, pnpm 9                                                      |
 | Styling | Tailwind v4 with `@tailwindcss/postcss`; no `tailwind.config.ts`; shadcn dark theme (`dark` class on `<html>`) |
-| API     | OpenAPI-generated types from `docs/api/openapi.json`; native fetch wrapper                               |
-| Auth    | Bearer token from login/register responses; token stored in `localStorage`                               |
-| Pages   | `/login` two-mode auth form; workspace layout with sidebar; `/` empty state; `/files/[testFileId]` placeholder                                            |
-| Tests   | Vitest for API client, auth-error formatter, and sidebar helpers; Playwright E2E for auth and sidebar                                                           |
+| API     | OpenAPI-generated types from `docs/api/openapi.json`; native fetch wrapper                                     |
+| Auth    | Bearer token from login/register responses; token stored in `localStorage`                                     |
+| Pages   | `/login` two-mode auth form; workspace layout with sidebar; `/` empty state; `/files/[testFileId]` placeholder |
+| Tests   | Vitest for API client, auth-error formatter, and sidebar helpers; Playwright E2E for auth and sidebar          |
 
 
 
@@ -100,7 +100,7 @@ The pages behave as follows:
   - if `getCurrentUser()` fails with anything other than `401`, show the `formatAuthError` messages instead (a `401` is handled by the API client, which redirects to `/login`).
 - `/` is the workspace empty state: "Pick a test file to edit".
 
-The root layout remains a server component, while pages that need auth or data access are client components. This is a deliberate split because the auth token is browser state and the repo’s guidance says “Server Components by default,” but the token lives in the browser and the app needs client-side auth fetch behavior. The root layout remains a server component, while the workspace layout and pages that need auth or data access are client components.
+The root layout remains a server component, while the workspace layout and pages that need auth or data access are client components. This is a deliberate exception to the repo's "Server Components by default" guidance: the auth token is browser state, so auth and data fetching happen on the client.
 
 ### 1.6 Workspace sidebar
 
@@ -109,17 +109,18 @@ The workspace is every authenticated page. A shared layout guards auth, renders 
 | Route                 | Page                                    |
 | --------------------- | --------------------------------------- |
 | `/`                   | Empty state: "Pick a test file to edit" |
-| `/files/[testFileId]` | Editor (placeholder until #81)          |
+| `/files/[testFileId]` | Test file editor (1.7)                  |
 
-| Element        | Behavior                                                                                                                     |
-| -------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Header         | "Projects" with a "+" that opens the New Project dialog                                                                      |
-| Tree           | Projects → Modules → Test Files from `GET /tree`, in API order. Projects and Modules toggle open/closed; all open by default |
-| Row "+"        | On a Project: New Module dialog. On a Module: New Test File dialog                                                           |
-| Status dot     | From `latestRun.status`: `passed` green, `failed` red, `queued`/`running` amber, no run gray                                 |
-| Selection      | The Test File in the current route is highlighted                                                                            |
-| Account        | Initials, email from `me`, Log out (clears the token, goes to `/login`)                                                      |
-| Narrow screens | Sidebar hidden behind a ☰ button                                                                                             |
+| Element         | Behavior                                                                                                                     |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Header          | "Projects" with a "+" that opens the New Project dialog                                                                      |
+| Tree            | Projects → Modules → Test Files from `GET /tree`, in API order. Projects and Modules toggle open/closed; all open by default |
+| Row "+"         | On a Project: New Module dialog. On a Module: New Test File dialog                                                           |
+| Row "Variables" | On a Project: opens the Variables dialog (1.8)                                                                              |
+| Status dot      | From `latestRun.status`: `passed` green, `failed` red, `queued`/`running` amber, no run gray                                 |
+| Selection       | The Test File in the current route is highlighted                                                                            |
+| Account         | Initials, email from `me`, Log out (clears the token, goes to `/login`)                                                      |
+| Narrow screens  | Sidebar hidden behind a ☰ button                                                                                             |
 
 Names follow the backend rules: Project and Module names are 1–100 characters, a Test File name ends in `.yaml`, and names are unique within their parent. The New Test File dialog normalizes the input with `toTestFileName`, and the new file is created with `starterSource(name)`. After creation the page navigates to the new file.
 
@@ -147,23 +148,87 @@ steps:
 
 E2E tests locate elements by role and accessible name, so these names are part of the contract.
 
-| Element         | Role and name                                                                                                                                                                                  |
-| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Sidebar         | `navigation` named "Projects"                                                                                                                                                                  |
-| Header "+"      | button "New project"                                                                                                                                                                           |
-| Project row "+" | button "New module in <project name>"                                                                                                                                                          |
-| Module row "+"  | button "New test file in <module name>"                                                                                                                                                        |
-| Dialogs         | `dialog` titled "New project", "New module", or "New test file"; text input labelled "Name"; buttons "Create" and "Cancel"; an API error renders in a `role="alert"` element inside the dialog |
-| Test File       | link named by the file name; the current one has `aria-current="page"`                                                                                                                         |
-| Status dot      | inside the Test File link; `data-status` of `none`, `active`, `passed`, or `failed`, with a title: "Never run", "Running", "Passed", "Failed"                                                  |
-| Account         | the user email as text; button "Log out"                                                                                                                                                       |
+| Element               | Role and name                                                                                                                                                                                  |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Sidebar               | `navigation` named "Projects"                                                                                                                                                                  |
+| Header "+"            | button "New project"                                                                                                                                                                           |
+| Project row "+"       | button "New module in <project name>"                                                                                                                                                          |
+| Project row Variables | button "Variables for <project name>"                                                                                                                                                          |
+| Module row "+"        | button "New test file in <module name>"                                                                                                                                                        |
+| Dialogs               | `dialog` titled "New project", "New module", or "New test file"; text input labelled "Name"; buttons "Create" and "Cancel"; an API error renders in a `role="alert"` element inside the dialog |
+| Test File             | link named by the file name; the current one has `aria-current="page"`                                                                                                                         |
+| Status dot            | inside the Test File link; `data-status` of `none`, `active`, `passed`, or `failed`, with a title: "Never run", "Running", "Passed", "Failed"                                                  |
+| Account               | the user email as text; button "Log out"                                                                                                                                                       |
 
 #### Tests
 - Unit: the four helpers above.
 - E2E `sidebar.e2e.ts`: a new user creates a Project, a Module, and a Test File through the dialogs; each appears in the tree; the new file opens at `/files/<id>`, is marked current, and has status `none`; after a reload the tree is unchanged.
 - E2E: creating a second Project with the same name keeps the dialog open and shows an alert.
 
-### 1.7 Packages and exact pins
+### 1.7 Test file editor
+
+`/files/[testFileId]` loads the Test File with `GET /test-files/:id` and edits its source in a plain textarea. The page keeps two strings: `saved` (the last source from the API) and `draft` (the textarea). The file is dirty when `draft !== saved`.
+
+| State       | Render                                                                              |
+| ----------- | ----------------------------------------------------------------------------------- |
+| Pending     | `Loading…`                                                                          |
+| `404`       | "Test file not found"                                                               |
+| Other error | `ApiError.message` in a `role="alert"`                                              |
+| Loaded      | File name heading, toolbar (Upload file, Validate, Save, Run), textarea, result bar |
+
+| Action      | Behavior                                                                                                                                                                                                                                                                           |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Edit        | Updates `draft`; shows "Unsaved changes" while dirty; clears the result bar                                                                                                                                                                                                        |
+| Validate    | `POST /test-files/validate { source: draft }`; shows the diagnostics in the result bar                                                                                                                                                                                             |
+| Save        | Enabled only when dirty. `PATCH /test-files/:id { source: draft }`; on success `saved` becomes the returned `testFile.source`, the returned diagnostics are shown, and `refreshTree()` is called. On failure the draft is kept and `ApiError.message` is shown in a `role="alert"` |
+| Upload file | Opens a file picker accepting `.yaml` and `.yml`; the chosen file's text replaces `draft` (not saved until Save)                                                                                                                                                                   |
+| Run         | Saves first when dirty (stops if the save fails), then `POST /test-files/:id/runs`. `202`: shows "Run queued." in a `role="status"` and calls `refreshTree()`. `422`: shows `ApiError.details` (Diagnostic[]) in the result bar. Other errors: `role="alert"`                      |
+
+Buttons are disabled while their request is in flight. A failing `refreshTree()` shows its message in the page's `role="alert"`; the save or run itself still counts as done.
+
+The result bar is a `region` named "Validation". It shows `validationSummary(diagnostics)`, then one list item per diagnostic with `formatDiagnostic(d)`. Diagnostics have a line but no column.
+
+| Helper                  | Rule                                                                               |
+| ----------------------- | ---------------------------------------------------------------------------------- |
+| `validationSummary(ds)` | `[]` → "Valid. Ready to run."; 1 → "1 validation error"; n → "n validation errors" |
+| `formatDiagnostic(d)`   | "Line <line>: <message>"                                                           |
+
+Out of scope: validating while typing, line numbers, keyboard shortcuts, an unsaved-changes guard, live progress (#82), history (#83).
+
+### 1.8 Project Variables
+
+The "Variables for <project>" button opens the Variables dialog. It lists the Project's Variable names from `GET /projects/:id/variables`; values are write-only and never shown.
+
+| Action | Behavior                                                                                                                                                                                                                                                                                 |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Open   | Loads the names; an empty list shows "No variables yet"                                                                                                                                                                                                                                  |
+| Save   | Enabled when Name and Value are non-empty. Rejects a name that fails `isVariableName` with "Name must match [A-Z_][A-Z0-9_]*" without calling the API; otherwise `PUT /projects/:id/variables/:name { value }`, then reloads the names and clears the form. An existing name is replaced |
+| Delete | `DELETE /projects/:id/variables/:name`, then reloads the names                                                                                                                                                                                                                           |
+
+API errors show `ApiError.message` in a `role="alert"` inside the dialog, and the dialog stays open.
+
+| Helper                 | Rule                                                                 |
+| ---------------------- | -------------------------------------------------------------------- |
+| `isVariableName(name)` | `true` when `name` matches `^[A-Z_][A-Z0-9_]*$` (the backend's rule) |
+
+#### Accessible names (editor and Variables)
+
+| Element          | Role and name                                                                                                                                                                           |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| File name        | `heading` named by the file name                                                                                                                                                        |
+| Unsaved marker   | text "Unsaved changes"                                                                                                                                                                  |
+| Toolbar          | buttons "Upload file", "Validate", "Save", "Run"                                                                                                                                        |
+| Source           | textbox labelled "Test file YAML"                                                                                                                                                       |
+| Result bar       | `region` named "Validation"; summary text; one `listitem` per diagnostic                                                                                                                |
+| Run feedback     | `role="status"` with "Run queued."                                                                                                                                                      |
+| Variables dialog | `dialog` titled "Variables"; one `listitem` per name with button "Delete <NAME>"; inputs labelled "Name" and "Value" (password); buttons "Save" and "Close"; errors in a `role="alert"` |
+
+#### Tests
+- Unit: `validationSummary`, `formatDiagnostic`, `isVariableName`, and the new API client functions (5.1).
+- E2E `editor.e2e.ts`: a new user creates a Test File; the textarea shows the starter source; an invalid edit shows "Unsaved changes" and Validate shows "1 validation error" with a "Line …" item; restoring a valid source and saving hides "Unsaved changes"; after a reload the saved source is shown; Run shows "Run queued.".
+- E2E `variables.e2e.ts`: a new user adds Variable `BASE`; it is listed and its value is not shown; an invalid name shows the alert; Delete removes it.
+
+### 1.9 Packages and exact pins
 
 The frontend package uses these exact versions:
 
@@ -188,7 +253,7 @@ shadcn tooling and UI primitives are pinned exactly (no `^`). Primitives are add
 
 The repo does not use `eslint-config-next`; instead the root `eslint.config.js` is extended to include `.tsx` and the frontend package files.
 
-### 1.8 Scripts and config
+### 1.10 Scripts and config
 
 The root workspace exposes the frontend app with `pnpm frontend`, which starts the Next.js dev server on port `3000`.
 
@@ -295,10 +360,23 @@ export function createApiClient(config?: ApiClientConfig): {
   login(email: string, password: string): Promise<LoginResponse>;
   register(email: string, password: string): Promise<RegisterResponse>;
   getCurrentUser(): Promise<User>;
+  getTree(): Promise<TreeResponse>;
+  createProject(name: string): Promise<CreateProjectResponse>;
+  createModule(projectId: string, name: string): Promise<CreateModuleResponse>;
+  createTestFile(moduleId: string, name: string, source: string): Promise<CreateTestFileResponse>; // { testFile, diagnostics }
+  getTestFile(testFileId: string): Promise<TestFile>;
+  updateTestFile(testFileId: string, source: string): Promise<UpdateTestFileResponse>; // { testFile, diagnostics }
+  validateSource(source: string): Promise<ValidateResponse>; // { diagnostics }
+  startRun(testFileId: string): Promise<Run>; // 202; 422 rejects with ApiError whose details are Diagnostic[]
+  listVariables(projectId: string): Promise<VariableListResponse>; // { items: string[] }
+  setVariable(projectId: string, name: string, value: string): Promise<void>; // 204
+  deleteVariable(projectId: string, name: string): Promise<void>; // 204
 };
 
 export const apiClient: ReturnType<typeof createApiClient>;
 ```
+
+`TreeResponse`, `CreateProjectResponse`, `CreateModuleResponse`, `CreateTestFileResponse`, `TestFile`, `Run`, `UpdateTestFileResponse`, `ValidateResponse`, and `VariableListResponse` are aliases of the generated `components`/`paths` types for these routes; none are written by hand.
 
 ### 3.2 Request rules
 
@@ -330,16 +408,23 @@ This fallback is implemented in the client itself when the backend response is n
 
 ### 4.1 Modules
 
-| Module / Class                 | Responsibility                                                                      |
-| ------------------------------ | ----------------------------------------------------------------------------------- |
-| `app/login/page.tsx`           | Two-mode auth form (Log in/Register), submit, in-flight disable, and navigation     |
-| `app/page.tsx`                 | Authenticated placeholder: load current user, show email, and log out               |
-| `lib/api.ts`                   | Native fetch wrapper, `ApiError`, auth normalization, login/register/getCurrentUser |
-| `lib/api-schema.ts`            | Generated OpenAPI types from `docs/api/openapi.json`                                |
-| `lib/format-auth-error.ts`     | Pure mapping from unknown auth error to UI-safe string array                        |
-| `components/ui/`               | shadcn primitives (`button`, `input`, `label`)                                      |
-| `lib/utils.ts`                 | `shadcn` utility helpers for class composition                                      |
-| `src/tests/unit/app/frontend/` | API client and `formatAuthError` unit tests                                         |
+| Module / Class                                | Responsibility                                              |
+| --------------------------------------------- | ----------------------------------------------------------- |
+| `app/login/page.tsx`                          | Two-mode auth form (Log in/Register)                        |
+| `app/(workspace)/layout.tsx`                  | Auth guard, loads `me` and the tree, renders the sidebar    |
+| `app/(workspace)/page.tsx`                    | Empty state                                                 |
+| `app/(workspace)/files/[testFileId]/page.tsx` | Test file editor (1.7)                                      |
+| `lib/api.ts`                                  | Fetch wrapper, `ApiError`, typed API functions              |
+| `lib/api-schema.ts`                           | Generated OpenAPI types from `docs/api/openapi.json`        |
+| `lib/format-auth-error.ts`                    | Unknown auth error → UI-safe strings                        |
+| `lib/utils.ts`                                | Re-exports `cn` from the `cn` package for shadcn components |
+| `lib/sidebar.ts`                              | Sidebar helpers (1.6)                                       |
+| `lib/editor.ts`                               | Editor and Variables helpers (1.7, 1.8)                     |
+| `lib/workspace-context.tsx`                   | `useWorkspace()`: `me`, `tree`, `refreshTree`               |
+| `components/workspace/sidebar-nav.tsx`        | Sidebar tree, dialogs, account                              |
+| `components/workspace/create-name-dialog.tsx` | Shared New project/module/test file dialog                  |
+| `components/workspace/variables-dialog.tsx`   | Variables dialog (1.8)                                      |
+| `components/ui/`                              | shadcn primitives                                           |
 
 ### 4.2 Directory layout
 
@@ -348,35 +433,55 @@ src/app/frontend/
 ├── app/
 │   ├── globals.css
 │   ├── layout.tsx
-│   ├── page.tsx
-│   └── login/
-│       └── page.tsx
+│   ├── login/
+│   │   └── page.tsx
+│   └── (workspace)/
+│       ├── layout.tsx
+│       ├── page.tsx
+│       └── files/
+│           └── [testFileId]/
+│               └── page.tsx
 ├── components.json
 ├── components/
-│   └── ui/
-│       ├── button.tsx
-│       ├── input.tsx
-│       └── label.tsx
+│   ├── ui/
+│   │   ├── button.tsx
+│   │   ├── dialog.tsx
+│   │   ├── input.tsx
+│   │   └── label.tsx
+│   └── workspace/
+│       ├── create-name-dialog.tsx
+│       ├── sidebar-nav.tsx
+│       └── variables-dialog.tsx
 ├── lib/
 │   ├── api.ts
 │   ├── api-schema.ts
+│   ├── editor.ts
 │   ├── format-auth-error.ts
-│   └── utils.ts
+│   ├── sidebar.ts
+│   ├── utils.ts
+│   └── workspace-context.tsx
 ├── .env.example
-├── next-env.d.ts
+├── .gitignore
+├── Dockerfile
+├── next-env.d.ts        # generated, not committed
 ├── next.config.ts
 ├── package.json
-├── postcss.config.js
-├── tsconfig.json
-└── …
+├── postcss.config.mjs
+└── tsconfig.json
 ```
 
 ## 5. Test Plan
 
-| Type | Coverage                                                                                 | Location                                                |
-| ---- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------- |
-| Unit | API client error parsing, 401 behavior, auth header behavior, 204 success, HTML fallback | `src/tests/unit/app/frontend/api.test.ts`               |
-| Unit | Auth error formatter behavior for login/register and backend `400 details` rendering     | `src/tests/unit/app/frontend/format-auth-error.test.ts` |
+| Type | Coverage                                                                                                         | Location                                                |
+| ---- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| Unit | API client: error parsing, 401 behavior, auth header, 204 success, HTML fallback, workspace and editor functions | `src/tests/unit/app/frontend/api.test.ts`               |
+| Unit | `formatAuthError` for login/register and backend `400 details`                                                   | `src/tests/unit/app/frontend/format-auth-error.test.ts` |
+| Unit | Sidebar helpers (1.6)                                                                                            | `src/tests/unit/app/frontend/sidebar.test.ts`           |
+| Unit | Editor and Variables helpers (1.7, 1.8)                                                                          | `src/tests/unit/app/frontend/editor.test.ts`            |
+| E2E  | Auth flow                                                                                                        | `src/tests/e2e/auth.e2e.ts`                             |
+| E2E  | Sidebar create flow and duplicate name (1.6)                                                                     | `src/tests/e2e/sidebar.e2e.ts`                          |
+| E2E  | Editor: validate, save, reload, run (1.7)                                                                        | `src/tests/e2e/editor.e2e.ts`                           |
+| E2E  | Variables: add, invalid name, delete (1.8)                                                                       | `src/tests/e2e/variables.e2e.ts`                        |
 
 The tests use `fetchImpl`, `getToken`, `setToken`, and `onUnauthorized` injection where applicable; no DOM environment is required. The expected values are written by hand from mocked payloads and backend contract behavior, never generated from implementation output.
 
@@ -489,6 +594,39 @@ The tests use `fetchImpl`, `getToken`, `setToken`, and `onUnauthorized` injectio
 9. `it("resolves a 204 response to undefined", async () => { ... })`
    - expected value: `undefined`
 
+10. `it("sends GET /test-files/tf-1 and resolves the Test File", async () => { ... })`
+    - expected request: `GET /test-files/tf-1`
+    - expected value: the mocked body
+
+11. `it("sends PATCH /test-files/tf-1 with the source and resolves { testFile, diagnostics }", async () => { ... })`
+    - call: `updateTestFile("tf-1", "name: x")`
+    - expected request: `PATCH /test-files/tf-1`, body `{"source":"name: x"}`
+    - expected value: `{ testFile, diagnostics: [] }`
+
+12. `it("sends POST /test-files/validate and resolves the diagnostics", async () => { ... })`
+    - call: `validateSource("bad")`
+    - expected request: `POST /test-files/validate`, body `{"source":"bad"}`
+    - expected value: `{ diagnostics: [{ code: "E005", message: "Unknown action \"aiAct\"", line: 3 }] }`
+
+13. `it("sends POST /test-files/tf-1/runs and resolves the Run on 202", async () => { ... })`
+    - expected request: `POST /test-files/tf-1/runs`
+    - expected value: the mocked Run
+
+14. `it("rejects startRun with ApiError 422 and the diagnostics as details", async () => { ... })`
+    - mocked response: `422 { error: { code: "invalid_test", message: "Test file has errors", details: [{ code: "E005", message: "Unknown action \"aiAct\"", line: 3 }] } }`
+    - expected: `ApiError` with status `422`, code `invalid_test`, those details
+
+15. `it("sends GET /projects/p-1/variables and resolves the names", async () => { ... })`
+    - expected value: `{ items: ["BASE", "SWAG_PASSWORD"] }`
+
+16. `it("sends PUT /projects/p-1/variables/BASE with the value and resolves undefined on 204", async () => { ... })`
+    - call: `setVariable("p-1", "BASE", "https://demo.example.com")`
+    - expected body: `{"value":"https://demo.example.com"}`
+    - expected value: `undefined`
+
+17. `it("sends DELETE /projects/p-1/variables/BASE and resolves undefined on 204", async () => { ... })`
+    - expected value: `undefined`
+
 These exact values are the source of truth for the API client tests and are intentionally written by hand rather than read from generated responses.
 
 ### 5.2 Exact `formatAuthError` unit-test cases
@@ -550,3 +688,18 @@ These exact values are the source of truth for the API client tests and are inte
      ```ts
      ["Internal server error"]
      ```
+
+### 5.3 Exact editor helper unit-test cases
+
+`editor.test.ts` imports `@/app/frontend/lib/editor.js`.
+
+1. `validationSummary`
+   - `[]` → `"Valid. Ready to run."`
+   - one diagnostic → `"1 validation error"`
+   - two diagnostics → `"2 validation errors"`
+
+2. `formatDiagnostic({ code: "E005", message: "Unknown action \"aiAct\"", line: 3 })` → `Line 3: Unknown action "aiAct"`
+
+3. `isVariableName`
+   - `"BASE"` → `true`; `"_X1"` → `true`
+   - `"base"` → `false`; `"1A"` → `false`; `""` → `false`; `"SWAG-PASSWORD"` → `false`
