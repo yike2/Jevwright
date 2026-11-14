@@ -2,6 +2,8 @@
 
 End-to-end tests drive the real frontend in Chromium against the real backend and database, covering the user flows the unit and integration tests cannot.
 
+The cases they automate, and the test files they run, are in `docs/testing/test-cases.md`, shared with manual test passes.
+
 ## 1. Functional Definition
 
 ### 1.1 Scope

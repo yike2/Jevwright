@@ -1,0 +1,27 @@
+# Expect: passed; Jev judges step 8 true. Step 9's selector matches nothing, then Jev judges its statement true (fallback pass)
+name: "Statement holds"
+description: "Jev judges true statements about the cart"
+baseUrl: "{{BASE}}"
+timeoutMs: 5000
+steps:
+  - open:
+      url: "/"
+  - input:
+      selector: '[data-test="username"]'
+      value: "standard_user"
+  - input:
+      selector: '[data-test="password"]'
+      value: "{{SWAG_PASSWORD}}"
+  - click:
+      selector: '[data-test="login-button"]'
+  - waitFor:
+      url: "**/inventory.html"
+  - click:
+      selector: '[data-test="add-to-cart-sauce-labs-backpack"]'
+  - click:
+      selector: '[data-test="add-to-cart-sauce-labs-onesie"]'
+  - assert:
+      statement: "The page lists products with prices and 'Add to cart' or 'Remove' buttons"
+  - assert:
+      selector: '[data-test="products-heading-old"]'
+      statement: "Several products are shown, each with a price"

@@ -1,0 +1,12 @@
+# Expect: failed after about 3 s; step 2 (sleep) fails with the Run error "timeout", step 3 stays pending
+name: "Run timeout"
+description: "The whole Run is cut off by runTimeoutMs"
+baseUrl: "{{BASE}}"
+runTimeoutMs: 3000
+steps:
+  - open:
+      url: "/"
+  - sleep:
+      ms: 8000
+  - assert:
+      selector: '[data-test="login-button"]'

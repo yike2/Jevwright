@@ -23,6 +23,7 @@ The PRD's YAML example (`xpath`, `open: "<url>"`, per-step `timeoutMs`) is **obs
 | A module's behavior, interfaces, constants, tests | `docs/tech/<module>.md` |
 | Components, data flow, run sequence | `docs/archify/*/index.html` ([architecture](https://yike2.github.io/Jevwright/archify/jevwright-architecture/), [run sequence](https://yike2.github.io/Jevwright/archify/jevwright-sequence/)), `docs/references/arch.svg` |
 | User journeys, CLI commands, exit codes, UI pages | `docs/PRD.md` §4.2, §7 |
+| E2E and manual test cases, their `.yaml` test files | `docs/testing/test-cases.md`, `src/tests/e2e/fixtures/` |
 | Screens and layout | `docs/references/workspace.svg`, `dashboard.svg`, [`ui-prototype.html`](https://yike2.github.io/Jevwright/references/ui-prototype.html) |
 | Deploying the backend | Locally for development: `docs/deploy/backend-local.md`; to the VPS: `docs/deploy/backend-prod.md`; the Demo App alone: `docs/deploy/demo-app.md` |
 | Commit format | `README.md`, `.gitmessage`, `.githooks/commit-msg` (enforced) |

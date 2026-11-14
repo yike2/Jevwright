@@ -1,0 +1,12 @@
+# Expect: failed at step 2 within about 3 s, locate method "selector"; step 3 stays pending; Jev is never called
+name: "Missing element"
+description: "A selector that matches nothing fails without calling Jev"
+baseUrl: "{{BASE}}"
+timeoutMs: 3000
+steps:
+  - open:
+      url: "/"
+  - click:
+      selector: '[data-test="no-such-button"]'
+  - assert:
+      selector: '[data-test="login-button"]'

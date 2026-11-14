@@ -1,0 +1,11 @@
+# Expect: failed at step 2; the reason shows {{SWAG_PASSWORD}}, never the password itself
+name: "Redaction"
+description: "A failing assert on a secret Variable does not reveal its value"
+baseUrl: "{{BASE}}"
+timeoutMs: 3000
+steps:
+  - open:
+      url: "/"
+  - assert:
+      selector: '[data-test="login-button"]'
+      text: "{{SWAG_PASSWORD}}"

@@ -1,0 +1,12 @@
+# Expect: failed at step 2 with "Variable {{NOT_SET}} is not set"; step 3 stays pending
+name: "Missing variable"
+description: "A Variable that is not set fails its step"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/"
+  - input:
+      selector: '[data-test="username"]'
+      value: "{{NOT_SET}}"
+  - assert:
+      selector: '[data-test="login-button"]'

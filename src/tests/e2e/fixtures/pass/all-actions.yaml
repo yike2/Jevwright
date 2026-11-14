@@ -1,0 +1,90 @@
+# Expect: passed; every action of the syntax runs once, by selector only
+name: "All actions"
+description: "Every action and dialog answer on the Demo App's extra pages"
+baseUrl: "{{BASE}}"
+timeoutMs: 10000
+steps:
+  # Dialogs: alert with message, prompt with text, confirm dismissed
+  - open:
+      url: "/extras/dialogs.html"
+  - click:
+      selector: "#save"
+      dialog: { accept: true, message: "Profile saved" }
+  - click:
+      selector: "#rename"
+      dialog: { accept: true, text: "Swag Lover" }
+  - assert:
+      selector: "#display-name"
+      text: "Swag Lover"
+  - click:
+      selector: "#delete"
+      dialog: { accept: false }
+  - assert:
+      selector: "#status"
+      text: "Your account was kept."
+  # Hover, right-click, double-click
+  - open:
+      url: "/extras/menus.html"
+  - hover:
+      selector: "#account-menu"
+  - click:
+      selector: "#sign-out-link"
+  - assert:
+      selector: "#status"
+      text: "You are signed out."
+  - rightClick:
+      selector: '[data-file="packing-list.txt"]'
+  - click:
+      selector: "#delete-file"
+  - assert:
+      selector: "#status"
+      text: "Deleted packing-list.txt."
+  - doubleClick:
+      selector: '[data-file="invoice-2026.pdf"]'
+  - assert:
+      selector: "#status"
+      text: "Opened invoice-2026.pdf."
+  # History: back, forward, reload
+  - back: {}
+  - assert:
+      url: "/extras/dialogs.html"
+  - forward: {}
+  - assert:
+      url: "/extras/menus.html"
+  - reload: {}
+  - waitFor:
+      selector: '[data-file="packing-list.txt"]'
+  # Tabs: open a new tab, switch to it and back
+  - open:
+      url: "/extras/tabs.html"
+  - click:
+      selector: "#returns-link"
+  - switchTab:
+      url: "**/extras/returns.html"
+  - assert:
+      selector: "#returns-window"
+      text: "30 days"
+  - switchTab:
+      url: "**/extras/tabs.html"
+  - assert:
+      selector: "#shipping-link"
+  # Keyboard, scroll, sleep on the product list
+  - open:
+      url: "/"
+  - input:
+      selector: '[data-test="username"]'
+      value: "standard_user"
+  - input:
+      selector: '[data-test="password"]'
+      value: "{{SWAG_PASSWORD}}"
+  - press:
+      key: "Enter"
+  - waitFor:
+      url: "**/inventory.html"
+  - scroll:
+      direction: "down"
+      distance: 2000
+  - sleep:
+      ms: 300
+  - assert:
+      selector: '[data-test="footer-copy"]'
