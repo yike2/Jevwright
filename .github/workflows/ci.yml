@@ -1,5 +1,11 @@
 name: CI
 
+# Stages (docs/deploy/ci-cd.md):
+#   1. checks:  typecheck, lint, unit tests, integration tests, security scan
+#   2. build:   frontend build (after typecheck, lint, unit tests)
+#   3. e2e:     Playwright against the built frontend, the backend and Postgres (after build)
+#   4. deploy:  production over SSH, on pushes to main only (after every test job)
+
 on:
   pull_request:
   push:
@@ -11,7 +17,8 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Cancel superseded PR runs, but never a run on main, which may be deploying.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   typecheck:
@@ -118,7 +125,6 @@ jobs:
   integration-tests:
     name: Integration tests
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -141,8 +147,8 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Run integration tests
-        # TODO(#57): three browser tests in checks.test.ts and dialogs.test.ts time out in a full local run but pass
-        # alone and in CI. Remove the job's continue-on-error once they are fixed.
+        # #57: three browser tests in checks.test.ts and dialogs.test.ts can time out in a full local run; they pass
+        # alone and in CI, so this job blocks merges.
         run: pnpm test:integration
 
   backend-integration-tests:
@@ -188,3 +194,172 @@ jobs:
       - name: Run backend integration tests
         # The Integration tests job runs these too, but without DATABASE_URL they are skipped there.
         run: pnpm vitest run src/tests/integration/app/backend
+
+  security:
+    name: Security scan
+    runs-on: ubuntu-latest
+    # Reported, not blocking yet (#101): a new advisory in a transitive dependency must not stop every merge.
+    continue-on-error: true
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Audit dependencies
+        run: pnpm audit --audit-level=high
+
+  frontend-build:
+    name: Frontend build
+    runs-on: ubuntu-latest
+    needs: [typecheck, lint, unit-tests]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend
+        run: pnpm --filter @jevwright/frontend build
+
+  e2e:
+    name: E2E tests
+    runs-on: ubuntu-latest
+    needs: [frontend-build]
+    services:
+      postgres:
+        image: postgres:17.9-alpine
+        env:
+          POSTGRES_USER: jevwright
+          POSTGRES_PASSWORD: jevwright
+          POSTGRES_DB: jevwright
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U jevwright"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 15
+    # The backend's variables (src/app/backend/src/env.ts). Throwaway values: this database lives only for the job,
+    # and the E2E tests never call Jev.
+    env:
+      DATABASE_URL: postgresql://jevwright:jevwright@localhost:5432/jevwright
+      JWT_SECRET: ci-only-jwt-secret-for-e2e-tests-0000
+      OPENROUTER_API_KEY: ci-not-used
+      CORS_ORIGIN: http://localhost:3000
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Build frontend
+        # playwright.config.ts serves this build with next start when CI is set.
+        run: pnpm --filter @jevwright/frontend build
+
+      - name: Run E2E tests
+        run: pnpm test:e2e
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+  deploy:
+    name: Deploy to production
+    runs-on: ubuntu-latest
+    needs:
+      - typecheck
+      - lint
+      - unit-tests
+      - locator-integration-tests
+      - integration-tests
+      - backend-integration-tests
+      - e2e
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    timeout-minutes: 20
+    # Secrets and variables live in the "production" environment (docs/deploy/ci-cd.md).
+    environment:
+      name: production
+      url: ${{ vars.APP_URL }}
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    steps:
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      - name: Deploy this commit
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
+          SHA: ${{ github.sha }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -o BatchMode=yes "$SSH_USER@$SSH_HOST" \
+            "DEPLOY_PATH='$DEPLOY_PATH' SHA='$SHA' bash -s" <<'SCRIPT'
+          set -euo pipefail
+          cd "$DEPLOY_PATH"
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "The server checkout has local changes; refusing to deploy:" >&2
+            git status --short >&2
+            exit 1
+          fi
+          git fetch origin main
+          git checkout main
+          git merge --ff-only "$SHA"
+          docker compose up -d --build
+          docker compose ps
+          SCRIPT
+
+      - name: Check health
+        env:
+          API_URL: ${{ vars.API_URL }}
+        run: curl --fail --silent --show-error --retry 12 --retry-delay 5 --retry-all-errors "$API_URL/health"
