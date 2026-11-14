@@ -22,6 +22,11 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx}\"",
     "typecheck": "tsc && pnpm --filter @jevwright/frontend typecheck"
   },
+  "pnpm": {
+    "overrides": {
+      "next>postcss": "8.5.32"
+    }
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
