@@ -146,6 +146,7 @@ export function createApiClient(config: ApiClientConfig = {}): {
   getRun(runId: string): Promise<Run>;
 } {
   const defaultBaseUrl = "http://127.0.0.1:4000/api/v1";
+  const resolvedBaseUrl = (config.baseUrl ?? defaultBaseUrl).replace(/\/$/, "");
   const fetchImpl = config.fetchImpl ?? fetch;
   const defaultOnUnauthorized = () => {
     if (typeof window !== "undefined") {
@@ -173,9 +174,7 @@ export function createApiClient(config: ApiClientConfig = {}): {
   };
 
   const request = async <T>(path: string, init: RequestInit = {}, options: RequestOptions = {}): Promise<T> => {
-    const url = path.startsWith("http")
-      ? path
-      : `${(config.baseUrl ?? defaultBaseUrl).replace(/\/$/, "")}${path.startsWith("/") ? path : `/${path}`}`;
+    const url = path.startsWith("http") ? path : `${resolvedBaseUrl}${path.startsWith("/") ? path : `/${path}`}`;
 
     const headers = new Headers(init.headers ?? {});
 
@@ -346,15 +345,16 @@ export function createApiClient(config: ApiClientConfig = {}): {
   };
 
   const getBaseUrl = (): string => {
-    throw new Error("Not implemented");
+    return resolvedBaseUrl;
   };
 
-  const listRuns = async (_testFileId: string): Promise<RunListResponse> => {
-    throw new Error("Not implemented");
+  const listRuns = async (testFileId: string): Promise<RunListResponse> => {
+    const query = `/runs?testFileId=${encodeURIComponent(testFileId)}&limit=20`;
+    return request<RunListResponse>(query);
   };
 
-  const getRun = async (_runId: string): Promise<Run> => {
-    throw new Error("Not implemented");
+  const getRun = async (runId: string): Promise<Run> => {
+    return request<Run>(`/runs/${runId}`);
   };
 
   return {
