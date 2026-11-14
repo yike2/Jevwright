@@ -12,6 +12,9 @@ export type CreateTestFileResponse =
   paths["/modules/{moduleId}/test-files"]["post"]["responses"][201]["content"]["application/json"];
 export type TestFile = components["schemas"]["TestFile"];
 export type Run = components["schemas"]["Run"];
+export type RunListResponse = paths["/runs"]["get"]["responses"][200]["content"]["application/json"];
+export type Step = components["schemas"]["Step"];
+export type LiveMessage = components["schemas"]["LiveMessage"];
 export type UpdateTestFileResponse =
   paths["/test-files/{testFileId}"]["patch"]["responses"][200]["content"]["application/json"];
 export type ValidateResponse = paths["/test-files/validate"]["post"]["responses"][200]["content"]["application/json"];
@@ -123,6 +126,7 @@ export function createApiClient(config: ApiClientConfig = {}): {
   setToken(token: string | null): void;
   clearToken(): void;
   getToken(): string | null;
+  getBaseUrl(): string;
   request<T>(path: string, init?: RequestInit, options?: RequestOptions): Promise<T>;
   login(email: string, password: string): Promise<LoginResponse>;
   register(email: string, password: string): Promise<RegisterResponse>;
@@ -138,8 +142,11 @@ export function createApiClient(config: ApiClientConfig = {}): {
   listVariables(projectId: string): Promise<VariableListResponse>;
   setVariable(projectId: string, name: string, value: string): Promise<void>;
   deleteVariable(projectId: string, name: string): Promise<void>;
+  listRuns(testFileId: string): Promise<RunListResponse>;
+  getRun(runId: string): Promise<Run>;
 } {
   const defaultBaseUrl = "http://127.0.0.1:4000/api/v1";
+  const resolvedBaseUrl = (config.baseUrl ?? defaultBaseUrl).replace(/\/$/, "");
   const fetchImpl = config.fetchImpl ?? fetch;
   const defaultOnUnauthorized = () => {
     if (typeof window !== "undefined") {
@@ -167,9 +174,7 @@ export function createApiClient(config: ApiClientConfig = {}): {
   };
 
   const request = async <T>(path: string, init: RequestInit = {}, options: RequestOptions = {}): Promise<T> => {
-    const url = path.startsWith("http")
-      ? path
-      : `${(config.baseUrl ?? defaultBaseUrl).replace(/\/$/, "")}${path.startsWith("/") ? path : `/${path}`}`;
+    const url = path.startsWith("http") ? path : `${resolvedBaseUrl}${path.startsWith("/") ? path : `/${path}`}`;
 
     const headers = new Headers(init.headers ?? {});
 
@@ -339,10 +344,24 @@ export function createApiClient(config: ApiClientConfig = {}): {
     });
   };
 
+  const getBaseUrl = (): string => {
+    return resolvedBaseUrl;
+  };
+
+  const listRuns = async (testFileId: string): Promise<RunListResponse> => {
+    const query = `/runs?testFileId=${encodeURIComponent(testFileId)}&limit=20`;
+    return request<RunListResponse>(query);
+  };
+
+  const getRun = async (runId: string): Promise<Run> => {
+    return request<Run>(`/runs/${runId}`);
+  };
+
   return {
     setToken,
     clearToken,
     getToken,
+    getBaseUrl,
     request,
     login,
     register,
@@ -358,6 +377,8 @@ export function createApiClient(config: ApiClientConfig = {}): {
     listVariables,
     setVariable,
     deleteVariable,
+    listRuns,
+    getRun,
   };
 }
 

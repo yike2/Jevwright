@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { ApiError, apiClient, type Diagnostic } from "@/lib/api";
@@ -7,6 +8,7 @@ import { formatDiagnostic, validationSummary } from "@/lib/editor";
 import { useWorkspace } from "@/lib/workspace-context";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { RunList } from "@/components/workspace/run-list";
 
 export default function TestFilePage() {
   const params = useParams<{ testFileId: string }>();
@@ -20,6 +22,8 @@ export default function TestFilePage() {
   const [draft, setDraft] = useState("");
   const [diagnostics, setDiagnostics] = useState<Diagnostic[] | null>(null);
   const [runMessage, setRunMessage] = useState<string | null>(null);
+  const [queuedRunId, setQueuedRunId] = useState<string | null>(null);
+  const [runsReloadKey, setRunsReloadKey] = useState(0);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
   const [loadErrorStatus, setLoadErrorStatus] = useState<number | null>(null);
   const [loadErrorMessage, setLoadErrorMessage] = useState<string | null>(null);
@@ -38,6 +42,7 @@ export default function TestFilePage() {
     setDraft("");
     setDiagnostics(null);
     setRunMessage(null);
+    setQueuedRunId(null);
     setAlertMessage(null);
     setLoadErrorStatus(null);
     setLoadErrorMessage(null);
@@ -90,6 +95,7 @@ export default function TestFilePage() {
     setDraft(value);
     setDiagnostics(null);
     setRunMessage(null);
+    setQueuedRunId(null);
   };
 
   const handleUploadClick = () => {
@@ -107,6 +113,7 @@ export default function TestFilePage() {
     setDraft(nextSource);
     setDiagnostics(null);
     setRunMessage(null);
+    setQueuedRunId(null);
     event.target.value = "";
   };
 
@@ -169,6 +176,7 @@ export default function TestFilePage() {
 
     setAlertMessage(null);
     setRunMessage(null);
+    setQueuedRunId(null);
     setIsRunning(true);
 
     try {
@@ -179,8 +187,10 @@ export default function TestFilePage() {
         }
       }
 
-      await apiClient.startRun(testFileId);
+      const run = await apiClient.startRun(testFileId);
       setRunMessage("Run queued.");
+      setQueuedRunId(run.id);
+      setRunsReloadKey((previous) => previous + 1);
       setDiagnostics(null);
 
       try {
@@ -262,7 +272,16 @@ export default function TestFilePage() {
         </p>
       )}
 
-      {runMessage && <p role="status">{runMessage}</p>}
+      {runMessage && (
+        <div className="flex flex-wrap items-center gap-3">
+          <p role="status">{runMessage}</p>
+          {queuedRunId && (
+            <Link className="text-sm text-foreground underline underline-offset-4" href={`/runs/${queuedRunId}`}>
+              View run
+            </Link>
+          )}
+        </div>
+      )}
 
       <div className="space-y-2">
         <Label htmlFor="test-file-yaml">Test file YAML</Label>
@@ -287,6 +306,8 @@ export default function TestFilePage() {
           </>
         )}
       </section>
+
+      <RunList testFileId={testFileId} reloadKey={runsReloadKey} />
     </section>
   );
 }
