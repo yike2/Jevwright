@@ -5,6 +5,11 @@ import {
   type CreateModuleResponse,
   type CreateProjectResponse,
   type CreateTestFileResponse,
+  type Run,
+  type TestFile,
+  type UpdateTestFileResponse,
+  type ValidateResponse,
+  type VariableListResponse,
   type TreeResponse,
 } from "@/app/frontend/lib/api.js";
 
@@ -377,5 +382,222 @@ describe("api client", () => {
       code: "conflict",
       message: "Project name already exists",
     });
+  });
+
+  it("sends GET /test-files/tf-1 and resolves the Test File", async () => {
+    const testFile: TestFile = {
+      id: "tf-1",
+      moduleId: "m-1",
+      name: "login.yaml",
+      source: 'name: login\nsteps:\n  - open:\n      url: "https://example.com"\n',
+      createdAt: "2026-11-13T00:00:00.000Z",
+      updatedAt: "2026-11-13T00:00:00.000Z",
+    };
+
+    const fetchImpl = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+      expect(url).toBe("http://localhost:4000/api/v1/test-files/tf-1");
+      expect(init?.method ?? "GET").toBe("GET");
+      const headers = new Headers(init?.headers ?? {});
+      expect(headers.get("Authorization")).toBe("Bearer jwt-token");
+      return makeResponse(testFile, 200);
+    });
+
+    const client = createApiClient({
+      baseUrl: "http://localhost:4000/api/v1",
+      getToken: () => "jwt-token",
+      setToken: () => undefined,
+      fetchImpl,
+    });
+
+    await expect(client.getTestFile("tf-1")).resolves.toEqual(testFile);
+  });
+
+  it("sends PATCH /test-files/tf-1 with the source and resolves { testFile, diagnostics }", async () => {
+    const testFile: TestFile = {
+      id: "tf-1",
+      moduleId: "m-1",
+      name: "login.yaml",
+      source: "name: x",
+      createdAt: "2026-11-13T00:00:00.000Z",
+      updatedAt: "2026-11-13T00:00:00.000Z",
+    };
+    const updated: UpdateTestFileResponse = {
+      testFile,
+      diagnostics: [],
+    };
+
+    const fetchImpl = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+      expect(url).toBe("http://localhost:4000/api/v1/test-files/tf-1");
+      expect(init?.method).toBe("PATCH");
+      const headers = new Headers(init?.headers ?? {});
+      expect(headers.get("Authorization")).toBe("Bearer jwt-token");
+      expect(headers.get("Content-Type")).toBe("application/json");
+      expect(init?.body).toBe('{"source":"name: x"}');
+      return makeResponse(updated, 200);
+    });
+
+    const client = createApiClient({
+      baseUrl: "http://localhost:4000/api/v1",
+      getToken: () => "jwt-token",
+      setToken: () => undefined,
+      fetchImpl,
+    });
+
+    await expect(client.updateTestFile("tf-1", "name: x")).resolves.toEqual(updated);
+  });
+
+  it("sends POST /test-files/validate and resolves the diagnostics", async () => {
+    const response: ValidateResponse = {
+      diagnostics: [{ code: "E005", message: 'Unknown action "aiAct"', line: 3 }],
+    };
+
+    const fetchImpl = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+      expect(url).toBe("http://localhost:4000/api/v1/test-files/validate");
+      expect(init?.method).toBe("POST");
+      const headers = new Headers(init?.headers ?? {});
+      expect(headers.get("Authorization")).toBe("Bearer jwt-token");
+      expect(headers.get("Content-Type")).toBe("application/json");
+      expect(init?.body).toBe('{"source":"bad"}');
+      return makeResponse(response, 200);
+    });
+
+    const client = createApiClient({
+      baseUrl: "http://localhost:4000/api/v1",
+      getToken: () => "jwt-token",
+      setToken: () => undefined,
+      fetchImpl,
+    });
+
+    await expect(client.validateSource("bad")).resolves.toEqual(response);
+  });
+
+  it("sends POST /test-files/tf-1/runs and resolves the Run on 202", async () => {
+    const run: Run = {
+      id: "run-1",
+      testFileId: "tf-1",
+      projectId: "p-1",
+      moduleId: "m-1",
+      fileName: "login.yaml",
+      name: "login",
+      status: "queued",
+      createdAt: "2026-11-13T00:00:00.000Z",
+      startedAt: null,
+      finishedAt: null,
+      durationMs: null,
+      summary: {
+        total: 1,
+        passed: 0,
+        failed: 0,
+        pending: 1,
+      },
+      error: null,
+    };
+
+    const fetchImpl = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+      expect(url).toBe("http://localhost:4000/api/v1/test-files/tf-1/runs");
+      expect(init?.method).toBe("POST");
+      const headers = new Headers(init?.headers ?? {});
+      expect(headers.get("Authorization")).toBe("Bearer jwt-token");
+      return makeResponse(run, 202);
+    });
+
+    const client = createApiClient({
+      baseUrl: "http://localhost:4000/api/v1",
+      getToken: () => "jwt-token",
+      setToken: () => undefined,
+      fetchImpl,
+    });
+
+    await expect(client.startRun("tf-1")).resolves.toEqual(run);
+  });
+
+  it("rejects startRun with ApiError 422 and the diagnostics as details", async () => {
+    const fetchImpl = vi.fn(async () =>
+      makeResponse(
+        {
+          error: {
+            code: "invalid_test",
+            message: "Test file has errors",
+            details: [{ code: "E005", message: 'Unknown action "aiAct"', line: 3 }],
+          },
+        },
+        422,
+      ),
+    );
+
+    const client = createApiClient({
+      baseUrl: "http://localhost:4000/api/v1",
+      getToken: () => "jwt-token",
+      setToken: () => undefined,
+      fetchImpl,
+    });
+
+    await expect(client.startRun("tf-1")).rejects.toMatchObject({
+      status: 422,
+      code: "invalid_test",
+      message: "Test file has errors",
+      details: [{ code: "E005", message: 'Unknown action "aiAct"', line: 3 }],
+    });
+  });
+
+  it("sends GET /projects/p-1/variables and resolves the names", async () => {
+    const response: VariableListResponse = { items: ["BASE", "SWAG_PASSWORD"] };
+
+    const fetchImpl = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+      expect(url).toBe("http://localhost:4000/api/v1/projects/p-1/variables");
+      expect(init?.method ?? "GET").toBe("GET");
+      const headers = new Headers(init?.headers ?? {});
+      expect(headers.get("Authorization")).toBe("Bearer jwt-token");
+      return makeResponse(response, 200);
+    });
+
+    const client = createApiClient({
+      baseUrl: "http://localhost:4000/api/v1",
+      getToken: () => "jwt-token",
+      setToken: () => undefined,
+      fetchImpl,
+    });
+
+    await expect(client.listVariables("p-1")).resolves.toEqual(response);
+  });
+
+  it("sends PUT /projects/p-1/variables/BASE with the value and resolves undefined on 204", async () => {
+    const fetchImpl = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+      expect(url).toBe("http://localhost:4000/api/v1/projects/p-1/variables/BASE");
+      expect(init?.method).toBe("PUT");
+      const headers = new Headers(init?.headers ?? {});
+      expect(headers.get("Authorization")).toBe("Bearer jwt-token");
+      expect(headers.get("Content-Type")).toBe("application/json");
+      expect(init?.body).toBe('{"value":"https://demo.example.com"}');
+      return new Response(null, { status: 204 });
+    });
+
+    const client = createApiClient({
+      baseUrl: "http://localhost:4000/api/v1",
+      getToken: () => "jwt-token",
+      setToken: () => undefined,
+      fetchImpl,
+    });
+
+    await expect(client.setVariable("p-1", "BASE", "https://demo.example.com")).resolves.toBeUndefined();
+  });
+
+  it("sends DELETE /projects/p-1/variables/BASE and resolves undefined on 204", async () => {
+    const fetchImpl = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+      expect(url).toBe("http://localhost:4000/api/v1/projects/p-1/variables/BASE");
+      expect(init?.method).toBe("DELETE");
+      const headers = new Headers(init?.headers ?? {});
+      expect(headers.get("Authorization")).toBe("Bearer jwt-token");
+      return new Response(null, { status: 204 });
+    });
+
+    const client = createApiClient({
+      baseUrl: "http://localhost:4000/api/v1",
+      getToken: () => "jwt-token",
+      setToken: () => undefined,
+      fetchImpl,
+    });
+
+    await expect(client.deleteVariable("p-1", "BASE")).resolves.toBeUndefined();
   });
 });
