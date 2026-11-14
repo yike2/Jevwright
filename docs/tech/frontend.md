@@ -109,7 +109,8 @@ The workspace is every authenticated page. A shared layout guards auth, renders 
 | Route                 | Page                                    |
 | --------------------- | --------------------------------------- |
 | `/`                   | Empty state: "Pick a test file to edit" |
-| `/files/[testFileId]` | Test file editor (1.7)                  |
+| `/files/[testFileId]` | Test file editor (1.7) and its Runs list (1.9) |
+| `/runs/[runId]`       | Run: live progress and report (1.9)     |
 
 | Element         | Behavior                                                                                                                     |
 | --------------- | ---------------------------------------------------------------------------------------------------------------------------- |
@@ -174,7 +175,7 @@ E2E tests locate elements by role and accessible name, so these names are part o
 | Pending     | `Loading…`                                                                          |
 | `404`       | "Test file not found"                                                               |
 | Other error | `ApiError.message` in a `role="alert"`                                              |
-| Loaded      | File name heading, toolbar (Upload file, Validate, Save, Run), textarea, result bar |
+| Loaded      | File name heading, toolbar (Upload file, Validate, Save, Run), textarea, result bar, Runs list (1.9) |
 
 | Action      | Behavior                                                                                                                                                                                                                                                                           |
 | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -182,7 +183,7 @@ E2E tests locate elements by role and accessible name, so these names are part o
 | Validate    | `POST /test-files/validate { source: draft }`; shows the diagnostics in the result bar                                                                                                                                                                                             |
 | Save        | Enabled only when dirty. `PATCH /test-files/:id { source: draft }`; on success `saved` becomes the returned `testFile.source`, the returned diagnostics are shown, and `refreshTree()` is called. On failure the draft is kept and `ApiError.message` is shown in a `role="alert"` |
 | Upload file | Opens a file picker accepting `.yaml` and `.yml`; the chosen file's text replaces `draft` (not saved until Save)                                                                                                                                                                   |
-| Run         | Saves first when dirty (stops if the save fails), then `POST /test-files/:id/runs`. `202`: shows "Run queued." in a `role="status"` and calls `refreshTree()`. `422`: shows `ApiError.details` (Diagnostic[]) in the result bar. Other errors: `role="alert"`                      |
+| Run         | Saves first when dirty (stops if the save fails), then `POST /test-files/:id/runs`. `202`: shows "Run queued." in a `role="status"` with a "View run" link to `/runs/<id>` next to it (outside the status element), reloads the Runs list (1.9), and calls `refreshTree()`. `422`: shows `ApiError.details` (Diagnostic[]) in the result bar. Other errors: `role="alert"`                      |
 
 Buttons are disabled while their request is in flight. A failing `refreshTree()` shows its message in the page's `role="alert"`; the save or run itself still counts as done.
 
@@ -193,7 +194,7 @@ The result bar is a `region` named "Validation". It shows `validationSummary(dia
 | `validationSummary(ds)` | `[]` → "Valid. Ready to run."; 1 → "1 validation error"; n → "n validation errors" |
 | `formatDiagnostic(d)`   | "Line <line>: <message>"                                                           |
 
-Out of scope: validating while typing, line numbers, keyboard shortcuts, an unsaved-changes guard, live progress (#82), history (#83).
+Out of scope: validating while typing, line numbers, keyboard shortcuts, an unsaved-changes guard.
 
 ### 1.8 Project Variables
 
@@ -228,7 +229,59 @@ API errors show `ApiError.message` in a `role="alert"` inside the dialog, and th
 - E2E `editor.e2e.ts`: a new user creates a Test File; the textarea shows the starter source; an invalid edit shows "Unsaved changes" and Validate shows "1 validation error" with a "Line …" item; restoring a valid source and saving hides "Unsaved changes"; after a reload the saved source is shown; Run shows "Run queued.".
 - E2E `variables.e2e.ts`: a new user adds Variable `BASE`; it is listed and its value is not shown; an invalid name shows the alert; Delete removes it.
 
-### 1.9 Packages and exact pins
+### 1.9 Runs: live progress and history
+
+A Run has one page, `/runs/[runId]`, used both while it runs (live progress) and after it finishes (report). The editor page lists the file's recent Runs. Both render steps with the same `StepList` component, because the backend uses one `Step` shape for Live Progress and the Report.
+
+#### Runs list (editor page)
+
+Below the result bar, a `region` named "Runs" loads `GET /runs?testFileId=<id>&limit=20` with the page and again after a successful Run. Each Run is one list item with a link to `/runs/<id>` whose text is `runStatusLabel(status)`, the trigger time (`createdAt`, `toLocaleString()`), and `formatDuration(durationMs)`. An empty list shows "No runs yet". There is no pagination. A failed load shows `ApiError.message` in a `role="alert"` inside the region.
+
+#### Run page
+
+| Step | Behavior |
+| ---- | -------- |
+| Load | `GET /runs/:id`. Pending: `Loading…`; `404`: "Run not found"; other errors: `ApiError.message` in a `role="alert"` and nothing else |
+| Finished Run (`passed`/`failed`) | Steps come from `run.report.steps`. A Run without a Report (`interrupted`/`internal` error) shows no steps and "No step results" |
+| Active Run (`queued`/`running`) | Opens the WebSocket at `liveUrl(baseUrl, runId, token)` and folds every message into `{ run, steps }` with `applyLiveMessage`. When a `status` message makes the Run final, the page reloads `GET /runs/:id` (for the Report and trace) and calls `refreshTree()` |
+| Socket closes early | If the socket closes before the Run is final, the page keeps the last state and shows "Live progress disconnected" in a `role="alert"` |
+| Leave the page | The socket is closed |
+
+The header shows the file name as the heading, "Status: <runStatusLabel>", the trigger time, `formatDuration(durationMs)`, the summary as "<passed>/<total> passed" once it exists, and the Run error as "<kind>: <message>" when there is one. A "Back to <fileName>" link goes to `/files/<testFileId>` (hidden when `testFileId` is `null`). After the Run is final, a "Download report" link points to `runFileUrl(baseUrl, runId, "report.json", token)`, and a "Download trace" link to `runFileUrl(…, report.trace, token)` when `report.trace` exists.
+
+`StepList` renders an ordered list named "Steps". Each step is one list item with "Step <index + 1>", the action, "line <line>", `runStatusLabel`-style status text (Pending, Running, Passed, Failed), and, when present, `formatDuration(durationMs)`, the locate method, the failure `reason`, and the screenshot as an `img` with alt "Step <index + 1> screenshot" from `runFileUrl(baseUrl, runId, step.screenshot, token)`. Dialog records are not shown.
+
+| Helper | Rule |
+| ------ | ---- |
+| `runStatusLabel(status)` | `queued` → "Queued", `running` → "Running", `passed` → "Passed", `failed` → "Failed" |
+| `stepStatusLabel(status)` | `pending` → "Pending", `running` → "Running", `passed` → "Passed", `failed` → "Failed" |
+| `formatDuration(ms)` | `null` or `undefined` → "—"; under 1000 → "<ms> ms"; otherwise seconds with one decimal, "<s> s" |
+| `liveUrl(baseUrl, runId, token)` | `baseUrl` with `http` → `ws` and `https` → `wss`, then `/runs/<runId>/live?token=<encodeURIComponent(token)>` |
+| `runFileUrl(baseUrl, runId, path, token)` | `<baseUrl>/runs/<runId>/files/<path>?token=<encodeURIComponent(token)>` |
+| `applyLiveMessage(state, message)` | Pure. `snapshot` → `{ run, steps }` from the message; `step` → the step with the same `index` is replaced (inserted in `index` order if absent); `status` → `run` replaced, steps kept. Never mutates `state` |
+
+`state` is `{ run: Run | null; steps: Step[] }`; messages are the generated `LiveMessage` type.
+
+#### Accessible names (Runs)
+
+| Element | Role and name |
+| ------- | ------------- |
+| Runs list | `region` named "Runs"; one `listitem` per Run containing a `link` to the Run; text "No runs yet" when empty |
+| Editor run link | `link` "View run" |
+| Run heading | `heading` named by the file name |
+| Run status | text "Status: <label>" |
+| Steps | `list` named "Steps"; one `listitem` per step containing "Step <n>" |
+| Screenshot | `img` with alt "Step <n> screenshot" |
+| Links | "Back to <fileName>", "Download report", "Download trace" |
+| Disconnect | `role="alert"` with "Live progress disconnected" |
+
+#### Tests
+- Unit: the six helpers above (5.4) and `getRun`, `listRuns`, `getBaseUrl` (5.1).
+- E2E `flow.e2e.ts` (the full PRD flow, #84): a new user creates a Test File, enters a valid source, Validate shows "Valid. Ready to run.", saves, clicks Run and sees "Run queued.", follows "View run" to `/runs/<id>`, sees the file name heading, a "Status: …" text, and a "Steps" list with one item containing "Step 1"; "Back to <file>" returns to the editor, where the "Runs" region lists one Run. The test does not wait for the Run to finish.
+
+Out of scope: project or module dashboards, charts, filters, pagination, showing dialog records.
+
+### 1.10 Packages and exact pins
 
 The frontend package uses these exact versions:
 
@@ -253,7 +306,7 @@ shadcn tooling and UI primitives are pinned exactly (no `^`). Primitives are add
 
 The repo does not use `eslint-config-next`; instead the root `eslint.config.js` is extended to include `.tsx` and the frontend package files.
 
-### 1.10 Scripts and config
+### 1.11 Scripts and config
 
 The root workspace exposes the frontend app with `pnpm frontend`, which starts the Next.js dev server on port `3000`.
 
@@ -356,6 +409,7 @@ export function createApiClient(config?: ApiClientConfig): {
   setToken(token: string | null): void;
   clearToken(): void;
   getToken(): string | null;
+  getBaseUrl(): string;
   request<T>(path: string, init?: RequestInit, options?: RequestOptions): Promise<T>;
   login(email: string, password: string): Promise<LoginResponse>;
   register(email: string, password: string): Promise<RegisterResponse>;
@@ -371,12 +425,14 @@ export function createApiClient(config?: ApiClientConfig): {
   listVariables(projectId: string): Promise<VariableListResponse>; // { items: string[] }
   setVariable(projectId: string, name: string, value: string): Promise<void>; // 204
   deleteVariable(projectId: string, name: string): Promise<void>; // 204
+  listRuns(testFileId: string): Promise<RunListResponse>; // GET /runs?testFileId=&limit=20 → { items, nextCursor }
+  getRun(runId: string): Promise<Run>; // with source and, once finished, report
 };
 
 export const apiClient: ReturnType<typeof createApiClient>;
 ```
 
-`TreeResponse`, `CreateProjectResponse`, `CreateModuleResponse`, `CreateTestFileResponse`, `TestFile`, `Run`, `UpdateTestFileResponse`, `ValidateResponse`, and `VariableListResponse` are aliases of the generated `components`/`paths` types for these routes; none are written by hand.
+`TreeResponse`, `CreateProjectResponse`, `CreateModuleResponse`, `CreateTestFileResponse`, `TestFile`, `Run`, `UpdateTestFileResponse`, `ValidateResponse`, `VariableListResponse`, `RunListResponse`, `Step`, and `LiveMessage` are aliases of the generated `components`/`paths` types for these routes; none are written by hand.
 
 ### 3.2 Request rules
 
@@ -413,17 +469,21 @@ This fallback is implemented in the client itself when the backend response is n
 | `app/login/page.tsx`                          | Two-mode auth form (Log in/Register)                        |
 | `app/(workspace)/layout.tsx`                  | Auth guard, loads `me` and the tree, renders the sidebar    |
 | `app/(workspace)/page.tsx`                    | Empty state                                                 |
-| `app/(workspace)/files/[testFileId]/page.tsx` | Test file editor (1.7)                                      |
+| `app/(workspace)/files/[testFileId]/page.tsx` | Test file editor (1.7) and Runs list (1.9)                  |
+| `app/(workspace)/runs/[runId]/page.tsx`       | Run page: live progress and report (1.9)                    |
 | `lib/api.ts`                                  | Fetch wrapper, `ApiError`, typed API functions              |
 | `lib/api-schema.ts`                           | Generated OpenAPI types from `docs/api/openapi.json`        |
 | `lib/format-auth-error.ts`                    | Unknown auth error → UI-safe strings                        |
 | `lib/utils.ts`                                | Re-exports `cn` from the `cn` package for shadcn components |
 | `lib/sidebar.ts`                              | Sidebar helpers (1.6)                                       |
 | `lib/editor.ts`                               | Editor and Variables helpers (1.7, 1.8)                     |
+| `lib/runs.ts`                                 | Run helpers (1.9)                                           |
 | `lib/workspace-context.tsx`                   | `useWorkspace()`: `me`, `tree`, `refreshTree`               |
 | `components/workspace/sidebar-nav.tsx`        | Sidebar tree, dialogs, account                              |
 | `components/workspace/create-name-dialog.tsx` | Shared New project/module/test file dialog                  |
 | `components/workspace/variables-dialog.tsx`   | Variables dialog (1.8)                                      |
+| `components/workspace/run-list.tsx`           | Runs list on the editor page (1.9)                          |
+| `components/workspace/step-list.tsx`          | Shared step list for live progress and report (1.9)         |
 | `components/ui/`                              | shadcn primitives                                           |
 
 ### 4.2 Directory layout
@@ -438,8 +498,11 @@ src/app/frontend/
 │   └── (workspace)/
 │       ├── layout.tsx
 │       ├── page.tsx
-│       └── files/
-│           └── [testFileId]/
+│       ├── files/
+│       │   └── [testFileId]/
+│       │       └── page.tsx
+│       └── runs/
+│           └── [runId]/
 │               └── page.tsx
 ├── components.json
 ├── components/
@@ -450,13 +513,16 @@ src/app/frontend/
 │   │   └── label.tsx
 │   └── workspace/
 │       ├── create-name-dialog.tsx
+│       ├── run-list.tsx
 │       ├── sidebar-nav.tsx
+│       ├── step-list.tsx
 │       └── variables-dialog.tsx
 ├── lib/
 │   ├── api.ts
 │   ├── api-schema.ts
 │   ├── editor.ts
 │   ├── format-auth-error.ts
+│   ├── runs.ts
 │   ├── sidebar.ts
 │   ├── utils.ts
 │   └── workspace-context.tsx
@@ -478,10 +544,12 @@ src/app/frontend/
 | Unit | `formatAuthError` for login/register and backend `400 details`                                                   | `src/tests/unit/app/frontend/format-auth-error.test.ts` |
 | Unit | Sidebar helpers (1.6)                                                                                            | `src/tests/unit/app/frontend/sidebar.test.ts`           |
 | Unit | Editor and Variables helpers (1.7, 1.8)                                                                          | `src/tests/unit/app/frontend/editor.test.ts`            |
+| Unit | Run helpers (1.9)                                                                                                | `src/tests/unit/app/frontend/runs.test.ts`              |
 | E2E  | Auth flow                                                                                                        | `src/tests/e2e/auth.e2e.ts`                             |
 | E2E  | Sidebar create flow and duplicate name (1.6)                                                                     | `src/tests/e2e/sidebar.e2e.ts`                          |
 | E2E  | Editor: validate, save, reload, run (1.7)                                                                        | `src/tests/e2e/editor.e2e.ts`                           |
 | E2E  | Variables: add, invalid name, delete (1.8)                                                                       | `src/tests/e2e/variables.e2e.ts`                        |
+| E2E  | Full flow: create, validate, save, run, live view, history (1.9)                                                 | `src/tests/e2e/flow.e2e.ts`                             |
 
 The tests use `fetchImpl`, `getToken`, `setToken`, and `onUnauthorized` injection where applicable; no DOM environment is required. The expected values are written by hand from mocked payloads and backend contract behavior, never generated from implementation output.
 
@@ -627,6 +695,17 @@ The tests use `fetchImpl`, `getToken`, `setToken`, and `onUnauthorized` injectio
 17. `it("sends DELETE /projects/p-1/variables/BASE and resolves undefined on 204", async () => { ... })`
     - expected value: `undefined`
 
+18. `it("sends GET /runs?testFileId=tf-1&limit=20 and resolves the list", async () => { ... })`
+    - expected request: `GET /runs?testFileId=tf-1&limit=20`
+    - expected value: the mocked `{ items: [<Run>], nextCursor: null }`
+
+19. `it("sends GET /runs/run-1 and resolves the Run", async () => { ... })`
+    - expected request: `GET /runs/run-1`
+    - expected value: the mocked Run
+
+20. `it("returns the configured base URL from getBaseUrl", () => { ... })`
+    - config `baseUrl: "http://localhost:4000/api/v1"` → `"http://localhost:4000/api/v1"`
+
 These exact values are the source of truth for the API client tests and are intentionally written by hand rather than read from generated responses.
 
 ### 5.2 Exact `formatAuthError` unit-test cases
@@ -703,3 +782,21 @@ These exact values are the source of truth for the API client tests and are inte
 3. `isVariableName`
    - `"BASE"` → `true`; `"_X1"` → `true`
    - `"base"` → `false`; `"1A"` → `false`; `""` → `false`; `"SWAG-PASSWORD"` → `false`
+
+### 5.4 Exact run helper unit-test cases
+
+`runs.test.ts` imports `@/app/frontend/lib/runs.js`. Mock Runs and Steps are typed with the generated `Run` and `Step` types.
+
+1. `runStatusLabel`: `"queued"` → `"Queued"`; `"running"` → `"Running"`; `"passed"` → `"Passed"`; `"failed"` → `"Failed"`
+2. `stepStatusLabel`: `"pending"` → `"Pending"`; `"running"` → `"Running"`; `"passed"` → `"Passed"`; `"failed"` → `"Failed"`
+3. `formatDuration`: `null` → `"—"`; `850` → `"850 ms"`; `1000` → `"1.0 s"`; `1400` → `"1.4 s"`
+4. `liveUrl`
+   - `("http://127.0.0.1:4000/api/v1", "run-1", "a b")` → `"ws://127.0.0.1:4000/api/v1/runs/run-1/live?token=a%20b"`
+   - `("https://api.example.com/api/v1", "run-1", "t")` → `"wss://api.example.com/api/v1/runs/run-1/live?token=t"`
+5. `runFileUrl("https://api.example.com/api/v1", "run-1", "screenshots/step-0.png", "t")` → `"https://api.example.com/api/v1/runs/run-1/files/screenshots/step-0.png?token=t"`
+6. `applyLiveMessage`
+   - from `{ run: null, steps: [] }`, a `snapshot` with a queued Run and one `pending` step (index 0) → that Run and that step
+   - then a `step` message with index 0 `running` → the single step is now `running`
+   - then a `status` message with the Run `running` → `run.status` is `"running"` and the step is unchanged
+   - a `step` message for index 1 when only index 0 exists → two steps in index order
+   - the input state object is not mutated (compare with a deep copy)
