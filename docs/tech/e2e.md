@@ -84,15 +84,15 @@ Shared setup for the tests. Requests go straight to the backend at `API_URL` (`h
 | `playwright.config.ts` | Test location, `baseURL`, Chromium project, `webServer` for backend, frontend, and Demo App, trace on failure |
 | `src/tests/e2e/demo-app.ts` | Serves the Demo App on `127.0.0.1:8080` with `serveDemoApp(8080)` (`benchmark.md` 1.4) until it is stopped |
 | `src/tests/e2e/support.ts` | Setup helpers (3.1) |
-| `src/tests/e2e/auth.e2e.ts` | TC-AUTH-01 – 05 |
-| `src/tests/e2e/sidebar.e2e.ts` | TC-WS-01 – 03 |
+| `src/tests/e2e/auth.e2e.ts` | TC-AUTH-01 – 05, 07, 08 |
+| `src/tests/e2e/sidebar.e2e.ts` | TC-WS-01 – 03, 08, 09 |
 | `src/tests/e2e/sidebar-actions.e2e.ts` | TC-WS-04 – 06 |
-| `src/tests/e2e/editor.e2e.ts` | TC-ED-01 – 07 |
-| `src/tests/e2e/variables.e2e.ts` | TC-VAR-01 – 04 |
-| `src/tests/e2e/runs.e2e.ts` | TC-RUN-01 – 12 |
-| `src/tests/e2e/reports.e2e.ts` | TC-RPT-01 – 05 |
+| `src/tests/e2e/editor.e2e.ts` | TC-ED-01 – 09 |
+| `src/tests/e2e/variables.e2e.ts` | TC-VAR-01 – 06 |
+| `src/tests/e2e/runs.e2e.ts` | TC-RUN-01 – 12, 15 – 19 |
+| `src/tests/e2e/reports.e2e.ts` | TC-RPT-01 – 06 |
 | `src/tests/e2e/overview.e2e.ts` | TC-OV-01 – 02 |
-| `src/tests/e2e/security.e2e.ts` | TC-SEC-01 – 03 |
+| `src/tests/e2e/security.e2e.ts` | TC-SEC-01 – 03, 05 – 07 |
 
 ### 4.2 Directory Layout
 

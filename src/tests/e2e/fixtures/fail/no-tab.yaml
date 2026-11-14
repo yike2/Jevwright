@@ -1,0 +1,12 @@
+# Expect: failed at step 2 within about 3 s; no tab matches the URL
+name: "No such tab"
+description: "switchTab fails when no tab matches"
+baseUrl: "{{BASE}}"
+timeoutMs: 3000
+steps:
+  - open:
+      url: "/extras/tabs.html"
+  - switchTab:
+      url: "**/extras/returns.html"
+  - assert:
+      selector: "#returns-window"

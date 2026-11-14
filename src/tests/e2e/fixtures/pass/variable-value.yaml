@@ -1,0 +1,13 @@
+# Expect: passed; a Variable value with spaces, quotes, HTML, and non-ASCII text is typed and read back as is
+name: "Variable value"
+description: "A Variable's value reaches the page unchanged"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/extras/dialogs.html"
+  - click:
+      selector: "#rename"
+      dialog: { accept: true, text: "{{DISPLAY_NAME}}" }
+  - assert:
+      selector: "#display-name"
+      text: "{{DISPLAY_NAME}}"

@@ -1,0 +1,10 @@
+# Expect: failed at step 2; the first page has no history entry to go back to
+name: "No history"
+description: "back fails on the first page of a tab"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/extras/tabs.html"
+  - back: {}
+  - assert:
+      selector: "#returns-link"

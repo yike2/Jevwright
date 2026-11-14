@@ -15,6 +15,7 @@ Unit and integration tests cover each module (`docs/tech/<module>.md`, 5); this 
 | Boundary values | Name lengths, the source size limit, `timeoutMs` and `runTimeoutMs` |
 | State transition | Run `queued → running → passed / failed`; Step `pending → running → passed / failed` |
 | Negative and error guessing | Wrong input, duplicates, missing Variables, unexpected dialogs, another user's data |
+| Edge cases | Empty and comment-only sources, Unicode and HTML in names, surrounding spaces, double clicks, a file deleted while its Run waits, malformed ids, path traversal |
 | Risk-based priority | P0 first; see 1.2 |
 
 ### 1.2 Priority
@@ -86,7 +87,7 @@ The deployed frontend and API, with the Demo App at its public `DEMO_DOMAIN` (`d
 
 ### 2.4 Test files
 
-The test files are in `src/tests/e2e/fixtures/`, grouped by expected outcome. E2E tests read them from there; manual testers load them with **Upload file** (TC-ED-03) or paste them (Appendix A). The first line of each file states its expected result. Every file uses only `{{BASE}}` and `{{SWAG_PASSWORD}}`, so it runs unchanged locally and in production.
+The test files are in `src/tests/e2e/fixtures/`, grouped by expected outcome. E2E tests read them from there; manual testers load them with **Upload file** (TC-ED-03) or paste them (Appendix A). The first line of each file states its expected result. Every file uses only `{{BASE}}` and `{{SWAG_PASSWORD}}`, except `pass/variable-value.yaml`, which also needs `{{DISPLAY_NAME}}` (TC-VAR-06), so each runs unchanged locally and in production.
 
 | File | Locates by | Expected outcome | Used by |
 | ---- | ---------- | ---------------- | ------- |
@@ -95,14 +96,20 @@ The test files are in `src/tests/e2e/fixtures/`, grouped by expected outcome. E2
 | `pass/locked-out.yaml` | `selector` | Passed: the app's own error is asserted | RUN-03 |
 | `pass/all-actions.yaml` | `selector` | Passed, 35/35: every action and dialog answer | RUN-04 |
 | `pass/slow.yaml` | `selector` | Passed after about 8 s | RUN-07, RUN-08 |
+| `pass/variable-value.yaml` | `selector` | Passed: `{{DISPLAY_NAME}}` is typed and read back unchanged | VAR-06 |
 | `fail/wrong-total.yaml` | `selector` | Failed at step 14; steps 15–16 pending | RUN-05, RPT-02, OV-02 |
 | `fail/missing-element.yaml` | `selector` | Failed at step 2 within about 3 s; no Jev call | RUN-06 |
 | `fail/missing-variable.yaml` | `selector` | Failed at step 2: `Variable {{NOT_SET}} is not set` | VAR-03 |
 | `fail/redaction.yaml` | `selector` | Failed at step 2; the reason shows `{{SWAG_PASSWORD}}` | SEC-03 |
 | `fail/unexpected-dialog.yaml` | `selector` | Failed at step 2: `Unexpected alert dialog` | RUN-09 |
 | `fail/run-timeout.yaml` | `selector` | Failed: Run error `timeout` after about 3 s | RUN-10 |
+| `fail/dialog-message.yaml` | `selector` | Failed at step 2: the alert text is not the expected message | RUN-17 |
+| `fail/no-tab.yaml` | `selector` | Failed at step 2 within about 3 s: no tab matches | RUN-18 |
+| `fail/no-history.yaml` | `selector` | Failed at step 2: no page to go back to | RUN-19 |
 | `invalid/multiple-errors.yaml` | – | 7 validation errors; Run refused | ED-04, RUN-11, CLI-01 |
 | `invalid/yaml-syntax.yaml` | – | 1 validation error (`E001`) at line 7 | ED-05 |
+| `invalid/empty.yaml` | – | 1 validation error (`E002`) at line 1: a comment only | ED-08 |
+| `invalid/timeout-bounds.yaml` | – | 2 validation errors (`E007`) at lines 5 and 7 | ED-09 |
 | `jev/target-sign-in.yaml` | `target` | Passed; steps 2–4 by `visual` or `dom` | JEV-01 |
 | `jev/stale-selector.yaml` | both | Passed; step 4 falls back to Jev | JEV-02 |
 | `jev/statement-holds.yaml` | `selector` | Passed; Jev judges step 8, step 9 is a fallback pass | JEV-03 |
@@ -186,6 +193,23 @@ Covers US-4.3.7. Pre: signed in.
 
 Expected: the app clears the token and goes to `/login`.
 
+#### TC-AUTH-07 Emails are compared in lower case — P1, E2E
+
+Covers US-4.3.7. Pre: an account registered with a lower-case email.
+
+1. Log in with the same email in upper case.
+
+Expected: the login succeeds; the sidebar shows the email as registered.
+
+#### TC-AUTH-08 Log out in one tab — P1, E2E
+
+Covers US-4.3.7. Pre: signed in, with the workspace open in two tabs.
+
+1. In tab 1, click **Log out**.
+2. In tab 2, open a Project's **Variables** dialog or reload the page.
+
+Expected: tab 2 goes to `/login` on its next request, since both tabs share the stored token.
+
 ### 4.2 Workspace sidebar (`WS`)
 
 #### TC-WS-01 Create a Project, a Module, and a Test File — P0, E2E
@@ -255,6 +279,25 @@ Covers US-4.3.3. Pre: S1, S2, a Test File.
 
 Expected: rows toggle their children; on a narrow window the sidebar hides behind a ☰ button that opens it.
 
+#### TC-WS-08 Unicode and surrounding spaces in names — P1, E2E
+
+Covers US-4.3.3. Pre: S1.
+
+1. Create a Project named `Démo 商店 🛒`.
+2. Create a Project named `  Padded  `.
+3. Create a Project named three spaces.
+
+Expected: step 1 shows the name unchanged, also after a reload; step 2 is saved as `Padded`; step 3 keeps the dialog open with an alert and adds nothing.
+
+#### TC-WS-09 Test File names must end in `.yaml` — P1, E2E
+
+Covers US-4.3.3. Pre: S1, S2.
+
+1. Create Test Files named `login.yml`, `notes.txt`, and `v1.2`, one at a time.
+2. Create a Test File named `  spaced  `.
+
+Expected: each name of step 1 keeps the dialog open with an alert and adds nothing (a name with a `.` gets no `.yaml` added); step 2 creates `spaced.yaml`.
+
 ### 4.3 Editor (`ED`)
 
 #### TC-ED-01 Starter source and unsaved changes — P0, E2E
@@ -320,6 +363,23 @@ Covers US-4.3.3. Pre: S1, S2, a new Test File.
 
 Expected: step 1 saves; step 2 shows the `413` message naming `body.source` in an alert, and keeps the draft.
 
+#### TC-ED-08 A file with no steps at all — P2, E2E
+
+Covers US-4.3.1. Pre: S1, S2, a new Test File.
+
+1. Clear the textarea; click **Validate**.
+2. Load `invalid/empty.yaml` (a comment only); click **Validate**.
+
+Expected: both show "1 validation error" and `Line 1: The root must be an object`.
+
+#### TC-ED-09 Integer limits (boundary) — P2, E2E
+
+Covers US-4.3.1. Pre: S1, S2, a new Test File.
+
+1. Load `invalid/timeout-bounds.yaml`; click **Validate**.
+
+Expected: "2 validation errors": `Line 5: "ms" must be a positive integer up to 2147483647` and the same at line 7 (`1e3`). Line 3 (`timeoutMs: 2147483647`) and line 6 (`ms: 1`) are valid.
+
 ### 4.4 Project Variables (`VAR`)
 
 #### TC-VAR-01 Add, replace, and delete a Variable — P0, E2E
@@ -358,6 +418,24 @@ Covers US-4.3.3. Pre: S1–S3, a second Project `Other` with a Module and `pass/
 1. Run the file in `Other`.
 
 Expected: step 1 fails with `Variable {{BASE}} is not set`; Variables of `Demo Shop` are not used.
+
+#### TC-VAR-05 Variable value limits (boundary) — P2, E2E
+
+Covers US-4.3.3. Pre: S1, S2, the Variables dialog open.
+
+1. Fill only the Name, then only the Value.
+2. Save `LONG` with a value of 10,000 characters.
+3. Save `LONG` with a value of 10,001 characters.
+
+Expected: step 1 keeps **Save** disabled; step 2 lists `LONG`; step 3 shows `body.value is over its size limit` in the dialog's alert, which stays open.
+
+#### TC-VAR-06 A value with special characters — P1, E2E
+
+Covers US-4.3.4. Pre: S1–S3, and `DISPLAY_NAME` set to `Zoë "the <b>Swag</b>" Fan & 商店`.
+
+1. S4 with `pass/variable-value.yaml`; S5.
+
+Expected: `Passed`, "3/3 passed": the value is typed into the prompt and read back unchanged, without being treated as HTML.
 
 ### 4.5 Runs and Live Progress (`RUN`)
 
@@ -481,6 +559,46 @@ Covers US-4.3.4. Pre: TC-RUN-13.
 
 Expected: `Failed` with `interrupted: Interrupted by a server restart`; "No step results".
 
+#### TC-RUN-15 A double click on Run — P1, E2E
+
+Covers US-4.3.4. Pre: S1–S3, S4 with `pass/sign-in.yaml`.
+
+1. Double-click **Run**.
+
+Expected: one "Run queued."; after a reload the Runs list shows exactly one Run, since **Run** is disabled while its request is in flight.
+
+#### TC-RUN-16 The file is deleted while its Run waits — P1, E2E
+
+Covers US-4.3.4, US-4.3.5. Pre: S1–S3, a Run of `pass/slow.yaml` running, then a queued Run of `pass/sign-in.yaml`.
+
+1. Delete `sign-in.yaml` while its Run is still `Queued`; open that Run.
+
+Expected: the Run still runs its copy of the source and ends `Passed`, "6/6 passed"; the Run page has no "Back to …" link.
+
+#### TC-RUN-17 A dialog with another message — P1, E2E
+
+Covers US-4.3.4. Pre: S1–S3.
+
+1. S4 with `fail/dialog-message.yaml`; S5.
+
+Expected: `Failed`; step 2 Failed with `The dialog said "Profile saved", which does not contain "Profile deleted"`; step 3 Pending.
+
+#### TC-RUN-18 switchTab with no matching tab — P1, E2E
+
+Covers US-4.3.4. Pre: S1–S3.
+
+1. S4 with `fail/no-tab.yaml`; S5.
+
+Expected: `Failed` within about 5 s; step 2's reason starts with `No tab matched "**/extras/returns.html" within 3000ms` and lists the open tab as `{{BASE}}/extras/tabs.html`, with the Variable, not its value.
+
+#### TC-RUN-19 back on the first page — P2, E2E
+
+Covers US-4.3.4. Pre: S1–S3.
+
+1. S4 with `fail/no-history.yaml`; S5.
+
+Expected: `Failed`; step 2 Failed with `There is no previous page to go back to`; step 3 Pending.
+
 ### 4.6 Run page and history (`RPT`)
 
 #### TC-RPT-01 Report of a passed Run — P0, E2E
@@ -527,6 +645,15 @@ Covers US-4.3.5. Pre: S1.
 1. Open `/runs/00000000-0000-4000-8000-000000000000`.
 
 Expected: "Run not found".
+
+#### TC-RPT-06 Malformed ids in the URL — P2, E2E
+
+Covers US-4.3.5. Pre: S1.
+
+1. Open `/runs/not-a-uuid`.
+2. Open `/files/not-a-uuid`.
+
+Expected: each page shows the backend's message `The request fails its schema` in an alert, and nothing else of the page; the app does not crash.
 
 ### 4.7 Files overview (`OV`)
 
@@ -584,6 +711,33 @@ Covers PRD 4.3.10 (blocking private networks is in scope). Pre: production; S1, 
 2. Set `BASE` to `http://169.254.169.254`; run again.
 
 Expected: both Runs fail at step 1 with `net::ERR_FAILED` or `net::ERR_CONNECTION_REFUSED`; no page content from those addresses appears in the screenshot.
+
+#### TC-SEC-05 HTML in names is shown as text — P1, E2E
+
+Covers US-4.3.7. Pre: S1.
+
+1. Create a Project, a Module, and a Test File named `<img src=x onerror=alert(1)>` (the Test File gets `.yaml`).
+2. Open `/` and the Test File.
+
+Expected: the names show as the literal text in the sidebar, the overview, and the editor heading; no `img` element is added and no dialog opens.
+
+#### TC-SEC-06 Run Files cannot leave their Run — P1, E2E
+
+Covers US-4.3.7. Pre: a finished Run of user A.
+
+1. As A, request `/runs/<id>/files/` with `../../../.env`, `..%2F..%2F..%2F.env`, and `..%2f..%2f..%2f..%2f..%2fetc%2fpasswd`, each with A's token.
+
+Expected: each answers `404`, and no answer contains the server's `.env` or `/etc/passwd`.
+
+#### TC-SEC-07 Live Progress checks the token and the owner — P1, E2E
+
+Covers US-4.3.7. Pre: a Run of user A; user B.
+
+1. Open `/runs/<id>/live?token=invalid` as a WebSocket.
+2. Open it with B's token.
+3. Open it with A's token.
+
+Expected: step 1 closes with code `4401`, step 2 with `4404`, and step 3 receives a `snapshot` message.
 
 ### 4.9 Jev locating and judging (`JEV`)
 
@@ -687,13 +841,13 @@ Expected: every status has text or a title, not only a color; step updates are a
 
 | Requirement | Cases |
 | ----------- | ----- |
-| US-4.3.1 Validation | ED-04, ED-05, ED-06, RUN-11, CLI-01 |
+| US-4.3.1 Validation | ED-04 – ED-06, ED-08, ED-09, RUN-11, CLI-01 |
 | US-4.3.2 Locating | RUN-05, RUN-06, JEV-01 – JEV-05 |
-| US-4.3.3 Organization and authoring | WS-01 – WS-07, ED-01 – ED-03, ED-07, VAR-01, VAR-02, VAR-04 |
-| US-4.3.4 Live execution | RUN-01 – RUN-14, VAR-03 |
-| US-4.3.5 History and reports | RPT-01 – RPT-05 |
+| US-4.3.3 Organization and authoring | WS-01 – WS-09, ED-01 – ED-03, ED-07, VAR-01, VAR-02, VAR-04, VAR-05 |
+| US-4.3.4 Live execution | RUN-01 – RUN-19, VAR-03, VAR-06 |
+| US-4.3.5 History and reports | RPT-01 – RPT-06, RUN-16 |
 | US-4.3.6 Local CLI | CLI-01, CLI-02 |
-| US-4.3.7 Authentication and isolation | AUTH-01 – AUTH-06, SEC-01 – SEC-03 |
+| US-4.3.7 Authentication and isolation | AUTH-01 – AUTH-08, SEC-01 – SEC-03, SEC-05 – SEC-07 |
 | US-4.3.8 Public API | API-01 |
 | PRD 5.4.3 Files overview | OV-01, OV-02 |
 | Private network blocking (`docs/tech/backend.md` 1.6) | SEC-04 |
@@ -914,6 +1068,24 @@ steps:
       selector: '[data-test="login-button"]'
 ```
 
+### `pass/variable-value.yaml`
+
+```yaml
+# Expect: passed; a Variable value with spaces, quotes, HTML, and non-ASCII text is typed and read back as is
+name: "Variable value"
+description: "A Variable's value reaches the page unchanged"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/extras/dialogs.html"
+  - click:
+      selector: "#rename"
+      dialog: { accept: true, text: "{{DISPLAY_NAME}}" }
+  - assert:
+      selector: "#display-name"
+      text: "{{DISPLAY_NAME}}"
+```
+
 ### `fail/wrong-total.yaml`
 
 ```yaml
@@ -1049,6 +1221,56 @@ steps:
       selector: '[data-test="login-button"]'
 ```
 
+### `fail/dialog-message.yaml`
+
+```yaml
+# Expect: failed at step 2; the alert says "Profile saved", not the expected message
+name: "Dialog message"
+description: "A dialog whose text differs from the expected message fails the step"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/extras/dialogs.html"
+  - click:
+      selector: "#save"
+      dialog: { accept: true, message: "Profile deleted" }
+  - assert:
+      selector: "#status"
+      text: "Your profile was saved."
+```
+
+### `fail/no-tab.yaml`
+
+```yaml
+# Expect: failed at step 2 within about 3 s; no tab matches the URL
+name: "No such tab"
+description: "switchTab fails when no tab matches"
+baseUrl: "{{BASE}}"
+timeoutMs: 3000
+steps:
+  - open:
+      url: "/extras/tabs.html"
+  - switchTab:
+      url: "**/extras/returns.html"
+  - assert:
+      selector: "#returns-window"
+```
+
+### `fail/no-history.yaml`
+
+```yaml
+# Expect: failed at step 2; the first page has no history entry to go back to
+name: "No history"
+description: "back fails on the first page of a tab"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/extras/tabs.html"
+  - back: {}
+  - assert:
+      selector: "#returns-link"
+```
+
 ### `invalid/multiple-errors.yaml`
 
 ```yaml
@@ -1082,6 +1304,24 @@ steps:
   - open:
       url: "/"
   - click: selector: '[data-test="login-button"]'
+```
+
+### `invalid/empty.yaml`
+
+```yaml
+# Expect: invalid; a file with no content has no root object (E002 at line 1)
+```
+
+### `invalid/timeout-bounds.yaml`
+
+```yaml
+# Expect: invalid; 2147483647 is the largest timeoutMs, so only lines 5 and 7 are errors
+name: "Timeout bounds"
+timeoutMs: 2147483647
+steps:
+  - sleep: { ms: 2147483648 }
+  - sleep: { ms: 1 }
+  - sleep: { ms: 1e3 }
 ```
 
 ### `jev/target-sign-in.yaml`
