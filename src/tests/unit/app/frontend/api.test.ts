@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { createApiClient } from "@/app/frontend/lib/api.js";
+import {
+  createApiClient,
+  type CreateModuleResponse,
+  type CreateProjectResponse,
+  type CreateTestFileResponse,
+  type TreeResponse,
+} from "@/app/frontend/lib/api.js";
 
 function makeResponse(body: string | object | undefined, status: number, headers: Record<string, string> = {}) {
   return new Response(typeof body === "string" ? body : JSON.stringify(body ?? null), {
@@ -208,5 +214,168 @@ describe("api client", () => {
     });
 
     await expect(client.request("/delete")).resolves.toBeUndefined();
+  });
+
+  it("sends GET /tree with Bearer token and returns the parsed tree body", async () => {
+    const tree: TreeResponse = {
+      items: [
+        {
+          id: "project-1",
+          name: "Demo Shop",
+          createdAt: "2026-11-13T00:00:00.000Z",
+          updatedAt: "2026-11-13T00:00:00.000Z",
+          modules: [
+            {
+              id: "module-1",
+              projectId: "project-1",
+              name: "Auth",
+              createdAt: "2026-11-13T00:00:00.000Z",
+              updatedAt: "2026-11-13T00:00:00.000Z",
+              testFiles: [
+                {
+                  id: "test-file-1",
+                  moduleId: "module-1",
+                  name: "login.yaml",
+                  createdAt: "2026-11-13T00:00:00.000Z",
+                  updatedAt: "2026-11-13T00:00:00.000Z",
+                  latestRun: null,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    const fetchImpl = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+      expect(url).toBe("http://localhost:4000/api/v1/tree");
+      expect(init?.method ?? "GET").toBe("GET");
+      const headers = new Headers(init?.headers ?? {});
+      expect(headers.get("Authorization")).toBe("Bearer jwt-token");
+      return makeResponse(tree, 200);
+    });
+
+    const client = createApiClient({
+      baseUrl: "http://localhost:4000/api/v1",
+      getToken: () => "jwt-token",
+      setToken: () => undefined,
+      fetchImpl,
+    });
+
+    await expect(client.getTree()).resolves.toEqual(tree);
+  });
+
+  it('sends POST /projects with body {"name":"Demo Shop"} and returns the created project', async () => {
+    const project: CreateProjectResponse = {
+      id: "project-1",
+      name: "Demo Shop",
+      createdAt: "2026-11-13T00:00:00.000Z",
+      updatedAt: "2026-11-13T00:00:00.000Z",
+    };
+
+    const fetchImpl = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+      expect(url).toBe("http://localhost:4000/api/v1/projects");
+      expect(init?.method).toBe("POST");
+      const headers = new Headers(init?.headers ?? {});
+      expect(headers.get("Authorization")).toBe("Bearer jwt-token");
+      expect(headers.get("Content-Type")).toBe("application/json");
+      expect(init?.body).toBe('{"name":"Demo Shop"}');
+      return makeResponse(project, 201);
+    });
+
+    const client = createApiClient({
+      baseUrl: "http://localhost:4000/api/v1",
+      getToken: () => "jwt-token",
+      setToken: () => undefined,
+      fetchImpl,
+    });
+
+    await expect(client.createProject("Demo Shop")).resolves.toEqual(project);
+  });
+
+  it('sends POST /projects/p1/modules with body {"name":"Auth"} and returns the created module', async () => {
+    const createdModule: CreateModuleResponse = {
+      id: "module-1",
+      projectId: "p1",
+      name: "Auth",
+      createdAt: "2026-11-13T00:00:00.000Z",
+      updatedAt: "2026-11-13T00:00:00.000Z",
+    };
+
+    const fetchImpl = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+      expect(url).toBe("http://localhost:4000/api/v1/projects/p1/modules");
+      expect(init?.method).toBe("POST");
+      const headers = new Headers(init?.headers ?? {});
+      expect(headers.get("Authorization")).toBe("Bearer jwt-token");
+      expect(headers.get("Content-Type")).toBe("application/json");
+      expect(init?.body).toBe('{"name":"Auth"}');
+      return makeResponse(createdModule, 201);
+    });
+
+    const client = createApiClient({
+      baseUrl: "http://localhost:4000/api/v1",
+      getToken: () => "jwt-token",
+      setToken: () => undefined,
+      fetchImpl,
+    });
+
+    await expect(client.createModule("p1", "Auth")).resolves.toEqual(createdModule);
+  });
+
+  it('sends POST /modules/m1/test-files with body {"name":"login.yaml","source":"name: x\\n"} and returns the created test file', async () => {
+    const testFile: CreateTestFileResponse = {
+      testFile: {
+        id: "test-file-1",
+        moduleId: "m1",
+        name: "login.yaml",
+        source: "name: x\n",
+        createdAt: "2026-11-13T00:00:00.000Z",
+        updatedAt: "2026-11-13T00:00:00.000Z",
+      },
+      diagnostics: [],
+    };
+
+    const fetchImpl = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+      expect(url).toBe("http://localhost:4000/api/v1/modules/m1/test-files");
+      expect(init?.method).toBe("POST");
+      const headers = new Headers(init?.headers ?? {});
+      expect(headers.get("Authorization")).toBe("Bearer jwt-token");
+      expect(headers.get("Content-Type")).toBe("application/json");
+      expect(init?.body).toBe('{"name":"login.yaml","source":"name: x\\n"}');
+      return makeResponse(testFile, 201);
+    });
+
+    const client = createApiClient({
+      baseUrl: "http://localhost:4000/api/v1",
+      getToken: () => "jwt-token",
+      setToken: () => undefined,
+      fetchImpl,
+    });
+
+    await expect(client.createTestFile("m1", "login.yaml", "name: x\n")).resolves.toEqual(testFile);
+  });
+
+  it("rejects createProject with ApiError status 409 code conflict and backend message", async () => {
+    const fetchImpl = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+      expect(url).toBe("http://localhost:4000/api/v1/projects");
+      expect(init?.method).toBe("POST");
+      const headers = new Headers(init?.headers ?? {});
+      expect(headers.get("Content-Type")).toBe("application/json");
+      expect(init?.body).toBe('{"name":"Demo Shop"}');
+      return makeResponse({ error: { code: "conflict", message: "Project name already exists" } }, 409);
+    });
+
+    const client = createApiClient({
+      baseUrl: "http://localhost:4000/api/v1",
+      getToken: () => "jwt-token",
+      setToken: () => undefined,
+      fetchImpl,
+    });
+
+    await expect(client.createProject("Demo Shop")).rejects.toMatchObject({
+      status: 409,
+      code: "conflict",
+      message: "Project name already exists",
+    });
   });
 });
