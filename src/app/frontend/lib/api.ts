@@ -4,6 +4,12 @@ export type User = components["schemas"]["User"];
 export type Diagnostic = components["schemas"]["Diagnostic"];
 export type LoginResponse = paths["/auth/login"]["post"]["responses"][200]["content"]["application/json"];
 export type RegisterResponse = paths["/auth/register"]["post"]["responses"][201]["content"]["application/json"];
+export type TreeResponse = paths["/tree"]["get"]["responses"][200]["content"]["application/json"];
+export type CreateProjectResponse = paths["/projects"]["post"]["responses"][201]["content"]["application/json"];
+export type CreateModuleResponse =
+  paths["/projects/{projectId}/modules"]["post"]["responses"][201]["content"]["application/json"];
+export type CreateTestFileResponse =
+  paths["/modules/{moduleId}/test-files"]["post"]["responses"][201]["content"]["application/json"];
 
 export type ApiErrorBody = {
   error: {
@@ -114,6 +120,10 @@ export function createApiClient(config: ApiClientConfig = {}): {
   login(email: string, password: string): Promise<LoginResponse>;
   register(email: string, password: string): Promise<RegisterResponse>;
   getCurrentUser(): Promise<User>;
+  getTree(): Promise<TreeResponse>;
+  createProject(name: string): Promise<CreateProjectResponse>;
+  createModule(projectId: string, name: string): Promise<CreateModuleResponse>;
+  createTestFile(moduleId: string, name: string, source: string): Promise<CreateTestFileResponse>;
 } {
   const defaultBaseUrl = "http://127.0.0.1:4000/api/v1";
   const fetchImpl = config.fetchImpl ?? fetch;
@@ -231,6 +241,28 @@ export function createApiClient(config: ApiClientConfig = {}): {
     return request<User>("/auth/me");
   };
 
+  const getTree = async (): Promise<TreeResponse> => {
+    throw new Error("Not implemented");
+  };
+
+  const createProject = async (name: string): Promise<CreateProjectResponse> => {
+    void name;
+    throw new Error("Not implemented");
+  };
+
+  const createModule = async (projectId: string, name: string): Promise<CreateModuleResponse> => {
+    void projectId;
+    void name;
+    throw new Error("Not implemented");
+  };
+
+  const createTestFile = async (moduleId: string, name: string, source: string): Promise<CreateTestFileResponse> => {
+    void moduleId;
+    void name;
+    void source;
+    throw new Error("Not implemented");
+  };
+
   return {
     setToken,
     clearToken,
@@ -239,6 +271,10 @@ export function createApiClient(config: ApiClientConfig = {}): {
     login,
     register,
     getCurrentUser,
+    getTree,
+    createProject,
+    createModule,
+    createTestFile,
   };
 }
 
