@@ -45,7 +45,7 @@ test("shows overview empty state and grouped files after creating a test file", 
   await expect(refreshedTestFilesRegion.getByRole("heading", { name: "Auth", exact: true })).toBeVisible();
 
   const fileItem = refreshedTestFilesRegion.getByRole("listitem").filter({
-    has: refreshedTestFilesRegion.getByRole("link", { name: "login.yaml", exact: true }),
+    has: page.getByRole("link", { name: "login.yaml", exact: true }),
   });
   await expect(fileItem).toContainText("Never run");
 
