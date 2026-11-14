@@ -7,6 +7,8 @@ import { apiClient, type TreeResponse } from "@/lib/api";
 import { initials, starterSource, statusOf, toTestFileName } from "@/lib/sidebar";
 import { Button } from "@/components/ui/button";
 import { CreateNameDialog } from "@/components/workspace/create-name-dialog";
+import { VariablesDialog } from "@/components/workspace/variables-dialog";
+import { KeyRound } from "lucide-react";
 
 type WorkspaceSidebarProps = {
   email: string;
@@ -67,6 +69,7 @@ export function SidebarNav({ email, tree, refreshTree, onLogout, onNavigate }: W
   const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false);
   const [moduleProject, setModuleProject] = useState<{ id: string; name: string } | null>(null);
   const [testFileModule, setTestFileModule] = useState<{ id: string; name: string } | null>(null);
+  const [variablesProject, setVariablesProject] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     const newProjectIds: string[] = [];
@@ -198,6 +201,16 @@ export function SidebarNav({ email, tree, refreshTree, onLogout, onNavigate }: W
                     type="button"
                     variant="outline"
                     size="icon-sm"
+                    aria-label={`Variables for ${project.name}`}
+                    title={`Variables for ${project.name}`}
+                    onClick={() => setVariablesProject({ id: project.id, name: project.name })}
+                  >
+                    <KeyRound />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon-sm"
                     aria-label={`New module in ${project.name}`}
                     onClick={() => setModuleProject({ id: project.id, name: project.name })}
                   >
@@ -313,6 +326,16 @@ export function SidebarNav({ email, tree, refreshTree, onLogout, onNavigate }: W
           }
         }}
         onCreate={handleCreateTestFile}
+      />
+
+      <VariablesDialog
+        open={variablesProject !== null}
+        projectId={variablesProject?.id ?? ""}
+        onOpenChange={(open) => {
+          if (!open) {
+            setVariablesProject(null);
+          }
+        }}
       />
     </>
   );

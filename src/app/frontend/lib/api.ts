@@ -289,32 +289,54 @@ export function createApiClient(config: ApiClientConfig = {}): {
     });
   };
 
-  const getTestFile = async (_testFileId: string): Promise<TestFile> => {
-    throw new Error("Not implemented");
+  const getTestFile = async (testFileId: string): Promise<TestFile> => {
+    return request<TestFile>(`/test-files/${testFileId}`);
   };
 
-  const updateTestFile = async (_testFileId: string, _source: string): Promise<UpdateTestFileResponse> => {
-    throw new Error("Not implemented");
+  const updateTestFile = async (testFileId: string, source: string): Promise<UpdateTestFileResponse> => {
+    return request<UpdateTestFileResponse>(`/test-files/${testFileId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ source }),
+    });
   };
 
-  const validateSource = async (_source: string): Promise<ValidateResponse> => {
-    throw new Error("Not implemented");
+  const validateSource = async (source: string): Promise<ValidateResponse> => {
+    return request<ValidateResponse>("/test-files/validate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ source }),
+    });
   };
 
-  const startRun = async (_testFileId: string): Promise<Run> => {
-    throw new Error("Not implemented");
+  const startRun = async (testFileId: string): Promise<Run> => {
+    return request<Run>(`/test-files/${testFileId}/runs`, {
+      method: "POST",
+    });
   };
 
-  const listVariables = async (_projectId: string): Promise<VariableListResponse> => {
-    throw new Error("Not implemented");
+  const listVariables = async (projectId: string): Promise<VariableListResponse> => {
+    return request<VariableListResponse>(`/projects/${projectId}/variables`);
   };
 
-  const setVariable = async (_projectId: string, _name: string, _value: string): Promise<void> => {
-    throw new Error("Not implemented");
+  const setVariable = async (projectId: string, name: string, value: string): Promise<void> => {
+    await request<void>(`/projects/${projectId}/variables/${name}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ value }),
+    });
   };
 
-  const deleteVariable = async (_projectId: string, _name: string): Promise<void> => {
-    throw new Error("Not implemented");
+  const deleteVariable = async (projectId: string, name: string): Promise<void> => {
+    await request<void>(`/projects/${projectId}/variables/${name}`, {
+      method: "DELETE",
+    });
   };
 
   return {
