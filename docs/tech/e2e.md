@@ -2,7 +2,7 @@
 
 End-to-end tests drive the real frontend in Chromium against the real backend and database, covering the user flows the unit and integration tests cannot.
 
-The cases they automate, and the test files they run, are in `docs/testing/test-cases.md`, shared with manual test passes.
+The cases they automate, and the test files they run, are in `docs/testing/test-cases.md`, shared with manual test passes. Every case marked **E2E** there has one test here.
 
 ## 1. Functional Definition
 
@@ -13,28 +13,34 @@ The cases they automate, and the test files they run, are in `docs/testing/test-
 | Runner | `@playwright/test@1.64.1`, the same version as the root `playwright` package, so both use one Chromium |
 | Location | `src/tests/e2e/`, files named `*.e2e.ts`; vitest collects `*.test.ts` and `*.spec.ts`, so this name keeps E2E out of `pnpm test` |
 | Browser | Chromium only |
-| Servers | The backend (`pnpm backend`, dev mode) and the frontend (`pnpm frontend`), started by Playwright's `webServer`, or reused when already running locally |
+| Servers | The backend (`pnpm backend`, dev mode), the frontend (`pnpm frontend`), and the Demo App (`src/tests/e2e/demo-app.ts`), started by Playwright's `webServer`, or reused when already running locally |
+| Target site | Runs open only the Demo App at `DEMO_URL` (`http://127.0.0.1:8080`); a dev-mode backend's Runs may open local addresses (`backend.md` 1.6). No test opens an external site |
+| Jev | No test calls Jev: every test file it runs locates by `selector` and asserts with Playwright checks. Cases that need Jev are **Live** in `test-cases.md` and stay out of this suite |
+| Workers | One. The Run Queue runs one Run at a time across all users (`RUN_CONCURRENCY=1`), and TC-RUN-07 needs no other Run active |
 | Data | Each test registers its own account with a unique email, so tests do not depend on each other or on existing data |
+| Setup | What a case lists as preconditions is set up through the REST API (`support.ts`); what a case tests is done through the UI |
+| Names | A test's title starts with its case ID, such as `TC-RUN-01 runs a passing test and watches it live` |
 
 ### 1.2 Prerequisites (local)
 
 - PostgreSQL running and migrated (`docs/deploy/backend-local.md` steps 2–4), with the root `.env` configured.
 - Chromium installed: `pnpm exec playwright install chromium`.
-- Ports 3000 and 4000 free, or already serving this repository's frontend and backend.
+- Ports 3000, 4000, and 8080 free, or already serving this repository's frontend, backend, and Demo App.
 
 ## 2. Internal Flow
 
 ```mermaid
 flowchart LR
-  A[pnpm test:e2e] --> B[webServer: backend + frontend]
+  A[pnpm test:e2e] --> B[webServer: backend + frontend + Demo App]
   B --> C[Chromium runs *.e2e.ts]
   C --> D[Report and traces]
 ```
 
 1. Playwright starts the backend and waits for `http://127.0.0.1:4000/api/v1/health`.
 2. It starts the frontend and waits for `http://localhost:3000/login`.
-3. It runs every `*.e2e.ts` file in Chromium with `baseURL` `http://localhost:3000`, one worker at a time.
-4. On failure it keeps the trace; the HTML report goes to `playwright-report/`.
+3. It starts the Demo App and waits for `http://127.0.0.1:8080/`.
+4. It runs every `*.e2e.ts` file in Chromium with `baseURL` `http://localhost:3000`, one worker at a time.
+5. On failure it keeps the trace; the HTML report goes to `playwright-report/`.
 
 ## 3. External Interface
 
@@ -42,40 +48,65 @@ flowchart LR
 | ------- | ------------ |
 | `pnpm test:e2e` | Runs all E2E tests headless |
 | `pnpm test:e2e --headed` | Runs them with a visible browser |
+| `pnpm test:e2e -g TC-RUN-` | Runs the tests of one area, by case ID |
 | `pnpm exec playwright show-report` | Opens the last HTML report |
 
 `test-results/` and `playwright-report/` are git-ignored.
+
+### 3.1 `support.ts`
+
+Shared setup for the tests. Requests go straight to the backend at `API_URL` (`http://127.0.0.1:4000/api/v1`) with Playwright's `request` context.
+
+| Export | Does |
+| ------ | ---- |
+| `API_URL`, `DEMO_URL`, `PASSWORD` | `http://127.0.0.1:4000/api/v1`, `http://127.0.0.1:8080`, `"e2e-password-123"` |
+| `uniqueEmail()` | `e2e-<Date.now()>-<6 random characters>@example.com` |
+| `fixture(path)` | The text of `src/tests/e2e/fixtures/<path>` |
+| `signUp(page)` | Registers a new account through the API and stores its token in the page's `localStorage` (`auth-token`) before any page script runs. Returns `{ email, token, api }`, where `api` sends `Authorization: Bearer <token>` |
+| `createWorkspace(api)` | Creates Project `Demo Shop` and Module `Shopping`; returns their ids |
+| `setDemoVariables(api, projectId)` | Sets `BASE` to `DEMO_URL` and `SWAG_PASSWORD` to `process.env.SWAG_PASSWORD ?? "secret_sauce"` |
+| `addTestFile(api, moduleId, name, source)` | Creates a Test File; returns its id |
+| `startRun(api, testFileId)` | Triggers a Run; returns its id |
+| `waitForFinalStatus(page)` | Waits up to 60 s until the Run page shows `Status: Passed` or `Status: Failed`; returns the label |
+
+`api` methods throw when the response status is not the expected one, so a setup failure shows as the setup step, not as a later assertion.
 
 ## 4. Class Architecture
 
 ### 4.1 Modules
 
-| File | Responsibility |
-| ---- | -------------- |
-| `playwright.config.ts` | Test location, `baseURL`, Chromium project, `webServer` for backend and frontend, trace on failure |
-| `src/tests/e2e/auth.e2e.ts` | Register, log out, and log back in |
+| File | Cases |
+| ---- | ----- |
+| `playwright.config.ts` | Test location, `baseURL`, Chromium project, `webServer` for backend, frontend, and Demo App, trace on failure |
+| `src/tests/e2e/demo-app.ts` | Serves the Demo App on `127.0.0.1:8080` with `serveDemoApp(8080)` (`benchmark.md` 1.4) until it is stopped |
+| `src/tests/e2e/support.ts` | Setup helpers (3.1) |
+| `src/tests/e2e/auth.e2e.ts` | TC-AUTH-01 – 05 |
+| `src/tests/e2e/sidebar.e2e.ts` | TC-WS-01 – 03 |
+| `src/tests/e2e/sidebar-actions.e2e.ts` | TC-WS-04 – 06 |
+| `src/tests/e2e/editor.e2e.ts` | TC-ED-01 – 07 |
+| `src/tests/e2e/variables.e2e.ts` | TC-VAR-01 – 04 |
+| `src/tests/e2e/runs.e2e.ts` | TC-RUN-01 – 12 |
+| `src/tests/e2e/reports.e2e.ts` | TC-RPT-01 – 05 |
+| `src/tests/e2e/overview.e2e.ts` | TC-OV-01 – 02 |
+| `src/tests/e2e/security.e2e.ts` | TC-SEC-01 – 03 |
 
 ### 4.2 Directory Layout
 
 ```text
 playwright.config.ts
 src/tests/e2e/
-└── auth.e2e.ts
+├── demo-app.ts
+├── support.ts
+├── *.e2e.ts
+└── fixtures/          # the test files of test-cases.md 2.4
+    ├── pass/
+    ├── fail/
+    ├── invalid/
+    └── jev/           # Live only; no E2E test runs these
 ```
 
 ## 5. Test Plan
 
-### 5.1 `auth.e2e.ts`
+The steps and expected results of every test are those of its case in `docs/testing/test-cases.md` 4. A test asserts every expected result its case lists; where a case needs a server restart, a second browser window, or production, it is Manual and has no test here.
 
-`test("registers, logs out, and logs back in", ...)`, with `email = e2e-<Date.now()>@example.com` and `password = "e2e-password-123"`:
-
-1. Go to `/login`; click the **Register** mode button (outside the form).
-2. Fill **Email** and **Password** (by label); click **Register** inside the form.
-3. Expect the URL to be `/` and the text `Signed in as <email>`.
-4. Click **Log out**; expect the URL to be `/login`.
-5. Fill the same email and password; click **Log in** inside the form.
-6. Expect the URL to be `/` and the text `Signed in as <email>` again.
-
-The mode buttons and the submit button can share a label ("Register", "Log in"), so the submit button is always located inside the `form`.
-
-Later features add their own `*.e2e.ts` files, written and committed failing before the feature is implemented.
+The selectors follow the accessible names of `frontend.md` 1.6–1.11. The mode buttons and the submit button on `/login` can share a label ("Register", "Log in"), so the submit button is always located inside the `form`; the overview and the sidebar share link names, so overview lookups are scoped to the "Test files" region.

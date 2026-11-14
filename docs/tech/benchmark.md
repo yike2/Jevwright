@@ -48,7 +48,7 @@ The build also holds pages that upstream ships for locating tests: iframes (`/fr
 
 ### 1.4 Server
 
-`serveDemoApp()` serves the Demo App on a free port of `127.0.0.1`:
+`serveDemoApp(port)` serves the Demo App on `port` of `127.0.0.1`, a free port when `port` is `0` (the default); the E2E tests use `8080` (`e2e.md` 1.1):
 
 - `/extras/<file>` comes from the extra pages, and any other path from the build.
 - A path with no file gets `index.html`, because the app routes on the client at paths such as `/inventory.html`.
@@ -196,7 +196,7 @@ flowchart LR
 ## 3. External Interface
 
 ```ts
-function serveDemoApp(): Promise<{ baseUrl: string; stop: () => Promise<void> }>;
+function serveDemoApp(port?: number): Promise<{ baseUrl: string; stop: () => Promise<void> }>;
 ```
 
 `baseUrl` is `http://127.0.0.1:<port>`; test files use it through the Variable `{{BASE}}`.
@@ -250,7 +250,7 @@ src/tests/benchmark/
 
 | Type | Coverage | Location |
 | ---- | -------- | -------- |
-| Integration | `serveDemoApp()`: `index.html` at the root, a script with a JavaScript type, `index.html` for a client route, an extra page under `/extras/` | `src/tests/benchmark/server.test.ts` |
+| Integration | `serveDemoApp()`: on a free port by default and on a given port, `index.html` at the root, a script with a JavaScript type, `index.html` for a client route, an extra page under `/extras/` | `src/tests/benchmark/server.test.ts` |
 | Integration | With the Executor and the real browser: signing in as `standard_user`; the alert, prompt, and confirm; a new tab; hover, right-click, and double-click. No page or stylesheet of the build loads anything from outside localhost | `src/tests/benchmark/demo-app.test.ts` |
 | Integration | The suite: every file has no diagnostics; every Flow of `selector/` is also in `target/` and `both/` with the same steps apart from locating; every `both/` Flow has one to three `# stale` selectors; every Atomic and Assert case has tags as in 1.5, and every tag is on at least five cases; every `selector/` file passes with the Executor against the Demo App | `src/tests/benchmark/suite.test.ts` |
 | Unit | `summary.ts`: outcomes from the first try and the retry, pass rate per folder and Flow group, judging accuracy of `holds/` and `fails/` (a `fails/` file that fails before its last step is not right), tag rates, Jev step latency by method, the cases, the failures | `src/tests/benchmark/summary.test.ts` |
