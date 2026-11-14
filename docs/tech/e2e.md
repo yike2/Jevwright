@@ -60,6 +60,7 @@ Shared setup for the tests. Requests go straight to the backend at `API_URL` (`h
 | Export | Does |
 | ------ | ---- |
 | `API_URL`, `DEMO_URL`, `PASSWORD`, `SWAG_PASSWORD` | `http://127.0.0.1:4000/api/v1`, `http://127.0.0.1:8080`, `"e2e-password-123"`, `process.env.SWAG_PASSWORD ?? "secret_sauce"` |
+| `alertsOf(page)` | The page's `role="alert"` elements without Next.js's hidden route announcer (`#__next-route-announcer__`), which has the same role |
 | `uniqueEmail()` | `e2e-<Date.now()>-<6 random characters>@example.com` |
 | `fixture(path)` | The text of `src/tests/e2e/fixtures/<path>` |
 | `signUp(page)` | Registers a new account through the API and stores its token in the page's `localStorage` (`auth-token`) before any page script runs. Returns `{ email, token, api }`, where `api` sends `Authorization: Bearer <token>` |

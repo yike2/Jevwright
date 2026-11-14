@@ -23,7 +23,6 @@ const TYPES: Record<string, string> = {
 
 /** Serves the Swag Labs demo app on a local port (a free one by default); returns its base URL and a stop function. */
 export async function serveDemoApp(port = 0): Promise<{ baseUrl: string; stop: () => Promise<void> }> {
-  void port; // TODO(#104): listen on it
   const server: Server = createServer(async (req, res) => {
     // new URL() resolves "..", so the path stays inside the site or the extras.
     const { pathname } = new URL(req.url ?? "/", "http://x");
@@ -36,7 +35,7 @@ export async function serveDemoApp(port = 0): Promise<{ baseUrl: string; stop: (
       .catch(async () => ({ body: await readFile(join(SITE, "index.html")), type: TYPES[".html"]! }));
     res.writeHead(200, { "content-type": file.type }).end(file.body);
   });
-  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+  await new Promise<void>((resolve) => server.listen(port, "127.0.0.1", resolve));
   const { port: boundPort } = server.address() as AddressInfo;
   return {
     baseUrl: `http://127.0.0.1:${boundPort}`,

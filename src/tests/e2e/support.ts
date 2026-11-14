@@ -1,4 +1,5 @@
-import type { Page } from "@playwright/test";
+import { readFileSync } from "node:fs";
+import { expect, type Locator, type Page } from "@playwright/test";
 
 // Setup for the E2E tests (docs/tech/e2e.md 3.1): preconditions go through the REST API, the case under test through the UI.
 
@@ -7,51 +8,103 @@ export const DEMO_URL = "http://127.0.0.1:8080";
 export const PASSWORD = "e2e-password-123";
 export const SWAG_PASSWORD = process.env.SWAG_PASSWORD ?? "secret_sauce";
 
-type Method = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+const FIXTURES = new URL("./fixtures/", import.meta.url);
+const FINAL_STATUS_TIMEOUT_MS = 60_000;
+// The status each request answers when it succeeds, unless a call names another.
+const OK_STATUS = { GET: 200, POST: 201, PUT: 204, PATCH: 200, DELETE: 204 } as const;
+
+type Method = keyof typeof OK_STATUS;
 export type Api = <T = unknown>(method: Method, path: string, body?: unknown, status?: number) => Promise<T>;
 export type Account = { email: string; token: string; api: Api };
 export type DemoProject = Account & { projectId: string; moduleId: string };
 
+/** The page's own alerts; Next.js adds a hidden route announcer that also has role="alert". */
+export function alertsOf(page: Page): Locator {
+  return page.getByRole("alert").and(page.locator(":not(#__next-route-announcer__)"));
+}
+
 export function uniqueEmail(): string {
-  throw new Error("Not implemented");
+  return `e2e-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`;
 }
 
 export function fixture(path: string): string {
-  throw new Error(`Not implemented: ${path}`);
+  return readFileSync(new URL(path, FIXTURES), "utf8");
 }
 
 export async function signUp(page: Page): Promise<Account> {
-  throw new Error(`Not implemented: ${page.url()}`);
+  const email = uniqueEmail();
+  const response = await page.request.post(`${API_URL}/auth/register`, { data: { email, password: PASSWORD } });
+  expect(response.status(), await response.text()).toBe(201);
+  const { token } = (await response.json()) as { token: string };
+
+  // The app reads the token from localStorage, which exists only once a page of its origin is open.
+  await page.goto("/login");
+  await page.evaluate((value) => window.localStorage.setItem("auth-token", value), token);
+
+  const api: Api = async <T>(method: Method, path: string, body?: unknown, status: number = OK_STATUS[method]) => {
+    const reply = await page.request.fetch(`${API_URL}${path}`, {
+      method,
+      headers: { Authorization: `Bearer ${token}` },
+      data: body,
+    });
+    expect(reply.status(), `${method} ${path}: ${await reply.text()}`).toBe(status);
+    return (reply.status() === 204 ? undefined : await reply.json()) as T;
+  };
+  return { email, token, api };
 }
 
 export async function createWorkspace(api: Api): Promise<{ projectId: string; moduleId: string }> {
-  throw new Error(`Not implemented: ${typeof api}`);
+  const project = await api<{ id: string }>("POST", "/projects", { name: "Demo Shop" });
+  const module = await api<{ id: string }>("POST", `/projects/${project.id}/modules`, { name: "Shopping" });
+  return { projectId: project.id, moduleId: module.id };
 }
 
 export async function setDemoVariables(api: Api, projectId: string): Promise<void> {
-  throw new Error(`Not implemented: ${projectId}`);
+  await api("PUT", `/projects/${projectId}/variables/BASE`, { value: DEMO_URL });
+  await api("PUT", `/projects/${projectId}/variables/SWAG_PASSWORD`, { value: SWAG_PASSWORD });
 }
 
 export async function setUpDemoProject(page: Page): Promise<DemoProject> {
-  throw new Error(`Not implemented: ${page.url()}`);
+  const account = await signUp(page);
+  const ids = await createWorkspace(account.api);
+  await setDemoVariables(account.api, ids.projectId);
+  return { ...account, ...ids };
 }
 
 export async function addTestFile(api: Api, moduleId: string, name: string, source: string): Promise<string> {
-  throw new Error(`Not implemented: ${moduleId} ${name} ${source.length}`);
+  const { testFile } = await api<{ testFile: { id: string } }>("POST", `/modules/${moduleId}/test-files`, {
+    name,
+    source,
+  });
+  return testFile.id;
 }
 
 export async function startRun(api: Api, testFileId: string): Promise<string> {
-  throw new Error(`Not implemented: ${testFileId}`);
+  const run = await api<{ id: string }>("POST", `/test-files/${testFileId}/runs`, undefined, 202);
+  return run.id;
 }
 
 export async function runToEnd(api: Api, testFileId: string): Promise<string> {
-  throw new Error(`Not implemented: ${typeof api} ${testFileId}`);
+  const runId = await startRun(api, testFileId);
+  await expect
+    .poll(async () => (await api<{ status: string }>("GET", `/runs/${runId}`)).status, {
+      timeout: FINAL_STATUS_TIMEOUT_MS,
+    })
+    .toMatch(/^(passed|failed)$/);
+  return runId;
 }
 
 export async function waitForFinalStatus(page: Page): Promise<"Passed" | "Failed"> {
-  throw new Error(`Not implemented: ${page.url()}`);
+  const status = page.getByText(/^Status: (Passed|Failed)$/);
+  await expect(status).toBeVisible({ timeout: FINAL_STATUS_TIMEOUT_MS });
+  return (await status.textContent()) === "Status: Passed" ? "Passed" : "Failed";
 }
 
 export async function runFromEditor(page: Page, testFileId: string): Promise<"Passed" | "Failed"> {
-  throw new Error(`Not implemented: ${page.url()} ${testFileId}`);
+  await page.goto(`/files/${testFileId}`);
+  await page.getByRole("button", { name: "Run", exact: true }).click();
+  await expect(page.getByRole("status")).toHaveText("Run queued.");
+  await page.getByRole("link", { name: "View run" }).click();
+  await expect(page).toHaveURL(/\/runs\/[^/]+$/);
+  return waitForFinalStatus(page);
 }

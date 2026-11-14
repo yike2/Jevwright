@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { API_URL, PASSWORD, uniqueEmail } from "./support.js";
+import { alertsOf, API_URL, PASSWORD, uniqueEmail } from "./support.js";
 
 async function submit(page: Page, mode: "Log in" | "Register", email: string, password: string): Promise<void> {
   await page.goto("/login");
@@ -32,7 +32,7 @@ test("TC-AUTH-02 refuses an email that is taken, in any case", async ({ page }) 
 
   await submit(page, "Register", email.toUpperCase(), PASSWORD);
 
-  await expect(page.getByRole("alert")).not.toBeEmpty();
+  await expect(alertsOf(page)).toHaveText("The email is taken");
   await expect(page).toHaveURL("/login");
 });
 
@@ -42,7 +42,7 @@ test("TC-AUTH-03 shows an error for a wrong password", async ({ page }) => {
 
   await submit(page, "Log in", email, "wrong-password-1");
 
-  await expect(page.getByRole("alert")).not.toBeEmpty();
+  await expect(alertsOf(page)).toHaveText("Wrong email or password");
   await expect(page).toHaveURL("/login");
   await expect(page.locator("form").getByRole("button", { name: "Log in" })).toBeEnabled();
 });
@@ -50,8 +50,8 @@ test("TC-AUTH-03 shows an error for a wrong password", async ({ page }) => {
 test("TC-AUTH-04 needs a password of at least 8 characters", async ({ page }) => {
   await submit(page, "Register", uniqueEmail(), "1234567");
   // The 400 message, then one line per detail.
-  await expect(page.getByRole("alert").locator("p")).not.toHaveCount(0);
-  expect(await page.getByRole("alert").locator("p").count()).toBeGreaterThanOrEqual(2);
+  await expect(alertsOf(page).locator("p")).not.toHaveCount(0);
+  expect(await alertsOf(page).locator("p").count()).toBeGreaterThanOrEqual(2);
   await expect(page).toHaveURL("/login");
 
   await submit(page, "Register", uniqueEmail(), "12345678");

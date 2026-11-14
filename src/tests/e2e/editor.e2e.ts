@@ -1,6 +1,6 @@
 import { fileURLToPath } from "node:url";
 import { expect, test, type Locator, type Page } from "@playwright/test";
-import { addTestFile, createWorkspace, fixture, signUp } from "./support.js";
+import { addTestFile, alertsOf, createWorkspace, fixture, signUp } from "./support.js";
 
 const MAX_SOURCE_CHARS = 262_144;
 
@@ -144,7 +144,7 @@ test("TC-ED-07 saves a source of up to 262,144 characters", async ({ page }) => 
 
   await textarea.fill(`${largest}x`);
   await save.click();
-  await expect(page.getByRole("alert")).toContainText("body.source");
+  await expect(alertsOf(page)).toContainText("body.source is over its size limit");
   await expect(unsaved).toBeVisible();
   await expect(textarea).toHaveValue(`${largest}x`);
 });

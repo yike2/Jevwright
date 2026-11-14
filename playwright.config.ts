@@ -1,6 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 
-// E2E tests (docs/tech/e2e.md): the real frontend and backend, driven in Chromium.
+// E2E tests (docs/tech/e2e.md): the real frontend and backend, driven in Chromium, with Runs against the Demo App.
 export default defineConfig({
   testDir: "src/tests/e2e",
   testMatch: "**/*.e2e.ts",
@@ -25,6 +25,13 @@ export default defineConfig({
       url: "http://localhost:3000/login",
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
+    },
+    {
+      // Runs open only this local Demo App (docs/tech/e2e.md 1.1), at the BASE the tests set.
+      command: "pnpm exec tsx src/tests/e2e/demo-app.ts",
+      url: "http://127.0.0.1:8080/",
+      reuseExistingServer: !process.env.CI,
+      timeout: 60_000,
     },
   ],
 });
