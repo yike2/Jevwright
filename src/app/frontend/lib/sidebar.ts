@@ -5,18 +5,42 @@ export type LatestRun =
 
 export type RunDot = "none" | "active" | "passed" | "failed";
 
-export function statusOf(_latestRun: LatestRun): RunDot {
-  throw new Error("Not implemented");
+export function statusOf(latestRun: LatestRun): RunDot {
+  if (latestRun === null) {
+    return "none";
+  }
+
+  if (latestRun.status === "queued" || latestRun.status === "running") {
+    return "active";
+  }
+
+  if (latestRun.status === "passed") {
+    return "passed";
+  }
+
+  return "failed";
 }
 
-export function toTestFileName(_input: string): string {
-  throw new Error("Not implemented");
+export function toTestFileName(input: string): string {
+  const trimmed = input.trim();
+  if (trimmed.length === 0) {
+    return "";
+  }
+
+  if (trimmed.includes(".")) {
+    return trimmed;
+  }
+
+  return `${trimmed}.yaml`;
 }
 
-export function initials(_email: string): string {
-  throw new Error("Not implemented");
+export function initials(email: string): string {
+  const local = email.split("@")[0] ?? "";
+  return local.slice(0, 2).toUpperCase();
 }
 
-export function starterSource(_name: string): string {
-  throw new Error("Not implemented");
+export function starterSource(name: string): string {
+  const baseName = name.endsWith(".yaml") ? name.slice(0, -5) : name;
+
+  return `name: ${JSON.stringify(baseName)}\nsteps:\n  - open:\n      url: "https://example.com"\n`;
 }

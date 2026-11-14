@@ -242,25 +242,37 @@ export function createApiClient(config: ApiClientConfig = {}): {
   };
 
   const getTree = async (): Promise<TreeResponse> => {
-    throw new Error("Not implemented");
+    return request<TreeResponse>("/tree");
   };
 
   const createProject = async (name: string): Promise<CreateProjectResponse> => {
-    void name;
-    throw new Error("Not implemented");
+    return request<CreateProjectResponse>("/projects", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ name }),
+    });
   };
 
   const createModule = async (projectId: string, name: string): Promise<CreateModuleResponse> => {
-    void projectId;
-    void name;
-    throw new Error("Not implemented");
+    return request<CreateModuleResponse>(`/projects/${projectId}/modules`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ name }),
+    });
   };
 
   const createTestFile = async (moduleId: string, name: string, source: string): Promise<CreateTestFileResponse> => {
-    void moduleId;
-    void name;
-    void source;
-    throw new Error("Not implemented");
+    return request<CreateTestFileResponse>(`/modules/${moduleId}/test-files`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ name, source }),
+    });
   };
 
   return {
