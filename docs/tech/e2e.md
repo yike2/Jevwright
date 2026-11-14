@@ -59,15 +59,18 @@ Shared setup for the tests. Requests go straight to the backend at `API_URL` (`h
 
 | Export | Does |
 | ------ | ---- |
-| `API_URL`, `DEMO_URL`, `PASSWORD` | `http://127.0.0.1:4000/api/v1`, `http://127.0.0.1:8080`, `"e2e-password-123"` |
+| `API_URL`, `DEMO_URL`, `PASSWORD`, `SWAG_PASSWORD` | `http://127.0.0.1:4000/api/v1`, `http://127.0.0.1:8080`, `"e2e-password-123"`, `process.env.SWAG_PASSWORD ?? "secret_sauce"` |
 | `uniqueEmail()` | `e2e-<Date.now()>-<6 random characters>@example.com` |
 | `fixture(path)` | The text of `src/tests/e2e/fixtures/<path>` |
 | `signUp(page)` | Registers a new account through the API and stores its token in the page's `localStorage` (`auth-token`) before any page script runs. Returns `{ email, token, api }`, where `api` sends `Authorization: Bearer <token>` |
 | `createWorkspace(api)` | Creates Project `Demo Shop` and Module `Shopping`; returns their ids |
-| `setDemoVariables(api, projectId)` | Sets `BASE` to `DEMO_URL` and `SWAG_PASSWORD` to `process.env.SWAG_PASSWORD ?? "secret_sauce"` |
+| `setDemoVariables(api, projectId)` | Sets the Project Variables `BASE` to `DEMO_URL` and `SWAG_PASSWORD` to `SWAG_PASSWORD` |
+| `setUpDemoProject(page)` | Shared steps S1–S3 of `test-cases.md`: `signUp`, `createWorkspace`, and `setDemoVariables`; returns the Account with `projectId` and `moduleId` |
 | `addTestFile(api, moduleId, name, source)` | Creates a Test File; returns its id |
 | `startRun(api, testFileId)` | Triggers a Run; returns its id |
+| `runToEnd(api, testFileId)` | `startRun`, then polls `GET /runs/:id` for up to 60 s until the Run is `passed` or `failed`; returns its id |
 | `waitForFinalStatus(page)` | Waits up to 60 s until the Run page shows `Status: Passed` or `Status: Failed`; returns the label |
+| `runFromEditor(page, testFileId)` | Shared step S5: opens the editor, clicks **Run**, expects "Run queued.", follows **View run**, and returns `waitForFinalStatus(page)` |
 
 `api` methods throw when the response status is not the expected one, so a setup failure shows as the setup step, not as a later assertion.
 

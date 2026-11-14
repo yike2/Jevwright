@@ -547,7 +547,7 @@ Covers PRD 5.4.3. Pre: S1–S3, `sign-in.yaml` (`pass/sign-in.yaml`) and `wrong-
 1. Run both; wait until both finish; open `/`.
 2. Run `wrong-total.yaml` again; while it runs, open `/`.
 
-Expected: step 1 shows "Passed" and "Failed" with their trigger times; step 2 shows "Running" for `wrong-total.yaml` until it finishes, then "Failed".
+Expected: step 1 shows "Passed" and "Failed" with their trigger times; step 2 shows "Running" for `wrong-total.yaml`, and "Failed" again when the page is reloaded after the Run finishes. The overview does not update itself while it is open (`docs/tech/frontend.md` 1.10).
 
 ### 4.8 Security (`SEC`)
 
