@@ -8,6 +8,8 @@ import {
   type Run,
   type RunListResponse,
   type TestFile,
+  type UpdateModuleResponse,
+  type UpdateProjectResponse,
   type UpdateTestFileResponse,
   type ValidateResponse,
   type VariableListResponse,
@@ -691,5 +693,151 @@ describe("api client", () => {
     });
 
     expect(client.getBaseUrl()).toBe("http://localhost:4000/api/v1");
+  });
+
+  it("sends PATCH /projects/p-1 with the name and resolves the body", async () => {
+    const response: UpdateProjectResponse = {
+      id: "p-1",
+      name: "Shop",
+      createdAt: "2026-11-13T00:00:00.000Z",
+      updatedAt: "2026-11-13T00:00:00.000Z",
+    };
+
+    const fetchImpl = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+      expect(url).toBe("http://localhost:4000/api/v1/projects/p-1");
+      expect(init?.method).toBe("PATCH");
+      const headers = new Headers(init?.headers ?? {});
+      expect(headers.get("Authorization")).toBe("Bearer jwt-token");
+      expect(headers.get("Content-Type")).toBe("application/json");
+      expect(init?.body).toBe('{"name":"Shop"}');
+      return makeResponse(response, 200);
+    });
+
+    const client = createApiClient({
+      baseUrl: "http://localhost:4000/api/v1",
+      getToken: () => "jwt-token",
+      setToken: () => undefined,
+      fetchImpl,
+    });
+
+    await expect(client.renameProject("p-1", "Shop")).resolves.toEqual(response);
+  });
+
+  it("sends PATCH /modules/m-1 with the name and resolves the body", async () => {
+    const response: UpdateModuleResponse = {
+      id: "m-1",
+      projectId: "p-1",
+      name: "Cart",
+      createdAt: "2026-11-13T00:00:00.000Z",
+      updatedAt: "2026-11-13T00:00:00.000Z",
+    };
+
+    const fetchImpl = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+      expect(url).toBe("http://localhost:4000/api/v1/modules/m-1");
+      expect(init?.method).toBe("PATCH");
+      const headers = new Headers(init?.headers ?? {});
+      expect(headers.get("Authorization")).toBe("Bearer jwt-token");
+      expect(headers.get("Content-Type")).toBe("application/json");
+      expect(init?.body).toBe('{"name":"Cart"}');
+      return makeResponse(response, 200);
+    });
+
+    const client = createApiClient({
+      baseUrl: "http://localhost:4000/api/v1",
+      getToken: () => "jwt-token",
+      setToken: () => undefined,
+      fetchImpl,
+    });
+
+    await expect(client.renameModule("m-1", "Cart")).resolves.toEqual(response);
+  });
+
+  it("sends PATCH /test-files/tf-1 with the name and resolves { testFile, diagnostics }", async () => {
+    const response: UpdateTestFileResponse = {
+      testFile: {
+        id: "tf-1",
+        moduleId: "m-1",
+        name: "checkout.yaml",
+        createdAt: "2026-11-13T00:00:00.000Z",
+        updatedAt: "2026-11-13T00:00:00.000Z",
+      },
+      diagnostics: [],
+    };
+
+    const fetchImpl = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+      expect(url).toBe("http://localhost:4000/api/v1/test-files/tf-1");
+      expect(init?.method).toBe("PATCH");
+      const headers = new Headers(init?.headers ?? {});
+      expect(headers.get("Authorization")).toBe("Bearer jwt-token");
+      expect(headers.get("Content-Type")).toBe("application/json");
+      expect(init?.body).toBe('{"name":"checkout.yaml"}');
+      return makeResponse(response, 200);
+    });
+
+    const client = createApiClient({
+      baseUrl: "http://localhost:4000/api/v1",
+      getToken: () => "jwt-token",
+      setToken: () => undefined,
+      fetchImpl,
+    });
+
+    await expect(client.renameTestFile("tf-1", "checkout.yaml")).resolves.toEqual(response);
+  });
+
+  it("sends DELETE /projects/p-1 and resolves undefined on 204", async () => {
+    const fetchImpl = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+      expect(url).toBe("http://localhost:4000/api/v1/projects/p-1");
+      expect(init?.method).toBe("DELETE");
+      const headers = new Headers(init?.headers ?? {});
+      expect(headers.get("Authorization")).toBe("Bearer jwt-token");
+      return new Response(null, { status: 204 });
+    });
+
+    const client = createApiClient({
+      baseUrl: "http://localhost:4000/api/v1",
+      getToken: () => "jwt-token",
+      setToken: () => undefined,
+      fetchImpl,
+    });
+
+    await expect(client.deleteProject("p-1")).resolves.toBeUndefined();
+  });
+
+  it("sends DELETE /modules/m-1 and resolves undefined on 204", async () => {
+    const fetchImpl = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+      expect(url).toBe("http://localhost:4000/api/v1/modules/m-1");
+      expect(init?.method).toBe("DELETE");
+      const headers = new Headers(init?.headers ?? {});
+      expect(headers.get("Authorization")).toBe("Bearer jwt-token");
+      return new Response(null, { status: 204 });
+    });
+
+    const client = createApiClient({
+      baseUrl: "http://localhost:4000/api/v1",
+      getToken: () => "jwt-token",
+      setToken: () => undefined,
+      fetchImpl,
+    });
+
+    await expect(client.deleteModule("m-1")).resolves.toBeUndefined();
+  });
+
+  it("sends DELETE /test-files/tf-1 and resolves undefined on 204", async () => {
+    const fetchImpl = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+      expect(url).toBe("http://localhost:4000/api/v1/test-files/tf-1");
+      expect(init?.method).toBe("DELETE");
+      const headers = new Headers(init?.headers ?? {});
+      expect(headers.get("Authorization")).toBe("Bearer jwt-token");
+      return new Response(null, { status: 204 });
+    });
+
+    const client = createApiClient({
+      baseUrl: "http://localhost:4000/api/v1",
+      getToken: () => "jwt-token",
+      setToken: () => undefined,
+      fetchImpl,
+    });
+
+    await expect(client.deleteTestFile("tf-1")).resolves.toBeUndefined();
   });
 });

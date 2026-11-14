@@ -1,12 +1,12 @@
 # Frontend
 
-The Frontend is the browser app for Jevwright: an App Router Next.js client that authenticates with the backend, manages the user's workspace through the REST API, and presents placeholder login and workspace views while the backend contract is in place.
+The Frontend is the browser app for Jevwright: an App Router Next.js client that authenticates with the backend, manages the user's workspace through the REST API, and lets the user edit, validate and run Test Files and follow their Runs.
 
 ## 1. Functional Definition
 
 ### 1.1 Scope
 
-This module covers the frontend package: the Next.js scaffold, generated API types, the auth-aware fetch client, a two-mode login/register page. It also covers the workspace layout and sidebar; the editor, live run, history and reports are not built yet.
+This module covers the frontend package: the Next.js scaffold, generated API types, the auth-aware fetch client, a two-mode login/register page, the workspace layout and sidebar, the files overview, the test file editor, Project Variables, and the Run pages (live progress, history and reports).
 
 | Area    | Scope                                                                                                          |
 | ------- | -------------------------------------------------------------------------------------------------------------- |
@@ -15,8 +15,8 @@ This module covers the frontend package: the Next.js scaffold, generated API typ
 | Styling | Tailwind v4 with `@tailwindcss/postcss`; no `tailwind.config.ts`; shadcn dark theme (`dark` class on `<html>`) |
 | API     | OpenAPI-generated types from `docs/api/openapi.json`; native fetch wrapper                                     |
 | Auth    | Bearer token from login/register responses; token stored in `localStorage`                                     |
-| Pages   | `/login` two-mode auth form; workspace layout with sidebar; `/` empty state; `/files/[testFileId]` placeholder |
-| Tests   | Vitest for API client, auth-error formatter, and sidebar helpers; Playwright E2E for auth and sidebar          |
+| Pages   | `/login` two-mode auth form; workspace layout with sidebar; `/` files overview; `/files/[testFileId]` editor; `/runs/[runId]` Run page |
+| Tests   | Vitest for the API client and lib helpers; Playwright E2E for auth, sidebar, editor, Variables, overview and the full flow |
 
 
 
@@ -98,7 +98,7 @@ The pages behave as follows:
   - when resolved, render the sidebar (with the current user email and a Log out button) and the page;
   - Log out calls `apiClient.clearToken()` and navigates with `router.replace("/login")`;
   - if `getCurrentUser()` fails with anything other than `401`, show the `formatAuthError` messages instead (a `401` is handled by the API client, which redirects to `/login`).
-- `/` is the workspace empty state: "Pick a test file to edit".
+- `/` is the files overview (1.10).
 
 The root layout remains a server component, while the workspace layout and pages that need auth or data access are client components. This is a deliberate exception to the repo's "Server Components by default" guidance: the auth token is browser state, so auth and data fetching happen on the client.
 
@@ -108,7 +108,7 @@ The workspace is every authenticated page. A shared layout guards auth, renders 
 
 | Route                 | Page                                    |
 | --------------------- | --------------------------------------- |
-| `/`                   | Empty state: "Pick a test file to edit" |
+| `/`                   | Files overview (1.10)                   |
 | `/files/[testFileId]` | Test file editor (1.7) and its Runs list (1.9) |
 | `/runs/[runId]`       | Run: live progress and report (1.9)     |
 
@@ -118,6 +118,7 @@ The workspace is every authenticated page. A shared layout guards auth, renders 
 | Tree            | Projects → Modules → Test Files from `GET /tree`, in API order. Projects and Modules toggle open/closed; all open by default |
 | Row "+"         | On a Project: New Module dialog. On a Module: New Test File dialog                                                           |
 | Row "Variables" | On a Project: opens the Variables dialog (1.8)                                                                              |
+| Row actions     | On every Project, Module and Test File: Rename and Delete (1.11)                                                             |
 | Status dot      | From `latestRun.status`: `passed` green, `failed` red, `queued`/`running` amber, no run gray                                 |
 | Selection       | The Test File in the current route is highlighted                                                                            |
 | Account         | Initials, email from `me`, Log out (clears the token, goes to `/login`)                                                      |
@@ -281,7 +282,81 @@ The header shows the file name as the heading, "Status: <runStatusLabel>", the t
 
 Out of scope: project or module dashboards, charts, filters, pagination, showing dialog records.
 
-### 1.10 Packages and exact pins
+### 1.10 Files overview
+
+`/` lists every Test File in the workspace with its latest Run status, so a Tester can check test health at a glance (PRD 5.4.3). It reads the tree from `useWorkspace()`; there is no extra request, and the page updates whenever `refreshTree()` runs.
+
+| Element | Behavior |
+| ------- | -------- |
+| Region | A `region` named "Test files" |
+| Groups | `overviewGroups(tree)`: one heading (level 2) per Project and one heading (level 3) per Module, in API order |
+| File | One list item per Test File: a link to `/files/<id>` named by the file name, the status text `statusTitle(statusOf(latestRun))`, and, when `latestRun` exists, its trigger time (`latestRun.createdAt`, `toLocaleString()`) |
+| Empty | When `overviewGroups(tree)` is empty: "No test files yet" |
+
+| Helper | Rule |
+| ------ | ---- |
+| `overviewGroups(tree)` | Pure. Returns the tree's Projects in API order with the same shape, keeping only Modules that have at least one Test File and only Projects that keep at least one Module. Never mutates `tree` |
+| `statusTitle(status)` | `none` → "Never run"; `active` → "Running"; `passed` → "Passed"; `failed` → "Failed" (the status dot titles in 1.6 use the same helper) |
+
+#### Accessible names (overview)
+
+| Element | Role and name |
+| ------- | ------------- |
+| Overview | `region` named "Test files" |
+| Project | `heading` level 2 named by the Project name |
+| Module | `heading` level 3 named by the Module name |
+| Test File | `listitem` containing a `link` named by the file name, the status text, and the trigger time |
+| Empty | text "No test files yet" |
+
+The sidebar has links with the same names, so E2E tests scope overview lookups to the "Test files" region.
+
+#### Tests
+- Unit: `overviewGroups`, `statusTitle` (5.5).
+- E2E `overview.e2e.ts`: a new user opens `/` and sees "No test files yet"; after creating a Project, a Module and a Test File through the sidebar and opening `/` again, the "Test files" region shows the Project and Module headings and the file link with "Never run"; clicking the link opens `/files/<id>`.
+
+Out of scope: filters, sorting, charts, pagination, distinguishing `queued` from `running`.
+
+### 1.11 Rename and delete
+
+Every Project, Module and Test File row in the sidebar has a Rename and a Delete button. Moving a Test File to another Module is out of scope.
+
+| Action | Behavior |
+| ------ | -------- |
+| Rename | Opens the name dialog titled "Rename project", "Rename module", or "Rename test file", prefilled with the current name. Test File input is normalized with `toTestFileName`. Save is disabled while the normalized name is empty or equal to the current name. Submits `PATCH /projects/:id`, `PATCH /modules/:id`, or `PATCH /test-files/:id` with `{ name }`, then calls `refreshTree()` and closes |
+| Delete | Opens a confirmation dialog titled "Delete project", "Delete module", or "Delete test file" with the text `confirmDeleteText(kind, name)`. Delete submits `DELETE /projects/:id`, `DELETE /modules/:id`, or `DELETE /test-files/:id`. If `deletesTestFile(tree, target, currentTestFileId)` is true, the page navigates with `router.replace("/")`. Then it calls `refreshTree()` and closes |
+
+API errors (such as `409 conflict` on rename) show `ApiError.message` in a `role="alert"` inside the dialog, and the dialog stays open. Buttons are disabled while the request is in flight. A failing `refreshTree()` after a successful change closes the dialog and is otherwise ignored, as in 1.6.
+
+The editor heading (1.7) shows the Test File's name from the tree when the file is in it, falling back to the loaded `testFile.name`, so renaming the open file updates the heading at once.
+
+The backend cascades: deleting a Project deletes its Modules, Test Files and Variables; deleting a Module deletes its Test Files. Runs are kept with their ids set to `null`.
+
+| Helper | Rule |
+| ------ | ---- |
+| `confirmDeleteText(kind, name)` | `project` → `Delete project "<name>" and all its modules, test files and variables? Run history is kept.`; `module` → `Delete module "<name>" and all its test files? Run history is kept.`; `testFile` → `Delete test file "<name>"? Run history is kept.` |
+| `deletesTestFile(tree, target, testFileId)` | Pure. `target` is `{ kind: "project" \| "module" \| "testFile"; id: string }`. `false` when `testFileId` is `null`; otherwise `true` when `testFileId` is the target Test File or belongs to the target Module or Project in `tree` |
+
+`kind` is `"project" | "module" | "testFile"`.
+
+#### Accessible names (rename and delete)
+
+| Element | Role and name |
+| ------- | ------------- |
+| Row buttons | "Rename project <name>", "Delete project <name>", "Rename module <name>", "Delete module <name>", "Rename test file <name>", "Delete test file <name>" |
+| Rename dialog | `dialog` titled "Rename project", "Rename module", or "Rename test file"; text input labelled "Name"; buttons "Save" and "Cancel"; errors in a `role="alert"` |
+| Delete dialog | `dialog` titled "Delete project", "Delete module", or "Delete test file"; the confirmation text; buttons "Delete" and "Cancel"; errors in a `role="alert"` |
+
+Row buttons sit next to the Test File link, never inside it. They may be revealed on hover on wide screens, but must stay in the accessibility tree and be shown on keyboard focus. The dialogs' "Delete" button shares a prefix with the row buttons, so E2E tests scope it to the dialog.
+
+#### Tests
+- Unit: `confirmDeleteText`, `deletesTestFile` (5.5), and the new API client functions (5.1).
+- E2E `sidebar-actions.e2e.ts`:
+  - a new user creates a Project, a Module and a Test File; renaming the Test File shows the new name in the sidebar and the editor heading;
+  - renaming a second Project to the first Project's name keeps the dialog open and shows an alert;
+  - deleting the open Test File returns to `/` and removes its link;
+  - deleting the Project shows the cascade text in the confirmation, then the "Test files" region shows "No test files yet".
+
+### 1.12 Packages and exact pins
 
 The frontend package uses these exact versions:
 
@@ -306,7 +381,7 @@ shadcn tooling and UI primitives are pinned exactly (no `^`). Primitives are add
 
 The repo does not use `eslint-config-next`; instead the root `eslint.config.js` is extended to include `.tsx` and the frontend package files.
 
-### 1.11 Scripts and config
+### 1.13 Scripts and config
 
 The root workspace exposes the frontend app with `pnpm frontend`, which starts the Next.js dev server on port `3000`.
 
@@ -427,12 +502,18 @@ export function createApiClient(config?: ApiClientConfig): {
   deleteVariable(projectId: string, name: string): Promise<void>; // 204
   listRuns(testFileId: string): Promise<RunListResponse>; // GET /runs?testFileId=&limit=20 → { items, nextCursor }
   getRun(runId: string): Promise<Run>; // with source and, once finished, report
+  renameProject(projectId: string, name: string): Promise<UpdateProjectResponse>; // PATCH /projects/:id
+  renameModule(moduleId: string, name: string): Promise<UpdateModuleResponse>; // PATCH /modules/:id
+  renameTestFile(testFileId: string, name: string): Promise<UpdateTestFileResponse>; // PATCH /test-files/:id → { testFile, diagnostics }
+  deleteProject(projectId: string): Promise<void>; // 204; cascades to Modules, Test Files, Variables
+  deleteModule(moduleId: string): Promise<void>; // 204; cascades to Test Files
+  deleteTestFile(testFileId: string): Promise<void>; // 204
 };
 
 export const apiClient: ReturnType<typeof createApiClient>;
 ```
 
-`TreeResponse`, `CreateProjectResponse`, `CreateModuleResponse`, `CreateTestFileResponse`, `TestFile`, `Run`, `UpdateTestFileResponse`, `ValidateResponse`, `VariableListResponse`, `RunListResponse`, `Step`, and `LiveMessage` are aliases of the generated `components`/`paths` types for these routes; none are written by hand.
+`TreeResponse`, `CreateProjectResponse`, `CreateModuleResponse`, `CreateTestFileResponse`, `UpdateProjectResponse`, `UpdateModuleResponse`, `TestFile`, `Run`, `UpdateTestFileResponse`, `ValidateResponse`, `VariableListResponse`, `RunListResponse`, `Step`, and `LiveMessage` are aliases of the generated `components`/`paths` types for these routes; none are written by hand.
 
 ### 3.2 Request rules
 
@@ -468,19 +549,21 @@ This fallback is implemented in the client itself when the backend response is n
 | --------------------------------------------- | ----------------------------------------------------------- |
 | `app/login/page.tsx`                          | Two-mode auth form (Log in/Register)                        |
 | `app/(workspace)/layout.tsx`                  | Auth guard, loads `me` and the tree, renders the sidebar    |
-| `app/(workspace)/page.tsx`                    | Empty state                                                 |
+| `app/(workspace)/page.tsx`                    | Files overview (1.10)                                       |
 | `app/(workspace)/files/[testFileId]/page.tsx` | Test file editor (1.7) and Runs list (1.9)                  |
 | `app/(workspace)/runs/[runId]/page.tsx`       | Run page: live progress and report (1.9)                    |
 | `lib/api.ts`                                  | Fetch wrapper, `ApiError`, typed API functions              |
 | `lib/api-schema.ts`                           | Generated OpenAPI types from `docs/api/openapi.json`        |
 | `lib/format-auth-error.ts`                    | Unknown auth error → UI-safe strings                        |
 | `lib/utils.ts`                                | Re-exports `cn` from the `cn` package for shadcn components |
-| `lib/sidebar.ts`                              | Sidebar helpers (1.6)                                       |
+| `lib/sidebar.ts`                              | Sidebar helpers (1.6, 1.10 `statusTitle`, 1.11)             |
+| `lib/overview.ts`                             | Overview helper `overviewGroups` (1.10)                     |
 | `lib/editor.ts`                               | Editor and Variables helpers (1.7, 1.8)                     |
 | `lib/runs.ts`                                 | Run helpers (1.9)                                           |
 | `lib/workspace-context.tsx`                   | `useWorkspace()`: `me`, `tree`, `refreshTree`               |
 | `components/workspace/sidebar-nav.tsx`        | Sidebar tree, dialogs, account                              |
-| `components/workspace/create-name-dialog.tsx` | Shared New project/module/test file dialog                  |
+| `components/workspace/create-name-dialog.tsx` | Shared name dialog for create (1.6) and rename (1.11)       |
+| `components/workspace/confirm-delete-dialog.tsx` | Delete confirmation dialog (1.11)                        |
 | `components/workspace/variables-dialog.tsx`   | Variables dialog (1.8)                                      |
 | `components/workspace/run-list.tsx`           | Runs list on the editor page (1.9)                          |
 | `components/workspace/step-list.tsx`          | Shared step list for live progress and report (1.9)         |
@@ -512,6 +595,7 @@ src/app/frontend/
 │   │   ├── input.tsx
 │   │   └── label.tsx
 │   └── workspace/
+│       ├── confirm-delete-dialog.tsx
 │       ├── create-name-dialog.tsx
 │       ├── run-list.tsx
 │       ├── sidebar-nav.tsx
@@ -522,6 +606,7 @@ src/app/frontend/
 │   ├── api-schema.ts
 │   ├── editor.ts
 │   ├── format-auth-error.ts
+│   ├── overview.ts
 │   ├── runs.ts
 │   ├── sidebar.ts
 │   ├── utils.ts
@@ -542,7 +627,8 @@ src/app/frontend/
 | ---- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
 | Unit | API client: error parsing, 401 behavior, auth header, 204 success, HTML fallback, workspace and editor functions | `src/tests/unit/app/frontend/api.test.ts`               |
 | Unit | `formatAuthError` for login/register and backend `400 details`                                                   | `src/tests/unit/app/frontend/format-auth-error.test.ts` |
-| Unit | Sidebar helpers (1.6)                                                                                            | `src/tests/unit/app/frontend/sidebar.test.ts`           |
+| Unit | Sidebar helpers (1.6, 1.10, 1.11)                                                                                | `src/tests/unit/app/frontend/sidebar.test.ts`           |
+| Unit | Overview helper (1.10)                                                                                           | `src/tests/unit/app/frontend/overview.test.ts`          |
 | Unit | Editor and Variables helpers (1.7, 1.8)                                                                          | `src/tests/unit/app/frontend/editor.test.ts`            |
 | Unit | Run helpers (1.9)                                                                                                | `src/tests/unit/app/frontend/runs.test.ts`              |
 | E2E  | Auth flow                                                                                                        | `src/tests/e2e/auth.e2e.ts`                             |
@@ -550,6 +636,8 @@ src/app/frontend/
 | E2E  | Editor: validate, save, reload, run (1.7)                                                                        | `src/tests/e2e/editor.e2e.ts`                           |
 | E2E  | Variables: add, invalid name, delete (1.8)                                                                       | `src/tests/e2e/variables.e2e.ts`                        |
 | E2E  | Full flow: create, validate, save, run, live view, history (1.9)                                                 | `src/tests/e2e/flow.e2e.ts`                             |
+| E2E  | Files overview: empty state, grouped list, open a file (1.10)                                                    | `src/tests/e2e/overview.e2e.ts`                         |
+| E2E  | Rename, duplicate rename, delete open file, delete Project (1.11)                                                | `src/tests/e2e/sidebar-actions.e2e.ts`                  |
 
 The tests use `fetchImpl`, `getToken`, `setToken`, and `onUnauthorized` injection where applicable; no DOM environment is required. The expected values are written by hand from mocked payloads and backend contract behavior, never generated from implementation output.
 
@@ -706,6 +794,27 @@ The tests use `fetchImpl`, `getToken`, `setToken`, and `onUnauthorized` injectio
 20. `it("returns the configured base URL from getBaseUrl", () => { ... })`
     - config `baseUrl: "http://localhost:4000/api/v1"` → `"http://localhost:4000/api/v1"`
 
+21. `it("sends PATCH /projects/p-1 with the name and resolves the body", async () => { ... })`
+    - call: `renameProject("p-1", "Shop")`
+    - expected request: `PATCH /projects/p-1`, body `{"name":"Shop"}`
+    - expected value: the mocked body
+
+22. `it("sends PATCH /modules/m-1 with the name and resolves the body", async () => { ... })`
+    - call: `renameModule("m-1", "Cart")`
+    - expected request: `PATCH /modules/m-1`, body `{"name":"Cart"}`
+    - expected value: the mocked body
+
+23. `it("sends PATCH /test-files/tf-1 with the name and resolves { testFile, diagnostics }", async () => { ... })`
+    - call: `renameTestFile("tf-1", "checkout.yaml")`
+    - expected request: `PATCH /test-files/tf-1`, body `{"name":"checkout.yaml"}`
+    - expected value: `{ testFile, diagnostics: [] }`
+
+24. `it("sends DELETE /projects/p-1 and resolves undefined on 204", async () => { ... })`
+
+25. `it("sends DELETE /modules/m-1 and resolves undefined on 204", async () => { ... })`
+
+26. `it("sends DELETE /test-files/tf-1 and resolves undefined on 204", async () => { ... })`
+
 These exact values are the source of truth for the API client tests and are intentionally written by hand rather than read from generated responses.
 
 ### 5.2 Exact `formatAuthError` unit-test cases
@@ -800,3 +909,28 @@ These exact values are the source of truth for the API client tests and are inte
    - then a `status` message with the Run `running` → `run.status` is `"running"` and the step is unchanged
    - a `step` message for index 1 when only index 0 exists → two steps in index order
    - the input state object is not mutated (compare with a deep copy)
+
+### 5.5 Exact sidebar and overview helper unit-test cases
+
+`sidebar.test.ts` imports `@/app/frontend/lib/sidebar.js`; `overview.test.ts` imports `@/app/frontend/lib/overview.js`. Trees are hand-written and typed with the generated `TreeResponse` type.
+
+1. `statusTitle`: `"none"` → `"Never run"`; `"active"` → `"Running"`; `"passed"` → `"Passed"`; `"failed"` → `"Failed"`
+
+2. `confirmDeleteText`
+   - `("project", "Shop")` → `Delete project "Shop" and all its modules, test files and variables? Run history is kept.`
+   - `("module", "Cart")` → `Delete module "Cart" and all its test files? Run history is kept.`
+   - `("testFile", "login.yaml")` → `Delete test file "login.yaml"? Run history is kept.`
+
+3. `deletesTestFile`, with a tree of Project `p-1` → Module `m-1` → Test File `tf-1`, and Project `p-2` → Module `m-2` → Test File `tf-2`:
+   - `{ kind: "testFile", id: "tf-1" }`, current `"tf-1"` → `true`
+   - `{ kind: "testFile", id: "tf-2" }`, current `"tf-1"` → `false`
+   - `{ kind: "module", id: "m-1" }`, current `"tf-1"` → `true`
+   - `{ kind: "module", id: "m-2" }`, current `"tf-1"` → `false`
+   - `{ kind: "project", id: "p-1" }`, current `"tf-1"` → `true`
+   - `{ kind: "project", id: "p-2" }`, current `"tf-1"` → `false`
+   - `{ kind: "project", id: "p-1" }`, current `null` → `false`
+
+4. `overviewGroups`
+   - a tree of Project `p-1` (Module `m-1` with Test File `tf-1`, Module `m-empty` with none), Project `p-2` (no Modules), and Project `p-3` (Module `m-3` with Test Files `tf-3`, `tf-4`) → Project `p-1` with only Module `m-1`, then Project `p-3` with Module `m-3` and both Test Files in order
+   - an empty tree → no Projects
+   - the input tree is not mutated (compare with a deep copy)

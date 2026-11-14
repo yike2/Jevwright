@@ -17,6 +17,10 @@ export type Step = components["schemas"]["Step"];
 export type LiveMessage = components["schemas"]["LiveMessage"];
 export type UpdateTestFileResponse =
   paths["/test-files/{testFileId}"]["patch"]["responses"][200]["content"]["application/json"];
+export type UpdateProjectResponse =
+  paths["/projects/{projectId}"]["patch"]["responses"][200]["content"]["application/json"];
+export type UpdateModuleResponse =
+  paths["/modules/{moduleId}"]["patch"]["responses"][200]["content"]["application/json"];
 export type ValidateResponse = paths["/test-files/validate"]["post"]["responses"][200]["content"]["application/json"];
 export type VariableListResponse =
   paths["/projects/{projectId}/variables"]["get"]["responses"][200]["content"]["application/json"];
@@ -144,6 +148,12 @@ export function createApiClient(config: ApiClientConfig = {}): {
   deleteVariable(projectId: string, name: string): Promise<void>;
   listRuns(testFileId: string): Promise<RunListResponse>;
   getRun(runId: string): Promise<Run>;
+  renameProject(projectId: string, name: string): Promise<UpdateProjectResponse>;
+  renameModule(moduleId: string, name: string): Promise<UpdateModuleResponse>;
+  renameTestFile(testFileId: string, name: string): Promise<UpdateTestFileResponse>;
+  deleteProject(projectId: string): Promise<void>;
+  deleteModule(moduleId: string): Promise<void>;
+  deleteTestFile(testFileId: string): Promise<void>;
 } {
   const defaultBaseUrl = "http://127.0.0.1:4000/api/v1";
   const resolvedBaseUrl = (config.baseUrl ?? defaultBaseUrl).replace(/\/$/, "");
@@ -357,6 +367,54 @@ export function createApiClient(config: ApiClientConfig = {}): {
     return request<Run>(`/runs/${runId}`);
   };
 
+  const renameProject = async (projectId: string, name: string): Promise<UpdateProjectResponse> => {
+    return request<UpdateProjectResponse>(`/projects/${projectId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ name }),
+    });
+  };
+
+  const renameModule = async (moduleId: string, name: string): Promise<UpdateModuleResponse> => {
+    return request<UpdateModuleResponse>(`/modules/${moduleId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ name }),
+    });
+  };
+
+  const renameTestFile = async (testFileId: string, name: string): Promise<UpdateTestFileResponse> => {
+    return request<UpdateTestFileResponse>(`/test-files/${testFileId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ name }),
+    });
+  };
+
+  const deleteProject = async (projectId: string): Promise<void> => {
+    await request<void>(`/projects/${projectId}`, {
+      method: "DELETE",
+    });
+  };
+
+  const deleteModule = async (moduleId: string): Promise<void> => {
+    await request<void>(`/modules/${moduleId}`, {
+      method: "DELETE",
+    });
+  };
+
+  const deleteTestFile = async (testFileId: string): Promise<void> => {
+    await request<void>(`/test-files/${testFileId}`, {
+      method: "DELETE",
+    });
+  };
+
   return {
     setToken,
     clearToken,
@@ -379,6 +437,12 @@ export function createApiClient(config: ApiClientConfig = {}): {
     deleteVariable,
     listRuns,
     getRun,
+    renameProject,
+    renameModule,
+    renameTestFile,
+    deleteProject,
+    deleteModule,
+    deleteTestFile,
   };
 }
 
