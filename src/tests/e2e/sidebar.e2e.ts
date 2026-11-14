@@ -1,73 +1,90 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
+import { signUp } from "./support.js";
 
-async function registerUniqueUser(page: Page): Promise<string> {
-  const email = `e2e-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`;
-  const password = "e2e-password-123";
-  const form = page.locator("form");
-
-  await page.goto("/login");
-  await page.getByRole("button", { name: "Register" }).click();
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(password);
-  await form.getByRole("button", { name: "Register" }).click();
-
-  await expect(page).toHaveURL("/");
-  return email;
+function sidebarOf(page: Page): Locator {
+  return page.getByRole("navigation", { name: "Projects", exact: true });
 }
 
-test("creates a project, module, and test file from the sidebar", async ({ page }) => {
-  await registerUniqueUser(page);
+async function create(page: Page, opener: string, dialogName: string, name: string): Promise<Locator> {
+  await sidebarOf(page).getByRole("button", { name: opener, exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: dialogName, exact: true });
+  await dialog.getByLabel("Name").fill(name);
+  await dialog.getByRole("button", { name: "Create", exact: true }).click();
+  return dialog;
+}
 
-  const sidebar = page.getByRole("navigation", { name: "Projects" });
+test("TC-WS-01 creates a project, module, and test file from the sidebar", async ({ page }) => {
+  await signUp(page);
+  await page.goto("/");
+  const sidebar = sidebarOf(page);
 
-  await sidebar.getByRole("button", { name: "New project" }).click();
-  const newProjectDialog = page.getByRole("dialog", { name: "New project" });
-  await newProjectDialog.getByLabel("Name").fill("Demo Shop");
-  await newProjectDialog.getByRole("button", { name: "Create" }).click();
-  await expect(newProjectDialog).toBeHidden();
-  await expect(sidebar.getByText("Demo Shop", { exact: true })).toBeVisible();
-
-  await sidebar.getByRole("button", { name: "New module in Demo Shop" }).click();
-  const newModuleDialog = page.getByRole("dialog", { name: "New module" });
-  await newModuleDialog.getByLabel("Name").fill("Auth");
-  await newModuleDialog.getByRole("button", { name: "Create" }).click();
-  await expect(newModuleDialog).toBeHidden();
-  await expect(sidebar.getByText("Auth", { exact: true })).toBeVisible();
-
-  await sidebar.getByRole("button", { name: "New test file in Auth" }).click();
-  const newTestFileDialog = page.getByRole("dialog", { name: "New test file" });
-  await newTestFileDialog.getByLabel("Name").fill("login");
-  await newTestFileDialog.getByRole("button", { name: "Create" }).click();
-  await expect(newTestFileDialog).toBeHidden();
+  await expect(await create(page, "New project", "New project", "Demo Shop")).toBeHidden();
+  await expect(await create(page, "New module in Demo Shop", "New module", "Shopping")).toBeHidden();
+  await expect(await create(page, "New test file in Shopping", "New test file", "login")).toBeHidden();
 
   await expect(page).toHaveURL(/\/files\/[^/]+$/);
-  const loginFileLink = sidebar.getByRole("link", { name: "login.yaml" });
-  await expect(loginFileLink).toHaveAttribute("aria-current", "page");
-  await expect(loginFileLink.locator("[data-status]")).toHaveAttribute("data-status", "none");
+  await expect(page.getByRole("heading", { name: "login.yaml", exact: true })).toBeVisible();
+  const fileLink = sidebar.getByRole("link", { name: "login.yaml", exact: true });
+  await expect(fileLink).toHaveAttribute("aria-current", "page");
+  const dot = fileLink.locator("[data-status]");
+  await expect(dot).toHaveAttribute("data-status", "none");
+  await expect(dot).toHaveAttribute("title", "Never run");
 
   await page.reload();
   await expect(sidebar.getByText("Demo Shop", { exact: true })).toBeVisible();
-  await expect(sidebar.getByText("Auth", { exact: true })).toBeVisible();
-  await expect(sidebar.getByRole("link", { name: "login.yaml" })).toBeVisible();
+  await expect(sidebar.getByText("Shopping", { exact: true })).toBeVisible();
+  await expect(sidebar.getByRole("link", { name: "login.yaml", exact: true })).toBeVisible();
 });
 
-test("keeps the dialog open on a duplicate project name", async ({ page }) => {
-  await registerUniqueUser(page);
+test("TC-WS-02 keeps names unique within their parent only", async ({ page }) => {
+  await signUp(page);
+  await page.goto("/");
+  const sidebar = sidebarOf(page);
+  await create(page, "New project", "New project", "Demo Shop");
+  await create(page, "New module in Demo Shop", "New module", "Shopping");
+  await create(page, "New test file in Shopping", "New test file", "login");
+  await expect(page).toHaveURL(/\/files\/[^/]+$/);
 
-  const sidebar = page.getByRole("navigation", { name: "Projects" });
+  for (const [opener, dialogName, name] of [
+    ["New project", "New project", "Demo Shop"],
+    ["New module in Demo Shop", "New module", "Shopping"],
+    ["New test file in Shopping", "New test file", "login.yaml"],
+  ] as const) {
+    const dialog = await create(page, opener, dialogName, name);
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole("alert")).toBeVisible();
+    await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
+  }
+  await expect(sidebar.getByText("Demo Shop", { exact: true })).toHaveCount(1);
+  await expect(sidebar.getByText("Shopping", { exact: true })).toHaveCount(1);
+  await expect(sidebar.getByRole("link", { name: "login.yaml", exact: true })).toHaveCount(1);
 
-  await sidebar.getByRole("button", { name: "New project" }).click();
-  const firstNewProjectDialog = page.getByRole("dialog", { name: "New project" });
-  await firstNewProjectDialog.getByLabel("Name").fill("Demo Shop");
-  await firstNewProjectDialog.getByRole("button", { name: "Create" }).click();
-  await expect(firstNewProjectDialog).toBeHidden();
-  await expect(sidebar.getByText("Demo Shop", { exact: true })).toBeVisible();
+  await expect(await create(page, "New project", "New project", "Other")).toBeHidden();
+  await expect(await create(page, "New module in Other", "New module", "Shopping")).toBeHidden();
+  await sidebar.getByRole("button", { name: "New test file in Shopping", exact: true }).last().click();
+  const fileDialog = page.getByRole("dialog", { name: "New test file", exact: true });
+  await fileDialog.getByLabel("Name").fill("login");
+  await fileDialog.getByRole("button", { name: "Create", exact: true }).click();
+  await expect(fileDialog).toBeHidden();
+  await expect(sidebar.getByRole("link", { name: "login.yaml", exact: true })).toHaveCount(2);
+});
 
-  await sidebar.getByRole("button", { name: "New project" }).click();
-  const duplicateProjectDialog = page.getByRole("dialog", { name: "New project" });
-  await duplicateProjectDialog.getByLabel("Name").fill("Demo Shop");
-  await duplicateProjectDialog.getByRole("button", { name: "Create" }).click();
+test("TC-WS-03 accepts project names of 1 to 100 characters", async ({ page }) => {
+  await signUp(page);
+  await page.goto("/");
+  const sidebar = sidebarOf(page);
 
-  await expect(duplicateProjectDialog).toBeVisible();
-  await expect(duplicateProjectDialog.getByRole("alert")).toBeVisible();
+  const empty = await create(page, "New project", "New project", "");
+  await expect(empty).toBeVisible();
+  await empty.getByRole("button", { name: "Cancel", exact: true }).click();
+
+  const longest = "P".repeat(100);
+  await expect(await create(page, "New project", "New project", longest)).toBeHidden();
+  await expect(sidebar.getByText(longest, { exact: true })).toBeVisible();
+
+  const tooLong = await create(page, "New project", "New project", "Q".repeat(101));
+  await expect(tooLong).toBeVisible();
+  await expect(tooLong.getByRole("alert")).toBeVisible();
+  await tooLong.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(sidebar.getByText("Q".repeat(101), { exact: true })).toHaveCount(0);
 });

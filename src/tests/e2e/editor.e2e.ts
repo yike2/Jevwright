@@ -1,66 +1,150 @@
-import { expect, test, type Page } from "@playwright/test";
+import { fileURLToPath } from "node:url";
+import { expect, test, type Locator, type Page } from "@playwright/test";
+import { addTestFile, createWorkspace, fixture, signUp } from "./support.js";
 
-async function registerUniqueUser(page: Page): Promise<string> {
-  const email = `e2e-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`;
-  const password = "e2e-password-123";
-  const form = page.locator("form");
+const MAX_SOURCE_CHARS = 262_144;
 
-  await page.goto("/login");
-  await page.getByRole("button", { name: "Register" }).click();
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(password);
-  await form.getByRole("button", { name: "Register" }).click();
+type Editor = { textarea: Locator; validation: Locator; save: Locator; unsaved: Locator };
 
-  await expect(page).toHaveURL("/");
-  return email;
+function editorOf(page: Page): Editor {
+  return {
+    textarea: page.getByRole("textbox", { name: "Test file YAML" }),
+    validation: page.getByRole("region", { name: "Validation" }),
+    save: page.getByRole("button", { name: "Save", exact: true }),
+    unsaved: page.getByText("Unsaved changes"),
+  };
 }
 
-test("validates, saves, reloads, and runs a test file from the editor", async ({ page }) => {
-  await registerUniqueUser(page);
+async function openNewFile(page: Page, source = fixture("pass/sign-in.yaml")): Promise<Editor> {
+  const { api } = await signUp(page);
+  const { moduleId } = await createWorkspace(api);
+  const testFileId = await addTestFile(api, moduleId, "editor.yaml", source);
+  await page.goto(`/files/${testFileId}`);
+  const editor = editorOf(page);
+  await expect(editor.textarea).toHaveValue(source);
+  return editor;
+}
 
-  const sidebar = page.getByRole("navigation", { name: "Projects" });
+test("TC-ED-01 shows the starter source and tracks unsaved changes", async ({ page }) => {
+  const { api } = await signUp(page);
+  await createWorkspace(api);
+  await page.goto("/");
+  await page.getByRole("button", { name: "New test file in Shopping", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "New test file", exact: true });
+  await dialog.getByLabel("Name").fill("editor");
+  await dialog.getByRole("button", { name: "Create", exact: true }).click();
+  const { textarea, save, unsaved } = editorOf(page);
 
-  await sidebar.getByRole("button", { name: "New project" }).click();
-  const newProjectDialog = page.getByRole("dialog", { name: "New project" });
-  await newProjectDialog.getByLabel("Name").fill("Demo Shop");
-  await newProjectDialog.getByRole("button", { name: "Create" }).click();
-  await expect(sidebar.getByText("Demo Shop", { exact: true })).toBeVisible();
+  const starter = 'name: "editor"\nsteps:\n  - open:\n      url: "https://example.com"\n';
+  await expect(textarea).toHaveValue(starter);
+  await expect(save).toBeDisabled();
 
-  await sidebar.getByRole("button", { name: "New module in Demo Shop" }).click();
-  const newModuleDialog = page.getByRole("dialog", { name: "New module" });
-  await newModuleDialog.getByLabel("Name").fill("Auth");
-  await newModuleDialog.getByRole("button", { name: "Create" }).click();
-  await expect(sidebar.getByText("Auth", { exact: true })).toBeVisible();
+  await textarea.fill(`${starter}#`);
+  await expect(unsaved).toBeVisible();
+  await expect(save).toBeEnabled();
 
-  await sidebar.getByRole("button", { name: "New test file in Auth" }).click();
-  const newTestFileDialog = page.getByRole("dialog", { name: "New test file" });
-  await newTestFileDialog.getByLabel("Name").fill("editor");
-  await newTestFileDialog.getByRole("button", { name: "Create" }).click();
-  await expect(newTestFileDialog).toBeHidden();
-  await expect(page).toHaveURL(/\/files\/[^/]+$/);
+  await textarea.fill(starter);
+  await expect(unsaved).toBeHidden();
+  await expect(save).toBeDisabled();
+});
 
-  const textarea = page.getByRole("textbox", { name: "Test file YAML" });
-  await expect(textarea).toHaveValue('name: "editor"\nsteps:\n  - open:\n      url: "https://example.com"\n');
+test("TC-ED-02 saves a source and shows it after a reload", async ({ page }) => {
+  const { textarea, validation, save, unsaved } = await openNewFile(page, fixture("pass/locked-out.yaml"));
+  const source = fixture("pass/sign-in.yaml");
 
-  await textarea.fill('name: "editor"\nsteps:\n  - aiAct:\n      url: "https://example.com"\n');
-  await expect(page.getByText("Unsaved changes")).toBeVisible();
-  await page.getByRole("button", { name: "Validate" }).click();
+  await textarea.fill(source);
+  await save.click();
 
-  const validationRegion = page.getByRole("region", { name: "Validation" });
-  await expect(validationRegion.getByText("1 validation error")).toBeVisible();
-  await expect(validationRegion.getByRole("listitem").first()).toContainText("Line 3:");
+  await expect(unsaved).toBeHidden();
+  await expect(validation).toContainText("Valid. Ready to run.");
+  await page.reload();
+  await expect(textarea).toHaveValue(source);
+});
 
-  const savedSource = 'name: "editor"\nsteps:\n  - open:\n      url: "https://example.com/saved"\n';
-  await textarea.fill(savedSource);
-  const saveButton = page.getByRole("button", { name: "Save" });
-  await saveButton.click();
+test("TC-ED-03 uploads a file into the draft without saving it", async ({ page }) => {
+  const original = fixture("pass/sign-in.yaml");
+  const { textarea, save, unsaved } = await openNewFile(page, original);
+  const fileInput = page.locator('input[type="file"]');
+  const checkout = fileURLToPath(new URL("./fixtures/pass/checkout.yaml", import.meta.url));
+  await expect(fileInput).toHaveAttribute("accept", ".yaml,.yml");
 
-  await expect(page.getByText("Unsaved changes")).toBeHidden();
-  await expect(saveButton).toBeDisabled();
+  await fileInput.setInputFiles(checkout);
+  await expect(textarea).toHaveValue(fixture("pass/checkout.yaml"));
+  await expect(unsaved).toBeVisible();
 
   await page.reload();
-  await expect(textarea).toHaveValue(savedSource);
+  await expect(textarea).toHaveValue(original);
 
-  await page.getByRole("button", { name: "Run" }).click();
-  await expect(page.getByRole("status")).toHaveText("Run queued.");
+  await fileInput.setInputFiles(checkout);
+  await save.click();
+  await expect(unsaved).toBeHidden();
+  await page.reload();
+  await expect(textarea).toHaveValue(fixture("pass/checkout.yaml"));
+});
+
+test("TC-ED-04 lists every error of an invalid file with its line", async ({ page }) => {
+  const { textarea, validation, save } = await openNewFile(page);
+  const expected = [
+    'Line 3: "timeoutMs" must be a positive integer up to 2147483647',
+    'Line 6: "url" is relative, so the test needs a "baseUrl"',
+    'Line 7: Unknown action "aiAct"',
+    'Line 8: Step must contain exactly one action, found "click" and "input"',
+    'Line 13: Missing required field "value"',
+    'Line 15: Needs at least one of "selector" and "target"',
+    'Line 18: Unknown field "colour"',
+  ];
+
+  await textarea.fill(fixture("invalid/multiple-errors.yaml"));
+  await page.getByRole("button", { name: "Validate", exact: true }).click();
+  await expect(validation.getByText("7 validation errors", { exact: true })).toBeVisible();
+  await expect(validation.getByRole("listitem")).toHaveText(expected);
+
+  await save.click();
+  await expect(page.getByText("Unsaved changes")).toBeHidden();
+  await expect(validation.getByRole("listitem")).toHaveText(expected);
+});
+
+test("TC-ED-05 reports a YAML syntax error", async ({ page }) => {
+  const { textarea, validation } = await openNewFile(page);
+
+  await textarea.fill(fixture("invalid/yaml-syntax.yaml"));
+  await page.getByRole("button", { name: "Validate", exact: true }).click();
+
+  await expect(validation.getByText("1 validation error", { exact: true })).toBeVisible();
+  await expect(validation.getByRole("listitem")).toHaveText([
+    "Line 7: Nested mappings are not allowed in compact mappings",
+  ]);
+});
+
+test("TC-ED-06 shows a fixed file as valid and clears the result on edit", async ({ page }) => {
+  const { textarea, validation } = await openNewFile(page);
+  const validate = page.getByRole("button", { name: "Validate", exact: true });
+  await textarea.fill(fixture("invalid/multiple-errors.yaml"));
+  await validate.click();
+  await expect(validation.getByText("7 validation errors", { exact: true })).toBeVisible();
+
+  await textarea.fill(fixture("pass/sign-in.yaml"));
+  await validate.click();
+  await expect(validation.getByText("Valid. Ready to run.", { exact: true })).toBeVisible();
+  await expect(validation.getByRole("listitem")).toHaveCount(0);
+
+  await textarea.fill(`${fixture("pass/sign-in.yaml")}#`);
+  await expect(validation).toHaveText("");
+});
+
+test("TC-ED-07 saves a source of up to 262,144 characters", async ({ page }) => {
+  const { textarea, save, unsaved } = await openNewFile(page);
+  const base = `${fixture("pass/sign-in.yaml")}# `;
+  const largest = base + "x".repeat(MAX_SOURCE_CHARS - base.length);
+  expect(largest).toHaveLength(MAX_SOURCE_CHARS);
+
+  await textarea.fill(largest);
+  await save.click();
+  await expect(unsaved).toBeHidden();
+
+  await textarea.fill(`${largest}x`);
+  await save.click();
+  await expect(page.getByRole("alert")).toContainText("body.source");
+  await expect(unsaved).toBeVisible();
+  await expect(textarea).toHaveValue(`${largest}x`);
 });

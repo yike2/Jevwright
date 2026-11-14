@@ -1,52 +1,78 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
+import { addTestFile, createWorkspace, DEMO_URL, fixture, runFromEditor, setUpDemoProject, signUp } from "./support.js";
 
-async function registerUniqueUser(page: Page): Promise<string> {
-  const email = `e2e-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`;
-  const password = "e2e-password-123";
-  const form = page.locator("form");
-
-  await page.goto("/login");
-  await page.getByRole("button", { name: "Register" }).click();
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(password);
-  await form.getByRole("button", { name: "Register" }).click();
-
-  await expect(page).toHaveURL("/");
-  return email;
+async function openVariables(page: Page): Promise<Locator> {
+  const { api } = await signUp(page);
+  await createWorkspace(api);
+  await page.goto("/");
+  await page.getByRole("button", { name: "Variables for Demo Shop", exact: true }).click();
+  return page.getByRole("dialog", { name: "Variables", exact: true });
 }
 
-test("adds, validates, and deletes a project variable", async ({ page }) => {
-  await registerUniqueUser(page);
+async function saveVariable(dialog: Locator, name: string, value: string): Promise<void> {
+  await dialog.getByLabel("Name").fill(name);
+  await dialog.getByLabel("Value").fill(value);
+  await dialog.getByRole("button", { name: "Save", exact: true }).click();
+}
 
-  const sidebar = page.getByRole("navigation", { name: "Projects" });
+test("TC-VAR-01 adds, replaces, and deletes a variable without showing its value", async ({ page }) => {
+  const dialog = await openVariables(page);
+  await expect(dialog.getByText("No variables yet", { exact: true })).toBeVisible();
+  const items = dialog.getByRole("listitem").filter({ hasText: "BASE" });
 
-  await sidebar.getByRole("button", { name: "New project" }).click();
-  const newProjectDialog = page.getByRole("dialog", { name: "New project" });
-  await newProjectDialog.getByLabel("Name").fill("Demo Shop");
-  await newProjectDialog.getByRole("button", { name: "Create" }).click();
-  await expect(sidebar.getByText("Demo Shop", { exact: true })).toBeVisible();
+  await saveVariable(dialog, "BASE", DEMO_URL);
+  await expect(items).toHaveCount(1);
+  await expect(dialog.getByLabel("Value")).toHaveValue("");
+  await expect(page.locator("body")).not.toContainText(DEMO_URL);
 
-  await sidebar.getByRole("button", { name: "Variables for Demo Shop" }).click();
-  const variablesDialog = page.getByRole("dialog", { name: "Variables" });
-  const valueInput = variablesDialog.getByLabel("Value");
-  const nameInput = variablesDialog.getByLabel("Name");
-  const saveButton = variablesDialog.getByRole("button", { name: "Save" });
+  await saveVariable(dialog, "BASE", "http://127.0.0.1:9999");
+  await expect(items).toHaveCount(1);
+  await expect(page.locator("body")).not.toContainText("127.0.0.1:9999");
 
-  await nameInput.fill("BASE");
-  await valueInput.fill("https://demo.example.com/secret-value");
-  await saveButton.click();
+  await dialog.getByRole("button", { name: "Delete BASE", exact: true }).click();
+  await expect(items).toHaveCount(0);
+});
 
-  const variableListItem = variablesDialog.getByRole("listitem").filter({ hasText: "BASE" });
-  await expect(variableListItem).toContainText("BASE");
-  await expect(variableListItem.getByRole("button", { name: "Delete BASE" })).toBeVisible();
-  await expect(variablesDialog).not.toContainText("secret-value");
-  await expect(valueInput).toHaveValue("");
+test("TC-VAR-02 rejects names that are not upper snake case, before any request", async ({ page }) => {
+  const dialog = await openVariables(page);
+  const puts: string[] = [];
+  page.on("request", (request) => {
+    if (request.method() === "PUT") puts.push(request.url());
+  });
 
-  await nameInput.fill("base");
-  await valueInput.fill("https://demo.example.com/secret-value");
-  await saveButton.click();
-  await expect(variablesDialog.getByRole("alert")).toHaveText("Name must match [A-Z_][A-Z0-9_]*");
+  for (const name of ["base", "1BASE"]) {
+    await saveVariable(dialog, name, "value");
+    await expect(dialog.getByRole("alert")).toHaveText("Name must match [A-Z_][A-Z0-9_]*");
+  }
+  expect(puts).toEqual([]);
 
-  await variableListItem.getByRole("button", { name: "Delete BASE" }).click();
-  await expect(variableListItem).toHaveCount(0);
+  await saveVariable(dialog, "_BASE_1", "value");
+  await expect(dialog.getByRole("listitem").filter({ hasText: "_BASE_1" })).toHaveCount(1);
+  expect(puts).toHaveLength(1);
+});
+
+test("TC-VAR-03 fails the step whose variable is not set", async ({ page }) => {
+  const { api, moduleId } = await setUpDemoProject(page);
+  const testFileId = await addTestFile(api, moduleId, "missing-variable.yaml", fixture("fail/missing-variable.yaml"));
+
+  expect(await runFromEditor(page, testFileId)).toBe("Failed");
+
+  const steps = page.getByRole("list", { name: "Steps" }).getByRole("listitem");
+  await expect(steps.nth(0)).toContainText("Passed");
+  await expect(steps.nth(1)).toContainText("Failed");
+  await expect(steps.nth(1)).toContainText("Variable {{NOT_SET}} is not set");
+  await expect(steps.nth(2)).toContainText("Pending");
+  await expect(page.getByText("1/3 passed", { exact: true })).toBeVisible();
+});
+
+test("TC-VAR-04 uses only the variables of the file's own project", async ({ page }) => {
+  const { api } = await setUpDemoProject(page);
+  const other = await api<{ id: string }>("POST", "/projects", { name: "Other" });
+  const module = await api<{ id: string }>("POST", `/projects/${other.id}/modules`, { name: "Shopping" });
+  const testFileId = await addTestFile(api, module.id, "sign-in.yaml", fixture("pass/sign-in.yaml"));
+
+  expect(await runFromEditor(page, testFileId)).toBe("Failed");
+
+  const firstStep = page.getByRole("list", { name: "Steps" }).getByRole("listitem").first();
+  await expect(firstStep).toContainText("Variable {{BASE}} is not set");
 });
