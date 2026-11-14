@@ -359,7 +359,12 @@ jobs:
           git fetch origin main
           git checkout main
           git merge --ff-only "$SHA"
-          docker compose up -d --build
+          # One image at a time: parallel builds run the VPS out of memory.
+          # COMPOSE_PARALLEL_LIMIT does not apply, since compose builds through bake.
+          for service in browser backend frontend; do
+            docker compose build "$service"
+          done
+          docker compose up -d
           docker compose ps
           SCRIPT
 

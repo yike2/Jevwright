@@ -33,8 +33,9 @@ The `Deploy to production` job:
 1. Connects to the server over SSH with a key used only by GitHub Actions.
 2. Refuses to deploy if the server's checkout has local changes, and prints them.
 3. Fetches `main` and fast-forwards the checkout to the exact commit that passed CI.
-4. Runs `docker compose up -d --build` and prints `docker compose ps`.
-5. Calls `<API_URL>/health` until it answers, for up to a minute.
+4. Builds the `browser`, `backend`, and `frontend` images one at a time with `docker compose build <service>`, because parallel builds run the VPS out of memory. If a build fails, the job stops and the running containers stay as they are.
+5. Restarts the changed services with `docker compose up -d` and prints `docker compose ps`.
+6. Calls `<API_URL>/health` until it answers, for up to a minute.
 
 The GitHub environment `production` shows each deployment and links to the frontend.
 
@@ -81,7 +82,8 @@ If the deploy job fails or GitHub Actions is down, deploy from the server:
 cd <DEPLOY_PATH>
 git status --short          # must print nothing
 git checkout main && git pull
-docker compose up -d --build
+for service in browser backend frontend; do docker compose build "$service"; done
+docker compose up -d
 docker compose ps
 ```
 
@@ -92,6 +94,7 @@ Never deploy a branch that is not merged: production would no longer match `main
 | Symptom | Check |
 | ------- | ----- |
 | Deploy fails at "refusing to deploy" | Someone changed files on the server. Inspect them with `git status` and `git diff` there, move wanted changes into a PR, then `git restore` the checkout |
+| A build step fails with `Killed` or exit code `137` | The server ran out of memory during the build. Check `free -h` and `sudo dmesg -T \| grep -i oom`; add swap or stop other memory users, then rerun the job |
 | Deploy fails at `git merge --ff-only` | The server's `main` has commits that are not on GitHub; reset it to `origin/main` after saving anything needed |
 | `Permission denied (publickey)` | The public key is missing from the server's `authorized_keys`, or `SSH_PRIVATE_KEY` was pasted without its first and last lines |
 | `Host key verification failed` | `SSH_KNOWN_HOSTS` is empty or the server was rebuilt; copy the host key line again (3.2) |
