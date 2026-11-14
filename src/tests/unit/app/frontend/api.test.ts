@@ -6,6 +6,7 @@ import {
   type CreateProjectResponse,
   type CreateTestFileResponse,
   type Run,
+  type RunListResponse,
   type TestFile,
   type UpdateTestFileResponse,
   type ValidateResponse,
@@ -599,5 +600,96 @@ describe("api client", () => {
     });
 
     await expect(client.deleteVariable("p-1", "BASE")).resolves.toBeUndefined();
+  });
+
+  it("sends GET /runs?testFileId=tf-1&limit=20 and resolves the list", async () => {
+    const run: Run = {
+      id: "run-1",
+      testFileId: "tf-1",
+      projectId: "p-1",
+      moduleId: "m-1",
+      fileName: "login.yaml",
+      name: "login",
+      status: "queued",
+      createdAt: "2026-11-13T00:00:00.000Z",
+      startedAt: null,
+      finishedAt: null,
+      durationMs: null,
+      summary: {
+        total: 1,
+        passed: 0,
+        failed: 0,
+        pending: 1,
+      },
+      error: null,
+    };
+    const response: RunListResponse = { items: [run], nextCursor: null };
+
+    const fetchImpl = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+      expect(url).toBe("http://localhost:4000/api/v1/runs?testFileId=tf-1&limit=20");
+      expect(init?.method ?? "GET").toBe("GET");
+      const headers = new Headers(init?.headers ?? {});
+      expect(headers.get("Authorization")).toBe("Bearer jwt-token");
+      return makeResponse(response, 200);
+    });
+
+    const client = createApiClient({
+      baseUrl: "http://localhost:4000/api/v1",
+      getToken: () => "jwt-token",
+      setToken: () => undefined,
+      fetchImpl,
+    });
+
+    await expect(client.listRuns("tf-1")).resolves.toEqual(response);
+  });
+
+  it("sends GET /runs/run-1 and resolves the Run", async () => {
+    const run: Run = {
+      id: "run-1",
+      testFileId: "tf-1",
+      projectId: "p-1",
+      moduleId: "m-1",
+      fileName: "login.yaml",
+      name: "login",
+      status: "running",
+      createdAt: "2026-11-13T00:00:00.000Z",
+      startedAt: "2026-11-13T00:01:00.000Z",
+      finishedAt: null,
+      durationMs: 1000,
+      summary: {
+        total: 1,
+        passed: 0,
+        failed: 0,
+        pending: 1,
+      },
+      error: null,
+    };
+
+    const fetchImpl = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+      expect(url).toBe("http://localhost:4000/api/v1/runs/run-1");
+      expect(init?.method ?? "GET").toBe("GET");
+      const headers = new Headers(init?.headers ?? {});
+      expect(headers.get("Authorization")).toBe("Bearer jwt-token");
+      return makeResponse(run, 200);
+    });
+
+    const client = createApiClient({
+      baseUrl: "http://localhost:4000/api/v1",
+      getToken: () => "jwt-token",
+      setToken: () => undefined,
+      fetchImpl,
+    });
+
+    await expect(client.getRun("run-1")).resolves.toEqual(run);
+  });
+
+  it("returns the configured base URL from getBaseUrl", () => {
+    const client = createApiClient({
+      baseUrl: "http://localhost:4000/api/v1",
+      getToken: () => "jwt-token",
+      setToken: () => undefined,
+    });
+
+    expect(client.getBaseUrl()).toBe("http://localhost:4000/api/v1");
   });
 });
