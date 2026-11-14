@@ -10,6 +10,13 @@ export type CreateModuleResponse =
   paths["/projects/{projectId}/modules"]["post"]["responses"][201]["content"]["application/json"];
 export type CreateTestFileResponse =
   paths["/modules/{moduleId}/test-files"]["post"]["responses"][201]["content"]["application/json"];
+export type TestFile = components["schemas"]["TestFile"];
+export type Run = components["schemas"]["Run"];
+export type UpdateTestFileResponse =
+  paths["/test-files/{testFileId}"]["patch"]["responses"][200]["content"]["application/json"];
+export type ValidateResponse = paths["/test-files/validate"]["post"]["responses"][200]["content"]["application/json"];
+export type VariableListResponse =
+  paths["/projects/{projectId}/variables"]["get"]["responses"][200]["content"]["application/json"];
 
 export type ApiErrorBody = {
   error: {
@@ -124,6 +131,13 @@ export function createApiClient(config: ApiClientConfig = {}): {
   createProject(name: string): Promise<CreateProjectResponse>;
   createModule(projectId: string, name: string): Promise<CreateModuleResponse>;
   createTestFile(moduleId: string, name: string, source: string): Promise<CreateTestFileResponse>;
+  getTestFile(testFileId: string): Promise<TestFile>;
+  updateTestFile(testFileId: string, source: string): Promise<UpdateTestFileResponse>;
+  validateSource(source: string): Promise<ValidateResponse>;
+  startRun(testFileId: string): Promise<Run>;
+  listVariables(projectId: string): Promise<VariableListResponse>;
+  setVariable(projectId: string, name: string, value: string): Promise<void>;
+  deleteVariable(projectId: string, name: string): Promise<void>;
 } {
   const defaultBaseUrl = "http://127.0.0.1:4000/api/v1";
   const fetchImpl = config.fetchImpl ?? fetch;
@@ -275,6 +289,56 @@ export function createApiClient(config: ApiClientConfig = {}): {
     });
   };
 
+  const getTestFile = async (testFileId: string): Promise<TestFile> => {
+    return request<TestFile>(`/test-files/${testFileId}`);
+  };
+
+  const updateTestFile = async (testFileId: string, source: string): Promise<UpdateTestFileResponse> => {
+    return request<UpdateTestFileResponse>(`/test-files/${testFileId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ source }),
+    });
+  };
+
+  const validateSource = async (source: string): Promise<ValidateResponse> => {
+    return request<ValidateResponse>("/test-files/validate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ source }),
+    });
+  };
+
+  const startRun = async (testFileId: string): Promise<Run> => {
+    return request<Run>(`/test-files/${testFileId}/runs`, {
+      method: "POST",
+    });
+  };
+
+  const listVariables = async (projectId: string): Promise<VariableListResponse> => {
+    return request<VariableListResponse>(`/projects/${projectId}/variables`);
+  };
+
+  const setVariable = async (projectId: string, name: string, value: string): Promise<void> => {
+    await request<void>(`/projects/${projectId}/variables/${name}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ value }),
+    });
+  };
+
+  const deleteVariable = async (projectId: string, name: string): Promise<void> => {
+    await request<void>(`/projects/${projectId}/variables/${name}`, {
+      method: "DELETE",
+    });
+  };
+
   return {
     setToken,
     clearToken,
@@ -287,6 +351,13 @@ export function createApiClient(config: ApiClientConfig = {}): {
     createProject,
     createModule,
     createTestFile,
+    getTestFile,
+    updateTestFile,
+    validateSource,
+    startRun,
+    listVariables,
+    setVariable,
+    deleteVariable,
   };
 }
 
