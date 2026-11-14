@@ -1,0 +1,81 @@
+# The preview environment on the VPS (docs/deploy/ci-cd.md 4): one slot that CI redeploys with each PR's commit.
+# It runs next to production as the compose project "jevwright-preview", from its own checkout and .env:
+#   docker compose -p jevwright-preview -f compose.preview.yaml up -d --build
+# It has its own database, secrets, and Runs. It has no Caddy: production's Caddy serves it at PREVIEW_APP_DOMAIN and
+# PREVIEW_API_DOMAIN through the external network jevwright-edge. Service names start with "preview-" so they never
+# share a DNS name with production's services.
+services:
+  preview-postgres:
+    image: postgres:17.9-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: jevwright
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: jevwright
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jevwright"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    networks: [data]
+
+  preview-backend:
+    build:
+      context: .
+      dockerfile: src/app/backend/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      preview-postgres:
+        condition: service_healthy
+      preview-browser:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgresql://jevwright:${POSTGRES_PASSWORD}@preview-postgres:5432/jevwright
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:?set OPENROUTER_API_KEY in .env}
+      CORS_ORIGIN: ${CORS_ORIGIN:?set CORS_ORIGIN in .env}
+      RUN_CONCURRENCY: 1
+      RUNS_DIR: /data/runs
+      PORT: 4000
+      BROWSER_ENDPOINT: ws://preview-browser:3000/
+    volumes:
+      - runs:/data/runs
+    init: true
+    networks: [data, browser, edge]
+
+  preview-browser:
+    build:
+      context: .
+      dockerfile: src/app/backend/browser.Dockerfile
+    restart: unless-stopped
+    cap_add: [NET_ADMIN]
+    # Smaller than production's: a preview runs one Run at a time on a shared server.
+    shm_size: 512m
+    mem_limit: 1g
+    cpus: "1"
+    pids_limit: 512
+    init: true
+    networks: [browser]
+
+  preview-frontend:
+    build:
+      context: .
+      dockerfile: src/app/frontend/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: https://${API_DOMAIN:?set API_DOMAIN in .env}/api/v1
+    restart: unless-stopped
+    init: true
+    networks: [edge]
+
+volumes:
+  postgres-data:
+  runs:
+
+networks:
+  data:
+  browser:
+  edge:
+    external: true
+    name: jevwright-edge
