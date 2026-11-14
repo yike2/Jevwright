@@ -161,3 +161,4 @@ src/app/backend/src/generated/
 **/data/runs/
 test-results/
 playwright-report/
+.DS_Store

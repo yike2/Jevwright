@@ -13,7 +13,7 @@ The cases they automate, and the test files they run, are in `docs/testing/test-
 | Runner | `@playwright/test@1.64.1`, the same version as the root `playwright` package, so both use one Chromium |
 | Location | `src/tests/e2e/`, files named `*.e2e.ts`; vitest collects `*.test.ts` and `*.spec.ts`, so this name keeps E2E out of `pnpm test` |
 | Browser | Chromium only |
-| Servers | The backend (`pnpm backend`, dev mode), the frontend (`pnpm frontend`), and the Demo App (`src/tests/e2e/demo-app.ts`), started by Playwright's `webServer`, or reused when already running locally |
+| Servers | The backend (`pnpm backend`, dev mode), the frontend (`pnpm frontend`; in CI the build, served with `next start`, `docs/deploy/ci-cd.md`), and the Demo App (`src/tests/e2e/demo-app.ts`), started by Playwright's `webServer`, or reused when already running locally |
 | Target site | Runs open only the Demo App at `DEMO_URL` (`http://127.0.0.1:8080`); a dev-mode backend's Runs may open local addresses (`backend.md` 1.6). No test opens an external site |
 | Jev | No test calls Jev: every test file it runs locates by `selector` and asserts with Playwright checks. Cases that need Jev are **Live** in `test-cases.md` and stay out of this suite |
 | Timeout | 120 s per test, since a test may wait for several Runs; each Run page waits up to 60 s for a final status |
