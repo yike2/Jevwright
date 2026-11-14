@@ -50,7 +50,8 @@ test("validates, saves, reloads, and runs a test file from the editor", async ({
   await expect(validationRegion.getByText("1 validation error")).toBeVisible();
   await expect(validationRegion.getByRole("listitem").first()).toContainText("Line 3:");
 
-  await textarea.fill('name: "editor"\nsteps:\n  - open:\n      url: "https://example.com"\n');
+  const savedSource = 'name: "editor"\nsteps:\n  - open:\n      url: "https://example.com/saved"\n';
+  await textarea.fill(savedSource);
   const saveButton = page.getByRole("button", { name: "Save" });
   await saveButton.click();
 
@@ -58,7 +59,7 @@ test("validates, saves, reloads, and runs a test file from the editor", async ({
   await expect(saveButton).toBeDisabled();
 
   await page.reload();
-  await expect(textarea).toHaveValue('name: "editor"\nsteps:\n  - open:\n      url: "https://example.com"\n');
+  await expect(textarea).toHaveValue(savedSource);
 
   await page.getByRole("button", { name: "Run" }).click();
   await expect(page.getByRole("status")).toHaveText("Run queued.");
