@@ -79,7 +79,8 @@ Leave `DATABASE_URL`, `RUNS_DIR`, `PORT`, `HOST`, and `BROWSER_ENDPOINT` unset; 
 ## 4. Start it
 
 ```sh
-docker compose up -d --build
+for service in browser backend frontend; do docker compose build "$service"; done   # one image at a time to stay within memory
+docker compose up -d
 docker compose ps
 docker compose logs -f backend   # Ctrl+C to stop following
 ```
@@ -136,7 +137,8 @@ The frontend gets its own service in `compose.yaml` and its own site in `Caddyfi
 ```sh
 cd /opt/jevwright
 git pull
-docker compose up -d --build
+for service in browser backend frontend; do docker compose build "$service"; done
+docker compose up -d
 ```
 
 The backend applies new migrations when it starts. Demo App changes are live as soon as `git pull` brings them, since Caddy serves the files from the checkout. Runs that were queued or running during the restart are marked `failed` with the error `interrupted`, so update when no Runs are running.

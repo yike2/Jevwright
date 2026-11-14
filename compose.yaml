@@ -3,6 +3,8 @@
 #   cp .env.example .env   # fill in the Deploy section
 #   docker compose up -d --build
 # The frontend and the public Demo App are added by their own services and Caddy sites.
+# Caddy also serves the preview environment (compose.preview.yaml, docs/deploy/ci-cd.md 4) through the external
+# network jevwright-edge, created once with: docker network create jevwright-edge
 services:
   postgres:
     image: postgres:17.9-alpine
@@ -84,6 +86,8 @@ services:
       API_DOMAIN: ${API_DOMAIN:?set API_DOMAIN in .env}
       DEMO_DOMAIN: ${DEMO_DOMAIN:?set DEMO_DOMAIN in .env}
       APP_DOMAIN: ${APP_DOMAIN:?set APP_DOMAIN in .env}
+      PREVIEW_APP_DOMAIN: ${PREVIEW_APP_DOMAIN:?set PREVIEW_APP_DOMAIN in .env}
+      PREVIEW_API_DOMAIN: ${PREVIEW_API_DOMAIN:?set PREVIEW_API_DOMAIN in .env}
     ports:
       - "80:80"
       - "443:443"
@@ -96,7 +100,7 @@ services:
       - ./src/tests/benchmark/demo-app/extras:/srv/demo/extras:ro
       - caddy-data:/data
       - caddy-config:/config
-    networks: [web]
+    networks: [web, edge]
 
 volumes:
   postgres-data:
@@ -108,3 +112,8 @@ networks:
   data:
   web:
   browser:
+  # Shared with the preview environment's frontend and backend only; production's services are not on it, so their
+  # names never resolve to preview containers.
+  edge:
+    external: true
+    name: jevwright-edge

@@ -27,7 +27,8 @@ The API URL is not a runtime variable. Next.js writes `NEXT_PUBLIC_API_URL` into
 ## 2. Start it
 
 ```sh
-docker compose up -d --build
+for service in browser backend frontend; do docker compose build "$service"; done
+docker compose up -d
 docker compose ps
 docker compose logs frontend
 ```
@@ -62,7 +63,7 @@ docker run --rm -p 127.0.0.1:3000:3000 jevwright-frontend
 
 ## 5. Update
 
-Same as `backend-prod.md` 8: `git pull`, then `docker compose up -d --build`.
+Same as `backend-prod.md` 8: `git pull`, `for service in browser backend frontend; do docker compose build "$service"; done`, then `docker compose up -d`.
 
 ## 6. When something goes wrong
 
