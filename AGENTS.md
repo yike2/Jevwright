@@ -54,7 +54,9 @@ src/
 ├── app/backend/     # Express: REST API, auth, Run Queue, Live Progress, OpenAPI, prisma/
 └── tests/           # unit/ (mirrors src/), integration/ (hw3/ = Locator demo pages, fixtures, scripts),
                      # e2e/, benchmark/ (Epic 3 demo-app + .yaml suite)
-docs/                # PRD.md, tech/ (TEMPLATE.md + one doc per module), references/, archify/
+docs/                # PRD.md, tech/ (TEMPLATE.md + one doc per module), references/, archify/,
+                     # guide-src/ (the user guide's sources) and guide/ (its build, committed)
+skills/              # jevwright-test-files/: the Agent Skill for writing test files
 ```
 
 ### 3.1 Key Patterns
@@ -71,8 +73,8 @@ docs/                # PRD.md, tech/ (TEMPLATE.md + one doc per module), referen
 - **Never rewrite or "self-heal" a user's test file.** The Syntax Analyzer returns *every* diagnostic.
 - **The Executor stops on the first failed step**; the pipeline still writes a complete report.
 - **Adding an action:** parser in `core/syntax/steps.ts` + map entry, a `BrowserAction` variant and its
-  function in `core/browser/actions.ts`, valid + invalid fixtures, and updates to `syntax-analyzer.md` and
-  `browser-adapter.md`.
+  function in `core/browser/actions.ts`, valid + invalid fixtures, and updates to `syntax-analyzer.md`,
+  `browser-adapter.md`, the user guide's `docs/guide-src/reference/` and the Agent Skill in `skills/`.
 
 ### 3.2 External Calls and Model Output
 
@@ -153,7 +155,9 @@ docs/                # PRD.md, tech/ (TEMPLATE.md + one doc per module), referen
   the PR.
 - **Don't** use `page.waitForTimeout()` except for `sleep`, put binaries in Postgres, or put business
   logic in React components.
-- **Don't** commit `.env`, reports, traces, `node_modules`, or build output.
+- **Don't** commit `.env`, reports, traces, `node_modules`, or build output. Two generated files are committed on
+  purpose and checked in CI: `docs/api/openapi.json` (`pnpm api:docs`) and the user guide `docs/guide/` (`pnpm docs:build`
+  from `docs/guide-src/`); regenerate them in the same PR as their sources.
 
 ### 7.1 Security
 

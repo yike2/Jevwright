@@ -152,7 +152,7 @@ Covers PRD 4.2.2. Pre: no token.
 1. Open `/`.
 2. Click **Get started** in the hero.
 
-Expected: step 1 shows the heading starting "Web tests as plain YAML steps.", the command `pnpm jevwright run tests/sign-in.yaml` with **Copy command**, the sections How does Jev find an element?, What does it fix?, Which should I write?, What runs where?, Checked before it runs, Light and dark, Quick start, and What it is, and what it is not, a **Docs** link to `https://yike2.github.io/Jevwright/`, and one **Sign in** button at the top right, with no **Log in**, **Register**, or **Open workspace**; step 2 opens `/register`, the auth page in Register mode, with the heading "Register".
+Expected: step 1 shows the heading starting "Web tests as plain YAML steps.", no command line anywhere on the page, the sections How does Jev find an element?, What does it fix?, Which should I write?, What runs where?, Checked before it runs, Light and dark, Quick start, and What it is, and what it is not, a **Docs** link to the user guide `https://yike2.github.io/Jevwright/guide/`, and one **Sign in** button at the top right, with no **Log in**, **Register**, or **Open workspace**; step 2 opens `/register`, the auth page in Register mode, with the heading "Register".
 
 #### TC-LAND-02 Sign in from the landing page — P1, E2E
 
@@ -187,9 +187,9 @@ Expected: every logo links to `/` ("Jevwright home"), signed in or not; step 3 o
 Covers PRD 4.2.2. Pre: none.
 
 1. Open `/`; in **Run replay** click **Show all steps**, then the button of step 4.
-2. Choose the tab `fall-back-from-a-stale-selector.yaml` and click **Show all steps**.
+2. Choose the tab `sign-in-and-see-products.yaml` and click **Show all steps**.
 
-Expected: step 1 lists six steps, step 4 is `click` with `selector` and `Passed`, and its screenshot "Step 4 screenshot" shows; in step 2 step 4 shows `visual` or `dom`.
+Expected: step 1 opens on the tab `fall-back-from-a-stale-selector.yaml` and lists six steps; step 4 is `click`, `Passed`, with the badge **AI locate**, the other steps have no badge, no step shows a method name such as `selector`, and the screenshot "Step 4 screenshot" shows; in step 2 no step has an **AI locate** or **AI assert** badge.
 
 #### TC-LAND-06 The replay with reduced motion — P2, E2E
 
@@ -199,13 +199,14 @@ Covers AGENTS.md 7.2. Pre: the system set to reduce motion.
 
 Expected: the replay shows all six steps as `Passed` at once, with no animation.
 
-#### TC-LAND-07 Quick start tabs — P2, E2E
+#### TC-LAND-07 Quick start on the web — P2, E2E
 
 Covers PRD 4.2.2. Pre: none.
 
-1. Open `/`; in **Quick start** look at **Web**, then choose **CLI**.
+1. Open `/` and look at **Quick start**.
+2. Do S1, open `/`, and click **Open workspace** in **Quick start**.
 
-Expected: **Web** lists the Quick Start folders, starting with `1 Passing tests`; **CLI** shows `pnpm jevwright validate tests/login.yaml` and the run command.
+Expected: step 1 shows no tabs, the Demo App `https://demo.94.72.126.118.sslip.io`, the Quick Start files with what each shows (such as `judge-a-true-statement.yaml`), the Quick Start folders starting with `1 Passing tests`, and a **Register** link to `/register`; step 2 opens `/files`.
 
 #### TC-LAND-08 The landing page on a phone — P2, Manual
 
@@ -213,7 +214,15 @@ Covers AGENTS.md 7.2. Pre: a 400px wide window, both themes.
 
 1. Scroll through `/`.
 
-Expected: nothing scrolls sideways except code boxes and the choice table; every diagram reads top to bottom; text and badges are readable in both themes.
+Expected: nothing scrolls sideways except code boxes; every diagram reads top to bottom; text and badges are readable in both themes.
+
+#### TC-LAND-09 Code for each choice and fix, lined up checks — P2, E2E
+
+Covers PRD 4.2.2. Pre: a 1280px wide window.
+
+1. Open `/` and look at **Which should I write?**, **What does it fix?** and **Checked before it runs**.
+
+Expected: each of the five choices has a YAML snippet; each scenario of What does it fix? has a Playwright and a Jevwright code block side by side; the three code blocks of Checked before it runs (the Debug console, the Output console and the report step) start on the same line.
 
 #### TC-THEME-01 The theme follows the system by default — P1, E2E
 
@@ -1319,7 +1328,7 @@ Expected: every status has text or a title, not only a color; step updates are a
 | US-4.3.5 History and reports | RPT-01 – RPT-07, RUN-16 |
 | US-4.3.6 Local CLI | CLI-01, CLI-02 |
 | US-4.3.7 Authentication and isolation | AUTH-01 – AUTH-10, SEC-01 – SEC-03, SEC-05 – SEC-08 |
-| PRD 4.2.2 Landing page and Quick Start | LAND-01 – LAND-08, QS-01 – QS-06 |
+| PRD 4.2.2 Landing page and Quick Start | LAND-01 – LAND-09, QS-01 – QS-06 |
 | `docs/tech/design-system.md` Themes and contrast | THEME-01 – THEME-05 |
 | US-4.3.8 Public API | API-01 |
 | PRD 5.4.3 Files overview | OV-01, OV-02 |

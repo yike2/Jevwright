@@ -7,6 +7,7 @@ Jevwright is an AI-assisted web testing platform built on Jev and Playwright. Te
 | What | URL |
 | --- | --- |
 | Web app | https://app.94.72.126.118.sslip.io |
+| User guide | https://yike2.github.io/Jevwright/guide/ |
 | REST API | https://api.94.72.126.118.sslip.io/api/v1 |
 | API docs (Swagger UI) | https://api.94.72.126.118.sslip.io/api/v1/docs, also at https://yike2.github.io/Jevwright/api/ |
 | Demo App (the site the benchmark tests) | https://demo.94.72.126.118.sslip.io |
@@ -154,12 +155,29 @@ Production runs on one VPS with Docker Compose: PostgreSQL, the backend, a brows
 | [docs/submission.md](docs/submission.md) | Project 2 deliverables and where to find each one |
 | [docs/PRD.md](docs/PRD.md) | Product requirements, user stories, MoSCoW priorities |
 | [docs/api/openapi.json](docs/api/openapi.json) | OpenAPI specification of the REST API |
+| [docs/guide-src/](docs/guide-src/) | Sources of the [user guide](#user-guide), built into `docs/guide/` |
 | [docs/tech/](docs/tech/) | One design document per module: [syntax-analyzer](docs/tech/syntax-analyzer.md), [jev-harness](docs/tech/jev-harness.md), [locator](docs/tech/locator.md), [asserter](docs/tech/asserter.md), [executor](docs/tech/executor.md), [browser-adapter](docs/tech/browser-adapter.md), [report](docs/tech/report.md), [pipeline](docs/tech/pipeline.md), [cli](docs/tech/cli.md), [backend](docs/tech/backend.md), [frontend](docs/tech/frontend.md), [design-system](docs/tech/design-system.md), [e2e](docs/tech/e2e.md), [benchmark](docs/tech/benchmark.md) |
 | [docs/deploy/](docs/deploy/) | Setup and deployment guides (see above) |
 | [docs/sprints/](docs/sprints/) | Sprint retrospectives |
 | [docs/contributions.md](docs/contributions.md) | Partner contribution log |
 | [docs/reflections/](docs/reflections/) | Individual reflections |
 | [AGENTS.md](AGENTS.md) | Shared rules for the AI coding assistant and for us |
+
+## User guide
+
+The user guide at https://yike2.github.io/Jevwright/guide/ explains the web workspace and the YAML syntax for users. It is a [VitePress](https://vitepress.dev) site: the Markdown sources are in [docs/guide-src/](docs/guide-src/), and `pnpm docs:build` builds them into [docs/guide/](docs/guide/), which GitHub Pages serves from `main`'s `/docs` folder like the rest of `docs/`.
+
+To change the guide:
+
+1. Edit the Markdown in `docs/guide-src/` (the sidebar and nav are in `docs/guide-src/.vitepress/config.mts`).
+2. Preview it with `pnpm docs:dev`, which serves the guide with live reload at the URL it prints, or build it and serve the build with `pnpm docs:build` and `pnpm docs:preview`.
+3. Run `pnpm docs:build` and commit the sources together with `docs/guide/`.
+
+Every YAML example in the guide is checked by the Syntax Analyzer in `src/tests/unit/docs/guide.test.ts`: a block passes unless the line before it is `<!-- invalid: E005 -->` with the codes it must fail with, followed by a `text` block with the Debug console's lines. CI fails when `docs/guide/` differs from a fresh build; run `pnpm docs:build` to fix it.
+
+### Agent Skill
+
+[skills/jevwright-test-files/](skills/jevwright-test-files/) is an [Agent Skill](https://agentskills.io) that teaches coding agents to write Jevwright test files. The guide's [Agent Skill page](https://yike2.github.io/Jevwright/guide/guide/agent-skill.html) explains how to install it. Its example files and YAML blocks are checked by `src/tests/unit/docs/agent-skill.test.ts`.
 
 ## AI-assisted development
 

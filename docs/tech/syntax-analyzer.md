@@ -425,5 +425,6 @@ src/core/syntax/
 | Integration | `analyze()` valid fixtures: at least one per action; the output `TestCase` matches the expected one | `src/tests/integration/core/syntax/fixtures/valid/`   |
 | Integration | `analyze()` invalid fixtures: at least one per error code and per browser state field; assert `code` and `line`. Messages of the browser state diagnostics | `src/tests/integration/core/syntax/fixtures/invalid/` |
 | Integration | CLI `validate`: output format, `--json`, exit code                                                  | `src/tests/integration/cli/`                          |
+| Unit        | The user guide (`docs/guide-src/`) and the Agent Skill (`skills/jevwright-test-files/`): every YAML example is accepted, or fails with the codes it is marked with; every action, top-level field and error code above is documented | `src/tests/unit/docs/`                                |
 
 Invalid fixtures are named after the error code, e.g. `E003-missing-value.yaml`, with a `.json` file of the same name next to it containing the expected `diagnostics`.

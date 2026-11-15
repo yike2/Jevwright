@@ -542,23 +542,23 @@ Lint, format, and type-check coverage include the frontend package:
 
 ### 1.14 Landing page
 
-`/` is the product page, a server component (`app/page.tsx`) that needs no token; the header, the Run replay and the copy buttons are client components. It shows real product output rather than mockups, and every claim on it is true of the code: its content is in `lib/landing.ts`, and a unit test checks each number and each receipt against the code it describes.
+`/` is the product page, a server component (`app/page.tsx`) that needs no token; the header, the Run replay and the Quick start button are client components. Like the user guide, it describes the web workspace only: no command line. It shows real product output rather than mockups, and every claim on it is true of the code: its content is in `lib/landing.ts`, and a unit test checks each number and each receipt against the code it describes.
 
 | Section | Content |
 | ------- | ------- |
-| Header | `SiteHeader` (`components/landing/site-header.tsx`): the logo, links to the docs on GitHub Pages, the API reference and the repository (hidden below 768px), the theme switch, and one button at the top right: "Sign in" (`/login`, where the form switches between Log in and Register), or "Open workspace" (`/files`) for a visitor whose browser holds a token. The header checks the token after mount, so the server renders the visitor's button. The logo always leads to `/`, signed in or not; the workspace is reached through Open workspace. `/login` and `/register` use the same header without the auth links |
-| Hero | A two-beat heading ("Web tests as plain YAML steps." and a payoff line with one emphasized phrase), two sentences, "Get started" (`/register`), "See a real Run" (to the replay), and the copyable command `COMMAND` (`pnpm jevwright run tests/sign-in.yaml`, cli.md 3.1) |
-| A real Run, not a screenshot | `RunReplay` (`components/landing/run-replay.tsx`): one tab per entry of `REPLAY_RUNS`, real Run reports of the Quick Start files `sign-in-and-see-products.yaml` and `fall-back-from-a-stale-selector.yaml` (the second called Jev and located step 4 with `visual`). Once the replay scrolls into view, its steps tick from pending to their real status with their locate method and duration; a step's button shows its screenshot. "Replay" starts it again and "Show all steps" shows the end state. Below it, the stat strip `STATS` |
+| Header | `SiteHeader` (`components/landing/site-header.tsx`): the logo, a Docs link to the user guide (`DOCS_URL`, `https://yike2.github.io/Jevwright/guide/`, built from `docs/guide-src/`), links to the API reference and the repository (hidden below 768px), the theme switch, and one button at the top right: "Sign in" (`/login`, where the form switches between Log in and Register), or "Open workspace" (`/files`) for a visitor whose browser holds a token. The header checks the token after mount, so the server renders the visitor's button. The logo always leads to `/`, signed in or not; the workspace is reached through Open workspace. `/login` and `/register` use the same header without the auth links |
+| Hero | A two-beat heading ("Web tests as plain YAML steps." and a payoff line with one emphasized phrase), two sentences, "Get started" (`/register`) and "See a real Run" (to the replay) |
+| A real Run, not a screenshot | `RunReplay` (`components/landing/run-replay.tsx`): one tab per entry of `REPLAY_RUNS`, real Run reports of the Quick Start files `fall-back-from-a-stale-selector.yaml`, which called Jev and located step 4 with `visual`, and `sign-in-and-see-products.yaml`. It opens on the first. Once the replay scrolls into view, its steps tick from pending to their real status with their duration; only a step Jev worked on gets a badge (`replayBadge`): **AI locate** when its element was found by Visual or DOM Locate, **AI assert** when Jev judged its statement or condition. Steps Playwright did alone have no method badge. The workspace's Run report (1.9) still shows every step's locate method; a step's button shows its screenshot. "Replay" starts it again and "Show all steps" shows the end state. Below it, the stat strip `STATS` |
 | 01 How does Jev find an element? | Two small diagrams (`Flow`): a selector that matches skips Jev; a target, or a selector that matches nothing, goes to Visual Locate, then DOM Locate if Jev is unsure, then Playwright acts, with the method recorded (locator.md 1.2) |
-| 02 What does it fix? | Four scenarios with a before and an after line |
-| 03 Which should I write? | A table: `selector`, `target`, both, a Playwright `assert`, a `statement`, each with when and why, and the cost of Jev calls |
-| 04 What runs where? | A diagram of the parts (web app, CLI and REST API, Core, Playwright and Chromium, Jev through OpenRouter), links to the interactive architecture and run sequence diagrams on GitHub Pages, and how this differs from runners where a model plans the test |
-| Checked before it runs | Validate, Run, Report, each with real output: `VALIDATE_RECEIPT` and `RUN_RECEIPT`, captured from `jevwright validate` and `jevwright run` on the seeded Quick Start files, and the located step from the replayed report; each with the matching state of the web app |
+| 02 What does it fix? | `FIXES`: four scenarios, each with its Playwright code and its Jevwright step side by side, and one line on what changes |
+| 03 Which should I write? | `CHOICES`: `selector`, `target`, both, a Playwright `assert`, a `statement`, each a card with when, what to write, why, and a short YAML snippet, after a line on the cost of Jev calls |
+| 04 What runs where? | A diagram of the parts (the web workspace, Core, Playwright and Chromium, Jev through OpenRouter), links to the interactive architecture and run sequence diagrams on GitHub Pages, and how this differs from runners where a model plans the test |
+| Checked before it runs | Validate, Run, Report, each with real output of the web workspace: `DEBUG_RECEIPT`, the Debug console of the seeded `seven-errors-at-once.yaml`, `OUTPUT_RECEIPT`, the Output console of the replayed sign-in Run, and the located step from the replayed report; each with its state. From 1024px the three are columns whose heading, text, code and state rows line up whatever their length: each item spans the list's four rows with `grid-rows-subgrid` |
 | Light and dark | Screenshots of the workspace in both themes (`public/landing/workspace-light.webp`, `workspace-dark.webp`) |
-| Quick start | Tabs: Web (three steps and `QUICK_START_FOLDERS`, a list named "Quick Start folders") and CLI (install, validate, run, as in the README) |
-| What it is, and what it is not | Questions and answers on planning, self-healing, steps without a locator, the cost of Jev, browsers, and private networks |
-| Closing | One line, the command again, "Get started" and GitHub |
-| Footer | Docs, API reference, architecture, GitHub |
+| Quick start | Three steps that name the Demo App (`DEMO_APP_URL`), the preset `BASE` Variable, a test user and its password; `StartButton` (`components/landing/start-button.tsx`): "Open workspace" (`/files`) for a visitor whose browser holds a token, otherwise "Register" (`/register`), checked after mount like the header; that your own app must be on a public domain with a session for its sign-in, linking the guide's Quick start; `QUICK_START_FILES`, a list named "Quick Start files" of which file shows which feature, and `QUICK_START_FOLDERS`, a list named "Quick Start folders" |
+| What it is, and what it is not | Questions and answers on planning, self-healing, steps without a locator, the cost of Jev, browsers, and private networks (put the app on a public domain) |
+| Closing | One line, "Get started", "Read the guide" and GitHub |
+| Footer | Docs (the user guide), API reference, architecture, GitHub |
 
 The replay is the page's only animation; with `prefers-reduced-motion: reduce` it shows every step's result at once. The shipped reports are the backend's `report.json` of each Run without the `trace` field, since the trace is not shipped; their screenshots are in `public/landing/runs/<file>/step-<n>.webp`, resized to 800px wide.
 
@@ -566,10 +566,14 @@ The replay is the page's only animation; with `prefers-reduced-motion: reduce` i
 | ------ | ---- |
 | `ACTIONS` | The 15 actions of syntax-analyzer.md 1.2; each is an action of the Syntax Analyzer |
 | `LOCATE_METHODS` | `selector`, `visual`, `dom` |
-| `COMMAND` | The hero and closing command |
-| `VALIDATE_RECEIPT` | Real `validate` output for `seven-errors-at-once.yaml`; its error lines are the Syntax Analyzer's diagnostics of the seeded file |
-| `RUN_RECEIPT` | Real `run` output for `sign-in-and-see-products.yaml`; one passed line per step, at the seeded file's lines |
-| `REPLAY_RUNS` | `{ file, note, assets, report }` for the two Runs; both passed 6 of 6, and each step's screenshot is shipped |
+| `DEBUG_RECEIPT` | The Debug console for `seven-errors-at-once.yaml`: "7 problems", then `Line <line>: <message>  <code>` for each of the Syntax Analyzer's diagnostics of the seeded file |
+| `OUTPUT_RECEIPT` | The Output console of the replayed sign-in Run: `Passed  6/6 passed`, then `Step <n>  <action>  line <line>  Passed` per step, at the seeded file's lines |
+| `REPLAY_RUNS` | `{ file, note, assets, report, judged }` for the two Runs, the Jev Run first; both passed 6 of 6, and each step's screenshot is shipped. `judged` lists the steps whose statement or condition Jev judged, which a report does not record |
+| `replayBadge(run, step)` | `AI locate` for a `visual` or `dom` locate method; else `AI assert` when `step.index` is in `run.judged`; else `null` |
+| `CHOICES` | `{ when, write, why, yaml }` for the five choices; each `yaml` is a list of steps the Syntax Analyzer accepts |
+| `FIXES` | `{ problem, playwright, jevwright, note }` for four scenarios; each `jevwright` is a list of steps the Syntax Analyzer accepts |
+| `DEMO_APP_URL` | `https://demo.94.72.126.118.sslip.io` |
+| `QUICK_START_FILES` | `{ feature, file, folder }`: Quick Start files the backend seeds in that folder, among them the cookie file |
 | `STATS` | The number of actions, of locate methods, `0` test files rewritten, and the sign-in Run's duration from its report |
 | `QUICK_START_FOLDERS` | The Quick Start folder names, as `quickStartProject` creates them, with what each teaches |
 
@@ -578,13 +582,13 @@ The replay is the page's only animation; with `prefers-reduced-motion: reduce` i
 | Element | Role and name |
 | ------- | ------------- |
 | Header | `banner` with links "Jevwright home", "Docs", "API reference", "GitHub", and "Sign in", or "Open workspace" with a token; `group` "Theme" |
-| Hero | `heading` level 1 starting "Web tests as plain YAML steps."; button "Copy command" with a `role="status"` that says "Copied" |
-| Replay | `region` "Run replay"; one `tab` per file name; buttons "Replay" and "Show all steps"; `list` "Replay steps" with one `listitem` per step; `img` "Step <n> screenshot" |
-| Sections | `heading` level 2 per section title; the Quick start section is a `region` "Quick start" with `tab`s "Web" and "CLI" |
+| Hero | `heading` level 1 starting "Web tests as plain YAML steps." |
+| Replay | `region` "Run replay"; one `tab` per file name, the first selected; buttons "Replay" and "Show all steps"; `list` "Replay steps" with one `listitem` per step, with the text "AI locate" or "AI assert" on a Jev step; `img` "Step <n> screenshot" |
+| Sections | `heading` level 2 per section title; each section is a `region` named by its title. "Which should I write?" has one `listitem` per choice with its `pre`; "What does it fix?" has a `heading` level 3 per scenario, each with two `pre`s captioned "Playwright" and "Jevwright"; "Checked before it runs" has `pre`s named "Debug console", "Output console" and "report step"; "Quick start" has the link "Open workspace" or "Register" and the `list`s "Quick Start files" and "Quick Start folders", and no tabs |
 
 #### Tests
-- Unit `landing.test.ts`: `ACTIONS` are 15 distinct Syntax Analyzer actions; `LOCATE_METHODS`; `VALIDATE_RECEIPT` and `RUN_RECEIPT` match the Syntax Analyzer on the seeded Quick Start files; `REPLAY_RUNS` are passed 6 of 6 with shipped screenshots and the expected locate methods; `STATS` come from those; `QUICK_START_FOLDERS` match the backend.
-- E2E `landing.e2e.ts`: the hero, every section heading, the command and the header links, with one Sign in button and no Log in or Register; Get started opens `/register` in Register mode; Sign in opens `/login`, where the mode switches to Register; Open workspace instead of Sign in with a token; the logo links to `/` with and without a token, also from the workspace sidebar; the replay shows six steps, a screenshot per step, and the Jev Run's `visual` or `dom` step; with reduced motion every step shows its result at once; the Quick start tabs.
+- Unit `landing.test.ts`: `ACTIONS` are 15 distinct Syntax Analyzer actions; `LOCATE_METHODS`; `DEBUG_RECEIPT` and `OUTPUT_RECEIPT` match the Syntax Analyzer on the seeded Quick Start files; `REPLAY_RUNS` are passed 6 of 6, the Jev Run first, with shipped screenshots and the expected locate methods; `replayBadge` for every case, and the replayed Runs badge only the Jev step; `judged` names only statement or condition steps; `STATS` come from those; `QUICK_START_FOLDERS` and `QUICK_START_FILES` match the backend; every `CHOICES` and `FIXES` snippet is valid.
+- E2E `landing.e2e.ts`: the hero, every section heading, no command line, and the header links, with Docs to the guide and one Sign in button and no Log in or Register; Get started opens `/register` in Register mode; Sign in opens `/login`, where the mode switches to Register; Open workspace instead of Sign in with a token; the logo links to `/` with and without a token, also from the workspace sidebar; the replay opens on the Jev Run with six steps, a screenshot per step, AI locate on step 4 only and no method names, and the sign-in Run without badges; with reduced motion every step shows its result at once; Quick start names the Demo App and its files, with Register, or Open workspace to `/files` when signed in; a snippet per choice, Playwright and Jevwright code per fix, and the three code blocks of Checked before it runs on one row.
 
 ## 2. Internal Flow
 
@@ -770,7 +774,7 @@ This fallback is implemented in the client itself when the backend response is n
 | `public/landing/`                             | Replay screenshots and the workspace screenshots (1.14)     |
 | `components/landing/run-replay.tsx`           | The Run replay (1.14)                                       |
 | `components/landing/flow.tsx`                 | The small landing diagrams (1.14)                           |
-| `components/landing/copy-command.tsx`         | A command with a copy button (1.14)                         |
+| `components/landing/start-button.tsx`         | Quick start's Open workspace or Register button (1.14)      |
 | `components/auth/auth-form.tsx`               | Two-mode auth form (Log in/Register, 1.5)                   |
 | `components/landing/site-header.tsx`          | Header of the landing and auth pages (1.14)                 |
 | `components/landing/brand-mark.tsx`           | The product mark                                            |
@@ -822,10 +826,10 @@ src/app/frontend/
 │   │   └── auth-form.tsx
 │   ├── landing/
 │   │   ├── brand-mark.tsx
-│   │   ├── copy-command.tsx
 │   │   ├── flow.tsx
 │   │   ├── run-replay.tsx
-│   │   └── site-header.tsx
+│   │   ├── site-header.tsx
+│   │   └── start-button.tsx
 │   ├── theme/
 │   │   ├── theme-provider.tsx
 │   │   └── theme-toggle.tsx
