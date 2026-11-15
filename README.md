@@ -17,8 +17,8 @@ Merging to `main` deploys the app automatically; see [Deployment and CI/CD](#dep
 
 ## Features
 
-- **Accounts**: register and sign in with email and password (JWT). Each user sees only their own projects, and cloud runs are rate-limited.
-- **Workspace**: organize test files as Project → Module → Test File in the sidebar; create, rename, and delete each level.
+- **Accounts**: register and sign in with email and password (JWT). Each user sees only their own projects.
+- **Workspace**: organize test files in Projects and folders (up to 4 levels, counting the Project) in the sidebar; create, rename, move, and delete them, and upload `.yaml` files or whole folders by drag and drop.
 - **Quick Start project**: every new account gets a `Quick Start` project with ready-to-run examples against the Demo App, in learning order: passing tests, failing tests that show why they fail, invalid files to fix, and tests that locate and judge with Jev.
 - **Editor**: write or upload a `.yaml` test file, validate it with line-numbered errors before any browser starts, save it, and run it on the server.
 - **Project variables**: values such as `BASE` or passwords that test files reference as `{{NAME}}`, stored per project.

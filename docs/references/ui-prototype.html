@@ -280,7 +280,7 @@ tbody tr.sel td{background:color-mix(in srgb,var(--accent) 9%,transparent)}
       Jevwright
     </div>
     <div class="tree-head"><span>Projects</span><button class="icon-btn" id="newProject" title="New project" aria-label="New project">＋</button></div>
-    <nav class="tree" id="tree" aria-label="Projects, modules and test files"></nav>
+    <nav class="tree" id="tree" aria-label="Projects, folders and test files"></nav>
     <div class="account">
       <div class="avatar" id="avatar">ZG</div>
       <div class="who"><div>Account</div><div id="whoEmail"></div></div>
@@ -680,7 +680,7 @@ function renderTree(){
   $('#tree').innerHTML = S.projects.map(p => `
     <div class="row proj ${S.sel.pid === p.id && !S.sel.mid && !S.sel.fid ? 'sel' : ''}" data-act="toggle-p" data-id="${p.id}" tabindex="0">
       ${CARET.replace('{o}', p.open ? 'open' : '')}<span class="name">${esc(p.name)}</span>
-      <span class="acts"><button class="icon-btn" data-act="add-m" data-id="${p.id}" title="New module" aria-label="New module in ${esc(p.name)}">＋</button></span>
+      <span class="acts"><button class="icon-btn" data-act="add-m" data-id="${p.id}" title="New folder" aria-label="New folder in ${esc(p.name)}">＋</button></span>
     </div>
     ${p.open ? p.modules.map(m => `
       <div class="row mod ${S.sel.mid === m.id && !S.sel.fid ? 'sel' : ''}" data-act="toggle-m" data-pid="${p.id}" data-id="${m.id}" tabindex="0">
@@ -713,7 +713,7 @@ $('#tree').addEventListener('click', async e => {
   }
   if (act === 'open-f'){ S.sel = {pid, mid, fid: id}; if (S.mode === 'dashboard' && S.tab === 'files') S.tab = 'history'; S.historyRunId = null; $('#app').classList.remove('side-open'); }
   if (act === 'add-m'){
-    const name = await ask('New module', 'Module name', 'Payments'); if (!name) return;
+    const name = await ask('New folder', 'Folder name', 'Payments'); if (!name) return;
     const p = S.projects.find(x => x.id === id); const m = {id: nid('m'), name, open: true, files: []};
     p.modules.push(m); p.open = true; S.sel = {pid: id, mid: m.id, fid: null};
   }
@@ -758,7 +758,7 @@ let vTimer = null;
 function renderEditor(){
   const f = curFile();
   if (!f){
-    $('#view').innerHTML = `<div class="empty" style="padding-top:80px"><strong>Pick a test file to edit</strong>Choose one in the sidebar, or add a file to a module with ＋.</div>`;
+    $('#view').innerHTML = `<div class="empty" style="padding-top:80px"><strong>Pick a test file to edit</strong>Choose one in the sidebar, or add a file to a folder with ＋.</div>`;
     return;
   }
   const dirty = f.draft !== f.content;
@@ -827,7 +827,7 @@ function save(){
 $('#fileInput').onchange = e => {
   const file = e.target.files[0]; e.target.value = ''; if (!file) return;
   const m = curModule() || curProject()?.modules[0];
-  if (!m) return toast('Create a module first, then upload into it.', true);
+  if (!m) return toast('Create a folder first, then upload into it.', true);
   const reader = new FileReader();
   reader.onload = () => {
     let name = file.name; const taken = new Set(m.files.map(x => x.name));
@@ -932,9 +932,9 @@ function renderDashboard(){
 }
 
 function filesTab(scopeName, list){
-  if (!list.length) return `<div class="panel empty"><strong>${esc(scopeName)} has no test files yet</strong>Add one to a module with ＋ in the sidebar, or upload a YAML file from the editor.</div>`;
+  if (!list.length) return `<div class="panel empty"><strong>${esc(scopeName)} has no test files yet</strong>Add one to a folder with ＋ in the sidebar, or upload a YAML file from the editor.</div>`;
   return `<div class="panel tbl-wrap"><table>
-    <thead><tr><th>File</th><th>Module</th><th>Steps</th><th>Latest run</th><th>Last run</th><th>Runs</th><th></th></tr></thead>
+    <thead><tr><th>File</th><th>Folder</th><th>Steps</th><th>Latest run</th><th>Last run</th><th>Runs</th><th></th></tr></thead>
     <tbody>${list.map(({m, f}) => {
       const r = latestRun(f.id), v = validate(f.content), n = S.runs.filter(x => x.fileId === f.id).length;
       return `<tr>
