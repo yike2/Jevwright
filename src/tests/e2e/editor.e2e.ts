@@ -44,8 +44,11 @@ test("TC-ED-01 shows the starter source and tracks unsaved changes", async ({ pa
   await expect.poll(() => sourceOf(page)).toBe(STARTER);
   await expect(state).toHaveText("Saved");
   await expect(save).toBeDisabled();
-  // There is no Validate button: the file is checked as the user types.
-  await expect(page.getByRole("button", { name: "Validate" })).toHaveCount(0);
+  // The toolbar has no Validate and no Upload button: the file is checked as the user types, and upload is in the
+  // sidebar.
+  const main = page.getByRole("main");
+  await expect(main.getByRole("button", { name: /validate/i })).toHaveCount(0);
+  await expect(main.getByRole("button", { name: /upload/i })).toHaveCount(0);
 
   await source.fill(`${STARTER}#`);
   await expect(state).toHaveText("Unsaved");
@@ -287,4 +290,23 @@ test("TC-ED-16 stacks the consoles under the editor on a narrow screen", async (
   const problemsBox = await box(problems);
   expect(problemsBox.y).toBeGreaterThanOrEqual(editor.y + editor.height - 3);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
+test("TC-ED-17 shows the diagnostics a save answers, with Save and with Ctrl+S", async ({ page }) => {
+  const { source, save, state } = await openNewFile(page);
+  // With the typing check unavailable, only the save can bring the diagnostics.
+  await page.route("**/test-files/validate", (route) => route.abort());
+
+  await source.fill(fixture("invalid/yaml-syntax.yaml"));
+  await save.click();
+  await expect(state).toHaveText("Saved");
+  await expect(problemItemsOf(page)).toHaveText(["Line 7: Nested mappings are not allowed in compact mappings"]);
+
+  await source.fill(fixture("invalid/timeout-bounds.yaml"));
+  await source.press("Control+s");
+  await expect(state).toHaveText("Saved");
+  await expect(problemItemsOf(page)).toHaveText([
+    'Line 5: "ms" must be a positive integer up to 2147483647',
+    'Line 7: "ms" must be a positive integer up to 2147483647',
+  ]);
 });
