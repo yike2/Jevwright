@@ -38,7 +38,7 @@ export default function FilesOverviewPage() {
   };
 
   return (
-    <section aria-label="Test files" className="mx-auto max-w-4xl space-y-6">
+    <section aria-label="Test files" className="space-y-6 p-4">
       <h1 className="font-heading text-2xl font-semibold tracking-tight">Test files</h1>
 
       {groups.length === 0 ? (

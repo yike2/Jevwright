@@ -34,6 +34,10 @@
   --ring: #0090f1;
   --code: #ffffff;
   --code-foreground: #1f1f1f;
+  --syntax-key: #800000;
+  --syntax-string: #0451a5;
+  --syntax-literal: #0b7a52;
+  --syntax-comment: #007a00;
   --scrollbar-thumb: #8a8a8a;
   --scrollbar-thumb-hover: #6b6b6b;
   --chart-1: #005fb8;
@@ -80,6 +84,10 @@
   --ring: #0078d4;
   --code: #1f1f1f;
   --code-foreground: #cccccc;
+  --syntax-key: #569cd6;
+  --syntax-string: #ce9178;
+  --syntax-literal: #b5cea8;
+  --syntax-comment: #76a660;
   --scrollbar-thumb: #737373;
   --scrollbar-thumb-hover: #8f8f8f;
   --chart-1: #4daafc;

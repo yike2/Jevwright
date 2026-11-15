@@ -39,8 +39,7 @@ export function testFileBaseName(name: string): string {
 
 /** The Test File name for an uploaded file: its name with `.yaml` in place of a `.yaml` or `.yml` extension. */
 export function uploadedTestFileName(fileName: string): string {
-  void fileName;
-  return "";
+  return toTestFileName(fileName.replace(/\.ya?ml$/i, ""));
 }
 
 export function initials(email: string): string {

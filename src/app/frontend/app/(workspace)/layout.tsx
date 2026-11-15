@@ -4,11 +4,14 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ApiError, apiClient, type TreeResponse, type User } from "@/lib/api";
 import { formatError } from "@/lib/format-error";
-import { cn } from "cn";
 import { WorkspaceProvider } from "@/lib/workspace-context";
 import { SidebarNav } from "@/components/workspace/sidebar-nav";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { useMediaQuery } from "@/lib/use-media-query";
+import { usePanelLayout } from "@/lib/panel-layout";
 
 export default function WorkspaceLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -17,6 +20,8 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
   const [me, setMe] = useState<User | null>(null);
   const [tree, setTree] = useState<TreeResponse["items"]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const isDesktop = useMediaQuery("(min-width: 768px)");
+  const sidebarLayout = usePanelLayout("sidebar");
 
   useEffect(() => {
     let isMounted = true;
@@ -94,6 +99,16 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
     );
   }
 
+  const sidebar = (
+    <SidebarNav
+      email={me.email}
+      tree={tree}
+      refreshTree={refreshTree}
+      onLogout={handleLogout}
+      onNavigate={() => setIsSidebarOpen(false)}
+    />
+  );
+
   return (
     <WorkspaceProvider
       value={{
@@ -102,42 +117,55 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
         refreshTree,
       }}
     >
-      <div className="min-h-screen">
-        <div className="flex items-center gap-2 border-b bg-sidebar p-2 md:hidden">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            aria-label="Open sidebar"
-            aria-expanded={isSidebarOpen}
-            onClick={() => setIsSidebarOpen((previous) => !previous)}
-          >
-            <Menu aria-hidden="true" />
-          </Button>
-          <span className="font-heading font-semibold">Jevwright</span>
-        </div>
-
-        <div className="flex min-h-[calc(100vh-49px)] md:min-h-screen">
-          <aside
-            className={cn(
-              "w-full shrink-0 border-r border-sidebar-border bg-sidebar text-sidebar-foreground md:sticky md:top-0 md:block md:h-screen md:w-80",
-              isSidebarOpen ? "block" : "hidden",
+      <TooltipProvider delay={400}>
+        {isDesktop ? (
+          // The page fills the window; the sidebar and the page scroll on their own (frontend.md 1.6).
+          <div className="h-dvh">
+            <ResizablePanelGroup
+              id="sidebar"
+              orientation="horizontal"
+              defaultLayout={sidebarLayout.defaultLayout}
+              onLayoutChanged={sidebarLayout.onLayoutChanged}
+            >
+              <ResizablePanel
+                id="sidebar-panel"
+                defaultSize="320px"
+                minSize="220px"
+                maxSize="600px"
+                groupResizeBehavior="preserve-pixel-size"
+                className="h-full bg-sidebar text-sidebar-foreground"
+              >
+                {sidebar}
+              </ResizablePanel>
+              <ResizableHandle aria-label="Resize sidebar" />
+              <ResizablePanel id="page" minSize="30%">
+                <main className="h-full overflow-auto">{children}</main>
+              </ResizablePanel>
+            </ResizablePanelGroup>
+          </div>
+        ) : (
+          <div className="flex h-dvh flex-col">
+            <div className="flex shrink-0 items-center gap-2 border-b bg-sidebar p-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="Open sidebar"
+                aria-expanded={isSidebarOpen}
+                onClick={() => setIsSidebarOpen((previous) => !previous)}
+              >
+                <Menu aria-hidden="true" />
+              </Button>
+              <span className="font-heading font-semibold">Jevwright</span>
+            </div>
+            {isSidebarOpen ? (
+              <aside className="min-h-0 flex-1 bg-sidebar text-sidebar-foreground">{sidebar}</aside>
+            ) : (
+              <main className="min-h-0 flex-1 overflow-auto">{children}</main>
             )}
-          >
-            <SidebarNav
-              email={me.email}
-              tree={tree}
-              refreshTree={refreshTree}
-              onLogout={handleLogout}
-              onNavigate={() => setIsSidebarOpen(false)}
-            />
-          </aside>
-
-          <main className={cn("min-w-0 flex-1 p-4 sm:p-6", isSidebarOpen ? "hidden md:block" : "block")}>
-            {children}
-          </main>
-        </div>
-      </div>
+          </div>
+        )}
+      </TooltipProvider>
     </WorkspaceProvider>
   );
 }
