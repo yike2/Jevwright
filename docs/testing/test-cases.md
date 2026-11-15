@@ -91,17 +91,17 @@ The deployed frontend and API, with the Demo App at its public `DEMO_DOMAIN` (`d
 
 ### 2.4 Test files
 
-The test files are in `src/tests/e2e/fixtures/`, grouped by expected outcome. E2E tests read them from there; manual testers add them with a folder's **Upload files…** (TC-ED-03), drop them onto the sidebar (TC-FLD-06), or paste them (Appendix A). The first line of each file states its expected result. Every file uses only `{{BASE}}` and `{{SWAG_PASSWORD}}`, except `pass/variable-value.yaml`, which also needs `{{DISPLAY_NAME}}` (TC-VAR-06), so each runs unchanged locally and in production.
+The test files are in `src/tests/e2e/fixtures/`, grouped by expected outcome. E2E tests read them from there; manual testers add them with a folder's **Upload files…** (TC-ED-03), drop them onto the sidebar (TC-FLD-06), or paste them (Appendix A). The first line of each file states its expected result. Every file uses only `{{BASE}}` and `{{SWAG_PASSWORD}}`, except `pass/variable-value.yaml`, which also needs `{{DISPLAY_NAME}}` (TC-VAR-06), so each runs unchanged locally and in production. A file that needs a signed-in user, unless signing in is what it shows, sets the Demo App's `session-username` cookie and opens `/inventory.html` directly.
 
 | File | Locates by | Expected outcome | Used by |
 | ---- | ---------- | ---------------- | ------- |
 | `pass/sign-in.yaml` | `selector` | Passed, 6/6 | RUN-01, RPT-01, OV-02, CLI-02, QS-01 |
-| `pass/checkout.yaml` | `selector` | Passed, 16/16 | RUN-02 |
+| `pass/checkout.yaml` | `selector` | Passed, 12/12, signed in by cookie | RUN-02, QS-06 |
 | `pass/locked-out.yaml` | `selector` | Passed: the app's own error is asserted | RUN-03 |
 | `pass/all-actions.yaml` | `selector` | Passed, 35/35: every action and dialog answer | RUN-04 |
 | `pass/slow.yaml` | `selector` | Passed after about 8 s | RUN-07, RUN-08 |
 | `pass/variable-value.yaml` | `selector` | Passed: `{{DISPLAY_NAME}}` is typed and read back unchanged | VAR-06 |
-| `fail/wrong-total.yaml` | `selector` | Failed at step 14; steps 15–16 pending | RUN-05, RPT-02, OV-02 |
+| `fail/wrong-total.yaml` | `selector` | Failed at step 10; steps 11–12 pending | RUN-05, RPT-02, OV-02 |
 | `fail/missing-element.yaml` | `selector` | Failed at step 2 within about 3 s; no Jev call | RUN-06 |
 | `fail/missing-variable.yaml` | `selector` | Failed at step 2: `Variable {{NOT_SET}} is not set` | VAR-03 |
 | `fail/redaction.yaml` | `selector` | Failed at step 2; the reason shows `{{SWAG_PASSWORD}}` | SEC-03 |
@@ -114,10 +114,10 @@ The test files are in `src/tests/e2e/fixtures/`, grouped by expected outcome. E2
 | `invalid/yaml-syntax.yaml` | – | 1 validation error (`E001`) at line 7 | ED-05 |
 | `invalid/empty.yaml` | – | 1 validation error (`E002`) at line 1: a comment only | ED-08 |
 | `invalid/timeout-bounds.yaml` | – | 2 validation errors (`E007`) at lines 5 and 7 | ED-09 |
-| `jev/target-sign-in.yaml` | `target` | Passed; steps 2–4 by `visual` or `dom` | JEV-01, QS-04 |
+| `jev/target-add-to-cart.yaml` | `target` | Passed; steps 2–3 by `visual` or `dom` | JEV-01, QS-04 |
 | `jev/stale-selector.yaml` | both | Passed; step 4 falls back to Jev | JEV-02, QS-04 |
-| `jev/statement-holds.yaml` | `selector` | Passed; Jev judges step 8, step 9 is a fallback pass | JEV-03, QS-04 |
-| `jev/statement-fails.yaml` | `selector` | Failed at step 8: the statement does not hold | JEV-04, QS-04 |
+| `jev/statement-holds.yaml` | `selector` | Passed; Jev judges step 4, step 5 is a fallback pass | JEV-03, QS-04 |
+| `jev/statement-fails.yaml` | `selector` | Failed at step 4: the statement does not hold | JEV-04, QS-04 |
 
 `invalid/multiple-errors.yaml` reports these diagnostics, one per error code it covers:
 
@@ -395,6 +395,14 @@ Covers PRD 4.2.2. Pre: S1, S2.
 2. Rename the Project `Quick Start` to `My examples` and reload.
 
 Expected: before step 1 both the overview and the sidebar offer the button, next to `Demo Shop`; after it the sidebar shows `Quick Start` and `Demo Shop` and neither button is shown; after step 2 the sidebar offers it again.
+
+#### TC-QS-06 A Quick Start file starts signed in with a cookie — P1, E2E
+
+Covers PRD 4.2.2, US-4.3.4. Pre: TC-QS-01.
+
+1. Open `buy-a-backpack.yaml` from the overview and click **Run**.
+
+Expected: the source sets `cookies: { session-username: "standard_user" }` with a comment on it below the header, and its first step opens `/inventory.html`; the Run passes, "12/12 passed", and no step shows the sign-in page.
 
 ### 4.2 Workspace sidebar (`WS`)
 
@@ -759,6 +767,26 @@ Covers US-4.3.3. Pre: S1, S2.
 
 Expected: the sidebar's messages say `Imported 2 test files. 1 skipped:` and list `sign in.yaml: Use only letters, digits, -, _ and ., with no spaces.`; `sign-in.yaml` and `checkout.yaml` are in `Demo Shop`; no file opens.
 
+#### TC-ED-22 Headers, cookies, and storage errors — P2, Manual
+
+Covers US-4.3.1. Pre: S1, S2, a new Test File. Automated at Core level by the Syntax Analyzer fixtures (`syntax-analyzer.md` 5).
+
+1. Paste this source; click **Save**:
+
+   ```yaml
+   name: "State errors"
+   cookies:
+     "session id": "x"
+     theme:
+       value: "dark"
+       sameSite: "None"
+   localStorage: "token"
+   steps:
+     - open: { url: "https://example.com/" }
+   ```
+
+Expected: "4 validation errors", in line order: `Line 2: "cookies" needs a "baseUrl": they are set for the baseUrl's origin`, `Line 3: Cookie name "session id" is not valid: ...` (it lists the characters a name may have), `Line 4: "sameSite: None" needs "secure: true"`, and `Line 7: "localStorage" must be an object`; no browser is started.
+
 ### 4.4 Project Variables (`VAR`)
 
 #### TC-VAR-01 Add, replace, and delete a Variable — P0, E2E
@@ -845,7 +873,7 @@ Covers US-4.3.4. Pre: S1–S3.
 
 1. S4 with `pass/checkout.yaml`; S5.
 
-Expected: `Passed`, "16/16 passed".
+Expected: `Passed`, "12/12 passed"; step 1 opens the product list directly, because the file sets the Demo App's `session-username` cookie.
 
 #### TC-RUN-03 Assert the app's own error — P1, E2E
 
@@ -869,7 +897,7 @@ Covers US-4.3.2, US-4.3.4. Pre: S1–S3.
 
 1. S4 with `fail/wrong-total.yaml`; S5.
 
-Expected: `Failed`, "13/16 passed"; step 14 is Failed with the reason `Text of "[data-test="total-label"]" did not contain "Total: $99.99" within 3000ms; it was "Total: $32.39"` and a screenshot; steps 15–16 are Pending with no screenshot; the sidebar dot is red with the title "Failed".
+Expected: `Failed`, "9/12 passed"; step 10 is Failed with the reason `Text of "[data-test="total-label"]" did not contain "Total: $99.99" within 3000ms; it was "Total: $32.39"` and a screenshot; steps 11–12 are Pending with no screenshot; the sidebar dot is red with the title "Failed".
 
 #### TC-RUN-06 A selector that matches nothing — P1, E2E
 
@@ -985,6 +1013,30 @@ Covers US-4.3.4. Pre: S1–S3.
 
 Expected: `Failed`; step 2 Failed with `There is no previous page to go back to`; step 3 Pending.
 
+#### TC-RUN-20 Skip the sign-in page with a cookie — P1, Manual
+
+Covers US-4.3.4. Pre: S1–S3. Automated in `src/tests/integration/core/pipeline/browser-state.test.ts` and `src/tests/integration/app/backend/runs.test.ts`.
+
+1. S4 with this source; S5:
+
+   ```yaml
+   name: "Products without signing in"
+   baseUrl: "{{BASE}}"
+   cookies:
+     session-username: "standard_user"
+   localStorage:
+     cart-contents: "[4]"
+   steps:
+     - open: { url: "/inventory.html" }
+     - assert: { url: "/inventory.html" }
+     - assert: { selector: '[data-test="title"]', text: "Products" }
+     - assert: { selector: '[data-test="shopping-cart-badge"]', text: "1" }
+   ```
+
+2. Download the report.
+
+Expected: `Passed`, 4/4; no step shows the sign-in page; the cart badge shows `1` from the `localStorage` entry. `report.json` has `"browserState": { "cookies": ["session-username"], "localStorage": ["cart-contents"] }`.
+
 ### 4.6 Run page and history (`RPT`)
 
 #### TC-RPT-01 Report of a passed Run — P0, E2E
@@ -1004,10 +1056,10 @@ Expected:
 
 Covers US-4.3.5. Pre: TC-RUN-05.
 
-1. Look at step 14; click its screenshot, then press Escape.
+1. Look at step 10; click its screenshot, then press Escape.
 2. Download the report.
 
-Expected: the screenshot shows the checkout overview with `Total: $32.39`; clicking it opens the image full size in a dialog named "Step 14 screenshot", which Escape closes; `report.json` has `status: "failed"` and step 14's `reason`.
+Expected: the screenshot shows the checkout overview with `Total: $32.39`; clicking it opens the image full size in a dialog named "Step 10 screenshot", which Escape closes; `report.json` has `status: "failed"` and step 10's `reason`.
 
 #### TC-RPT-03 Run history lists every Run — P1, E2E
 
@@ -1137,6 +1189,27 @@ Covers US-4.3.7. Pre: a Run of user A; user B.
 
 Expected: step 1 closes with code `4401`, step 2 with `4404`, and step 3 receives a `snapshot` message.
 
+#### TC-SEC-08 Header and cookie values never show — P1, Manual
+
+Covers US-4.3.7. Pre: S1–S3, and a Project Variable `TOKEN` with the value `t0ken-123`. Automated in `src/tests/integration/core/pipeline/browser-state.test.ts`, `src/tests/integration/cli/run.test.ts`, and `src/tests/integration/app/backend/runs.test.ts`.
+
+1. S4 with this source; S5 and watch Live Progress; download the report:
+
+   ```yaml
+   name: "State redaction"
+   baseUrl: "{{BASE}}"
+   headers:
+     Authorization: "Bearer {{TOKEN}}"
+   cookies:
+     session-username: "standard_user"
+     api-token: "{{TOKEN}}"
+   steps:
+     - open: { url: "/inventory.html" }
+     - assert: { selector: '[data-test="title"]', text: "Products" }
+   ```
+
+Expected: `Passed`, 2/2. `t0ken-123` appears nowhere on the Run page, in Live Progress, or in `report.json`; `report.json` lists `"headers": ["Authorization"]` and `"cookies": ["session-username", "api-token"]` under `browserState`. The trace, like screenshots, is not redacted (`executor.md` 1.5), so it holds the header and cookie values.
+
 ### 4.9 Jev locating and judging (`JEV`)
 
 These cases call Jev. Run each up to twice; report a case only when both attempts fail.
@@ -1145,9 +1218,9 @@ These cases call Jev. Run each up to twice; report a case only when both attempt
 
 Covers US-4.3.2. Pre: S1–S3.
 
-1. S4 with `jev/target-sign-in.yaml`; S5.
+1. S4 with `jev/target-add-to-cart.yaml`; S5.
 
-Expected: `Passed`, "6/6 passed"; steps 2–4 show `visual` or `dom`, never `selector`.
+Expected: `Passed`, "5/5 passed"; steps 2–3 show `visual` or `dom`, never `selector`.
 
 #### TC-JEV-02 Fall back from a stale selector — P1, Live
 
@@ -1163,7 +1236,7 @@ Covers US-4.3.2. Pre: S1–S3.
 
 1. S4 with `jev/statement-holds.yaml`; S5.
 
-Expected: `Passed`, "9/9 passed". Step 9's `selector` matches nothing and its statement holds, so it passes as a fallback.
+Expected: `Passed`, "5/5 passed". Step 5's `selector` matches nothing and its statement holds, so it passes as a fallback.
 
 #### TC-JEV-04 A false statement fails — P1, Live
 
@@ -1171,7 +1244,7 @@ Covers US-4.3.2. Pre: S1–S3.
 
 1. S4 with `jev/statement-fails.yaml`; S5.
 
-Expected: `Failed`; step 8 Failed with `Statement does not hold`; "7/8 passed".
+Expected: `Failed`; step 4 Failed with `Statement does not hold`; "3/4 passed".
 
 #### TC-JEV-05 Nothing can be located — P2, Live
 
@@ -1239,14 +1312,14 @@ Expected: every status has text or a title, not only a color; step updates are a
 
 | Requirement | Cases |
 | ----------- | ----- |
-| US-4.3.1 Validation | ED-04 – ED-06, ED-08, ED-09, ED-11, ED-13, ED-17, RUN-11, CLI-01 |
+| US-4.3.1 Validation | ED-04 – ED-06, ED-08, ED-09, ED-11, ED-13, ED-17, ED-22, RUN-11, CLI-01 |
 | US-4.3.2 Locating | RUN-05, RUN-06, JEV-01 – JEV-05 |
 | US-4.3.3 Organization and authoring | WS-01 – WS-11, ED-01 – ED-03, ED-07, ED-10, ED-12, ED-14, ED-16, ED-18 – ED-20, VAR-01, VAR-02, VAR-04, VAR-05 |
-| US-4.3.4 Live execution | RUN-01 – RUN-19, ED-10, ED-15, VAR-03, VAR-06 |
+| US-4.3.4 Live execution | RUN-01 – RUN-20, ED-10, ED-15, VAR-03, VAR-06 |
 | US-4.3.5 History and reports | RPT-01 – RPT-07, RUN-16 |
 | US-4.3.6 Local CLI | CLI-01, CLI-02 |
-| US-4.3.7 Authentication and isolation | AUTH-01 – AUTH-10, SEC-01 – SEC-03, SEC-05 – SEC-07 |
-| PRD 4.2.2 Landing page and Quick Start | LAND-01 – LAND-08, QS-01 – QS-04 |
+| US-4.3.7 Authentication and isolation | AUTH-01 – AUTH-10, SEC-01 – SEC-03, SEC-05 – SEC-08 |
+| PRD 4.2.2 Landing page and Quick Start | LAND-01 – LAND-08, QS-01 – QS-06 |
 | `docs/tech/design-system.md` Themes and contrast | THEME-01 – THEME-05 |
 | US-4.3.8 Public API | API-01 |
 | PRD 5.4.3 Files overview | OV-01, OV-02 |
@@ -1285,23 +1358,16 @@ steps:
 ### `pass/checkout.yaml`
 
 ```yaml
-# Expect: passed, 16/16 steps
+# Expect: passed, 12/12 steps
+# The Demo App keeps the signed-in user in the session-username cookie, so setting it skips the sign-in page.
 name: "Checkout"
-description: "A standard user buys the backpack"
+description: "A signed-in standard user buys the backpack"
 baseUrl: "{{BASE}}"
+cookies:
+  session-username: "standard_user"
 steps:
   - open:
-      url: "/"
-  - input:
-      selector: '[data-test="username"]'
-      value: "standard_user"
-  - input:
-      selector: '[data-test="password"]'
-      value: "{{SWAG_PASSWORD}}"
-  - click:
-      selector: '[data-test="login-button"]'
-  - waitFor:
-      url: "**/inventory.html"
+      url: "/inventory.html"
   - click:
       selector: '[data-test="add-to-cart-sauce-labs-backpack"]'
   - click:
@@ -1489,24 +1555,17 @@ steps:
 ### `fail/wrong-total.yaml`
 
 ```yaml
-# Expect: failed at step 14 (the total assert); steps 15-16 stay pending
+# Expect: failed at step 10 (the total assert); steps 11-12 stay pending
+# The Demo App keeps the signed-in user in the session-username cookie, so setting it skips the sign-in page.
 name: "Wrong total"
 description: "The checkout total is asserted with a wrong amount"
 baseUrl: "{{BASE}}"
+cookies:
+  session-username: "standard_user"
 timeoutMs: 3000
 steps:
   - open:
-      url: "/"
-  - input:
-      selector: '[data-test="username"]'
-      value: "standard_user"
-  - input:
-      selector: '[data-test="password"]'
-      value: "{{SWAG_PASSWORD}}"
-  - click:
-      selector: '[data-test="login-button"]'
-  - waitFor:
-      url: "**/inventory.html"
+      url: "/inventory.html"
   - click:
       selector: '[data-test="add-to-cart-sauce-labs-backpack"]'
   - click:
@@ -1724,29 +1783,28 @@ steps:
   - sleep: { ms: 1e3 }
 ```
 
-### `jev/target-sign-in.yaml`
+### `jev/target-add-to-cart.yaml`
 
 ```yaml
-# Expect: passed; steps 2-4 locate by "visual" or "dom" (Jev), never "selector"
-name: "Sign in by description"
+# Expect: passed; steps 2-3 locate by "visual" or "dom" (Jev), never "selector"
+# The Demo App keeps the signed-in user in the session-username cookie, so setting it skips the sign-in page.
+name: "Add to cart by description"
 description: "Elements are found from plain-language descriptions only"
 baseUrl: "{{BASE}}"
+cookies:
+  session-username: "standard_user"
 steps:
   - open:
-      url: "/"
-  - input:
-      target: "Username text field in the login form"
-      value: "standard_user"
-  - input:
-      target: "Password text field in the login form"
-      value: "{{SWAG_PASSWORD}}"
+      url: "/inventory.html"
   - click:
-      target: "Green 'Login' button below the password field"
+      target: "'Add to cart' button of the Sauce Labs Backpack"
+  - click:
+      target: "Shopping cart icon at the top right of the page"
   - waitFor:
-      url: "**/inventory.html"
+      url: "**/cart.html"
   - assert:
-      selector: '[data-test="title"]'
-      text: "Products"
+      selector: '[data-test="inventory-item-name"]'
+      text: "Sauce Labs Backpack"
 ```
 
 ### `jev/stale-selector.yaml`
@@ -1778,24 +1836,17 @@ steps:
 ### `jev/statement-holds.yaml`
 
 ```yaml
-# Expect: passed; Jev judges step 8 true. Step 9's selector matches nothing, then Jev judges its statement true (fallback pass)
+# Expect: passed; Jev judges step 4 true. Step 5's selector matches nothing, then Jev judges its statement true (fallback pass)
+# The Demo App keeps the signed-in user in the session-username cookie, so setting it skips the sign-in page.
 name: "Statement holds"
 description: "Jev judges true statements about the cart"
 baseUrl: "{{BASE}}"
+cookies:
+  session-username: "standard_user"
 timeoutMs: 5000
 steps:
   - open:
-      url: "/"
-  - input:
-      selector: '[data-test="username"]'
-      value: "standard_user"
-  - input:
-      selector: '[data-test="password"]'
-      value: "{{SWAG_PASSWORD}}"
-  - click:
-      selector: '[data-test="login-button"]'
-  - waitFor:
-      url: "**/inventory.html"
+      url: "/inventory.html"
   - click:
       selector: '[data-test="add-to-cart-sauce-labs-backpack"]'
   - click:
@@ -1810,23 +1861,16 @@ steps:
 ### `jev/statement-fails.yaml`
 
 ```yaml
-# Expect: failed at step 8; Jev judges the statement false
+# Expect: failed at step 4; Jev judges the statement false
+# The Demo App keeps the signed-in user in the session-username cookie, so setting it skips the sign-in page.
 name: "Statement fails"
 description: "Jev rejects a false statement about the cart"
 baseUrl: "{{BASE}}"
+cookies:
+  session-username: "standard_user"
 steps:
   - open:
-      url: "/"
-  - input:
-      selector: '[data-test="username"]'
-      value: "standard_user"
-  - input:
-      selector: '[data-test="password"]'
-      value: "{{SWAG_PASSWORD}}"
-  - click:
-      selector: '[data-test="login-button"]'
-  - waitFor:
-      url: "**/inventory.html"
+      url: "/inventory.html"
   - click:
       selector: '[data-test="add-to-cart-sauce-labs-backpack"]'
   - click:

@@ -1,21 +1,14 @@
-# Expect: failed at step 14 (the total assert); steps 15-16 stay pending
+# Expect: failed at step 10 (the total assert); steps 11-12 stay pending
+# The Demo App keeps the signed-in user in the session-username cookie, so setting it skips the sign-in page.
 name: "Wrong total"
 description: "The checkout total is asserted with a wrong amount"
 baseUrl: "{{BASE}}"
+cookies:
+  session-username: "standard_user"
 timeoutMs: 3000
 steps:
   - open:
-      url: "/"
-  - input:
-      selector: '[data-test="username"]'
-      value: "standard_user"
-  - input:
-      selector: '[data-test="password"]'
-      value: "{{SWAG_PASSWORD}}"
-  - click:
-      selector: '[data-test="login-button"]'
-  - waitFor:
-      url: "**/inventory.html"
+      url: "/inventory.html"
   - click:
       selector: '[data-test="add-to-cart-sauce-labs-backpack"]'
   - click:

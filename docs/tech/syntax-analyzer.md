@@ -129,6 +129,10 @@ steps:
 | `baseUrl`      | absolute URL     |          | –        | Base for relative URLs in `open` and `url`; see 1.5                             |
 | `timeoutMs`    | positive integer |          | `15000`  | Timeout for each step                                                           |
 | `runTimeoutMs` | positive integer |          | `600000` | Timeout for the whole Run: the browser launch and all steps (`executor.md` 1.7) |
+| `headers`      | object           |          | –        | HTTP headers sent with requests to the `baseUrl`'s origin; see 1.7              |
+| `cookies`      | object           |          | –        | Cookies added before the first step; needs `baseUrl`; see 1.7                  |
+| `localStorage` | object           |          | –        | `localStorage` entries for the `baseUrl`'s origin; needs `baseUrl`; see 1.7    |
+| `sessionStorage` | object         |          | –        | `sessionStorage` entries for the `baseUrl`'s origin; needs `baseUrl`; see 1.7  |
 | `steps`        | Step[]           | ✔        | –        | At least one step, executed in order                                            |
 
 `{{NAME}}` in strings is kept as is and replaced at execution time with a variable from the local `.env` or the platform configuration.
@@ -198,6 +202,58 @@ steps:
   - assert:
       statement: "The navigation bar shows the logged-in account"
 ```
+
+### 1.7 Headers, Cookies, and Storage
+
+`headers`, `cookies`, `localStorage`, and `sessionStorage` give a test the state of a signed-in browser, so it can skip a sign-in page. Each is an object of any number of name → value pairs (`{}` is allowed). Values are strings and may use `{{NAME}}`; plain numbers and booleans read as their source text, as in 1.5. Names are kept as written and never hold a Variable.
+
+```yaml
+name: "Cart"
+baseUrl: "{{BASE}}"
+headers:
+  Authorization: "Bearer {{API_TOKEN}}"
+  X-Tenant: "acme"
+cookies:
+  session-username: "standard_user"   # short form: the value
+  session:                            # full form
+    value: "{{SESSION}}"
+    domain: ".example.com"
+    path: "/"
+    httpOnly: true
+    secure: true
+    sameSite: "Lax"
+localStorage:
+  onboardingDone: "true"
+  authToken: "{{API_TOKEN}}"
+sessionStorage:
+  tabId: "e2e"
+steps:
+  - open: { url: "/inventory.html" }
+```
+
+| Field | Names | Values | When the Run sets them (`browser-adapter.md` 1.13) |
+| ----- | ----- | ------ | -------------------------------------------------- |
+| `headers` | Header names: letters, digits, and `` - _ . ! # $ % & ' * + ^ ` \| ~ `` | String on one line | Sent with every request to the `baseUrl`'s origin, never to another origin. Without a `baseUrl` they go with every request to every origin |
+| `cookies` | Cookie names: the same characters as header names | A string (short form), or an object (full form) | Added before the first step |
+| `localStorage` | Any non-empty text | String | Written once for the `baseUrl`'s origin, before any page script runs |
+| `sessionStorage` | Any non-empty text | String | Written in every tab of the `baseUrl`'s origin, including tabs the page opens, before the page's scripts run |
+
+`cookies`, `localStorage`, and `sessionStorage` need a `baseUrl`: they are set for its origin.
+
+A full-form cookie has these fields; a short-form cookie is `value` alone, with every default:
+
+| Field | Type | Default |
+| ----- | ---- | ------- |
+| `value`* | string (may be `""`) | – |
+| `domain` | non-empty string: the `baseUrl`'s host or a parent of it, with or without a leading `.` | The `baseUrl`'s host, without subdomains |
+| `path` | string starting with `/` | `/` |
+| `httpOnly` | boolean | `false` |
+| `secure` | boolean | `true` when the `baseUrl` is `https`, otherwise `false` |
+| `sameSite` | `Strict` \| `Lax` \| `None`; `None` needs `secure: true` | `Lax` |
+
+The `domain` check runs here when `baseUrl` and `domain` are written without a Variable; otherwise the Executor runs it once the Variables are filled in (`executor.md` 1.2).
+
+Values filled in from Variables are redacted like every other Variable (`executor.md` 1.5), and the Report lists only the names that were set (`report.md` 1.4).
 
 ## 2. Internal Flow
 
@@ -272,15 +328,31 @@ type Step = { line: number } & (
   | Assert
 );
 
+type SameSite = "Strict" | "Lax" | "None";
+type Cookie = {
+  value: string;
+  domain?: string;
+  path?: string;
+  httpOnly?: boolean;
+  secure?: boolean;
+  sameSite?: SameSite;
+};
+
 type TestCase = {
   name: string;
   description?: string;
   baseUrl?: string;
   timeoutMs: number;
   runTimeoutMs: number;
+  headers?: Record<string, string>;
+  cookies?: Record<string, Cookie>; // a short-form cookie is { value }
+  localStorage?: Record<string, string>;
+  sessionStorage?: Record<string, string>;
   steps: Step[];
 };
 ```
+
+The four browser state fields are present only when the file has them. A cookie's attributes are present only when the file sets them; the defaults in 1.7 are applied by the Browser Adapter.
 
 `line` is the step's line number in the source file, used for errors and reports.
 
@@ -297,7 +369,8 @@ Each combination of fields that 1.5 allows has its own named type, so a `switch`
 | `E005` | Unknown action                                                                                                            | The action's key                                                          |
 | `E006` | Invalid step: not an object, has zero or multiple actions, or its parameters are not an object                            | The step node                                                             |
 | `E007` | Wrong type or invalid value                                                                                               | The field's value, or its key when the value is empty (`key:` or `? key`) |
-| `E008` | Invalid field combination, i.e. violates an "at least one" or "exactly one" rule in 1.5, or `text` without `accept: true` | The key of the enclosing object                                           |
+| `E008` | Invalid field combination: violates an "at least one" or "exactly one" rule in 1.5, or a field lacks the field it needs (`text` without `accept: true`, `sameSite: None` without `secure: true`, `cookies`, `localStorage`, or `sessionStorage` without `baseUrl`) | The key of the enclosing object                                           |
+| `E009` | Invalid name in `headers`, `cookies`, `localStorage`, or `sessionStorage`: empty, a list or an object, or a header or cookie name with a character 1.7 does not allow | The name                                                                  |
 
 ### 3.4 CLI Output
 
@@ -317,15 +390,18 @@ Validation FAILED (2 errors).
 ```mermaid
 flowchart LR
   analyze[analyze.ts] --> steps[steps.ts]
+  analyze --> state[browser-state.ts]
   analyze --> fields[fields.ts]
   steps --> fields
+  state --> fields
 ```
 
 | Module       | Responsibility                                                                                                                                                               |
 | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `analyze.ts` | Entry point `analyze()`: parses YAML, validates root fields, iterates `steps`, checks that each step has exactly one action, and reports `E005` when the action is unknown   |
 | `steps.ts`   | One parse function per action, plus a map from action name to parse function, typed so it must cover every action in `Step`; `isAction()` tells whether a name is in the map |
-| `fields.ts`  | `FieldReader` class: wraps a YAML object, reads fields by type (including nested objects such as `dialog`), and records `E003`/`E004`/`E007` with the line number            |
+| `browser-state.ts` | `parseBrowserState()`: reads `headers`, `cookies`, `localStorage`, and `sessionStorage` (1.7) and reports `E008` and `E009`; `cookieDomainProblem()`, which the Executor reuses for a `domain` it can only check after filling in Variables |
+| `fields.ts`  | `FieldReader` class: wraps a YAML object, reads fields by type (including nested objects such as `dialog`), lists an object's keys, and records `E003`/`E004`/`E007` with the line number |
 
 To add an action, add its variant to `Step` in `types.ts`, then add a parse function in `steps.ts` and register it in the map. The type check fails until both are done.
 
@@ -337,6 +413,7 @@ src/core/syntax/
 ├── types.ts     # TestCase, Step, Diagnostic
 ├── analyze.ts
 ├── steps.ts
+├── browser-state.ts
 └── fields.ts
 ```
 
@@ -344,9 +421,9 @@ src/core/syntax/
 
 | Type        | Coverage                                                                                            | Location                                              |
 | ----------- | --------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
-| Unit        | `FieldReader`: reading fields by type, line number conversion                                       | `src/tests/unit/core/syntax/fields.test.ts`           |
+| Unit        | `FieldReader`: reading fields by type, listing keys, line number conversion                         | `src/tests/unit/core/syntax/fields.test.ts`           |
 | Integration | `analyze()` valid fixtures: at least one per action; the output `TestCase` matches the expected one | `src/tests/integration/core/syntax/fixtures/valid/`   |
-| Integration | `analyze()` invalid fixtures: at least one per error code; assert `code` and `line`                 | `src/tests/integration/core/syntax/fixtures/invalid/` |
+| Integration | `analyze()` invalid fixtures: at least one per error code and per browser state field; assert `code` and `line`. Messages of the browser state diagnostics | `src/tests/integration/core/syntax/fixtures/invalid/` |
 | Integration | CLI `validate`: output format, `--json`, exit code                                                  | `src/tests/integration/cli/`                          |
 
 Invalid fixtures are named after the error code, e.g. `E003-missing-value.yaml`, with a `.json` file of the same name next to it containing the expected `diagnostics`.

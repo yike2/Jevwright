@@ -4,6 +4,21 @@ export type LaunchOptions = {
   timeoutMs: number; // TestCase.timeoutMs
   network?: Network; // default "any"
   endpoint?: string; // ws:// URL of a Playwright run-server to drive instead of a local Chromium (1.2)
+  // Browser state (1.13); values are already filled in.
+  headers?: Record<string, string>;
+  cookies?: Record<string, BrowserCookie>;
+  localStorage?: Record<string, string>;
+  sessionStorage?: Record<string, string>;
+};
+
+// Attributes left out get the defaults in 1.13.
+export type BrowserCookie = {
+  value: string;
+  domain?: string;
+  path?: string;
+  httpOnly?: boolean;
+  secure?: boolean;
+  sameSite?: "Strict" | "Lax" | "None";
 };
 
 // "public" aborts every request to a non-public address (browser-adapter.md 1.12).

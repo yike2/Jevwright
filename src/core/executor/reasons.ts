@@ -9,3 +9,6 @@ export const runTimedOut = (ms: number) => `The run did not finish within runTim
 
 /** The same, when the caller's maxRunTimeoutMs cut a longer `runTimeoutMs` short. */
 export const runCapped = (ms: number) => `The run did not finish within the longest run time allowed (${ms} ms)`;
+
+/** Failure reason when the filled-in baseUrl cannot be parsed, but the browser state needs its origin. */
+export const invalidBaseUrl = (url: string) => `"baseUrl" is not a valid URL: "${url}"`;

@@ -10,6 +10,7 @@ import { DialogGuard } from "./dialogs.js";
 import { failureReason, withCleanup } from "./errors.js";
 import { blockPrivateNetwork } from "./network.js";
 import { takeSnapshot } from "./snapshot.js";
+import { applyState, storageState } from "./state.js";
 import { Tabs } from "./tabs.js";
 import type {
   BrowserAction,
@@ -33,11 +34,14 @@ export async function launchBrowser(options: LaunchOptions): Promise<BrowserAdap
       viewport: VIEWPORT,
       deviceScaleFactor: 1,
       baseURL: options.baseUrl,
+      storageState: storageState(options),
       // Requests a service worker makes are not routed, so blocking private networks also blocks service workers.
       ...(isPublic ? { serviceWorkers: "block" as const } : {}),
     });
     context.setDefaultTimeout(options.timeoutMs);
     if (isPublic) await blockPrivateNetwork(context);
+    // After the private network block, so the header route runs first and falls back to it.
+    await applyState(context, options);
     await context.tracing.start({ screenshots: true, snapshots: true });
     return new PlaywrightAdapter(browser, context, await context.newPage(), options);
   } catch (error) {

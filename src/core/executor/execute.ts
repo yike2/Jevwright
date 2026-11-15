@@ -2,10 +2,11 @@ import { launchBrowser, type BrowserAdapter } from "../browser/index.js";
 import { firstLine } from "../browser/errors.js";
 import type { Step, TestCase } from "../syntax/index.js";
 import { RunAbortedError } from "./errors.js";
-import { missingVariables, runCapped, runTimedOut } from "./reasons.js";
+import { launchState } from "./launch-state.js";
+import { runCapped, runTimedOut } from "./reasons.js";
 import { failure, runStep, toStepResult, type StepContext } from "./run-step.js";
 import type { ExecuteOptions, ExecuteResult, RunError, StepResult } from "./types.js";
-import { createRedact, substitute } from "./variables.js";
+import { createRedact } from "./variables.js";
 
 const TIMED_OUT = Symbol("timed out");
 const NO_TRACE = Buffer.alloc(0);
@@ -52,13 +53,13 @@ export async function execute(
   const abortWith = (aborted: Aborted, trace: Buffer) =>
     new RunAbortedError(aborted.kind, aborted.message, results, trace, { cause: aborted.cause });
 
-  const baseUrl = substitute(testCase.baseUrl, vars);
-  if (!baseUrl.ok) {
-    // Without a baseUrl there is no browser to run on, so the first step carries the failure.
+  const launchable = launchState(testCase, vars);
+  if (!launchable.ok) {
+    // Without its baseUrl and browser state there is no browser to run on, so the first step carries the failure.
     const first = testCase.steps[0];
     if (first === undefined) return { steps: [], trace: NO_TRACE };
     onEvent({ type: "started", step: { index: 0, line: first.line, action: first.action } });
-    const ran = { startedAt: new Date(), durationMs: 0, result: failure(missingVariables(baseUrl.missing)) };
+    const ran = { startedAt: new Date(), durationMs: 0, result: failure(launchable.reason) };
     const result = toStepResult(first, 0, ran, redact);
     results[0] = result;
     onEvent({ type: "finished", result });
@@ -69,7 +70,7 @@ export async function execute(
   const expired = new Promise<typeof TIMED_OUT>((resolve) => {
     timer = setTimeout(() => resolve(TIMED_OUT), runTimeoutMs);
   });
-  const launching = launch({ headed, baseUrl: baseUrl.value, timeoutMs: testCase.timeoutMs, network });
+  const launching = launch({ headed, ...launchable.value, timeoutMs: testCase.timeoutMs, network });
   let browser: BrowserAdapter | typeof TIMED_OUT;
   try {
     browser = await Promise.race([launching, expired]);

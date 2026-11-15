@@ -1,0 +1,12 @@
+name: "Attributes"
+baseUrl: "https://example.com"
+cookies:
+  session:
+    value: "x"
+    domain: ""
+    path: "account"
+    httpOnly: "yes"
+    secure: 1
+    sameSite: "lax"
+steps:
+  - reload: {}

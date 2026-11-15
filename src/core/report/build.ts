@@ -1,6 +1,6 @@
 import type { StepResult } from "../executor/index.js";
 import { screenshotPath, TRACE_PATH } from "./paths.js";
-import type { Report, ReportBundle, ReportFile, ReportStep, RunOutcome } from "./types.js";
+import type { BrowserStateNames, Report, ReportBundle, ReportFile, ReportStep, RunOutcome } from "./types.js";
 
 // A step's screenshot moves into `files`; the ReportStep keeps only its path.
 function toReportStep(step: StepResult, files: ReportFile[]): ReportStep {
@@ -10,6 +10,15 @@ function toReportStep(step: StepResult, files: ReportFile[]): ReportStep {
   const path = screenshotPath(step.index);
   files.push({ path, data: screenshot });
   return { ...rest, screenshot: path };
+}
+
+// The names of the headers, cookies, and storage entries the TestCase sets; their values stay out of the Report.
+function browserStateNames({ headers, cookies, localStorage, sessionStorage }: RunOutcome["testCase"]) {
+  const fields = { headers, cookies, localStorage, sessionStorage };
+  const names: BrowserStateNames = Object.fromEntries(
+    Object.entries(fields).flatMap(([field, entries]) => (entries ? [[field, Object.keys(entries)]] : [])),
+  );
+  return Object.keys(names).length > 0 ? names : undefined;
 }
 
 /** Turns the outcome of one Run into its Report and the files the Report points to. */
@@ -24,6 +33,7 @@ export function buildReport(run: RunOutcome): ReportBundle {
     failed: count("failed"),
     pending: count("pending"),
   };
+  const browserState = browserStateNames(run.testCase);
   const report: Report = {
     file: run.file,
     name: run.testCase.name,
@@ -35,6 +45,7 @@ export function buildReport(run: RunOutcome): ReportBundle {
     ...(hasTrace ? { trace: TRACE_PATH } : {}),
     // Only the two fields: a RunAbortedError also fits RunError, but its message would not serialize and its trace would.
     ...(run.error ? { error: { kind: run.error.kind, message: run.error.message } } : {}),
+    ...(browserState ? { browserState } : {}),
   };
   return { report, files };
 }

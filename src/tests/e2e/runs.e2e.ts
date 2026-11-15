@@ -85,7 +85,7 @@ test("TC-RUN-01 runs a passing test and watches it live in the Output console", 
 
 test("TC-RUN-02 runs a longer flow", async ({ page }) => {
   expect(await runFixture(page, "pass/checkout.yaml", "checkout.yaml")).toBe("Passed");
-  await expect(page.getByText("16/16 passed", { exact: true })).toBeVisible();
+  await expect(page.getByText("12/12 passed", { exact: true })).toBeVisible();
 });
 
 test("TC-RUN-03 passes a test that expects the app's own error", async ({ page }) => {
@@ -121,16 +121,16 @@ test("TC-RUN-04 runs every action and dialog answer", async ({ page }) => {
 
 test("TC-RUN-05 stops at a failing assertion", async ({ page }) => {
   expect(await runFixture(page, "fail/wrong-total.yaml", "wrong-total.yaml")).toBe("Failed");
-  await expect(page.getByText("13/16 passed", { exact: true })).toBeVisible();
+  await expect(page.getByText("9/12 passed", { exact: true })).toBeVisible();
 
   const steps = stepsOf(page);
-  const failed = steps.nth(13);
+  const failed = steps.nth(9);
   await expect(failed).toContainText("Failed");
   await expect(failed).toContainText(
     'Text of "[data-test="total-label"]" did not contain "Total: $99.99" within 3000ms; it was "Total: $32.39"',
   );
-  await expect(failed.getByRole("img", { name: "Step 14 screenshot" })).toBeVisible();
-  for (const i of [14, 15]) {
+  await expect(failed.getByRole("img", { name: "Step 10 screenshot" })).toBeVisible();
+  for (const i of [10, 11]) {
     await expect(steps.nth(i)).toContainText("Pending");
     await expect(steps.nth(i).getByRole("img")).toHaveCount(0);
   }
@@ -251,7 +251,7 @@ test("TC-RUN-12 saves unsaved changes before running them", async ({ page }) => 
   await expect.poll(() => sourceOf(page)).toBe(fixture("pass/checkout.yaml"));
   await output.getByRole("region", { name: "Runs" }).getByRole("link").first().click();
   expect(await waitForFinalStatus(page)).toBe("Passed");
-  await expect(stepsOf(page)).toHaveCount(16);
+  await expect(stepsOf(page)).toHaveCount(12);
 });
 
 test("TC-RUN-15 queues one run for a double click", async ({ page }) => {

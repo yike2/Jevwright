@@ -184,6 +184,7 @@ The Core Module is the shared execution engine used by both the local CLI and th
 
 #### 5.1.3 Browser Lifecycle and Page Inspection
 - **Browser Instance Management**: Create and manage an isolated Chrome/Chromium instance (`create a chrome instance`) for each test run, and ensure the page is ready before each step executes.
+- **Browser State**: Start a run with the headers, cookies, and `localStorage` / `sessionStorage` entries a test file gives, so a test can skip signing in through the UI.
 - **Page Content Extraction**: Read and extract current page state—such as capturing page screenshots or retrieving the interactive DOM element list—to serve as input for the Locator, Assertion, and Report modules.
 
 #### 5.1.4 Element Locator

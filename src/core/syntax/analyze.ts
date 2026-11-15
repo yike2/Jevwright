@@ -1,4 +1,5 @@
 import { isAlias, isMap, isScalar, isSeq, LineCounter, parseDocument, type Node, type YAMLError } from "yaml";
+import { parseBrowserState } from "./browser-state.js";
 import { FieldReader, lineOf } from "./fields.js";
 import { isAbsoluteUrl, isAction, parseAction } from "./steps.js";
 import type { AnalyzeResult, Diagnostic, Step } from "./types.js";
@@ -36,6 +37,7 @@ export function analyze(source: string): AnalyzeResult {
   }
   const timeoutMs = fields.positiveInt("timeoutMs") ?? DEFAULT_TIMEOUT_MS;
   const runTimeoutMs = fields.positiveInt("runTimeoutMs") ?? DEFAULT_RUN_TIMEOUT_MS;
+  const state = parseBrowserState(fields, baseUrl);
 
   const steps: Step[] = [];
   if (!fields.has("steps")) {
@@ -57,7 +59,10 @@ export function analyze(source: string): AnalyzeResult {
 
   diagnostics.sort((a, b) => a.line - b.line);
   if (diagnostics.length > 0) return { diagnostics };
-  return { testCase: { name: name!, description, baseUrl, timeoutMs, runTimeoutMs, steps }, diagnostics };
+  return {
+    testCase: { name: name!, description, baseUrl, timeoutMs, runTimeoutMs, ...state, steps },
+    diagnostics,
+  };
 }
 
 // Checks that a step is an object with exactly one known action whose parameters are an object.

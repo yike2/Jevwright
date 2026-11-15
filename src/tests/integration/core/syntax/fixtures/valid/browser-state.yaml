@@ -1,0 +1,25 @@
+name: "Cart"
+baseUrl: "https://shop.example.com"
+headers:
+  Authorization: "Bearer {{API_TOKEN}}"
+  X-Tenant: "acme"
+  X-Empty: ""
+cookies:
+  session-username: "standard_user"
+  visits: 3
+  session:
+    value: "{{SESSION}}"
+    domain: ".example.com"
+    path: "/"
+    httpOnly: true
+    secure: true
+    sameSite: "None"
+  theme:
+    value: ""
+localStorage:
+  onboardingDone: true
+  authToken: "{{API_TOKEN}}"
+sessionStorage:
+  tabId: "e2e"
+steps:
+  - open: { url: "/inventory.html" }

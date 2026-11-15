@@ -42,6 +42,26 @@ describe("buildReport", () => {
     expect(files).toEqual([{ path: "trace.zip", data: TRACE }]);
   });
 
+  it("records the names of the headers, cookies, and storage entries the Run set, not their values", () => {
+    const testCase = {
+      ...outcome().testCase,
+      headers: { Authorization: "Bearer t0ken" },
+      cookies: { session: { value: "s3ssion", httpOnly: true }, theme: { value: "dark" } },
+      localStorage: {},
+      sessionStorage: { tabId: "e2e-tab" },
+    };
+
+    const { report } = buildReport(outcome({ testCase }));
+
+    expect(report.browserState).toEqual({
+      headers: ["Authorization"],
+      cookies: ["session", "theme"],
+      localStorage: [],
+      sessionStorage: ["tabId"],
+    });
+    expect(JSON.stringify(report)).not.toMatch(/t0ken|s3ssion|dark|e2e-tab/);
+  });
+
   it("writes a failed step's screenshot as a file and puts its path in the Report", () => {
     const failed: StepResult = {
       index: 1,

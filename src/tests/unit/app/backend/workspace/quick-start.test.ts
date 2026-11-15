@@ -35,13 +35,27 @@ const EXPECTED = [
   {
     folder: "4 Jev - find and check by description",
     files: [
-      ["find-elements-by-description.yaml", "jev/target-sign-in.yaml"],
+      ["find-elements-by-description.yaml", "jev/target-add-to-cart.yaml"],
       ["fall-back-from-a-stale-selector.yaml", "jev/stale-selector.yaml"],
       ["judge-a-true-statement.yaml", "jev/statement-holds.yaml"],
       ["judge-a-false-statement.yaml", "jev/statement-fails.yaml"],
     ],
   },
 ] as const;
+// The files whose point is the sign-in page: the one that signs in through it, the refused sign-in, and Jev finding
+// the Login button. Every other file that needs a signed-in user starts with the Demo App's session cookie (#121).
+const USES_SIGN_IN_PAGE = [
+  "sign-in-and-see-products.yaml",
+  "locked-out-user-sees-an-error.yaml",
+  "fall-back-from-a-stale-selector.yaml",
+];
+const STARTS_SIGNED_IN = [
+  "buy-a-backpack.yaml",
+  "wrong-total-fails-at-the-total.yaml",
+  "find-elements-by-description.yaml",
+  "judge-a-true-statement.yaml",
+  "judge-a-false-statement.yaml",
+];
 const DEMO_APP_URL = "https://demo.example.com";
 // Every file opens with a three-line header in place of the fixture's one-line "# Expect:" comment.
 const SHIFT = 2;
@@ -133,6 +147,28 @@ describe("quickStartProject", () => {
     expect(lines(seeded("yaml-syntax-error.yaml"))).toEqual([9]);
     for (const [name, path] of EXPECTED[2].files)
       expect(lines(seeded(name))).toEqual(lines(fixture(path)).map((line) => line + SHIFT));
+  });
+
+  it("starts the files that need a signed-in user on the product list, with the session cookie explained at the top", () => {
+    for (const name of STARTS_SIGNED_IN) {
+      const source = seeded(name);
+      expect(source.split("\n")[3], name).toMatch(/^# .*session-username.* cookie/);
+      expect(source, name).toContain('\ncookies:\n  session-username: "standard_user"\n');
+      expect(source, name).toContain('\nsteps:\n  - open:\n      url: "/inventory.html"\n');
+      expect(source, name).not.toContain("{{SWAG_PASSWORD}}");
+    }
+  });
+
+  it("signs in through the sign-in page only in the files whose point is that page, and in exactly one successfully", () => {
+    const typesPassword = testFiles().filter((testFile) => testFile.source.includes("{{SWAG_PASSWORD}}"));
+    const reachesProducts = typesPassword.filter((testFile) => testFile.source.includes('url: "**/inventory.html"'));
+
+    expect(typesPassword.map((testFile) => testFile.name).sort()).toEqual([...USES_SIGN_IN_PAGE].sort());
+    expect(reachesProducts.map((testFile) => testFile.name)).toEqual([
+      "sign-in-and-see-products.yaml",
+      "fall-back-from-a-stale-selector.yaml",
+    ]);
+    for (const testFile of typesPassword) expect(testFile.source, testFile.name).not.toContain("cookies:");
   });
 
   it("sets BASE to the Demo App URL and SWAG_PASSWORD to the Demo App's password", () => {

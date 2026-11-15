@@ -108,6 +108,15 @@ export class FieldReader {
     return this.child(map, this.pair(key)!.key as Node, isAlias(node) ? node : this.alias);
   }
 
+  /** Every key of this object in order: its name, or undefined when it is not a plain value, and its node. */
+  keys(): { name: string | undefined; node: Node }[] {
+    return this.map.items.map(({ key }) => {
+      const resolved = this.resolve(key);
+      // An empty key (`: value`) has no node of its own, so it is blamed on the owner.
+      return { name: isScalar(resolved) ? text(resolved) : undefined, node: (key ?? this.owner) as Node };
+    });
+  }
+
   /** The value node of `key`, matching aliased keys too; undefined when the field is absent. */
   get(key: string): Node | undefined {
     return this.pair(key)?.value as Node | undefined;

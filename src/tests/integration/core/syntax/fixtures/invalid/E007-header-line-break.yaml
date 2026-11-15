@@ -1,0 +1,5 @@
+name: "Line break"
+headers:
+  X-A: "a\nb"
+steps:
+  - reload: {}

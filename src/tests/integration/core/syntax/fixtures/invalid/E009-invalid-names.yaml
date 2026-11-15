@@ -1,0 +1,16 @@
+name: "Names"
+baseUrl: "https://example.com"
+headers:
+  "X Tenant": "acme"
+  "": "empty"
+  ? [a]
+  : "list"
+cookies:
+  "session;id": "x"
+  "": "y"
+localStorage:
+  "": "z"
+sessionStorage:
+  "": "w"
+steps:
+  - reload: {}

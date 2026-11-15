@@ -103,3 +103,15 @@ test("TC-QS-05 offers the Quick Start project whenever no project is named Quick
   await page.reload();
   await expect(sidebar.getByRole("button", { name: ADD, exact: true })).toBeVisible();
 });
+
+test("TC-QS-06 a Quick Start file starts signed in with the session cookie and passes", async ({ page }) => {
+  await signUp(page, { quickStart: true });
+  await page.goto(WORKSPACE);
+  await overviewOf(page).getByRole("link", { name: "buy-a-backpack.yaml", exact: true }).click();
+  await expect.poll(() => sourceOf(page)).toContain('cookies:\n  session-username: "standard_user"\n');
+
+  await editorOf(page).run.click();
+
+  await expect(editorOf(page).state).toHaveText("Passed", { timeout: 60_000 });
+  await expect(editorOf(page).output.getByText("12/12 passed", { exact: true })).toBeVisible();
+});

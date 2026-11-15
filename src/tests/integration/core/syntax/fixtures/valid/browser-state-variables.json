@@ -1,0 +1,12 @@
+{
+  "name": "State with a Variable baseUrl",
+  "baseUrl": "{{BASE}}",
+  "timeoutMs": 15000,
+  "runTimeoutMs": 600000,
+  "cookies": {
+    "session": { "value": "{{SESSION}}", "domain": ".example.com" },
+    "tenant": { "value": "acme", "domain": "{{COOKIE_DOMAIN}}" }
+  },
+  "localStorage": {},
+  "steps": [{ "line": 12, "action": "open", "url": "/" }]
+}

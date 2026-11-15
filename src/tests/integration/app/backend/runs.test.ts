@@ -8,6 +8,7 @@ import { afterAll, beforeAll, expect, it } from "vitest";
 import { browserLauncher } from "@/app/backend/src/runs/browser.js";
 import { recoverInterruptedRuns } from "@/app/backend/src/runs/execute-run.js";
 import { analyze } from "@/core/syntax/index.js";
+import { serveDemoApp } from "../../../benchmark/server.js";
 import { startRunServer } from "../../core/browser/run-server.js";
 import { serveFixtures } from "../../core/browser/server.js";
 import { createTestBackend, createUser, type TestBackendOptions } from "./test-app.js";
@@ -18,8 +19,15 @@ const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
 const MISSING_ID = "6f1c2a4e-9b3d-4c5e-8f7a-1b2c3d4e5f60";
 
 let server: Awaited<ReturnType<typeof serveFixtures>>;
-beforeAll(async () => (server = await serveFixtures(FIXTURES)));
-afterAll(() => server?.stop());
+let demo: Awaited<ReturnType<typeof serveDemoApp>>;
+beforeAll(async () => {
+  server = await serveFixtures(FIXTURES);
+  demo = await serveDemoApp();
+});
+afterAll(async () => {
+  await server?.stop();
+  await demo?.stop();
+});
 
 const passing = () => `name: "Add to cart"
 timeoutMs: 2000
@@ -235,6 +243,65 @@ describeDb("run routes", () => {
 
     expect(res.body.projectId).toBe(blog.id);
     expect((await as.get(`/runs/${res.body.id}`)).body.status).toBe("passed");
+  });
+
+  it("runs a Test File that uses cookies and browser state against the Demo App with Project Variables, and redacts their values", async () => {
+    const source = `name: "Products with cookie"
+baseUrl: "{{BASE}}"
+headers:
+  X-Run-Token: "{{API_TOKEN}}"
+cookies:
+  session-username: "{{SWAG_USER}}"
+localStorage:
+  cart-contents: "{{CART}}"
+sessionStorage:
+  tabId: "{{TAB_ID}}"
+steps:
+  - open:
+      url: "/inventory.html"
+  - assert:
+      selector: '[data-test="title"]'
+      text: "Products"
+  - assert:
+      selector: '[data-test="shopping-cart-badge"]'
+      text: "2"
+`;
+    const liveMessages: unknown[] = [];
+    const as = await setup(source, {
+      progress: {
+        status: (run) => liveMessages.push(run),
+        step: (_runId, step) => liveMessages.push(step),
+      },
+    });
+    await db().variable.createMany({
+      data: [
+        { projectId: as.project.id, name: "BASE", value: demo.baseUrl },
+        { projectId: as.project.id, name: "API_TOKEN", value: "cloud-header-secret" },
+        { projectId: as.project.id, name: "SWAG_USER", value: "standard_user" },
+        { projectId: as.project.id, name: "CART", value: "[4,0]" },
+        { projectId: as.project.id, name: "TAB_ID", value: "cloud-tab-secret" },
+      ],
+    });
+
+    const { id } = (await as.trigger()).body;
+    await as.queue.idle();
+    const res = await as.get(`/runs/${id}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      status: "passed",
+      summary: { total: 3, passed: 3, failed: 0, pending: 0 },
+      report: {
+        browserState: {
+          headers: ["X-Run-Token"],
+          cookies: ["session-username"],
+          localStorage: ["cart-contents"],
+          sessionStorage: ["tabId"],
+        },
+      },
+    });
+    expect(JSON.stringify(res.body.report)).not.toMatch(/cloud-header-secret|standard_user|cloud-tab-secret/);
+    expect(JSON.stringify(liveMessages)).not.toMatch(/cloud-header-secret|standard_user|cloud-tab-secret/);
   });
 
   it("fails a Run at its failed step, with the step's reason and no Run error", async () => {

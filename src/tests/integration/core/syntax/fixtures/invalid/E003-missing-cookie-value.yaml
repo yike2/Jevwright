@@ -1,0 +1,7 @@
+name: "No value"
+baseUrl: "https://example.com"
+cookies:
+  session:
+    path: "/"
+steps:
+  - reload: {}

@@ -35,7 +35,8 @@ export function substitute<T>(value: T, vars: Record<string, string>): Substitut
 /** Returns a function that puts {{NAME}} back for the value of every Variable used in `testCase`. */
 export function createRedact(testCase: TestCase, vars: Record<string, string>): (text: string) => string {
   const names = new Map<string, string>(); // value → {{NAME}}
-  for (const text of strings([testCase.baseUrl, testCase.steps])) {
+  const { baseUrl, headers, cookies, localStorage, sessionStorage, steps } = testCase;
+  for (const text of strings([baseUrl, headers, cookies, localStorage, sessionStorage, steps])) {
     for (const [variable, name] of text.matchAll(VARIABLE)) {
       const value = vars[name!];
       if (!value) continue;

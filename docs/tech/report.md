@@ -45,8 +45,9 @@ The trace is empty when the browser never launched, or when `close()` failed aft
 | `steps` | ReportStep[] | One per step, in order: the Step result (`executor.md` 3.2), with `screenshot` replaced by its path in the Bundle |
 | `trace` | string | `"trace.zip"`; absent when the trace is empty |
 | `error` | Run error | `{ kind, message }`; absent when the Run ended normally |
+| `browserState` | object | The names of the `headers`, `cookies`, `localStorage`, and `sessionStorage` entries the TestCase set (`syntax-analyzer.md` 1.7), one list per field it has; never their values. Absent when it has none of the four |
 
-Reasons, dialog messages, and the Run error message come redacted from the Executor. The Report adds no text of its own.
+Reasons, dialog messages, and the Run error message come redacted from the Executor. The Report adds no text of its own; the `browserState` names are copied from the test file.
 
 ### 1.5 Example
 
@@ -67,7 +68,8 @@ Reasons, dialog messages, and the Run error message come redacted from the Execu
     },
     { "index": 2, "line": 10, "action": "assert", "status": "pending" }
   ],
-  "trace": "trace.zip"
+  "trace": "trace.zip",
+  "browserState": { "cookies": ["session-username"], "localStorage": ["cart-contents"] }
 }
 ```
 
@@ -133,6 +135,14 @@ type Report = {
   steps: ReportStep[];
   trace?: string;
   error?: RunError;
+  browserState?: BrowserStateNames;
+};
+
+type BrowserStateNames = {
+  headers?: string[];
+  cookies?: string[];
+  localStorage?: string[];
+  sessionStorage?: string[];
 };
 
 type ReportFile = { path: string; data: Buffer };
@@ -154,7 +164,7 @@ type ReportBundle = { report: Report; files: ReportFile[] }; // files: trace fir
 
 | Module | Responsibility |
 | ------ | -------------- |
-| `build.ts` | `buildReport()`: ReportSteps, files, summary, status (2) |
+| `build.ts` | `buildReport()`: ReportSteps, files, summary, status, browser state names (2) |
 | `paths.ts` | Bundle paths in 3.3 |
 | `types.ts` | Types in 3, including `ReportStore` |
 
@@ -172,5 +182,5 @@ src/core/report/
 
 | Type | Coverage | Location |
 | ---- | -------- | -------- |
-| Unit | `buildReport`: a passing Run; a failed step with its screenshot as a file and a path; a passed step with a screenshot likewise; a failed step without a screenshot; `pending` steps; summary counts; `status` failed from a step and from a Run error alone; `error` copied; `trace` and `trace.zip` present only for a non-empty trace; `file`, `name`, `startedAt`, `durationMs` copied; the Report survives `JSON.stringify` with no Buffer in it | `src/tests/unit/core/report/build.test.ts` |
+| Unit | `buildReport`: a passing Run; a failed step with its screenshot as a file and a path; a passed step with a screenshot likewise; a failed step without a screenshot; `pending` steps; summary counts; `status` failed from a step and from a Run error alone; `error` copied; `trace` and `trace.zip` present only for a non-empty trace; `file`, `name`, `startedAt`, `durationMs` copied; the Report survives `JSON.stringify` with no Buffer in it; `browserState` lists the names of each browser state field and none of the values | `src/tests/unit/core/report/build.test.ts` |
 | Integration | A Run of the Executor against a local HTML page with a failing step, built into a Bundle whose screenshot is a PNG and whose trace is a zip | `src/tests/integration/core/report/build.test.ts` |
