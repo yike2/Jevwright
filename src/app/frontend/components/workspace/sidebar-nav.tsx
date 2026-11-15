@@ -517,7 +517,7 @@ export function SidebarNav({ email, tree, refreshTree, onLogout, onNavigate }: W
             })}
           </div>
 
-          <div className="space-y-3 border-t border-sidebar-border p-3">
+          <section aria-label={`Signed in as ${email}`} className="space-y-3 border-t border-sidebar-border p-3">
             <div className="flex items-center gap-3">
               <div
                 aria-hidden="true"
@@ -525,7 +525,12 @@ export function SidebarNav({ email, tree, refreshTree, onLogout, onNavigate }: W
               >
                 {initials(email)}
               </div>
-              <p className="min-w-0 flex-1 truncate">Signed in as {email}</p>
+              {/* The email is the account's name; the region's label says it is the signed-in account. */}
+              <TreeNameTooltip name={email}>
+                <p data-tree-name tabIndex={0} className="min-w-0 flex-1 truncate rounded-sm">
+                  {email}
+                </p>
+              </TreeNameTooltip>
             </div>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <ThemeToggle />
@@ -534,7 +539,7 @@ export function SidebarNav({ email, tree, refreshTree, onLogout, onNavigate }: W
                 Log out
               </Button>
             </div>
-          </div>
+          </section>
         </nav>
       </div>
 

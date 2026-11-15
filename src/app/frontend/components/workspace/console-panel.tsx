@@ -13,7 +13,7 @@ type ConsolePanelProps = {
   children: ReactNode;
 };
 
-/** One console of the editor's console column: a header that collapses and reopens it, and a body that scrolls. */
+/** One console of the editor's console column: a header that collapses and opens it, and a body that scrolls. */
 export function ConsolePanel({ title, summary, expanded, onToggle, children }: ConsolePanelProps) {
   const bodyId = useId();
 

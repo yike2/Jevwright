@@ -5,7 +5,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 
 type TreeNameTooltipProps = {
   name: string;
-  // The row's link or button; it holds a `[data-tree-name]` element with the (possibly truncated) name.
+  // The row's link or button, holding or being a `[data-tree-name]` element with the (possibly truncated) name.
   children: ReactElement<Record<string, unknown>>;
 };
 
@@ -18,7 +18,10 @@ export function TreeNameTooltip({ name, children }: TreeNameTooltipProps) {
   const [open, setOpen] = useState(false);
 
   const isTruncated = () => {
-    const text = triggerRef.current?.querySelector<HTMLElement>("[data-tree-name]");
+    const trigger = triggerRef.current;
+    const text = trigger?.matches("[data-tree-name]")
+      ? trigger
+      : trigger?.querySelector<HTMLElement>("[data-tree-name]");
     return text !== null && text !== undefined && text.scrollWidth > text.clientWidth;
   };
 

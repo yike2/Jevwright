@@ -90,18 +90,24 @@ export type ConsolesOpen = Record<ConsoleKey, boolean>;
 
 /** Opens a collapsed console or collapses an open one, leaving the other as it is. */
 export function toggleConsole(open: ConsolesOpen, key: ConsoleKey): ConsolesOpen {
-  void key;
-  return open;
+  return { ...open, [key]: !open[key] };
 }
 
 /** Opens a console that has something to report, leaving the other as it is. */
 export function openConsole(open: ConsolesOpen, key: ConsoleKey): ConsolesOpen {
-  void key;
-  return open;
+  return open[key] ? open : { ...open, [key]: true };
 }
 
 /** The consoles kept in the browser, or both open when nothing usable is stored. */
 export function parseConsolesOpen(stored: string | null): ConsolesOpen {
-  void stored;
-  return { debug: false, output: false };
+  const both = { debug: true, output: true };
+  if (stored === null) return both;
+  try {
+    const value: unknown = JSON.parse(stored);
+    if (typeof value !== "object" || value === null) return both;
+    const { debug, output } = value as Record<string, unknown>;
+    return typeof debug === "boolean" && typeof output === "boolean" ? { debug, output } : both;
+  } catch {
+    return both;
+  }
 }

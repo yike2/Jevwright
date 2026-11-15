@@ -4,9 +4,18 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePanelRef, type PanelImperativeHandle } from "react-resizable-panels";
 import { ApiError, apiClient, type Diagnostic, type Run } from "@/lib/api";
-import { fileState, fileStateLabel, formatDiagnostic, hasNewDiagnostics, problemsSummary } from "@/lib/editor";
+import {
+  fileState,
+  fileStateLabel,
+  formatDiagnostic,
+  hasNewDiagnostics,
+  openConsole,
+  problemsSummary,
+  toggleConsole,
+  type ConsoleKey,
+} from "@/lib/editor";
 import { errorText } from "@/lib/format-error";
-import { usePanelLayout } from "@/lib/panel-layout";
+import { useConsolesOpen, usePanelLayout } from "@/lib/panel-layout";
 import { useMediaQuery } from "@/lib/use-media-query";
 import { useRun } from "@/lib/use-run";
 import { formatDuration, runErrorText, runStatusLabel, stepStatusLabel } from "@/lib/runs";
@@ -23,8 +32,6 @@ import { cn } from "cn";
 
 // The validation request waits until typing pauses (frontend.md 1.7).
 const VALIDATE_DELAY_MS = 400;
-// A collapsed console keeps its header; the whole console column collapses to nothing.
-const CONSOLE_HEADER = "33px";
 
 type Validated = { source: string; diagnostics: Diagnostic[] };
 
@@ -124,11 +131,10 @@ function Workbench({ testFileId, loadedName, saved, draft, onSaved, onDraftChang
   const [detailsRunId, setDetailsRunId] = useState<string | null>(null);
 
   const consolesRef = usePanelRef();
-  const problemsRef = usePanelRef();
-  const runRef = usePanelRef();
-  const [open, setOpen] = useState({ consoles: true, problems: true, run: true });
+  // The column collapses through its panel; the two consoles in it open and collapse on their own (frontend.md 1.7).
+  const [columnOpen, setColumnOpen] = useState(true);
+  const [consoles, setConsoles] = useConsolesOpen();
   const outerLayout = usePanelLayout(isDesktop ? "editor" : "editor-narrow");
-  const consoleLayout = usePanelLayout("consoles");
 
   const dirty = draft !== saved;
   const treeFile = tree
@@ -154,24 +160,28 @@ function Workbench({ testFileId, loadedName, saved, draft, onSaved, onDraftChang
     if (panel.isCollapsed()) panel.expand();
     else panel.collapse();
   };
-  const track = (key: keyof typeof open, panel: { current: PanelImperativeHandle | null }) => () => {
-    const isOpen = panel.current !== null && !panel.current.isCollapsed();
-    setOpen((previous) => (previous[key] === isOpen ? previous : { ...previous, [key]: isOpen }));
+  const trackColumn = () => {
+    setColumnOpen(consolesRef.current !== null && !consolesRef.current.isCollapsed());
   };
+  // Opening a console for something to report shows the column too, and never closes the other console.
+  const reveal = useCallback(
+    (key: ConsoleKey) => {
+      expand(consolesRef.current);
+      setConsoles((previous) => openConsole(previous, key));
+    },
+    [consolesRef, setConsoles],
+  );
 
   // Diagnostics as the user types: the latest answer for the source in the editor wins.
   const shownDiagnostics = useRef<Diagnostic[]>([]);
   const showDiagnostics = useCallback(
     (next: Validated) => {
-      // A collapsed Problems console opens only for something new to report (frontend.md 1.7).
-      if (hasNewDiagnostics(shownDiagnostics.current, next.diagnostics)) {
-        expand(consolesRef.current);
-        expand(problemsRef.current);
-      }
+      // A collapsed Debug console opens only for something new to report (frontend.md 1.7).
+      if (hasNewDiagnostics(shownDiagnostics.current, next.diagnostics)) reveal("debug");
       shownDiagnostics.current = next.diagnostics;
       setValidated(next);
     },
-    [consolesRef, problemsRef],
+    [reveal],
   );
 
   useEffect(() => {
@@ -222,9 +232,8 @@ function Workbench({ testFileId, loadedName, saved, draft, onSaved, onDraftChang
     setAlertMessage(null);
     setRunError(null);
     setIsStarting(true);
-    // Run reports in the Run console, which opens for it and stays open (frontend.md 1.7).
-    expand(consolesRef.current);
-    expand(runRef.current);
+    // Run reports in the Output console, which opens for it and stays open (frontend.md 1.7).
+    reveal("output");
 
     try {
       if (dirty && !(await saveDraft())) return;
@@ -236,7 +245,7 @@ function Workbench({ testFileId, loadedName, saved, draft, onSaved, onDraftChang
     } catch (error) {
       if (error instanceof ApiError && error.status === 422 && Array.isArray(error.details)) {
         showDiagnostics({ source: draft, diagnostics: error.details as Diagnostic[] });
-        expand(problemsRef.current);
+        reveal("debug");
       }
       setRunError(errorText(error));
     } finally {
@@ -272,20 +281,20 @@ function Workbench({ testFileId, loadedName, saved, draft, onSaved, onDraftChang
       size="icon-sm"
       className={className}
       aria-label="Toggle consoles"
-      aria-expanded={open.consoles}
-      title={open.consoles ? "Hide consoles" : "Show consoles"}
+      aria-expanded={columnOpen}
+      title={columnOpen ? "Hide consoles" : "Show consoles"}
       onClick={() => toggle(consolesRef.current)}
     >
       <PanelRight aria-hidden="true" />
     </Button>
   );
 
-  const problems = (
+  const debugConsole = (
     <ConsolePanel
-      title="Problems"
+      title="Debug"
       summary={problemsSummary(diagnostics)}
-      expanded={open.problems}
-      onToggle={() => toggle(problemsRef.current)}
+      expanded={consoles.debug}
+      onToggle={() => setConsoles((previous) => toggleConsole(previous, "debug"))}
     >
       {validateError && (
         <p role="alert" className="text-destructive">
@@ -314,12 +323,12 @@ function Workbench({ testFileId, loadedName, saved, draft, onSaved, onDraftChang
     </ConsolePanel>
   );
 
-  const runConsole = (
+  const outputConsole = (
     <ConsolePanel
-      title="Run"
+      title="Output"
       summary={liveRun ? runStatusLabel(liveRun.status) : undefined}
-      expanded={open.run}
-      onToggle={() => toggle(runRef.current)}
+      expanded={consoles.output}
+      onToggle={() => setConsoles((previous) => toggleConsole(previous, "output"))}
     >
       <div className="space-y-3">
         {runError && (
@@ -443,40 +452,13 @@ function Workbench({ testFileId, loadedName, saved, draft, onSaved, onDraftChang
           minSize="220px"
           collapsible
           collapsedSize="0px"
-          onResize={track("consoles", consolesRef)}
+          onResize={trackColumn}
         >
-          {/* A collapsed column is out of the tab order, as if it were closed. */}
-          <div className="h-full" inert={!open.consoles}>
-            <ResizablePanelGroup
-              id="consoles"
-              orientation="vertical"
-              defaultLayout={consoleLayout.defaultLayout}
-              onLayoutChanged={consoleLayout.onLayoutChanged}
-            >
-              <ResizablePanel
-                id="problems"
-                panelRef={problemsRef}
-                defaultSize="50%"
-                minSize="96px"
-                collapsible
-                collapsedSize={CONSOLE_HEADER}
-                onResize={track("problems", problemsRef)}
-              >
-                {problems}
-              </ResizablePanel>
-              <ResizableHandle aria-label="Resize Problems and Run" />
-              <ResizablePanel
-                id="run"
-                panelRef={runRef}
-                defaultSize="50%"
-                minSize="96px"
-                collapsible
-                collapsedSize={CONSOLE_HEADER}
-                onResize={track("run", runRef)}
-              >
-                {runConsole}
-              </ResizablePanel>
-            </ResizablePanelGroup>
+          {/* A collapsed column is out of the tab order, as if it were closed. With both consoles open they share the
+              column evenly; a collapsed one keeps its header and the open one takes the rest. */}
+          <div className="flex h-full flex-col" inert={!columnOpen}>
+            <div className={cn("min-h-0", consoles.debug ? "flex-1" : "shrink-0")}>{debugConsole}</div>
+            <div className={cn("min-h-0 border-t", consoles.output ? "flex-1" : "shrink-0")}>{outputConsole}</div>
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>
@@ -492,10 +474,8 @@ function Workbench({ testFileId, loadedName, saved, draft, onSaved, onDraftChang
         <button
           type="button"
           className={cn("rounded-sm px-1 hover:bg-accent", diagnostics.length > 0 && "text-destructive")}
-          onClick={() => {
-            expand(consolesRef.current);
-            expand(problemsRef.current);
-          }}
+          title="Show the Debug console"
+          onClick={() => reveal("debug")}
         >
           {problemsSummary(diagnostics)}
         </button>
