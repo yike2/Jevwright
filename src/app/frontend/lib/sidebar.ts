@@ -39,6 +39,11 @@ export function toTestFileName(input: string): string {
   return `${trimmed}.yaml`;
 }
 
+/** The name a Test File's Rename input shows, before the fixed `.yaml`. */
+export function testFileBaseName(name: string): string {
+  return name;
+}
+
 export function initials(email: string): string {
   const local = email.split("@")[0] ?? "";
   return local.slice(0, 2).toUpperCase();

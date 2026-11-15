@@ -31,6 +31,12 @@ export function stepStatusLabel(status: Step["status"]): string {
   }
 }
 
+/** The line the Run page shows for a Run that ended with an error. */
+export function runErrorText(error: NonNullable<Run["error"]>): string {
+  void error;
+  return "";
+}
+
 export function formatDuration(ms: number | null | undefined): string {
   if (ms === null || ms === undefined) {
     return "—";

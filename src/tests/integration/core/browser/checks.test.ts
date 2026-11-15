@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { useBrowser } from "./harness.js";
 
-const { run } = useBrowser();
+const { run, url } = useBrowser();
 
 describe("check url", () => {
   it("passes when the current URL matches", () =>
@@ -13,13 +13,17 @@ describe("check url", () => {
 });
 
 describe("check url that never matches", () => {
-  it("fails after the step timeout with Playwright's reason", () =>
+  it("fails after the step timeout, saying which URL the page had", () =>
     run(async (browser) => {
       await browser.perform({ action: "open", url: "/plain.html" });
 
       const result = await browser.check({ check: "url", url: "/other.html" });
 
-      expect(result).toEqual({ ok: false, reason: expect.stringContaining("Timeout 2000ms"), dialogs: [] });
+      expect(result).toEqual({
+        ok: false,
+        reason: `The URL did not match "/other.html" within 2000ms; it was "${url("/plain.html")}"`,
+        dialogs: [],
+      });
     }));
 });
 
@@ -52,7 +56,16 @@ describe("check visible on a hidden element", () => {
 
       const result = await browser.check({ check: "visible", selector: "#secret" });
 
-      expect(result).toEqual({ ok: false, reason: expect.stringContaining("Timeout 2000ms"), dialogs: [] });
+      expect(result).toEqual({ ok: false, reason: '"#secret" did not become visible within 2000ms', dialogs: [] });
+    }));
+
+  it("fails after the step timeout, saying no element matches, for a selector that matches nothing", () =>
+    run(async (browser) => {
+      await browser.perform({ action: "open", url: "/checks.html" });
+
+      const result = await browser.check({ check: "visible", selector: "#nope" });
+
+      expect(result).toEqual({ ok: false, reason: 'No element matches "#nope" within 2000ms', dialogs: [] });
     }));
 });
 
@@ -115,12 +128,12 @@ describe("check text on an element that disappears", () => {
 });
 
 describe("check text on an element that never appears", () => {
-  it("fails with Playwright's timeout", () =>
+  it("fails after the step timeout, saying no element matches", () =>
     run(async (browser) => {
       await browser.perform({ action: "open", url: "/checks.html" });
 
       const result = await browser.check({ check: "text", selector: "#missing", text: "Saved" });
 
-      expect(result).toEqual({ ok: false, reason: expect.stringContaining("Timeout 2000ms"), dialogs: [] });
+      expect(result).toEqual({ ok: false, reason: 'No element matches "#missing" within 2000ms', dialogs: [] });
     }));
 });

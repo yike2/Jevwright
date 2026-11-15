@@ -31,7 +31,10 @@ describeDb("auth routes", () => {
     const res = await register({ ...credentials, email: "ADA@example.COM" });
 
     expect(res.status).toBe(409);
-    expect(res.body.error.code).toBe("conflict");
+    expect(res.body.error).toEqual({
+      code: "conflict",
+      message: "An account with this email already exists. Log in instead.",
+    });
   });
 
   it("logs in with the right password, in any email case", async () => {

@@ -111,6 +111,15 @@ export function parseApiError(payload: unknown): {
   };
 }
 
+/** The server could not be reached: fetch itself failed, so there is no HTTP status. */
+export class NetworkError extends Error {
+  constructor() {
+    super("");
+    this.name = "NetworkError";
+    Object.setPrototypeOf(this, NetworkError.prototype);
+  }
+}
+
 export class ApiError extends Error {
   readonly status: number;
   readonly code: string;

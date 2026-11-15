@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { apiClient } from "@/lib/api";
-import { formatAuthError } from "@/lib/format-auth-error";
+import { formatError } from "@/lib/format-error";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,7 +43,7 @@ export default function LoginPage() {
 
       router.replace("/");
     } catch (error) {
-      setMessages(formatAuthError(error));
+      setMessages(formatError(error));
     } finally {
       setIsSubmitting(false);
     }

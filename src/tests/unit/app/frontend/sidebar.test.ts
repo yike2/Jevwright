@@ -7,6 +7,7 @@ import {
   starterSource,
   statusOf,
   statusTitle,
+  testFileBaseName,
   toTestFileName,
   type LatestRun,
 } from "@/app/frontend/lib/sidebar.js";
@@ -60,28 +61,35 @@ describe("statusOf", () => {
 });
 
 describe("toTestFileName", () => {
-  it("adds .yaml to a bare name", () => {
+  it("adds .yaml to the name typed before the fixed suffix", () => {
     expect(toTestFileName("login")).toBe("login.yaml");
   });
 
-  it("leaves an existing .yaml file name unchanged", () => {
+  it("does not add a second .yaml to a pasted file name", () => {
     expect(toTestFileName("login.yaml")).toBe("login.yaml");
   });
 
-  it("trims surrounding whitespace and appends .yaml", () => {
+  it("trims surrounding whitespace", () => {
     expect(toTestFileName("  login  ")).toBe("login.yaml");
   });
 
-  it("leaves a non-yaml extension unchanged", () => {
-    expect(toTestFileName("login.yml")).toBe("login.yml");
+  it("adds .yaml after any other dot, since the suffix is always .yaml", () => {
+    expect(toTestFileName("v1.2")).toBe("v1.2.yaml");
   });
 
-  it("returns an empty string for empty input", () => {
+  it("returns an empty string for empty or whitespace-only input", () => {
     expect(toTestFileName("")).toBe("");
+    expect(toTestFileName("   ")).toBe("");
+  });
+});
+
+describe("testFileBaseName", () => {
+  it("drops the .yaml suffix, for the Rename input", () => {
+    expect(testFileBaseName("sign-in.yaml")).toBe("sign-in");
   });
 
-  it("returns an empty string for whitespace-only input", () => {
-    expect(toTestFileName("   ")).toBe("");
+  it("keeps a name without the suffix", () => {
+    expect(testFileBaseName("notes")).toBe("notes");
   });
 });
 

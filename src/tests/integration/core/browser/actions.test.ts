@@ -4,6 +4,7 @@ import { data, useBrowser } from "./harness.js";
 import { serveFixtures } from "./server.js";
 
 const { run } = useBrowser();
+const quick = useBrowser(300);
 
 const passed = { ok: true, dialogs: [] };
 const logged = (browser: BrowserAdapter, text: string) => browser.check({ check: "text", selector: "#log", text });
@@ -198,18 +199,56 @@ describe("open", () => {
     run(async (browser) => {
       const result = await browser.perform({ action: "open", url: "http://127.0.0.1:1/" });
 
-      expect(result).toEqual({ ok: false, reason: expect.stringMatching(/^page\.goto: net::ERR_/), dialogs: [] });
+      expect(result).toEqual({ ok: false, reason: expect.stringMatching(/^net::ERR_/), dialogs: [] });
+    }));
+
+  it("fails when the page does not finish loading within the step timeout, saying so", () =>
+    quick.run(async (browser) => {
+      const result = await browser.perform({ action: "open", url: "/slow.html" });
+
+      expect(result).toEqual({ ok: false, reason: "The page did not finish loading within 300ms", dialogs: [] });
     }));
 });
 
 describe("an element action on a covered element", () => {
-  it("fails after the step timeout", () =>
+  it("fails after the step timeout, saying the element was found but could not be used", () =>
     run(async (browser) => {
       await browser.perform({ action: "open", url: "/hittable.html" });
 
       const result = await browser.perform({ action: "click", element: { selector: "text=Covered" } });
 
-      expect(result).toEqual({ ok: false, reason: expect.stringContaining("Timeout 2000ms"), dialogs: [] });
+      expect(result).toEqual({
+        ok: false,
+        reason:
+          '"text=Covered" was found but could not be clicked within 2000ms: it stayed hidden, disabled, or covered by another element',
+        dialogs: [],
+      });
+    }));
+});
+
+describe("an element action on a selector that matches nothing", () => {
+  it.each([
+    ["click", "clicked"],
+    ["doubleClick", "double-clicked"],
+    ["rightClick", "right-clicked"],
+    ["hover", "hovered"],
+  ] as const)("%s fails after the step timeout, saying no element matches", (action) =>
+    run(async (browser) => {
+      await browser.perform({ action: "open", url: "/actions.html" });
+
+      const result = await browser.perform({ action, element: { selector: "#nope" } });
+
+      expect(result).toEqual({ ok: false, reason: 'No element matches "#nope" within 2000ms', dialogs: [] });
+    }),
+  );
+
+  it("input fails the same way", () =>
+    run(async (browser) => {
+      await browser.perform({ action: "open", url: "/actions.html" });
+
+      const result = await browser.perform({ action: "input", element: { selector: "#nope" }, value: "x" });
+
+      expect(result).toEqual({ ok: false, reason: 'No element matches "#nope" within 2000ms', dialogs: [] });
     }));
 });
 
