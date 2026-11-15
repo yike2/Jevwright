@@ -93,6 +93,15 @@ export const Report = z.object({
     .object({ kind: z.enum(["timeout", "infrastructure"]), message: z.string() })
     .optional()
     .meta({ description: "Core's Run error; absent when the Run ended normally" }),
+  browserState: z
+    .object({
+      headers: z.array(z.string()).optional(),
+      cookies: z.array(z.string()).optional(),
+      localStorage: z.array(z.string()).optional(),
+      sessionStorage: z.array(z.string()).optional(),
+    })
+    .optional()
+    .meta({ description: "The names of the headers, cookies, and storage entries the test set; never their values" }),
 });
 
 export const Run = z.object({

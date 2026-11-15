@@ -4762,6 +4762,37 @@
                             "message"
                           ],
                           "additionalProperties": false
+                        },
+                        "browserState": {
+                          "description": "The names of the headers, cookies, and storage entries the test set; never their values",
+                          "type": "object",
+                          "properties": {
+                            "headers": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "cookies": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "localStorage": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "sessionStorage": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          },
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -5532,6 +5563,37 @@
                                   "message"
                                 ],
                                 "additionalProperties": false
+                              },
+                              "browserState": {
+                                "description": "The names of the headers, cookies, and storage entries the test set; never their values",
+                                "type": "object",
+                                "properties": {
+                                  "headers": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "cookies": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "localStorage": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "sessionStorage": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string"
+                                    }
+                                  }
+                                },
+                                "additionalProperties": false
                               }
                             },
                             "required": [
@@ -6189,6 +6251,37 @@
                             "kind",
                             "message"
                           ],
+                          "additionalProperties": false
+                        },
+                        "browserState": {
+                          "description": "The names of the headers, cookies, and storage entries the test set; never their values",
+                          "type": "object",
+                          "properties": {
+                            "headers": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "cookies": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "localStorage": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "sessionStorage": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          },
                           "additionalProperties": false
                         }
                       },
@@ -7477,6 +7570,37 @@
               "message"
             ],
             "additionalProperties": false
+          },
+          "browserState": {
+            "description": "The names of the headers, cookies, and storage entries the test set; never their values",
+            "type": "object",
+            "properties": {
+              "headers": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "cookies": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "localStorage": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "sessionStorage": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "additionalProperties": false
           }
         },
         "required": [
@@ -7986,6 +8110,37 @@
                   "kind",
                   "message"
                 ],
+                "additionalProperties": false
+              },
+              "browserState": {
+                "description": "The names of the headers, cookies, and storage entries the test set; never their values",
+                "type": "object",
+                "properties": {
+                  "headers": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "cookies": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "localStorage": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "sessionStorage": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
                 "additionalProperties": false
               }
             },
