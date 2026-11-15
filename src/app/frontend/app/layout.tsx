@@ -1,15 +1,26 @@
 import "./globals.css";
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
+import localFont from "next/font/local";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 
-const plexSans = IBM_Plex_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+// Self-hosted (fonts/, from IBM's @ibm/plex-* packages, OFL) so the build never downloads fonts.
+const plexSans = localFont({
+  src: [
+    { path: "./fonts/IBMPlexSans-Regular-Latin1.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/IBMPlexSans-Medium-Latin1.woff2", weight: "500", style: "normal" },
+    { path: "./fonts/IBMPlexSans-SemiBold-Latin1.woff2", weight: "600", style: "normal" },
+    { path: "./fonts/IBMPlexSans-Bold-Latin1.woff2", weight: "700", style: "normal" },
+  ],
   variable: "--font-plex-sans",
 });
-const plexMono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-plex-mono" });
+const plexMono = localFont({
+  src: [
+    { path: "./fonts/IBMPlexMono-Regular-Latin1.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/IBMPlexMono-Medium-Latin1.woff2", weight: "500", style: "normal" },
+  ],
+  variable: "--font-plex-mono",
+});
 
 export const metadata: Metadata = {
   title: "Jevwright",
