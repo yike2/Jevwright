@@ -502,7 +502,7 @@ Covers US-4.3.3. Pre: S1, S2, a new Test File `editor.yaml`.
 2. Type a character.
 3. Delete it again.
 
-Expected: step 1 shows `name: "editor"` with one `open` step, with YAML highlighting and line numbers, the file state "Saved", and no **Validate** button; step 2 shows "Unsaved" in the header and the status bar and enables **Save**; step 3 shows "Saved" and disables **Save**.
+Expected: step 1 shows `name: "editor"` with one `open` step, with YAML highlighting and line numbers, the file state "Saved", and neither a **Validate** nor an **Upload file** button on the page (upload is in the sidebar); step 2 shows "Unsaved" in the header and the status bar and enables **Save**; step 3 shows "Saved" and disables **Save**.
 
 #### TC-ED-02 Save, keep showing, and reload — P0, E2E
 
@@ -632,6 +632,15 @@ Covers US-4.3.3. Pre: S1, S2, a Test File open, a 390px wide window.
 1. Look at the page.
 
 Expected: the consoles are under the editor; nothing scrolls sideways.
+
+#### TC-ED-17 Saving refreshes the problems — P1, E2E
+
+Covers US-4.3.1. Pre: S1, S2, a Test File open; the check while typing unavailable (E2E: `/test-files/validate` blocked).
+
+1. Paste `invalid/yaml-syntax.yaml`; click **Save**.
+2. Paste `invalid/timeout-bounds.yaml`; press `Ctrl+S`.
+
+Expected: each save lists the diagnostics it answers in the Problems console: step 1 `Line 7: …`, step 2 the two `"ms"` lines.
 
 ### 4.4 Project Variables (`VAR`)
 
@@ -1105,7 +1114,7 @@ Expected: every status has text or a title, not only a color; step updates are a
 
 | Requirement | Cases |
 | ----------- | ----- |
-| US-4.3.1 Validation | ED-04 – ED-06, ED-08, ED-09, ED-11, ED-13, RUN-11, CLI-01 |
+| US-4.3.1 Validation | ED-04 – ED-06, ED-08, ED-09, ED-11, ED-13, ED-17, RUN-11, CLI-01 |
 | US-4.3.2 Locating | RUN-05, RUN-06, JEV-01 – JEV-05 |
 | US-4.3.3 Organization and authoring | WS-01 – WS-11, ED-01 – ED-03, ED-07, ED-10, ED-12, ED-14, ED-16, VAR-01, VAR-02, VAR-04, VAR-05 |
 | US-4.3.4 Live execution | RUN-01 – RUN-19, ED-10, ED-15, VAR-03, VAR-06 |

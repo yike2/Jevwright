@@ -240,7 +240,7 @@ E2E tests locate elements by role and accessible name, so these names are part o
 
 `components/workspace/code-editor.tsx` wraps CodeMirror 6 without a React wrapper package: YAML highlighting (`@codemirror/lang-yaml` with a `HighlightStyle` on the `--syntax-*` tokens, design-system.md 2.1), line numbers, the active line, history, bracket matching, and Tab to indent (Escape then Tab moves the focus on). The theme is `EditorView.theme` on the design tokens, reconfigured with `dark` when next-themes' `resolvedTheme` changes. Its content is a `textbox` labelled "Test file YAML".
 
-While the user types, the page waits 400 ms after the last change, then sends `POST /test-files/validate { source: draft }`. The newest answer for the source in the editor wins; the diagnostics are shown on their line with `@codemirror/lint` (a wavy underline from the line's first non-blank character to its end, a marker in the gutter, the message on hover; `diagnosticRanges`), and listed in the Problems console. A failed check shows `errorText(error)` in the Problems console's `role="alert"`.
+There is no Validate button and no Upload button on the page: the file is checked automatically, while the user types and on every save. While the user types, the page waits 400 ms after the last change, then sends `POST /test-files/validate { source: draft }`. The newest answer for the source in the editor wins; the diagnostics are shown on their line with `@codemirror/lint` (a wavy underline from the line's first non-blank character to its end, a marker in the gutter, the message on hover; `diagnosticRanges`), and listed in the Problems console. A failed check shows `errorText(error)` in the Problems console's `role="alert"`.
 
 | Action      | Behavior |
 | ----------- | -------- |
@@ -298,7 +298,7 @@ API errors show `errorText(error)` (1.3) in a `role="alert"` on the page. Deleti
 
 #### Tests
 - Unit: `problemsSummary`, `formatDiagnostic`, `diagnosticRanges`, `hasNewDiagnostics`, `fileState`, `fileStateLabel`, the validation helpers (5.6), and the API client functions (5.1).
-- E2E `editor.e2e.ts`: the starter source and the file state; save and reload; upload from the sidebar; the diagnostics of the invalid fixtures listed as the user types and marked on their lines, with no Validate button; the size limit; `Ctrl+S` and `Ctrl+Enter`; a clicked problem moves the cursor; at 1366×768 the editor fills the space between the sidebar and the consoles within 3px, about 60 / 40, with Problems over Run split evenly, and the page does not scroll; a collapsed Problems console stays collapsed after a reload and while the YAML is valid, and opens for a new problem; the whole column hides and reopens from the header or the status bar; Run opens a collapsed Run console; on a phone the consoles are under the editor.
+- E2E `editor.e2e.ts`: the starter source and the file state, with no Validate or Upload button; save and reload; upload from the sidebar; the diagnostics of the invalid fixtures listed as the user types and marked on their lines, with no Validate button; the size limit; `Ctrl+S` and `Ctrl+Enter`; a clicked problem moves the cursor; at 1366×768 the editor fills the space between the sidebar and the consoles within 3px, about 60 / 40, with Problems over Run split evenly, and the page does not scroll; a collapsed Problems console stays collapsed after a reload and while the YAML is valid, and opens for a new problem; the whole column hides and reopens from the header or the status bar; Run opens a collapsed Run console; on a phone the consoles are under the editor; Save and `Ctrl+S` show the diagnostics the save answers.
 - E2E `variables.e2e.ts`: a new user adds Variable `BASE`; it is listed with `****` and its value shows only with the toggle; replacing it and deleting it; an invalid name shows the alert without a request; the value limits.
 
 ### 1.9 Runs: live progress and history
@@ -470,7 +470,7 @@ shadcn tooling and UI primitives are pinned exactly (no `^`). Primitives are add
 - `class-variance-authority@0.7.1`
 - `lucide-react@1.64.0`
 - `next-themes@0.4.6`
-- `react-resizable-panels@4.16.0`, which shadcn's `resizable` wraps
+- `react-resizable-panels@4.14.8`, which shadcn's `resizable` wraps; later 4.x releases import React's `Activity`, which the React that Next.js 15 builds with does not export
 
 The editor (1.7) uses CodeMirror 6, which ships as separate packages; only these are installed, with no React wrapper and no `basicSetup` bundle, so the editor loads what it uses:
 
