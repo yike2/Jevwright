@@ -1,0 +1,19 @@
+# Expect: passed; steps 2-3 locate by "visual" or "dom" (Jev), never "selector"
+# The Demo App keeps the signed-in user in the session-username cookie, so setting it skips the sign-in page.
+name: "Add to cart by description"
+description: "Elements are found from plain-language descriptions only"
+baseUrl: "{{BASE}}"
+cookies:
+  session-username: "standard_user"
+steps:
+  - open:
+      url: "/inventory.html"
+  - click:
+      target: "'Add to cart' button of the Sauce Labs Backpack"
+  - click:
+      target: "Shopping cart icon at the top right of the page"
+  - waitFor:
+      url: "**/cart.html"
+  - assert:
+      selector: '[data-test="inventory-item-name"]'
+      text: "Sauce Labs Backpack"

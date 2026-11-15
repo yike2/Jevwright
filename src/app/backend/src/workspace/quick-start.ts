@@ -27,8 +27,8 @@ const FOLDERS: { name: string; files: QuickStartFile[] }[] = [
       {
         name: "buy-a-backpack.yaml",
         fixture: "pass/checkout.yaml",
-        does: "Buys the backpack: signs in, adds it to the cart, checks out, and checks the total.",
-        expect: "passed, 16 of 16 steps.",
+        does: "Buys the backpack as a signed-in user: adds it to the cart, checks out, and checks the total.",
+        expect: "passed, 12 of 12 steps; the session cookie opens the product list without the sign-in page.",
         tryIt: 'change "Ada" to your own first name and run it again.',
       },
       {
@@ -47,7 +47,7 @@ const FOLDERS: { name: string; files: QuickStartFile[] }[] = [
         name: "wrong-total-fails-at-the-total.yaml",
         fixture: "fail/wrong-total.yaml",
         does: "Buys the backpack, but expects the wrong total.",
-        expect: "failed at step 14 because the total is $32.39, not $99.99; steps 15 and 16 stay pending.",
+        expect: "failed at step 10 because the total is $32.39, not $99.99; steps 11 and 12 stay pending.",
         tryIt: "change $99.99 to $32.39 and run it again.",
       },
       {
@@ -90,10 +90,10 @@ const FOLDERS: { name: string; files: QuickStartFile[] }[] = [
     files: [
       {
         name: "find-elements-by-description.yaml",
-        fixture: "jev/target-sign-in.yaml",
-        does: "Signs in with plain-language descriptions instead of selectors; each target is text, not code.",
-        expect: "passed; Jev finds the username field, the password field and the Login button from their targets.",
-        tryIt: 'reword a target, for example "the green button", and run it again.',
+        fixture: "jev/target-add-to-cart.yaml",
+        does: "Adds the backpack to the cart with plain-language descriptions instead of selectors.",
+        expect: "passed; Jev finds the backpack's Add to cart button and the cart icon from their targets.",
+        tryIt: 'reword a target, for example "the cart in the header", and run it again.',
       },
       {
         name: "fall-back-from-a-stale-selector.yaml",
@@ -113,7 +113,7 @@ const FOLDERS: { name: string; files: QuickStartFile[] }[] = [
         name: "judge-a-false-statement.yaml",
         fixture: "jev/statement-fails.yaml",
         does: "Adds the backpack to the cart, then claims that the cart is empty.",
-        expect: "failed at step 8, because Jev judges the statement false.",
+        expect: "failed at step 4, because Jev judges the statement false.",
         tryIt: 'change the statement to "The cart has one item" and run it again.',
       },
     ],
