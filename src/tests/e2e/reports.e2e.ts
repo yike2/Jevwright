@@ -72,21 +72,21 @@ test("TC-RPT-02 shows the report of a failed run", async ({ page }) => {
   const testFileId = await addTestFile(api, folder, "wrong-total.yaml", fixture("fail/wrong-total.yaml"));
   expect(await runFromEditor(page, testFileId)).toBe("Failed");
 
-  const screenshot = page.getByRole("img", { name: "Step 14 screenshot" });
+  const screenshot = page.getByRole("img", { name: "Step 10 screenshot" });
   await expect(screenshot).toBeVisible();
   expect(await screenshot.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
 
   // The screenshot opens full size, and Escape closes it.
-  await page.getByRole("button", { name: "Open step 14 screenshot full size", exact: true }).click();
-  const viewer = page.getByRole("dialog", { name: "Step 14 screenshot", exact: true });
-  await expect(viewer.getByRole("img", { name: "Step 14 screenshot, full size", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Open step 10 screenshot full size", exact: true }).click();
+  const viewer = page.getByRole("dialog", { name: "Step 10 screenshot", exact: true });
+  await expect(viewer.getByRole("img", { name: "Step 10 screenshot, full size", exact: true })).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(viewer).toBeHidden();
 
   const report = await downloadReport(page);
   expect(report.status).toBe("failed");
-  expect(report.steps[13]).toMatchObject({ status: "failed" });
-  expect(report.steps[13]?.reason).toContain('did not contain "Total: $99.99"');
+  expect(report.steps[9]).toMatchObject({ status: "failed" });
+  expect(report.steps[9]?.reason).toContain('did not contain "Total: $99.99"');
 });
 
 test("TC-RPT-03 lists every run of a file, newest first, each with its own source", async ({ page }) => {
@@ -113,7 +113,7 @@ test("TC-RPT-03 lists every run of a file, newest first, each with its own sourc
   await page.keyboard.press("Escape");
   await expect(details).toBeHidden();
   await runs.nth(0).getByRole("link").click();
-  await expect(details.getByRole("list", { name: "Steps" }).getByRole("listitem")).toHaveCount(16);
+  await expect(details.getByRole("list", { name: "Steps" }).getByRole("listitem")).toHaveCount(12);
   await details.getByText("Source when it ran", { exact: true }).click();
   await expect(source).toHaveText(fixture("fail/wrong-total.yaml"));
 });
