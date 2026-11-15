@@ -97,7 +97,7 @@ Shared setup for the tests. Requests go straight to the backend at `API_URL` (`h
 | `src/tests/e2e/quick-start.e2e.ts` | TC-QS-01 – 03 |
 | `src/tests/e2e/sidebar.e2e.ts` | TC-WS-01 – 03, 08 – 10 |
 | `src/tests/e2e/sidebar-actions.e2e.ts` | TC-WS-04 – 06, 11 |
-| `src/tests/e2e/editor.e2e.ts` | TC-ED-01 – 18 |
+| `src/tests/e2e/editor.e2e.ts` | TC-ED-01 – 20 |
 | `src/tests/e2e/variables.e2e.ts` | TC-VAR-01 – 06 |
 | `src/tests/e2e/runs.e2e.ts` | TC-RUN-01 – 12, 15 – 19 |
 | `src/tests/e2e/reports.e2e.ts` | TC-RPT-01 – 07 |

@@ -596,7 +596,7 @@ Covers US-4.3.3. Pre: S1, S2, a Test File open, a 1366×768 window (also check 1
 
 1. Look at the page.
 
-Expected: the sidebar, the editor and the console column sit edge to edge, separated only by 1px lines, with no centered column or margin; the editor's width is the window's minus the sidebar's and the console column's (within 3px), about 60 / 40 with the consoles; the Debug console is above the Output console and both are as high, with no handle between them; the page itself does not scroll.
+Expected: the sidebar, the editor and the console column sit edge to edge, separated only by 1px lines, with no centered column or margin; the editor's width is the window's minus the sidebar's and the console column's (within 3px), about 60 / 40 with the consoles; the Debug console is above the Output console and both are as high, with a handle "Resize Debug and Output consoles" between them (three handles on the page with the sidebar's and the consoles'); the page itself does not scroll.
 
 #### TC-ED-13 Collapsed consoles stay collapsed — P1, E2E
 
@@ -641,7 +641,25 @@ Covers US-4.3.3. Pre: S1, S2, a Test File open, both consoles open.
 2. Hide the column with **Toggle consoles**, then show it again.
 3. Collapse Debug, so both are collapsed; click **Run**; then paste `invalid/yaml-syntax.yaml`.
 
-Expected: every click changes only its own console, so every combination occurs: both open share the column evenly, a collapsed one keeps only its header while the open one takes the rest, and both collapsed show two headers. Step 2 brings the column back with Debug open and Output collapsed, as before. In step 3 Run opens Output and leaves Debug collapsed, and the new problem opens Debug and leaves Output open.
+Expected: every click changes only its own console, so every combination occurs: both open share the column evenly, with the handle between them, a collapsed one keeps only its header while the open one takes the rest, and both collapsed show two headers; with either collapsed there is no handle between them. Step 2 brings the column back with Debug open and Output collapsed, as before. In step 3 Run opens Output and leaves Debug collapsed, and the new problem opens Debug and leaves Output open.
+
+#### TC-ED-19 The Debug / Output split — P1, E2E
+
+Covers US-4.3.3. Pre: S1, S2, a Test File open, both consoles open.
+
+1. Focus **Resize Debug and Output consoles** and press ↑ ten times (or drag it up).
+2. Collapse the Output console, then open it again.
+3. Reload the page.
+
+Expected: step 1 makes the Debug console smaller than 40% of the column; after steps 2 and 3 the split is the same as after step 1.
+
+#### TC-ED-20 One scrollbar — P2, E2E
+
+Covers US-4.3.3. Pre: S1, S2, an invalid Test File open, a window small enough that the sidebar tree, the editor and both consoles scroll.
+
+1. Look at each scrollbar in the light theme, then in the dark theme; hover each.
+
+Expected: every scrollbar on the page, the Run details sheet's included, has the same width, thumb color, transparent track and hover color as the editor's.
 
 #### TC-ED-17 Saving refreshes the problems — P1, E2E
 
@@ -1126,7 +1144,7 @@ Expected: every status has text or a title, not only a color; step updates are a
 | ----------- | ----- |
 | US-4.3.1 Validation | ED-04 – ED-06, ED-08, ED-09, ED-11, ED-13, ED-17, RUN-11, CLI-01 |
 | US-4.3.2 Locating | RUN-05, RUN-06, JEV-01 – JEV-05 |
-| US-4.3.3 Organization and authoring | WS-01 – WS-11, ED-01 – ED-03, ED-07, ED-10, ED-12, ED-14, ED-16, ED-18, VAR-01, VAR-02, VAR-04, VAR-05 |
+| US-4.3.3 Organization and authoring | WS-01 – WS-11, ED-01 – ED-03, ED-07, ED-10, ED-12, ED-14, ED-16, ED-18 – ED-20, VAR-01, VAR-02, VAR-04, VAR-05 |
 | US-4.3.4 Live execution | RUN-01 – RUN-19, ED-10, ED-15, VAR-03, VAR-06 |
 | US-4.3.5 History and reports | RPT-01 – RPT-07, RUN-16 |
 | US-4.3.6 Local CLI | CLI-01, CLI-02 |

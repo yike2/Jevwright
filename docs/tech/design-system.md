@@ -161,7 +161,7 @@ The workspace is an editor: a tree, a code area, and panels of results. Its colo
 
 ### 2.9 Scrollbars
 
-Scrollbars are thin everywhere, the code editor included. The base layer sets `scrollbar-width: thin` and `scrollbar-color: var(--scrollbar-thumb) transparent` on every element, switching to `--scrollbar-thumb-hover` while the pointer is over it. Safari reads `::-webkit-scrollbar` instead: 8px wide, a transparent track, and a fully rounded thumb that takes the hover color under the pointer. The track is transparent, so the thumb is measured against every surface it can cross; it keeps 3:1 on all of them (2.2), and the hover color is darker in light and brighter in dark.
+There is one scrollbar: the `scrollbar-thin` utility in `app/globals.css`, which the base layer applies to every element, so the code editor, the Debug and Output consoles, the Run details sheet, the sidebar tree and every page scroll with the same bar in both themes; no component sets its own. It sets `scrollbar-width: thin` and `scrollbar-color: var(--scrollbar-thumb) transparent`, switching to `--scrollbar-thumb-hover` while the pointer is over it. Safari reads `::-webkit-scrollbar` instead: 8px wide, a transparent track, and a fully rounded thumb that takes the hover color under the pointer. The track is transparent, so the thumb is measured against every surface it can cross; it keeps 3:1 on all of them (2.2), and the hover color is darker in light and brighter in dark.
 
 ## 3. Themes
 
@@ -208,7 +208,7 @@ These rules follow the VS Code UX guidelines for the regions of an editor-like a
 | ------ | ------- | ---- |
 | Header | One compact row | File name, file state badge, Save, Run (the one `default` button), the consoles toggle |
 | Editor \| consoles | 60% / 40% | A horizontal split; the console column collapses to nothing |
-| Debug / Output | Even | The two consoles stacked in the console column, with no handle between them; each collapses to its 32px header on its own, and an open one takes the room a collapsed one leaves |
+| Debug / Output | 50% / 50% | The two consoles stacked in the console column. While both are open a vertical split with a handle; each collapses to its 32px header on its own, and then there is no handle and the open one takes the room the collapsed one leaves |
 | Status bar | 28px | Along the bottom, `background` with a top border, `text-xs` |
 | Narrow screens | Below 768px | The consoles stack under the editor in a vertical split |
 
@@ -226,7 +226,7 @@ Split sizes are kept per browser. The handles are 1px `border` lines with a wide
 | `Tabs` | Alternative views of one thing, such as the replayed Runs and the Web / CLI quick start on the landing page |
 | `Dialog` | The delete confirmation (frontend.md 1.11) and the screenshot viewer (1.9) |
 | `Sheet` | From the right, over most of the page, for a Run's details (frontend.md 1.9); closes with Escape, its close button, or a click on the uncovered part |
-| `Resizable` | The sidebar width and editor \| consoles, the workspace's only splits; 1px handles |
+| `Resizable` | The workspace's splits: the sidebar width, editor \| consoles, and Debug / Output while both consoles are open; 1px handles |
 | `Tooltip` | A tree name cut off with an ellipsis, on hover and on keyboard focus; never the only place of a name |
 | Code editor | CodeMirror 6 with a theme from the tokens: `--code` surface, `--syntax-*` highlighting, `--accent` active line, `--destructive` wavy underline and gutter marker for a diagnostic, `--popover` for its hover message (frontend.md 1.7) |
 | `Input`, `Label` | Every field has a visible `Label`; a problem shows under the field (6) |
@@ -276,6 +276,6 @@ The design system meets WCAG 2.1 AA (AGENTS.md 7.2): contrast as in 2.2; status 
 
 | Type | Coverage | Location |
 | ---- | -------- | -------- |
-| Unit | Every token pair of 2.2 in both themes, the syntax colors, the scrollbar thumbs, and that the neutrals are true greys | `src/tests/unit/app/frontend/design-tokens.test.ts` |
-| E2E | The editor fills the window between the sidebar and the consoles, edge to edge, and the page does not scroll | `src/tests/e2e/editor.e2e.ts` (TC-ED-12) |
+| Unit | Every token pair of 2.2 in both themes, the syntax colors, the scrollbar thumbs, that the scrollbar is one utility applied to every element, and that the neutrals are true greys | `src/tests/unit/app/frontend/design-tokens.test.ts` |
+| E2E | The editor fills the window between the sidebar and the consoles, edge to edge, and the page does not scroll; the editor page's scrollable regions share one scrollbar in both themes | `src/tests/e2e/editor.e2e.ts` (TC-ED-12, TC-ED-20) |
 | E2E | The theme follows the system by default; a chosen theme persists after a reload; System follows the setting again; the stored theme is set before the page's scripts run; the switch is on the login page and in the workspace | `src/tests/e2e/theme.e2e.ts` |

@@ -230,7 +230,7 @@ E2E tests locate elements by role and accessible name, so these names are part o
 
 | Part | Behavior |
 | ---- | -------- |
-| Split | One draggable split (shadcn `resizable`, react-resizable-panels): editor \| consoles, 60% / 40% by default, kept per browser in `localStorage` (`jevwright:editor`; `jevwright:editor-narrow` below 768px). Its handle is a `separator` that also moves with the arrow keys. The two consoles have no handle between them: with both open they share the column evenly; a collapsed one keeps only its header and the open one takes the rest; with both collapsed the column shows the two headers |
+| Splits | Draggable splits (shadcn `resizable`, react-resizable-panels), each with a `separator` handle that also moves with the arrow keys. Editor \| consoles: 60% / 40% by default, kept per browser in `localStorage` (`jevwright:editor`; `jevwright:editor-narrow` below 768px). Debug / Output: only while both consoles are open, 50% / 50% by default, each at least 64px; the Debug share is kept under `jevwright:console-split` (`parseConsoleSplit`), so collapsing and reopening a console, or a reload, restores the last dragged split. With one console collapsed there is no handle: it keeps only its header and the open one takes the rest; with both collapsed the column shows the two headers |
 | Consoles | Each console's header ("Debug console", "Output console") collapses it to its header and opens it, on its own: any combination works, both open, either collapsed, or both collapsed (`toggleConsole`). Which are open is kept per browser under `jevwright:consoles-open` (`parseConsolesOpen`). The console column collapses completely (the editor takes the full width) with the toggle in the header or the one in the status bar, independently of the two consoles, which keep their state; a collapsed column is `inert` |
 | Opening by itself | A collapsed console opens when it has something to report, showing the column too: Debug when new diagnostics arrive (`hasNewDiagnostics`), also from a refused Run; Output when the user clicks **Run** (and it stays open while the Run is live and after it ends). Opening one never closes the other (`openConsole`). Nothing else opens them, so a collapsed Debug console stays collapsed while the user types valid YAML |
 | Narrow screens | Below 768px the consoles stack under the editor in a vertical split |
@@ -269,6 +269,7 @@ A `region` named "Debug": the file's problems. The header shows `problemsSummary
 | `toggleConsole(open, key)` | Pure. `open` is `{ debug, output }`; flips `key` and leaves the other console as it is |
 | `openConsole(open, key)` | Pure. Sets `key` open and leaves the other as it is; returns `open` itself when it already is |
 | `parseConsolesOpen(stored)` | The stored `{ debug, output }`; both open for nothing stored, text that is not JSON, or another shape |
+| `parseConsoleSplit(stored)` | The stored Debug share in percent; `DEFAULT_CONSOLE_SPLIT` (50) for nothing stored, empty text, text that is not a number, or a share outside 10–90 |
 
 Out of scope: several open files (tabs), an unsaved-changes guard, autocompletion.
 
@@ -293,7 +294,7 @@ API errors show `errorText(error)` (1.3) in a `role="alert"` on the page. Deleti
 | File state       | `status` named "File state" with "Saved", "Unsaved", "Running", "Passed" or "Failed"                                                                                                     |
 | Header           | buttons "Save", "Run", "Toggle consoles" (`aria-expanded`)                                                                                                                              |
 | Source           | `textbox` labelled "Test file YAML"                                                                                                                                                     |
-| Split            | `separator` "Resize consoles", the only one on the page besides "Resize sidebar"                                                                                                      |
+| Splits           | `separator`s "Resize consoles" and, while both consoles are open, "Resize Debug and Output consoles"                                                                               |
 | Debug console    | `region` named "Debug"; button "Debug console" (`aria-expanded`); one `listitem` per diagnostic with a button "Line <n>: <message>"; text "No problems"                         |
 | Output console   | `region` named "Output"; button "Output console" (`aria-expanded`); errors in a `role="alert"` (1.9)                                                                                         |
 | Status bar       | `region` named "Status bar" with the file state, the problems button, "Ln <n>, Col <n>" and a "Toggle consoles" button                                                                 |
@@ -301,7 +302,7 @@ API errors show `errorText(error)` (1.3) in a `role="alert"` on the page. Deleti
 
 #### Tests
 - Unit: `problemsSummary`, `formatDiagnostic`, `diagnosticRanges`, `hasNewDiagnostics`, `fileState`, `fileStateLabel`, `toggleConsole` and `openConsole` for every combination of open consoles, `parseConsolesOpen`, the validation helpers (5.6), and the API client functions (5.1).
-- E2E `editor.e2e.ts`: the starter source and the file state, with no Validate or Upload button; save and reload; upload from the sidebar; the diagnostics of the invalid fixtures listed as the user types and marked on their lines, with no Validate button; the size limit; `Ctrl+S` and `Ctrl+Enter`; a clicked problem moves the cursor; at 1366×768 the editor fills the space between the sidebar and the consoles within 3px, about 60 / 40, with Debug over Output sharing the column evenly and no handle between them, and the page does not scroll; a collapsed Debug console stays collapsed after a reload and while the YAML is valid, and opens for a new problem; the whole column hides and reopens from the header or the status bar; Run opens a collapsed Output console; each console opens and collapses on its own in every combination, the column toggle keeps their state, and opening one by itself leaves the other as it is; on a phone the consoles are under the editor; Save and `Ctrl+S` show the diagnostics the save answers.
+- E2E `editor.e2e.ts`: the starter source and the file state, with no Validate or Upload button; save and reload; upload from the sidebar; the diagnostics of the invalid fixtures listed as the user types and marked on their lines, with no Validate button; the size limit; `Ctrl+S` and `Ctrl+Enter`; a clicked problem moves the cursor; at 1366×768 the editor fills the space between the sidebar and the consoles within 3px, about 60 / 40, with Debug over Output sharing the column evenly, three handles (sidebar, consoles, Debug / Output), and the page does not scroll; a collapsed Debug console stays collapsed after a reload and while the YAML is valid, and opens for a new problem; the whole column hides and reopens from the header or the status bar; Run opens a collapsed Output console; each console opens and collapses on its own in every combination, with the Debug / Output handle only while both are open, the column toggle keeps their state, and opening one by itself leaves the other as it is; the Debug / Output split moves with the keyboard, comes back after collapsing and reopening Output and after a reload; the sidebar tree, the editor and both consoles have the same scrollbar in both themes; on a phone the consoles are under the editor; Save and `Ctrl+S` show the diagnostics the save answers.
 - E2E `variables.e2e.ts`: a new user adds Variable `BASE`; it is listed with `****` and its value shows only with the toggle; replacing it and deleting it; an invalid name shows the alert without a request; the value limits.
 
 ### 1.9 Runs: live progress and history
@@ -716,7 +717,7 @@ This fallback is implemented in the client itself when the backend response is n
 | `lib/editor.ts`                               | Editor helpers (1.7)                                        |
 | `lib/runs.ts`                                 | Run helpers (1.9)                                           |
 | `lib/use-run.ts`                              | `useRun()`: a Run loaded and followed live (1.9)            |
-| `lib/panel-layout.ts`                         | `usePanelLayout()`, `useConsolesOpen()`: split sizes and open consoles kept per browser (1.6, 1.7) |
+| `lib/panel-layout.ts`                         | `usePanelLayout()`, `useConsolesOpen()`, `useConsoleSplit()`: split sizes, open consoles and the console split kept per browser (1.6, 1.7) |
 | `lib/use-media-query.ts`                      | `useMediaQuery()`: the 768px breakpoint (1.6, 1.7)          |
 | `lib/workspace-context.tsx`                   | `useWorkspace()`: `me`, `tree`, `refreshTree`               |
 | `lib/routes.ts`                               | `WORKSPACE_HOME`, the overview's path `/files`              |
@@ -1070,6 +1071,7 @@ These exact values are the source of truth for the API client tests and are inte
 7. `toggleConsole`: from each of the four combinations, toggling either console changes only that one; the input is not changed
 8. `openConsole`: opening either console from any combination never closes the other
 9. `parseConsolesOpen`: a stored `{"debug":false,"output":true}` is read; `null`, `{`, `{"problems":50,"run":50}` and a non-boolean value give both open
+10. `parseConsoleSplit`: `"62.5"` → `62.5`; `null`, `"wide"`, `""`, `"5"`, `"95"` and a layout object → `50`
 
 ### 5.4 Exact run helper unit-test cases
 
