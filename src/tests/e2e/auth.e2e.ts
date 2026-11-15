@@ -1,6 +1,11 @@
 import { expect, test, type Page } from "@playwright/test";
 import { alertsOf, API_URL, PASSWORD, signUp, uniqueEmail, WORKSPACE } from "./support.js";
 
+/** The sidebar's account: named as the signed-in account, showing only the email, which is the account's name. */
+function accountOf(page: Page, email: string) {
+  return page.getByRole("region", { name: `Signed in as ${email}`, exact: true }).getByText(email, { exact: true });
+}
+
 async function submit(page: Page, mode: "Log in" | "Register", email: string, password: string): Promise<void> {
   await page.goto("/login");
   // The mode buttons sit outside the form; the submit button inside it can share their label.
@@ -15,14 +20,16 @@ test("TC-AUTH-01 registers, logs out, and logs back in", async ({ page }) => {
 
   await submit(page, "Register", email, PASSWORD);
   await expect(page).toHaveURL(WORKSPACE);
-  await expect(page.getByText(`Signed in as ${email}`)).toBeVisible();
+  await expect(accountOf(page, email)).toBeVisible();
+  // No "Signed in as" prefix on screen: the email alone names the account.
+  await expect(page.getByText(/Signed in as/)).toHaveCount(0);
 
   await page.getByRole("button", { name: "Log out" }).click();
   await expect(page).toHaveURL("/login");
 
   await submit(page, "Log in", email, PASSWORD);
   await expect(page).toHaveURL(WORKSPACE);
-  await expect(page.getByText(`Signed in as ${email}`)).toBeVisible();
+  await expect(accountOf(page, email)).toBeVisible();
 });
 
 test("TC-AUTH-02 refuses an email that is taken, in any case", async ({ page }) => {
@@ -80,7 +87,7 @@ test("TC-AUTH-07 compares emails in lower case", async ({ page }) => {
   await submit(page, "Log in", email.toUpperCase(), PASSWORD);
 
   await expect(page).toHaveURL(WORKSPACE);
-  await expect(page.getByText(`Signed in as ${email}`)).toBeVisible();
+  await expect(accountOf(page, email)).toBeVisible();
 });
 
 test("TC-AUTH-08 sends another tab to the login page after logging out", async ({ page }) => {

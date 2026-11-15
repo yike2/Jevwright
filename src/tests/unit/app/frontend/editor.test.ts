@@ -7,7 +7,11 @@ import {
   fileStateLabel,
   formatDiagnostic,
   hasNewDiagnostics,
+  openConsole,
+  parseConsolesOpen,
   problemsSummary,
+  toggleConsole,
+  type ConsolesOpen,
 } from "@/app/frontend/lib/editor.js";
 
 const aiAct: Diagnostic = { code: "E005", message: 'Unknown action "aiAct"', line: 3 };
@@ -110,5 +114,59 @@ describe("fileStateLabel", () => {
     ["failed", "Failed"],
   ] as const)("labels %s as %s", (state, label) => {
     expect(fileStateLabel(state)).toBe(label);
+  });
+});
+
+const both: ConsolesOpen = { debug: true, output: true };
+const debugOnly: ConsolesOpen = { debug: true, output: false };
+const outputOnly: ConsolesOpen = { debug: false, output: true };
+const none: ConsolesOpen = { debug: false, output: false };
+
+describe("toggleConsole", () => {
+  it.each([
+    ["both open", both, "debug", outputOnly],
+    ["both open", both, "output", debugOnly],
+    ["only Debug open", debugOnly, "debug", none],
+    ["only Debug open", debugOnly, "output", both],
+    ["only Output open", outputOnly, "debug", both],
+    ["only Output open", outputOnly, "output", none],
+    ["both collapsed", none, "debug", debugOnly],
+    ["both collapsed", none, "output", outputOnly],
+  ] as const)("with %s, toggling %s changes only that console", (_name, open, key, expected) => {
+    expect(toggleConsole(open, key)).toEqual(expected);
+  });
+
+  it("does not change the state it is given", () => {
+    const open = { ...both };
+    toggleConsole(open, "debug");
+    expect(open).toEqual(both);
+  });
+});
+
+describe("openConsole", () => {
+  it.each([
+    ["both collapsed", none, "debug", debugOnly],
+    ["both collapsed", none, "output", outputOnly],
+    ["only Output open", outputOnly, "debug", both],
+    ["only Debug open", debugOnly, "output", both],
+    ["both open", both, "debug", both],
+    ["only Debug open", debugOnly, "debug", debugOnly],
+  ] as const)("with %s, opening %s never closes the other", (_name, open, key, expected) => {
+    expect(openConsole(open, key)).toEqual(expected);
+  });
+});
+
+describe("parseConsolesOpen", () => {
+  it("reads what was stored", () => {
+    expect(parseConsolesOpen('{"debug":false,"output":true}')).toEqual(outputOnly);
+  });
+
+  it.each([
+    ["nothing", null],
+    ["text that is not JSON", "{"],
+    ["another shape", '{"problems":50,"run":50}'],
+    ["a value that is not a boolean", '{"debug":"yes","output":true}'],
+  ])("opens both for %s", (_name, stored) => {
+    expect(parseConsolesOpen(stored)).toEqual(both);
   });
 });

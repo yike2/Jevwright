@@ -82,3 +82,26 @@ export function fileStateLabel(state: FileState): string {
       return "Failed";
   }
 }
+
+/** The two consoles of the editor's console column (frontend.md 1.7). */
+export type ConsoleKey = "debug" | "output";
+/** Which consoles are open; each opens and collapses on its own. */
+export type ConsolesOpen = Record<ConsoleKey, boolean>;
+
+/** Opens a collapsed console or collapses an open one, leaving the other as it is. */
+export function toggleConsole(open: ConsolesOpen, key: ConsoleKey): ConsolesOpen {
+  void key;
+  return open;
+}
+
+/** Opens a console that has something to report, leaving the other as it is. */
+export function openConsole(open: ConsolesOpen, key: ConsoleKey): ConsolesOpen {
+  void key;
+  return open;
+}
+
+/** The consoles kept in the browser, or both open when nothing usable is stored. */
+export function parseConsolesOpen(stored: string | null): ConsolesOpen {
+  void stored;
+  return { debug: false, output: false };
+}

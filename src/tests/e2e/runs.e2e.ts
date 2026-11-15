@@ -21,7 +21,7 @@ function stepsOf(page: Page): Locator {
 }
 
 // Records the Live Progress messages of each socket the page opens, to check the transitions the page shows. The
-// Run console and the Run details each follow a Run with their own socket.
+// Output console and the Run details each follow a Run with their own socket.
 function recordLiveMessages(page: Page): LiveMessage[][] {
   const sockets: LiveMessage[][] = [];
   page.on("websocket", (socket) => {
@@ -45,12 +45,12 @@ async function runFixture(page: Page, path: string, name: string): Promise<"Pass
   return runFromEditor(page, testFileId);
 }
 
-test("TC-RUN-01 runs a passing test and watches it live in the Run console", async ({ page }) => {
+test("TC-RUN-01 runs a passing test and watches it live in the Output console", async ({ page }) => {
   const { api, moduleId } = await setUpDemoProject(page);
   const testFileId = await addTestFile(api, moduleId, "sign-in.yaml", fixture("pass/sign-in.yaml"));
   await page.goto(`/files/${testFileId}`);
-  const { run, state, runConsole } = editorOf(page);
-  const runs = runConsole.getByRole("region", { name: "Runs" });
+  const { run, state, output } = editorOf(page);
+  const runs = output.getByRole("region", { name: "Runs" });
   await expect(runs.getByText("No runs yet")).toBeVisible();
   let navigations = 0;
   page.on("framenavigated", (frame) => {
@@ -62,9 +62,9 @@ test("TC-RUN-01 runs a passing test and watches it live in the Run console", asy
   await expect(page.getByText("Run queued.")).toHaveCount(0);
 
   // The console follows the Run live: its status, "n/m passed" and a step list.
-  await expect(runConsole.getByText("6/6 passed", { exact: true })).toBeVisible({ timeout: 60_000 });
+  await expect(output.getByText("6/6 passed", { exact: true })).toBeVisible({ timeout: 60_000 });
   await expect(state).toHaveText("Passed");
-  const progress = runConsole.getByRole("list", { name: "Progress" }).getByRole("listitem");
+  const progress = output.getByRole("list", { name: "Progress" }).getByRole("listitem");
   await expect(progress).toHaveCount(6);
   for (let i = 0; i < 6; i += 1) await expect(progress.nth(i)).toContainText("Passed");
   expect(navigations).toBe(0);
@@ -74,7 +74,7 @@ test("TC-RUN-01 runs a passing test and watches it live in the Run console", asy
   await expect(dot).toHaveAttribute("data-status", "passed");
   await expect(dot).toHaveAttribute("title", "Passed");
 
-  await runConsole.getByRole("button", { name: "Open run details", exact: true }).click();
+  await output.getByRole("button", { name: "Open run details", exact: true }).click();
   const details = page.getByRole("dialog", { name: "sign-in.yaml", exact: true });
   await expect(details.getByText("Status: Passed", { exact: true })).toBeVisible();
   const steps = details.getByRole("list", { name: "Steps" }).getByRole("listitem");
@@ -159,7 +159,7 @@ test("TC-RUN-07 keeps a second run queued until the first one finishes", async (
   const slowRunId = await startRun(api, slowId);
   await page.goto(`/files/${signInId}`);
   await editorOf(page).run.click();
-  await editorOf(page).runConsole.getByRole("button", { name: "Open run details", exact: true }).click();
+  await editorOf(page).output.getByRole("button", { name: "Open run details", exact: true }).click();
 
   await expect(page.getByText("Status: Queued", { exact: true })).toBeVisible();
   await expect(page.getByText("Status: Running", { exact: true })).toBeVisible({ timeout: 30_000 });
@@ -180,7 +180,7 @@ test("TC-RUN-08 shows the steps done so far to a page opened late", async ({ pag
   const testFileId = await addTestFile(api, moduleId, "slow.yaml", fixture("pass/slow.yaml"));
   await page.goto(`/files/${testFileId}`);
   await editorOf(page).run.click();
-  const history = editorOf(page).runConsole.getByRole("region", { name: "Runs" }).getByRole("link");
+  const history = editorOf(page).output.getByRole("region", { name: "Runs" }).getByRole("link");
   await expect(history).toHaveCount(1);
   // Open the Run page late: once step 1 is done (its screenshot is written when it finishes), during the 8 s sleep.
   const runId = (await history.getAttribute("href"))!.split("/").pop()!;
@@ -224,32 +224,32 @@ test("TC-RUN-11 refuses to run an invalid file", async ({ page }) => {
   const testFileId = await addTestFile(api, moduleId, "invalid.yaml", fixture("invalid/multiple-errors.yaml"));
   await page.goto(`/files/${testFileId}`);
 
-  const { problems, runConsole } = editorOf(page);
-  const problemsToggle = problems.getByRole("button", { name: "Problems console", exact: true });
+  const { debug, output } = editorOf(page);
+  const debugToggle = debug.getByRole("button", { name: "Debug console", exact: true });
   await expect(problemItemsOf(page)).toHaveCount(7);
-  await problemsToggle.click();
+  await debugToggle.click();
 
   await editorOf(page).run.click();
 
-  await expect(runConsole.getByRole("alert")).toBeVisible();
-  await expect(problemsToggle).toHaveAttribute("aria-expanded", "true");
+  await expect(output.getByRole("alert")).toBeVisible();
+  await expect(debugToggle).toHaveAttribute("aria-expanded", "true");
   await expect(problemItemsOf(page)).toHaveCount(7);
-  await expect(runConsole.getByRole("region", { name: "Runs" }).getByText("No runs yet")).toBeVisible();
+  await expect(output.getByRole("region", { name: "Runs" }).getByText("No runs yet")).toBeVisible();
 });
 
 test("TC-RUN-12 saves unsaved changes before running them", async ({ page }) => {
   const { api, moduleId } = await setUpDemoProject(page);
   const testFileId = await addTestFile(api, moduleId, "flow.yaml", fixture("pass/locked-out.yaml"));
   await page.goto(`/files/${testFileId}`);
-  const { source, run, runConsole } = editorOf(page);
+  const { source, run, output } = editorOf(page);
 
   await source.fill(fixture("pass/checkout.yaml"));
   await run.click();
-  await expect(runConsole.getByRole("region", { name: "Runs" }).getByRole("listitem")).toHaveCount(1);
+  await expect(output.getByRole("region", { name: "Runs" }).getByRole("listitem")).toHaveCount(1);
 
   await page.reload();
   await expect.poll(() => sourceOf(page)).toBe(fixture("pass/checkout.yaml"));
-  await runConsole.getByRole("region", { name: "Runs" }).getByRole("link").first().click();
+  await output.getByRole("region", { name: "Runs" }).getByRole("link").first().click();
   expect(await waitForFinalStatus(page)).toBe("Passed");
   await expect(stepsOf(page)).toHaveCount(16);
 });
@@ -260,7 +260,7 @@ test("TC-RUN-15 queues one run for a double click", async ({ page }) => {
   await page.goto(`/files/${testFileId}`);
 
   await editorOf(page).run.dblclick();
-  await expect(editorOf(page).runConsole.getByRole("button", { name: "Open run details" })).toBeVisible();
+  await expect(editorOf(page).output.getByRole("button", { name: "Open run details" })).toBeVisible();
 
   await page.reload();
   await expect(page.getByRole("region", { name: "Runs" }).getByRole("listitem")).toHaveCount(1);

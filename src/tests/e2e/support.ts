@@ -132,8 +132,8 @@ export type Editor = {
   state: Locator;
   save: Locator;
   run: Locator;
-  problems: Locator;
-  runConsole: Locator;
+  debug: Locator;
+  output: Locator;
   statusBar: Locator;
 };
 
@@ -143,8 +143,8 @@ export function editorOf(page: Page): Editor {
     state: page.getByRole("status", { name: "File state", exact: true }),
     save: page.getByRole("button", { name: "Save", exact: true }),
     run: page.getByRole("button", { name: "Run", exact: true }),
-    problems: page.getByRole("region", { name: "Problems", exact: true }),
-    runConsole: page.getByRole("region", { name: "Run", exact: true }),
+    debug: page.getByRole("region", { name: "Debug", exact: true }),
+    output: page.getByRole("region", { name: "Output", exact: true }),
     statusBar: page.getByRole("region", { name: "Status bar", exact: true }),
   };
 }
@@ -163,16 +163,16 @@ export async function sourceOf(page: Page): Promise<string | null> {
   });
 }
 
-/** The diagnostics the Problems console lists, as "Line <n>: <message>". */
+/** The diagnostics the Debug console lists, as "Line <n>: <message>". */
 export function problemItemsOf(page: Page): Locator {
-  return editorOf(page).problems.getByRole("listitem").getByRole("button");
+  return editorOf(page).debug.getByRole("listitem").getByRole("button");
 }
 
 /** Opens the editor, clicks Run, opens the new Run's details full page, and waits for its final status (S5). */
 export async function runFromEditor(page: Page, testFileId: string): Promise<"Passed" | "Failed"> {
   await page.goto(`/files/${testFileId}`);
   await editorOf(page).run.click();
-  await editorOf(page).runConsole.getByRole("button", { name: "Open run details", exact: true }).click();
+  await editorOf(page).output.getByRole("button", { name: "Open run details", exact: true }).click();
   await page.getByRole("dialog").getByRole("link", { name: "Open full page", exact: true }).click();
   await expect(page).toHaveURL(/\/runs\/[^/]+$/);
   return waitForFinalStatus(page);

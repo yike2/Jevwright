@@ -60,7 +60,7 @@ test("TC-ED-01 shows the starter source and tracks unsaved changes", async ({ pa
 });
 
 test("TC-ED-02 saves a source, keeps showing it, and shows it after a reload", async ({ page }) => {
-  const { source, state, save, problems } = await openNewFile(page, fixture("pass/locked-out.yaml"));
+  const { source, state, save, debug } = await openNewFile(page, fixture("pass/locked-out.yaml"));
   const signIn = fixture("pass/sign-in.yaml");
 
   await source.fill(signIn);
@@ -69,8 +69,8 @@ test("TC-ED-02 saves a source, keeps showing it, and shows it after a reload", a
   await expect(state).toHaveText("Saved");
   // The saved source stays in the editor without a reload.
   expect(await sourceOf(page)).toBe(signIn);
-  await expect(problems.getByText("No problems").first()).toBeVisible();
-  await expect(problems).not.toContainText("Valid. Ready to run.");
+  await expect(debug.getByText("No problems").first()).toBeVisible();
+  await expect(debug).not.toContainText("Valid. Ready to run.");
   await page.reload();
   await expect.poll(() => sourceOf(page)).toBe(signIn);
 });
@@ -104,7 +104,7 @@ test("TC-ED-03 uploads a file into a new test file from the module's actions", a
 });
 
 test("TC-ED-04 lists every error of an invalid file with its line as the user types", async ({ page }) => {
-  const { source, problems, save } = await openNewFile(page);
+  const { source, debug, save } = await openNewFile(page);
   const expected = [
     'Line 3: "timeoutMs" must be a positive integer up to 2147483647',
     'Line 6: "url" is relative, so the test needs a "baseUrl"',
@@ -116,7 +116,7 @@ test("TC-ED-04 lists every error of an invalid file with its line as the user ty
   ];
 
   await source.fill(fixture("invalid/multiple-errors.yaml"));
-  await expect(problems.getByText("7 problems", { exact: true })).toBeVisible();
+  await expect(debug.getByText("7 problems", { exact: true })).toBeVisible();
   await expect(problemItemsOf(page)).toHaveText(expected);
   // Each diagnostic is marked on its own line of the editor.
   await expect(page.locator(".cm-lint-marker-error")).toHaveCount(7);
@@ -127,23 +127,23 @@ test("TC-ED-04 lists every error of an invalid file with its line as the user ty
 });
 
 test("TC-ED-05 reports a YAML syntax error", async ({ page }) => {
-  const { source, problems } = await openNewFile(page);
+  const { source, debug } = await openNewFile(page);
 
   await source.fill(fixture("invalid/yaml-syntax.yaml"));
 
-  await expect(problems.getByText("1 problem", { exact: true })).toBeVisible();
+  await expect(debug.getByText("1 problem", { exact: true })).toBeVisible();
   await expect(problemItemsOf(page)).toHaveText(["Line 7: Nested mappings are not allowed in compact mappings"]);
 });
 
 test("TC-ED-06 shows a fixed file as having no problems", async ({ page }) => {
-  const { source, problems } = await openNewFile(page);
+  const { source, debug } = await openNewFile(page);
   await source.fill(fixture("invalid/multiple-errors.yaml"));
   await expect(problemItemsOf(page)).toHaveCount(7);
 
   await source.fill(fixture("pass/sign-in.yaml"));
 
   await expect(problemItemsOf(page)).toHaveCount(0);
-  await expect(problems.getByText("No problems").first()).toBeVisible();
+  await expect(debug.getByText("No problems").first()).toBeVisible();
   await expect(page.locator(".cm-lint-marker-error")).toHaveCount(0);
 });
 
@@ -186,7 +186,7 @@ test("TC-ED-09 accepts integers up to 2147483647 in plain digits only", async ({
 });
 
 test("TC-ED-10 saves with Ctrl+S and runs with Ctrl+Enter", async ({ page }) => {
-  const { source, state, runConsole } = await openNewFile(page);
+  const { source, state, output } = await openNewFile(page);
 
   await source.fill(`${fixture("pass/sign-in.yaml")}# saved by keyboard\n`);
   await expect(state).toHaveText("Unsaved");
@@ -194,7 +194,7 @@ test("TC-ED-10 saves with Ctrl+S and runs with Ctrl+Enter", async ({ page }) => 
   await expect(state).not.toHaveText("Unsaved");
 
   await source.press("Control+Enter");
-  await expect(runConsole.getByRole("region", { name: "Runs" }).getByRole("listitem")).toHaveCount(1);
+  await expect(output.getByRole("region", { name: "Runs" }).getByRole("listitem")).toHaveCount(1);
   // Ctrl+Enter runs; it does not insert a line into the source.
   expect(await sourceOf(page)).toBe(`${fixture("pass/sign-in.yaml")}# saved by keyboard\n`);
 });
@@ -211,84 +211,86 @@ test("TC-ED-11 moves the cursor to a problem's line when it is clicked", async (
 
 test("TC-ED-12 fills the window: sidebar, editor and consoles edge to edge, about 60 / 40", async ({ page }) => {
   await page.setViewportSize({ width: 1366, height: 768 });
-  const { problems, runConsole } = await openNewFile(page);
+  const { debug, output } = await openNewFile(page);
   const sidebar = await box(sidebarOf(page));
   const editor = await box(page.locator(".cm-editor"));
-  const problemsBox = await box(problems);
-  const runBox = await box(runConsole);
+  const debugBox = await box(debug);
+  const outputBox = await box(output);
 
   // Only the 1px resize handles separate the regions; no centered column or outer padding.
   expect(Math.abs(editor.x - (sidebar.x + sidebar.width))).toBeLessThanOrEqual(3);
-  expect(Math.abs(problemsBox.x - (editor.x + editor.width))).toBeLessThanOrEqual(3);
-  expect(Math.abs(problemsBox.x + problemsBox.width - 1366)).toBeLessThanOrEqual(1);
-  expect(Math.abs(editor.width - (1366 - sidebar.width - problemsBox.width))).toBeLessThanOrEqual(3);
-  expect(editor.width / (editor.width + problemsBox.width)).toBeCloseTo(0.6, 1);
-  // Problems on top, Run below, split evenly.
-  expect(runBox.y).toBeGreaterThan(problemsBox.y);
-  expect(Math.abs(runBox.height - problemsBox.height)).toBeLessThanOrEqual(3);
+  expect(Math.abs(debugBox.x - (editor.x + editor.width))).toBeLessThanOrEqual(3);
+  expect(Math.abs(debugBox.x + debugBox.width - 1366)).toBeLessThanOrEqual(1);
+  expect(Math.abs(editor.width - (1366 - sidebar.width - debugBox.width))).toBeLessThanOrEqual(3);
+  expect(editor.width / (editor.width + debugBox.width)).toBeCloseTo(0.6, 1);
+  // Debug on top, Output below, sharing the column evenly; only the editor | consoles split has a handle.
+  expect(outputBox.y).toBeGreaterThan(debugBox.y);
+  expect(Math.abs(outputBox.height - debugBox.height)).toBeLessThanOrEqual(3);
+  await expect(page.getByRole("separator")).toHaveCount(2);
+  await expect(page.getByRole("separator", { name: "Resize consoles" })).toHaveCount(1);
   // The page itself never scrolls.
   expect(await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight)).toBe(true);
 });
 
-test("TC-ED-13 collapses the consoles, keeps that per browser, and reopens Problems for new problems only", async ({
+test("TC-ED-13 collapses the consoles, keeps that per browser, and reopens Debug for new problems only", async ({
   page,
 }) => {
-  const { source, problems } = await openNewFile(page);
-  const problemsToggle = problems.getByRole("button", { name: "Problems console", exact: true });
+  const { source, debug } = await openNewFile(page);
+  const debugToggle = debug.getByRole("button", { name: "Debug console", exact: true });
 
-  await problemsToggle.click();
-  await expect(problemsToggle).toHaveAttribute("aria-expanded", "false");
+  await debugToggle.click();
+  await expect(debugToggle).toHaveAttribute("aria-expanded", "false");
   await page.reload();
-  await expect(problemsToggle).toHaveAttribute("aria-expanded", "false");
+  await expect(debugToggle).toHaveAttribute("aria-expanded", "false");
 
   // Valid edits leave it collapsed.
   await source.fill(`${fixture("pass/sign-in.yaml")}# still valid\n`);
   await page.waitForTimeout(1_000);
-  await expect(problemsToggle).toHaveAttribute("aria-expanded", "false");
+  await expect(debugToggle).toHaveAttribute("aria-expanded", "false");
 
   // A new diagnostic opens it.
   await source.fill(fixture("invalid/yaml-syntax.yaml"));
-  await expect(problemsToggle).toHaveAttribute("aria-expanded", "true");
+  await expect(debugToggle).toHaveAttribute("aria-expanded", "true");
   await expect(problemItemsOf(page)).toHaveCount(1);
 });
 
 test("TC-ED-14 hides the whole console column and reopens it from the header or the status bar", async ({ page }) => {
   await page.setViewportSize({ width: 1366, height: 768 });
-  const { problems, statusBar } = await openNewFile(page);
+  const { debug, statusBar } = await openNewFile(page);
   const header = page.getByRole("button", { name: "Toggle consoles", exact: true }).first();
   const fromStatusBar = statusBar.getByRole("button", { name: "Toggle consoles", exact: true });
 
   await header.click();
   await expect(header).toHaveAttribute("aria-expanded", "false");
-  await expect(problems).toBeHidden();
+  await expect(debug).toBeHidden();
   const sidebar = await box(sidebarOf(page));
   const editor = await box(page.locator(".cm-editor"));
   expect(Math.abs(editor.width - (1366 - sidebar.width))).toBeLessThanOrEqual(3);
 
   await fromStatusBar.click();
-  await expect(problems).toBeVisible();
+  await expect(debug).toBeVisible();
   await expect(header).toHaveAttribute("aria-expanded", "true");
 });
 
-test("TC-ED-15 opens a collapsed Run console when Run is clicked", async ({ page }) => {
-  const { run, runConsole } = await openNewFile(page);
-  const runToggle = runConsole.getByRole("button", { name: "Run console", exact: true });
-  await runToggle.click();
-  await expect(runToggle).toHaveAttribute("aria-expanded", "false");
+test("TC-ED-15 opens a collapsed Output console when Run is clicked", async ({ page }) => {
+  const { run, output } = await openNewFile(page);
+  const outputToggle = output.getByRole("button", { name: "Output console", exact: true });
+  await outputToggle.click();
+  await expect(outputToggle).toHaveAttribute("aria-expanded", "false");
 
   await run.click();
 
-  await expect(runToggle).toHaveAttribute("aria-expanded", "true");
-  await expect(runConsole.getByRole("button", { name: "Open run details", exact: true })).toBeVisible();
+  await expect(outputToggle).toHaveAttribute("aria-expanded", "true");
+  await expect(output.getByRole("button", { name: "Open run details", exact: true })).toBeVisible();
 });
 
 test("TC-ED-16 stacks the consoles under the editor on a narrow screen", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  const { problems } = await openNewFile(page);
+  const { debug } = await openNewFile(page);
 
   const editor = await box(page.locator(".cm-editor"));
-  const problemsBox = await box(problems);
-  expect(problemsBox.y).toBeGreaterThanOrEqual(editor.y + editor.height - 3);
+  const debugBox = await box(debug);
+  expect(debugBox.y).toBeGreaterThanOrEqual(editor.y + editor.height - 3);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 
@@ -309,4 +311,51 @@ test("TC-ED-17 shows the diagnostics a save answers, with Save and with Ctrl+S",
     'Line 5: "ms" must be a positive integer up to 2147483647',
     'Line 7: "ms" must be a positive integer up to 2147483647',
   ]);
+});
+
+test("TC-ED-18 opens and collapses each console on its own, in every combination", async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  const { debug, output } = await openNewFile(page);
+  const debugToggle = debug.getByRole("button", { name: "Debug console", exact: true });
+  const outputToggle = output.getByRole("button", { name: "Output console", exact: true });
+  const columnToggle = page.getByRole("button", { name: "Toggle consoles", exact: true }).first();
+  const expectOpen = async (debugOpen: boolean, outputOpen: boolean) => {
+    await expect(debugToggle).toHaveAttribute("aria-expanded", String(debugOpen));
+    await expect(outputToggle).toHaveAttribute("aria-expanded", String(outputOpen));
+    const [d, o] = [await box(debug), await box(output)];
+    // An open console takes the room the other leaves; a collapsed one keeps only its header.
+    if (debugOpen && outputOpen) expect(Math.abs(d.height - o.height)).toBeLessThanOrEqual(3);
+    if (debugOpen && !outputOpen) expect(d.height).toBeGreaterThan(o.height * 5);
+    if (!debugOpen && outputOpen) expect(o.height).toBeGreaterThan(d.height * 5);
+    if (!debugOpen && !outputOpen) expect(Math.abs(d.height - o.height)).toBeLessThanOrEqual(3);
+  };
+
+  await expectOpen(true, true);
+  await debugToggle.click();
+  await expectOpen(false, true);
+  // With Debug collapsed, Output still collapses: both show only their headers.
+  await outputToggle.click();
+  await expectOpen(false, false);
+  await debugToggle.click();
+  await expectOpen(true, false);
+  // With Debug open, Output still opens.
+  await outputToggle.click();
+  await expectOpen(true, true);
+  await outputToggle.click();
+  await expectOpen(true, false);
+
+  // The column toggle hides and restores the column without changing either console.
+  await columnToggle.click();
+  await expect(debug).toBeHidden();
+  await columnToggle.click();
+  await expectOpen(true, false);
+
+  // Opening by itself opens only its own console: Run opens Output and leaves Debug collapsed.
+  await debugToggle.click();
+  await expectOpen(false, false);
+  await editorOf(page).run.click();
+  await expectOpen(false, true);
+  // A new problem opens Debug and leaves Output open.
+  await editorOf(page).source.fill(fixture("invalid/yaml-syntax.yaml"));
+  await expectOpen(true, true);
 });
