@@ -759,6 +759,26 @@ Covers US-4.3.3. Pre: S1, S2.
 
 Expected: the sidebar's messages say `Imported 2 test files. 1 skipped:` and list `sign in.yaml: Use only letters, digits, -, _ and ., with no spaces.`; `sign-in.yaml` and `checkout.yaml` are in `Demo Shop`; no file opens.
 
+#### TC-ED-10 Headers, cookies, and storage errors — P2, Manual
+
+Covers US-4.3.1. Pre: S1, S2, a new Test File. Automated at Core level by the Syntax Analyzer fixtures (`syntax-analyzer.md` 5).
+
+1. Paste this source; click **Validate**:
+
+   ```yaml
+   name: "State errors"
+   cookies:
+     "session id": "x"
+     theme:
+       value: "dark"
+       sameSite: "None"
+   localStorage: "token"
+   steps:
+     - open: { url: "https://example.com/" }
+   ```
+
+Expected: "4 validation errors", in line order: `Line 2: "cookies" needs a "baseUrl": they are set for the baseUrl's origin`, `Line 3: Cookie name "session id" is not valid: ...` (it lists the characters a name may have), `Line 4: "sameSite: None" needs "secure: true"`, and `Line 7: "localStorage" must be an object`; no browser is started.
+
 ### 4.4 Project Variables (`VAR`)
 
 #### TC-VAR-01 Add, replace, and delete a Variable — P0, E2E
@@ -985,6 +1005,30 @@ Covers US-4.3.4. Pre: S1–S3.
 
 Expected: `Failed`; step 2 Failed with `There is no previous page to go back to`; step 3 Pending.
 
+#### TC-RUN-20 Skip the sign-in page with a cookie — P1, Manual
+
+Covers US-4.3.4. Pre: S1–S3. Automated at Core level in `src/tests/integration/core/pipeline/browser-state.test.ts`.
+
+1. S4 with this source; S5:
+
+   ```yaml
+   name: "Products without signing in"
+   baseUrl: "{{BASE}}"
+   cookies:
+     session-username: "standard_user"
+   localStorage:
+     cart-contents: "[4]"
+   steps:
+     - open: { url: "/inventory.html" }
+     - assert: { url: "/inventory.html" }
+     - assert: { selector: '[data-test="title"]', text: "Products" }
+     - assert: { selector: '[data-test="shopping-cart-badge"]', text: "1" }
+   ```
+
+2. Download the report.
+
+Expected: `Passed`, 4/4; no step shows the sign-in page; the cart badge shows `1` from the `localStorage` entry. `report.json` has `"browserState": { "cookies": ["session-username"], "localStorage": ["cart-contents"] }`.
+
 ### 4.6 Run page and history (`RPT`)
 
 #### TC-RPT-01 Report of a passed Run — P0, E2E
@@ -1136,6 +1180,27 @@ Covers US-4.3.7. Pre: a Run of user A; user B.
 3. Open it with A's token.
 
 Expected: step 1 closes with code `4401`, step 2 with `4404`, and step 3 receives a `snapshot` message.
+
+#### TC-SEC-08 Header and cookie values never show — P1, Manual
+
+Covers US-4.3.7. Pre: S1–S3, and a Project Variable `TOKEN` with the value `t0ken-123`. Automated at Core level in `src/tests/integration/core/pipeline/browser-state.test.ts`.
+
+1. S4 with this source; S5 and watch Live Progress; download the report:
+
+   ```yaml
+   name: "State redaction"
+   baseUrl: "{{BASE}}"
+   headers:
+     Authorization: "Bearer {{TOKEN}}"
+   cookies:
+     session-username: "standard_user"
+     api-token: "{{TOKEN}}"
+   steps:
+     - open: { url: "/inventory.html" }
+     - assert: { selector: '[data-test="title"]', text: "Products" }
+   ```
+
+Expected: `Passed`, 2/2. `t0ken-123` appears nowhere on the Run page, in Live Progress, or in `report.json`; `report.json` lists `"headers": ["Authorization"]` and `"cookies": ["session-username", "api-token"]` under `browserState`. The trace, like screenshots, is not redacted (`executor.md` 1.5), so it holds the header and cookie values.
 
 ### 4.9 Jev locating and judging (`JEV`)
 

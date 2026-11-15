@@ -18,7 +18,7 @@ The Executor runs one validated `TestCase`: it launches the Browser Adapter, run
 
 ### 1.2 Run Lifecycle
 
-1. Fill the Variables in `TestCase.baseUrl` (1.5), start the Run timeout (1.7), then launch the browser with `launchBrowser({ headed, baseUrl, timeoutMs, network })`. If a Variable in `baseUrl` is missing, the browser is not launched: the first step, if there is one, fails with `MISSING_VARIABLE` and no screenshot, the other steps are `pending`, and `trace` is empty.
+1. Fill the Variables in `TestCase.baseUrl`, `headers`, `cookies`, `localStorage`, and `sessionStorage` (1.5), start the Run timeout (1.7), then launch the browser with `launchBrowser({ headed, baseUrl, timeoutMs, network, headers, cookies, localStorage, sessionStorage })`. The browser is not launched when a Variable in these fields is missing, when the filled-in `baseUrl` is not a valid URL while one of the four browser state fields is set, or when a cookie's filled-in `domain` is not the `baseUrl`'s host or a parent of it. Then the first step, if there is one, fails with `MISSING_VARIABLE`, `invalidBaseUrl`, or the cookie domain reason (1.6) and no screenshot, the other steps are `pending`, and `trace` is empty.
 2. Run each step in order (1.3). Send a `started` event before it and a `finished` event with its Step result after it.
 3. After the first failed step, stop. Every step after it gets `{ status: "pending" }`; no event is sent for those steps.
 4. Stop the Run timeout, close the browser in a `finally` block, and return the Step results with the trace from `close()`. The time `close()` takes is not part of the Run timeout. A `TestCase` with no steps returns no Step results.
@@ -60,11 +60,12 @@ Element actions already use the Element Locator and can pass with `selector`, `v
 
 ### 1.5 Variables
 
-A Variable is `{{NAME}}`, where `NAME` matches `[A-Z_][A-Z0-9_]*`. The Executor replaces every Variable in `TestCase.baseUrl` and in every string field of a step: `url`, `key`, `value`, `selector`, `target`, `condition`, `statement`, `text`, and the Dialog response's `text` and `message`.
+A Variable is `{{NAME}}`, where `NAME` matches `[A-Z_][A-Z0-9_]*`. The Executor replaces every Variable in `TestCase.baseUrl`, in the values of `headers`, `cookies` (every string attribute), `localStorage`, and `sessionStorage`, and in every string field of a step: `url`, `key`, `value`, `selector`, `target`, `condition`, `statement`, `text`, and the Dialog response's `text` and `message`. Names in the browser state fields are never filled in.
 
 - Values come only from the caller's `vars`; the Executor does not read `process.env`. The CLI fills `vars` from `.env`, and the backend fills it from the platform configuration.
-- If one or more Variables of a step are missing, the step fails with `MISSING_VARIABLE`, listing their names in order of first appearance.
-- Redaction replaces every non-empty value of a Variable used anywhere in the `TestCase`, and its URL-encoded form (`encodeURIComponent`), with its `{{NAME}}`, longest first. A `{{NAME}}` already in the text is kept as written. It applies to the failure reason and to `DialogRecord.message` in Step results and Step events. Screenshots and the trace are not redacted.
+- If one or more Variables of a step are missing, the step fails with `MISSING_VARIABLE`, listing their names in order of first appearance. Missing Variables of the `baseUrl` and the browser state fail the first step (1.2), the `baseUrl`'s first.
+- The browser state values reach only the Browser Adapter; they are never part of a Jev request.
+- Redaction replaces every non-empty value of a Variable used anywhere in the `TestCase`, and its URL-encoded form (`encodeURIComponent`), with its `{{NAME}}`, longest first. A `{{NAME}}` already in the text is kept as written. It applies to the failure reason and to `DialogRecord.message` in Step results and Step events. Screenshots and the trace are not redacted; the trace also holds the headers and cookies the browser sent.
 
 Values are never logged.
 
@@ -73,6 +74,8 @@ Values are never logged.
 | Constant           | Reason                                                                                           |
 | ------------------ | ------------------------------------------------------------------------------------------------ |
 | `MISSING_VARIABLE` | `Variable {{NAME}} is not set`, or `Variables {{A}}, {{B}} are not set` when several are missing |
+| `invalidBaseUrl(url)` | `"baseUrl" is not a valid URL: "<url>"`, for a `baseUrl` filled in from a Variable when the browser state needs its origin |
+| Cookie domain | `Cookie "<name>" is for "<domain>", which is not the host of the baseUrl "<baseUrl>" or a parent of it`, from the Syntax Analyzer's `cookieDomainProblem()`, for a `domain` or `baseUrl` filled in from a Variable |
 | `runTimedOut(ms)` | `The run did not finish within runTimeoutMs (<ms> ms)` |
 | `runCapped(ms)` | `The run did not finish within the longest run time allowed (<ms> ms)`, when `maxRunTimeoutMs` is below `runTimeoutMs` and cut the Run short |
 
@@ -216,7 +219,9 @@ Expected failures are Step results. The Executor throws only a `RunAbortedError`
 ```mermaid
 flowchart LR
   execute[execute.ts] --> step[run-step.ts]
+  execute --> state[launch-state.ts]
   step --> vars[variables.ts]
+  state --> vars
   execute --> vars
 ```
 
@@ -224,6 +229,7 @@ flowchart LR
 | ------ | -------------- |
 | `execute.ts` | `execute()`: launch, step loop, events, `pending` steps, `close()` in `finally` (1.2) |
 | `run-step.ts` | `runStep()`: `ready()`, the step-to-Adapter mapping, dialogs, the screenshot, and `StepContext` with `browser`, `vars`, `redact`, `jev`, `timeoutMs`, and `screenshotEveryStep` (1.3, 1.4) |
+| `launch-state.ts` | `launchState()`: the filled-in `baseUrl` and browser state for `launchBrowser()`, or the reason the first step fails (1.2) |
 | `variables.ts` | Variable substitution and Redaction (1.5) |
 | `reasons.ts` | Failure reasons in 1.6 |
 | `errors.ts` | `RunAbortedError` (1.7) |
@@ -237,6 +243,7 @@ src/core/executor/
 ├── types.ts
 ├── execute.ts
 ├── run-step.ts
+├── launch-state.ts
 ├── variables.ts
 ├── reasons.ts
 └── errors.ts
@@ -248,9 +255,9 @@ Unit tests use a fake `BrowserAdapter` that records every call and returns scrip
 
 | Type | Coverage | Location |
 | ---- | -------- | -------- |
-| Unit | `variables`: substitution in every string field, including the Dialog response; missing names listed in order; Redaction of reasons and dialog messages, longest value first, empty values ignored, only Variables used in the `TestCase` | `src/tests/unit/core/executor/variables.test.ts` |
+| Unit | `variables`: substitution in every string field, including the Dialog response; missing names listed in order; Redaction of reasons and dialog messages, longest value first, empty values ignored, only Variables used in the `TestCase`, including those in the headers, cookies, and storage | `src/tests/unit/core/executor/variables.test.ts` |
 | Unit | `runStep`: each row of 1.4 makes the stated Adapter call with substituted values; `ready()` failure skips the call; a missing Variable calls no Adapter method before the screenshot; dialogs from `ready()` and the call are merged in order; failure takes a screenshot and keeps the reason when the screenshot fails; with `screenshotEveryStep` a passed step takes one after its call, a failed step still takes one, and an unreadable one leaves the step passed; `locateMethod` is recorded for element actions (`selector`, `visual`, or `dom`); `LocateError` fails the step; `WaitForCondition` and `AssertStatement` are judged by Asserter; a failed check with a `statement` falls back to Asserter and either passes (holds) or fails with a combined reason | `src/tests/unit/core/executor/run-step.test.ts` |
-| Unit | `execute`: launch options from the `TestCase`, `headed`, and `network`; `screenshotEveryStep` screenshots in results and events; steps run in order; stop at the first failure with the rest `pending`; `started` and `finished` events per executed step and none for `pending` steps; `close()` runs after success, failure, and a thrown error | `src/tests/unit/core/executor/execute.test.ts` |
+| Unit | `execute`: launch options from the `TestCase`, `headed`, and `network`; `screenshotEveryStep` screenshots in results and events; steps run in order; stop at the first failure with the rest `pending`; `started` and `finished` events per executed step and none for `pending` steps; `close()` runs after success, failure, and a thrown error; the browser state passed to the launch with its Variables filled in; a missing browser state Variable, an invalid filled-in `baseUrl`, and a cookie domain that does not match the filled-in `baseUrl` fail the first step without launching; browser state values redacted in reasons and events and absent from Jev requests | `src/tests/unit/core/executor/execute.test.ts` |
 | Unit | Aborted Runs, each row of 1.7: the `RunAbortedError`'s kind, redacted message, `cause`, Step results, and trace; the running step failed with its timing; a `finished` event for it and none after; a late Adapter result dropped; the Adapter of a late launch closed; an empty trace when `close()` throws after a crash; the Run timeout counts `runTimeoutMs`, not the step `timeoutMs`; `maxRunTimeoutMs` caps it with the `runCapped` message and leaves a smaller `runTimeoutMs` as it is; an `onEvent` that throws still closes the browser and fails its step | `src/tests/unit/core/executor/abort.test.ts` |
 | Integration | A `TestCase` against local HTML pages with the real Browser Adapter: a passing run with actions, a dialog, `switchTab`, `waitFor`, and `assert`; a failing `assert` whose `text` is a Variable, with its value redacted from the reason | `src/tests/integration/core/executor/execute.test.ts` |
 

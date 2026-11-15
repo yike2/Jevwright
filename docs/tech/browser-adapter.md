@@ -22,7 +22,7 @@ The Browser Adapter owns the browser for one Run. It is the only module in Jevwr
 | ---- | ----- |
 | Browser | Chromium from the `playwright` package, launched once per Run; never shared between Runs. With `endpoint`, the Adapter connects to a Playwright `run-server` at that `ws://` URL instead (`chromium.connect()`, timing out after `timeoutMs`); each connection gets a browser of its own, which `close()` shuts down. The server must run the same Playwright version |
 | Mode | Headless by default; headed when the caller asks (CLI `--headed`), unless the browser is remote |
-| Context | One context per browser, with `viewport` `VIEWPORT`, `deviceScaleFactor` 1, and `baseURL` set to the TestCase `baseUrl` |
+| Context | One context per browser, with `viewport` `VIEWPORT`, `deviceScaleFactor` 1, and `baseURL` set to the TestCase `baseUrl`. Headers, cookies, and storage from `LaunchOptions` are set on it before the first tab opens (1.13) |
 | Default timeout | `TestCase.timeoutMs`, set with `context.setDefaultTimeout()`; every wait below uses it unless stated otherwise |
 | Trace | Always recorded: `context.tracing.start({ screenshots: true, snapshots: true })` at launch, stopped by `close()` |
 
@@ -198,6 +198,25 @@ A blocked request is aborted with `failed`, so the step that made it fails with 
 
 This check alone is not a sandbox. Two gaps remain: DNS can change between the check and Chromium's own lookup (DNS rebinding), and Playwright routes only the first request of a redirect chain, so a public URL that redirects to a private address is followed. The Backend closes both at the network layer by running the browser in a container whose firewall refuses connections to these ranges (`backend.md` 1.6); `NON_PUBLIC_RANGES` in `network.ts` is the list both use.
 
+### 1.13 Headers, Cookies, and Storage
+
+`LaunchOptions` carries the TestCase's `headers`, `cookies`, `localStorage`, and `sessionStorage` (`syntax-analyzer.md` 1.7), with their Variables already filled in. `launchBrowser()` sets them on the context before it opens the first tab:
+
+| Field | How | Scope |
+| ----- | --- | ----- |
+| `headers` | A `context.route()` for URLs of the `baseUrl`'s origin that adds the headers to the request (`route.fallback({ headers })`). Names are sent in lower case and replace a header the browser sends under the same name | Every HTTP request to the `baseUrl`'s origin: pages, scripts, `fetch`. Requests to other origins get none. Without a `baseUrl`, `context.setExtraHTTPHeaders()` sends them with every request |
+| `cookies` | `context.addCookies()` | Each cookie with its own attributes; a missing `domain` is the `baseUrl`'s host (a host-only cookie), `path` is `/`, `httpOnly` is `false`, `secure` is `true` for an `https` `baseUrl`, `sameSite` is `Lax` |
+| `localStorage` | The context's `storageState`, with one origin entry for the `baseUrl`'s origin | Written once when the context is created, before any page script runs; the page's own changes then stay across navigations and reloads |
+| `sessionStorage` | `context.addInitScript()`, which writes the entries when a document of the `baseUrl`'s origin starts, in the main page or a frame | Every tab, including tabs the page opens, before the page's scripts run. It runs at every load of such a document, so a reload or navigation writes the entries again |
+
+The header route is registered after the private network routes of 1.12, so it runs first and falls back to them with the headers added.
+
+Known limitations:
+
+- Playwright keeps the added headers on the redirects of a routed request, so a request to the `baseUrl`'s origin that redirects to another origin carries them there.
+- Requests a service worker makes are not routed, so they get no headers. With `network: "public"` service workers are blocked anyway (1.12).
+- A cookie Chromium refuses (for example, a value with `;`) makes `launchBrowser()` throw `The browser refused the cookies: <reason>`, which the Executor reports as an `infrastructure` Run error.
+
 ## 2. Internal Flow
 
 Where the Adapter sits in one Run:
@@ -247,9 +266,24 @@ type LaunchOptions = {
   timeoutMs: number; // TestCase.timeoutMs
   network?: Network; // default "any" (1.12)
   endpoint?: string; // ws:// URL of a Playwright run-server to connect to instead of launching Chromium (1.2)
+  // Browser state (1.13); values are already filled in.
+  headers?: Record<string, string>;
+  cookies?: Record<string, BrowserCookie>;
+  localStorage?: Record<string, string>;
+  sessionStorage?: Record<string, string>;
 };
 
 type Network = "any" | "public";
+
+// Attributes left out get the defaults in 1.13.
+type BrowserCookie = {
+  value: string;
+  domain?: string;
+  path?: string;
+  httpOnly?: boolean;
+  secure?: boolean;
+  sameSite?: "Strict" | "Lax" | "None";
+};
 
 interface BrowserAdapter {
   ready(): Promise<BrowserResult>;
@@ -345,6 +379,7 @@ flowchart LR
   launch --> actions[actions.ts]
   launch --> checks[checks.ts]
   launch --> snapshot[snapshot.ts]
+  launch --> state[state.ts]
   actions --> errors[errors.ts]
   checks --> errors
   checks --> url[url-match.ts]
@@ -355,6 +390,7 @@ flowchart LR
 | ------ | -------------- |
 | `launch.ts` | `launchBrowser()`: browser, context, trace, the `BrowserAdapter` implementation, `ready()` and `close()` |
 | `network.ts` | `isPublicAddress()`, `isPublicUrl()`, and the routes of `network: "public"` (1.12) |
+| `state.ts` | Headers, cookies, `localStorage`, and `sessionStorage` on a new context (1.13) |
 | `tabs.ts` | Open tabs in order, current tab, `switchTab` (1.8) |
 | `dialogs.ts` | Dialog listener per tab, armed response, Unexpected dialog records (1.7) |
 | `actions.ts` | `perform()`: one function per action, Element reference to locator (1.6) |
@@ -381,6 +417,7 @@ src/core/browser/
 ├── snapshot.ts
 ├── url-match.ts
 ├── network.ts
+├── state.ts
 └── errors.ts
 ```
 
@@ -401,6 +438,7 @@ Browser tests launch real headless Chromium against local HTML pages served by `
 | Integration | Tabs: switch to a `target=_blank` tab and back, ambiguous match, timeout, closed current tab | `src/tests/integration/core/browser/tabs.test.ts` |
 | Integration | Checks: `visible`, `text`, and `url` pass and fail; first-match rule; `url` matches like `switchTab` | `src/tests/integration/core/browser/checks.test.ts` |
 | Integration | `network: "public"`: a page on `127.0.0.1` fails with `net::ERR_FAILED`; with `"any"` it loads | `src/tests/integration/core/browser/network.test.ts` |
+| Integration | Browser state, with two local servers as two origins that record what they receive: headers reach every request to the `baseUrl`'s origin, keep the cookies, and reach no other origin; without a `baseUrl` they reach every origin; a short-form cookie on every path, readable by the page; a full-form cookie's `domain`, `path`, `httpOnly`, and `sameSite`; a refused cookie fails the launch; `localStorage` and `sessionStorage` read by the page's first script, `sessionStorage` in a tab the page opens, `localStorage` written once and `sessionStorage` at every load, and no storage for another origin | `src/tests/integration/core/browser/state.test.ts` |
 | Integration | `endpoint`: actions, screenshot, and trace through a real `playwright run-server` (counted by a proxy in front of it), `network: "public"` still applied, and a failed launch when nothing listens | `src/tests/integration/core/browser/remote.test.ts` |
 
 HTML pages live in `src/tests/integration/core/browser/fixtures/`, one page per scenario, named after it (e.g. `confirm-delete.html`, `open-new-tab.html`).
