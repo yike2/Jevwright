@@ -1007,7 +1007,7 @@ Expected: `Failed`; step 2 Failed with `There is no previous page to go back to`
 
 #### TC-RUN-20 Skip the sign-in page with a cookie — P1, Manual
 
-Covers US-4.3.4. Pre: S1–S3. Automated at Core level in `src/tests/integration/core/pipeline/browser-state.test.ts`.
+Covers US-4.3.4. Pre: S1–S3. Automated in `src/tests/integration/core/pipeline/browser-state.test.ts` and `src/tests/integration/app/backend/runs.test.ts`.
 
 1. S4 with this source; S5:
 
@@ -1183,7 +1183,7 @@ Expected: step 1 closes with code `4401`, step 2 with `4404`, and step 3 receive
 
 #### TC-SEC-08 Header and cookie values never show — P1, Manual
 
-Covers US-4.3.7. Pre: S1–S3, and a Project Variable `TOKEN` with the value `t0ken-123`. Automated at Core level in `src/tests/integration/core/pipeline/browser-state.test.ts`.
+Covers US-4.3.7. Pre: S1–S3, and a Project Variable `TOKEN` with the value `t0ken-123`. Automated in `src/tests/integration/core/pipeline/browser-state.test.ts`, `src/tests/integration/cli/run.test.ts`, and `src/tests/integration/app/backend/runs.test.ts`.
 
 1. S4 with this source; S5 and watch Live Progress; download the report:
 
