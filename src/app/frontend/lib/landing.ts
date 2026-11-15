@@ -6,7 +6,12 @@ import staleSelectorReport from "./landing-runs/fall-back-from-a-stale-selector.
 // the code it describes.
 
 export type Report = NonNullable<Run["report"]>;
-export type ReplayRun = { file: string; note: string; assets: string; report: Report };
+export type ReplayRun = { file: string; note: string; assets: string; report: Report; judged: number[] };
+export type ReplayStep = Report["steps"][number];
+export type ReplayBadge = "AI locate" | "AI assert";
+export type Choice = { when: string; write: string; why: string; yaml: string };
+export type Fix = { problem: string; playwright: string; jevwright: string; note: string };
+export type QuickStartFile = { feature: string; file: string; folder: string };
 export type Stat = { value: string; label: string };
 export type QuickStartFolder = { name: string; teaches: string };
 
@@ -64,12 +69,14 @@ export const REPLAY_RUNS: ReplayRun[] = [
     note: "Every element has a selector that matches, so Playwright does all the work and Jev is never called.",
     assets: "/landing/runs/sign-in-and-see-products",
     report: signInReport as Report,
+    judged: [],
   },
   {
     file: "fall-back-from-a-stale-selector.yaml",
     note: "The Login button's selector is out of date. The step also describes the button, so Jev finds it.",
     assets: "/landing/runs/fall-back-from-a-stale-selector",
     report: staleSelectorReport as Report,
+    judged: [],
   },
 ];
 
@@ -91,3 +98,26 @@ export const QUICK_START_FOLDERS: QuickStartFolder[] = [
     teaches: "Plain-language targets, a stale-selector fallback, and statements Jev judges.",
   },
 ];
+
+/** The Demo App every Quick Start file tests. */
+export const DEMO_APP_URL = "";
+
+/** Real Debug console lines for the Quick Start file seven-errors-at-once.yaml. */
+export const DEBUG_RECEIPT = "";
+
+/** Real Output console lines for the Run of sign-in-and-see-products.yaml. */
+export const OUTPUT_RECEIPT = "";
+
+/** "Which should I write?": each choice with a short YAML snippet. */
+export const CHOICES: Choice[] = [];
+
+/** "What does it fix?": each scenario in Playwright and in Jevwright. */
+export const FIXES: Fix[] = [];
+
+/** Which Quick Start file shows which feature. */
+export const QUICK_START_FILES: QuickStartFile[] = [];
+
+/** The badge of a replayed step that Jev worked on, or null for a step Playwright did alone. */
+export function replayBadge(_run: ReplayRun, _step: ReplayStep): ReplayBadge | null {
+  return null;
+}
