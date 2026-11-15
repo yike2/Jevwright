@@ -115,6 +115,16 @@ describe("browser state", () => {
           expect(await browser.check(text("#cookie", "(none)"))).toEqual(passed);
         },
       ));
+    it("fails the launch in plain words when the browser refuses a cookie", async () => {
+      const launching = launchBrowser({
+        headed: false,
+        baseUrl: app.baseUrl,
+        timeoutMs: 2000,
+        cookies: { session: { value: "a;b" } },
+      });
+
+      await expect(launching).rejects.toThrow(/^The browser refused the cookies: Invalid cookie fields$/);
+    });
   });
 
   describe("storage", () => {
