@@ -87,6 +87,14 @@ describe.each([":root", ".dark"] as const)("the %s tokens", (selector) => {
     expect(pair("code-foreground", "code")).toBeGreaterThanOrEqual(TEXT);
   });
 
+  it.each(["background", "card", "popover", "sidebar", "code"].map((surface) => [surface]))(
+    "keeps the scrollbar thumb visible on %s, and darker or brighter still on hover",
+    (surface) => {
+      expect(pair("scrollbar-thumb", surface)).toBeGreaterThanOrEqual(NON_TEXT);
+      expect(pair("scrollbar-thumb-hover", surface)).toBeGreaterThan(pair("scrollbar-thumb", surface));
+    },
+  );
+
   it.each(["background", "card", "popover", "sidebar"].map((surface) => [surface]))(
     "keeps input borders and the focus ring visible on %s",
     (surface) => {

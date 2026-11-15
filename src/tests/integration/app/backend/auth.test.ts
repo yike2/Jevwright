@@ -38,10 +38,24 @@ describeDb("auth routes", () => {
         module.testFiles.map((testFile) => testFile.name),
       ]),
     ).toEqual([
-      ["1 Passing", ["checkout.yaml", "locked-out.yaml", "sign-in.yaml"]],
-      ["2 Failing", ["missing-element.yaml", "unexpected-dialog.yaml", "wrong-total.yaml"]],
-      ["3 Invalid", ["multiple-errors.yaml", "yaml-syntax.yaml"]],
-      ["4 Jev", ["stale-selector.yaml", "statement-fails.yaml", "statement-holds.yaml", "target-sign-in.yaml"]],
+      [
+        "1 Passing tests",
+        ["buy-a-backpack.yaml", "locked-out-user-sees-an-error.yaml", "sign-in-and-see-products.yaml"],
+      ],
+      [
+        "2 Failing tests - see why they fail",
+        ["missing-button-fails.yaml", "unexpected-alert-fails.yaml", "wrong-total-fails-at-the-total.yaml"],
+      ],
+      ["3 Invalid files - fix the errors", ["seven-errors-at-once.yaml", "yaml-syntax-error.yaml"]],
+      [
+        "4 Jev - find and check by description",
+        [
+          "fall-back-from-a-stale-selector.yaml",
+          "find-elements-by-description.yaml",
+          "judge-a-false-statement.yaml",
+          "judge-a-true-statement.yaml",
+        ],
+      ],
     ]);
     const variables = await db().variable.findMany({ where: { projectId: project.id }, orderBy: { name: "asc" } });
     expect(variables.map(({ name, value }) => ({ name, value }))).toEqual([

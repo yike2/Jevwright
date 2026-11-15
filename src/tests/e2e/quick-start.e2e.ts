@@ -16,19 +16,26 @@ test("TC-QS-01 a new account starts with the Quick Start project and runs its pa
 
   const overview = overviewOf(page);
   await expect(overview.getByRole("heading", { level: 2, name: QUICK_START, exact: true })).toBeVisible();
-  for (const module of ["1 Passing", "2 Failing", "3 Invalid", "4 Jev"])
+  for (const module of [
+    "1 Passing tests",
+    "2 Failing tests - see why they fail",
+    "3 Invalid files - fix the errors",
+    "4 Jev - find and check by description",
+  ])
     await expect(overview.getByRole("heading", { level: 3, name: module, exact: true })).toBeVisible();
-  await expect(overview.getByRole("link", { name: "multiple-errors.yaml", exact: true })).toBeVisible();
+  await expect(overview.getByRole("link", { name: "seven-errors-at-once.yaml", exact: true })).toBeVisible();
   // The Jev examples are listed but never run here: pnpm test:e2e makes no Jev calls (AGENTS.md 5).
-  await expect(overview.getByRole("link", { name: "target-sign-in.yaml", exact: true })).toBeVisible();
+  await expect(overview.getByRole("link", { name: "find-elements-by-description.yaml", exact: true })).toBeVisible();
 
   await page.getByRole("button", { name: `Variables for ${QUICK_START}`, exact: true }).click();
   const variables = page.getByRole("dialog", { name: "Variables" });
   await expect(variables.getByRole("listitem")).toHaveText([/^BASE/, /^SWAG_PASSWORD/]);
   await variables.getByRole("button", { name: "Close", exact: true }).click();
 
-  await overview.getByRole("link", { name: "sign-in.yaml", exact: true }).click();
-  await expect(page.getByRole("textbox", { name: "Test file YAML" })).toHaveValue(/baseUrl: "\{\{BASE\}\}"/);
+  await overview.getByRole("link", { name: "sign-in-and-see-products.yaml", exact: true }).click();
+  const source = page.getByRole("textbox", { name: "Test file YAML" });
+  await expect(source).toHaveValue(/^# .+\n# Expect: .+\n# Try: .+\n/);
+  await expect(source).toHaveValue(/baseUrl: "\{\{BASE\}\}"/);
   await page.getByRole("button", { name: "Run", exact: true }).click();
   await page.getByRole("link", { name: "View run" }).click();
   expect(await waitForFinalStatus(page)).toBe("Passed");
@@ -43,7 +50,7 @@ test("TC-QS-02 an empty workspace offers to add the Quick Start project", async 
   await overview.getByRole("button", { name: ADD, exact: true }).click();
 
   await expect(overview.getByRole("heading", { level: 2, name: QUICK_START, exact: true })).toBeVisible();
-  await expect(overview.getByRole("link", { name: "sign-in.yaml", exact: true })).toBeVisible();
+  await expect(overview.getByRole("link", { name: "sign-in-and-see-products.yaml", exact: true })).toBeVisible();
   await expect(
     page.getByRole("navigation", { name: "Projects" }).getByText(QUICK_START, { exact: true }),
   ).toBeVisible();

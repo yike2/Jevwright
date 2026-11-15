@@ -1,5 +1,33 @@
-// Content of the landing page (frontend.md 1.14), kept out of the page so a unit test can check it.
+import type { Run } from "./api.js";
 
+// Content of the landing page (frontend.md 1.14), kept out of the page so unit tests can check every claim against
+// the code it describes.
+
+export type Report = NonNullable<Run["report"]>;
+export type ReplayRun = { file: string; assets: string; report: Report };
+export type Stat = { value: string; label: string };
+export type QuickStartModule = { name: string; teaches: string };
+
+/** The actions of the test file syntax (syntax-analyzer.md 1.2). */
+export const ACTIONS: string[] = [];
+
+/** The locate methods a report records for an element step. */
+export const LOCATE_METHODS: string[] = [];
+
+/** Real `jevwright validate` output for the Quick Start file seven-errors-at-once.yaml. */
+export const VALIDATE_RECEIPT = "";
+
+/** Real `jevwright run` output for the sign-in file. */
+export const RUN_RECEIPT = "";
+
+/** Real Run reports, replayed on the page, with their screenshots under public/. */
+export const REPLAY_RUNS: ReplayRun[] = [];
+
+/** The stat strip below the replay; every number is backed by the code or the shipped Run. */
+export const STATS: Stat[] = [];
+
+/** The Quick Start project's Modules, as the backend creates them, and what each teaches. */
+export const QUICK_START_MODULES: QuickStartModule[] = [];
 export type Feature = { title: string; description: string };
 
 /** A short test file shown on the landing page; a unit test runs it through the Syntax Analyzer. */

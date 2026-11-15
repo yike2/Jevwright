@@ -238,10 +238,10 @@ describeDb("workspace routes", () => {
     const tree = (await as.get("/tree")).body.items;
     expect(tree.map((project: { name: string }) => project.name)).toEqual(["Quick Start"]);
     expect(tree[0].modules.map((module: { name: string }) => module.name)).toEqual([
-      "1 Passing",
-      "2 Failing",
-      "3 Invalid",
-      "4 Jev",
+      "1 Passing tests",
+      "2 Failing tests - see why they fail",
+      "3 Invalid files - fix the errors",
+      "4 Jev - find and check by description",
     ]);
     expect((await as.get(`/projects/${res.body.id}/variables`)).body.items).toEqual(["BASE", "SWAG_PASSWORD"]);
   });
