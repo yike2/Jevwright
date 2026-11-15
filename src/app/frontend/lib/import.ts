@@ -40,7 +40,9 @@ export async function importEntries(
   // Each folder path of the drop, "" for the target itself: the folder it became, or null once it was skipped.
   const folders = new Map<string, Parent | null>([["", target]]);
 
-  const skip = (path: string, reason: string) => result.skipped.push({ path, reason });
+  const skip = (path: string, reason: string): void => {
+    result.skipped.push({ path, reason });
+  };
 
   const folderFor = async (segments: string[]): Promise<Parent | null> => {
     const path = segments.join("/");

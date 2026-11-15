@@ -76,7 +76,7 @@ export function childFolderId(tree: readonly TreeProject[], parent: Parent, name
 const isInside = (place: FolderPlace, folderId: string, places: FolderPlace[]): boolean => {
   for (let current: FolderPlace | undefined = place; current;) {
     if (current.folder.id === folderId) return true;
-    const parentId = current.parent.folderId;
+    const parentId: string | null = current.parent.folderId;
     current = parentId === null ? undefined : places.find((candidate) => candidate.folder.id === parentId);
   }
   return false;
