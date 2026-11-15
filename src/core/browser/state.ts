@@ -25,7 +25,8 @@ export async function applyState(context: BrowserContext, options: LaunchOptions
         Object.entries(cookies).map(([name, cookie]) => ({
           name,
           value: cookie.value,
-          domain: cookie.domain ?? url.hostname,
+          // Playwright gives a cookie to subdomains only when its domain starts with "."; the default is host-only.
+          domain: cookie.domain === undefined ? url.hostname : `.${cookie.domain.replace(/^\./, "")}`,
           path: cookie.path ?? "/",
           httpOnly: cookie.httpOnly ?? false,
           secure: cookie.secure ?? url.protocol === "https:",
