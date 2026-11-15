@@ -10,6 +10,7 @@ import {
   DEMO_APP_URL,
   FIXES,
   LOCATE_METHODS,
+  LOCATED_STEP,
   OUTPUT_RECEIPT,
   QUICK_START_FILES,
   QUICK_START_FOLDERS,
@@ -32,6 +33,9 @@ const seeded = (name: string) => seededFiles().find((testFile) => testFile.name 
 const runOf = (file: string) => REPLAY_RUNS.find((run) => run.file === file)!;
 const SIGN_IN = "sign-in-and-see-products.yaml";
 const STALE = "fall-back-from-a-stale-selector.yaml";
+const JEV = "find-and-check-with-jev.yaml";
+const methods = (file: string) =>
+  runOf(file).report.steps.map((step) => ("locateMethod" in step ? (step.locateMethod ?? null) : null));
 
 // Every claim on the landing page is checked against the code it describes (frontend.md 1.14).
 describe("landing page content", () => {
@@ -64,28 +68,53 @@ describe("landing page content", () => {
     );
   });
 
-  it("replays real passed Run reports, the Jev Run first, whose screenshots are shipped with the page", () => {
-    expect(REPLAY_RUNS.map((run) => run.file)).toEqual([STALE, SIGN_IN]);
+  it("replays real passed Run reports, the one with every Jev use first, whose screenshots are shipped", () => {
+    expect(REPLAY_RUNS.map((run) => run.file)).toEqual([JEV, STALE, SIGN_IN]);
     for (const run of REPLAY_RUNS) {
+      const total = analyze(seeded(run.file)).testCase!.steps.length;
       expect(run.report.status).toBe("passed");
-      expect(run.report.summary).toEqual({ total: 6, passed: 6, failed: 0, pending: 0 });
+      expect(run.report.summary).toEqual({ total, passed: total, failed: 0, pending: 0 });
       for (const step of run.report.steps) {
         expect(step.status).toBe("passed");
         expect(existsSync(new URL(`${run.assets}/step-${step.index}.webp`.slice(1), PUBLIC)), run.file).toBe(true);
       }
     }
-    expect(
-      runOf(SIGN_IN).report.steps.map((step) => ("locateMethod" in step ? (step.locateMethod ?? null) : null)),
-    ).toEqual([null, "selector", "selector", "selector", null, null]);
-    const fallback = runOf(STALE).report.steps[3]!;
-    expect(["visual", "dom"]).toContain("locateMethod" in fallback ? fallback.locateMethod : null);
+    expect(methods(SIGN_IN)).toEqual([null, "selector", "selector", "selector", null, null]);
+    expect(["visual", "dom"]).toContain(methods(STALE)[3]);
+  });
+
+  it("replays each Run of the seeded file: its name, and each step's action at the seeded line", () => {
+    for (const run of REPLAY_RUNS) {
+      const steps = analyze(seeded(run.file)).testCase!.steps;
+      expect(run.report.file).toBe(run.file);
+      expect(
+        run.report.steps.map(({ index, action, line }) => ({ index, action, line })),
+        run.file,
+      ).toEqual(steps.map(({ action, line }, index) => ({ index, action, line })));
+    }
+  });
+
+  it("replays a Run where Jev locates by screenshot and by DOM and judges a statement alone", () => {
+    const steps = analyze(seeded(JEV)).testCase!.steps;
+
+    expect(methods(JEV)).toEqual([null, "visual", "dom", null, "selector", "selector", null, null]);
+    expect(runOf(JEV).judged).toEqual([7]);
+    // Only a statement, so Playwright has nothing to check and Jev certainly judged it.
+    expect(steps[7]).toMatchObject({ action: "assert", statement: expect.any(String) });
+    expect(steps[7]).not.toHaveProperty("selector");
   });
 
   it("badges only the steps Jev worked on in the replayed Runs", () => {
     const badges = (file: string) => runOf(file).report.steps.map((step) => replayBadge(runOf(file), step));
 
+    expect(badges(JEV)).toEqual([null, "AI locate", "AI locate", null, null, null, null, "AI assert"]);
     expect(badges(STALE)).toEqual([null, null, null, "AI locate", null, null]);
     expect(badges(SIGN_IN)).toEqual([null, null, null, null, null, null]);
+  });
+
+  it("shows under Report the first step Jev located in the first replayed Run", () => {
+    expect(LOCATED_STEP).toBe(runOf(JEV).report.steps[1]);
+    expect(methods(JEV)[1]).toBe("visual");
   });
 
   it("badges a Visual or DOM Locate as AI locate and a judged statement as AI assert, nothing else", () => {

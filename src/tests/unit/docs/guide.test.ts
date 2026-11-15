@@ -108,6 +108,7 @@ describe("user guide", () => {
       "secret_sauce",
       "BASE",
       "sign-in-and-see-products.yaml",
+      "find-and-check-with-jev.yaml",
       "find-elements-by-description.yaml",
       "judge-a-true-statement.yaml",
       "buy-a-backpack.yaml",

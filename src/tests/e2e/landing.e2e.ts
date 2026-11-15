@@ -76,25 +76,44 @@ test("TC-LAND-04 the logo leads to the landing page everywhere, signed in or not
   await expect(page.getByRole("banner").getByRole("link", { name: "Open workspace" })).toBeVisible();
 });
 
-test("TC-LAND-05 replays the Jev Run first, badging only the steps Jev worked on", async ({ page }) => {
+test("TC-LAND-05 replays the Run with every Jev use first, badging only the steps Jev worked on", async ({ page }) => {
   await page.goto("/");
   const replay = page.getByRole("region", { name: "Run replay" });
   const steps = replay.getByRole("list", { name: "Replay steps" }).getByRole("listitem");
+  const badged = async (expected: Record<number, string>, count: number) => {
+    for (let index = 0; index < count; index += 1) {
+      const badge = expected[index];
+      if (badge) await expect(steps.nth(index)).toContainText(badge);
+      else await expect(steps.nth(index)).not.toContainText(/AI locate|AI assert/);
+    }
+  };
 
-  await expect(replay.getByRole("tab", { name: "fall-back-from-a-stale-selector.yaml" })).toHaveAttribute(
+  await expect(replay.getByRole("tab")).toHaveText([
+    "find-and-check-with-jev.yaml",
+    "fall-back-from-a-stale-selector.yaml",
+    "sign-in-and-see-products.yaml",
+  ]);
+  await expect(replay.getByRole("tab", { name: "find-and-check-with-jev.yaml" })).toHaveAttribute(
     "aria-selected",
     "true",
   );
   await replay.getByRole("button", { name: "Show all steps", exact: true }).click();
-  await expect(steps).toHaveCount(6);
-  await expect(steps.nth(3)).toContainText("click");
-  await expect(steps.nth(3)).toContainText("AI locate");
-  for (const index of [0, 1, 2, 4, 5]) await expect(steps.nth(index)).not.toContainText(/AI locate|AI assert/);
+  await expect(steps).toHaveCount(8);
+  await expect(steps.nth(1)).toContainText("click");
+  await expect(steps.nth(2)).toContainText("click");
+  await expect(steps.nth(7)).toContainText("assert");
+  await badged({ 1: "AI locate", 2: "AI locate", 7: "AI assert" }, 8);
   await expect(replay.getByText(/^(selector|visual|dom)$/)).toHaveCount(0);
   await expect(replay.getByText("Passed", { exact: true }).first()).toBeVisible();
 
-  await steps.nth(3).getByRole("button").click();
-  await expect(replay.getByRole("img", { name: "Step 4 screenshot" })).toBeVisible();
+  await steps.nth(2).getByRole("button").click();
+  await expect(replay.getByRole("img", { name: "Step 3 screenshot" })).toBeVisible();
+
+  await replay.getByRole("tab", { name: "fall-back-from-a-stale-selector.yaml" }).click();
+  await replay.getByRole("button", { name: "Show all steps", exact: true }).click();
+  await expect(steps).toHaveCount(6);
+  await expect(steps.nth(3)).toContainText("click");
+  await badged({ 3: "AI locate" }, 6);
 
   await replay.getByRole("tab", { name: "sign-in-and-see-products.yaml" }).click();
   await replay.getByRole("button", { name: "Show all steps", exact: true }).click();
@@ -107,8 +126,8 @@ test("TC-LAND-06 shows every step at once when the visitor prefers reduced motio
   await page.goto("/");
 
   const steps = page.getByRole("list", { name: "Replay steps" }).getByRole("listitem");
-  await expect(steps).toHaveCount(6);
-  for (let i = 0; i < 6; i += 1) await expect(steps.nth(i)).toContainText("Passed");
+  await expect(steps).toHaveCount(8);
+  for (let i = 0; i < 8; i += 1) await expect(steps.nth(i)).toContainText("Passed");
 });
 
 test("TC-LAND-07 shows how to start on the web with the Demo App, and opens the workspace", async ({ page }) => {

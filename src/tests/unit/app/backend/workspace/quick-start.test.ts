@@ -35,6 +35,7 @@ const EXPECTED = [
   {
     folder: "4 Jev - find and check by description",
     files: [
+      ["find-and-check-with-jev.yaml", "jev/find-and-check.yaml"],
       ["find-elements-by-description.yaml", "jev/target-add-to-cart.yaml"],
       ["fall-back-from-a-stale-selector.yaml", "jev/stale-selector.yaml"],
       ["judge-a-true-statement.yaml", "jev/statement-holds.yaml"],
@@ -52,6 +53,7 @@ const USES_SIGN_IN_PAGE = [
 const STARTS_SIGNED_IN = [
   "buy-a-backpack.yaml",
   "wrong-total-fails-at-the-total.yaml",
+  "find-and-check-with-jev.yaml",
   "find-elements-by-description.yaml",
   "judge-a-true-statement.yaml",
   "judge-a-false-statement.yaml",
