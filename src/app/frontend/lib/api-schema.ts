@@ -2170,6 +2170,12 @@ export interface paths {
                                     kind: "timeout" | "infrastructure";
                                     message: string;
                                 };
+                                browserState?: {
+                                    headers?: string[];
+                                    cookies?: string[];
+                                    localStorage?: string[];
+                                    sessionStorage?: string[];
+                                };
                             };
                         };
                     };
@@ -2384,6 +2390,12 @@ export interface paths {
                                         kind: "timeout" | "infrastructure";
                                         message: string;
                                     };
+                                    browserState?: {
+                                        headers?: string[];
+                                        cookies?: string[];
+                                        localStorage?: string[];
+                                        sessionStorage?: string[];
+                                    };
                                 };
                             }[];
                             nextCursor: string | null;
@@ -2560,6 +2572,12 @@ export interface paths {
                                     /** @enum {string} */
                                     kind: "timeout" | "infrastructure";
                                     message: string;
+                                };
+                                browserState?: {
+                                    headers?: string[];
+                                    cookies?: string[];
+                                    localStorage?: string[];
+                                    sessionStorage?: string[];
                                 };
                             };
                         };
@@ -2991,6 +3009,12 @@ export interface components {
                 kind: "timeout" | "infrastructure";
                 message: string;
             };
+            browserState?: {
+                headers?: string[];
+                cookies?: string[];
+                localStorage?: string[];
+                sessionStorage?: string[];
+            };
         };
         Run: {
             /** Format: uuid */
@@ -3094,6 +3118,12 @@ export interface components {
                     /** @enum {string} */
                     kind: "timeout" | "infrastructure";
                     message: string;
+                };
+                browserState?: {
+                    headers?: string[];
+                    cookies?: string[];
+                    localStorage?: string[];
+                    sessionStorage?: string[];
                 };
             };
         };

@@ -4764,7 +4764,6 @@
                           "additionalProperties": false
                         },
                         "browserState": {
-                          "description": "The names of the headers, cookies, and storage entries the test set; never their values",
                           "type": "object",
                           "properties": {
                             "headers": {
@@ -5565,7 +5564,6 @@
                                 "additionalProperties": false
                               },
                               "browserState": {
-                                "description": "The names of the headers, cookies, and storage entries the test set; never their values",
                                 "type": "object",
                                 "properties": {
                                   "headers": {
@@ -6254,7 +6252,6 @@
                           "additionalProperties": false
                         },
                         "browserState": {
-                          "description": "The names of the headers, cookies, and storage entries the test set; never their values",
                           "type": "object",
                           "properties": {
                             "headers": {
@@ -7572,7 +7569,6 @@
             "additionalProperties": false
           },
           "browserState": {
-            "description": "The names of the headers, cookies, and storage entries the test set; never their values",
             "type": "object",
             "properties": {
               "headers": {
@@ -8113,7 +8109,6 @@
                 "additionalProperties": false
               },
               "browserState": {
-                "description": "The names of the headers, cookies, and storage entries the test set; never their values",
                 "type": "object",
                 "properties": {
                   "headers": {
