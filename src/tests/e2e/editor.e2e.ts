@@ -435,6 +435,7 @@ test("TC-ED-20 gives every scrollable region of the editor page the editor's scr
 
   for (const theme of ["light", "dark"] as const) {
     await page.emulateMedia({ colorScheme: theme });
+    await expect(page.locator("html")).toHaveClass(new RegExp(`(^|\\s)${theme}(\\s|$)`));
     const styles = await page.evaluate(() => {
       const body = (name: string) => {
         const toggle = document.querySelector(`section[aria-label="${name}"] button[aria-controls]`);

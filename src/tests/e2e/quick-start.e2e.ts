@@ -71,10 +71,12 @@ test("TC-QS-02 an empty workspace offers to add the Quick Start project", async 
 test("TC-QS-03 explains why the Quick Start project cannot be added twice", async ({ page }) => {
   const { api } = await signUp(page);
   await page.goto(WORKSPACE);
+  const add = overviewOf(page).getByRole("button", { name: ADD, exact: true });
+  await expect(add).toBeVisible();
   // Another tab adds a project named Quick Start after this page loaded its tree.
   await api("POST", "/projects", { name: QUICK_START });
 
-  await overviewOf(page).getByRole("button", { name: ADD, exact: true }).click();
+  await add.click();
 
   await expect(alertsOf(page)).toHaveText(
     "You already have a project named Quick Start. Rename or delete it, then add it again.",
