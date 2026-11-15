@@ -198,11 +198,12 @@ Dropping `.yaml` files, or whole folders, from the computer onto a Project or fo
 
 Afterwards "Sidebar messages" shows `importSummary(result)`, such as `Imported 2 test files. 1 skipped:`, and a list named "Skipped" with `<path>: <reason>` for each skipped entry, paths from the drop target down.
 
-The tree is loaded once in the layout and exposed through a `refreshTree()` context, so later pages (editor save, finished run) can update the status dots.
+The tree is loaded once in the layout and exposed through a `refreshTree()` context, so later pages (editor save, finished run) can update the status dots; while `hasActiveRun(tree)` is `true`, the layout reloads the tree every second so a Run started on another page or before a reload still updates its dot when it finishes.
 
 | Helper                  | Rule                                                                                                                                                            |
 | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `statusOf(latestRun)`   | `null` → `none`; `queued`/`running` → `active`; `passed` → `passed`; `failed` → `failed`                                                                        |
+| `hasActiveRun(tree)`    | Whether any Test File at any level in `tree` has `statusOf(latestRun) === "active"`                                                                             |
 | `toTestFileName(input)` | Trims and adds `.yaml`; a trailing `.yaml` already typed is not doubled; empty input stays `""` |
 | `testFileBaseName(name)` | The name without a trailing `.yaml`, for the Rename input |
 | `uploadedTestFileName(fileName)` | The uploaded file's name with `.yaml` in place of a `.yaml` or `.yml` extension, any case: `checkout.yml` → `checkout.yaml` |
@@ -349,7 +350,7 @@ A `region` named "Output" in the editor's console column (1.7).
 
 | Part | Behavior |
 | ---- | -------- |
-| Live Run | After **Run**, the new Run: a status badge (`runStatusLabel`), "<passed>/<total> passed" once the summary exists, its duration, the Run error as `runErrorText(error)`, and a compact list named "Progress" with one item per step ("Step <n>", the action, "line <line>", the status and a failed step's `reason`), in an `aria-live="polite"` area. "Open run details" opens the sheet. When the Run is final, the history reloads and `refreshTree()` is called |
+| Live Run | After **Run** (or when opening a file whose `latestRun` in the tree is still active), the active Run: a status badge (`runStatusLabel`), "<passed>/<total> passed" once the summary exists, its duration, the Run error as `runErrorText(error)`, and a compact list named "Progress" with one item per step ("Step <n>", the action, "line <line>", the status and a failed step's `reason`), in an `aria-live="polite"` area. "Open run details" opens the sheet. When the Run is final, the history reloads and `refreshTree()` is called |
 | History | A `region` named "Runs" loads `GET /runs?testFileId=<id>&limit=20` with the page and again after a Run starts and ends. Each Run is one list item with a link to `/runs/<id>` whose text is `runStatusLabel(status)`, the trigger time (`createdAt`, `toLocaleString()`), and `formatDuration(durationMs)`, newest first; a click opens the sheet, and a click with a modifier key opens the page as a link does. An empty list shows "No runs yet". There is no pagination. A failed load shows `errorText(error)` (1.3) in a `role="alert"` inside the region |
 
 #### Run details sheet
@@ -361,8 +362,8 @@ A `region` named "Output" in the editor's console column (1.7).
 | Step | Behavior |
 | ---- | -------- |
 | Load | `GET /runs/:id`. Pending: `Loading…`; `404`, also for a malformed id (`backend.md` 1.7): "Run not found"; other errors: `errorText(error)` (1.3) in a `role="alert"` and nothing else |
-| Finished Run (`passed`/`failed`) | Steps come from `run.report.steps`. A Run without a Report (`interrupted`/`internal` error) shows no steps and "No step results" |
-| Active Run (`queued`/`running`) | Opens the WebSocket at `liveUrl(baseUrl, runId, token)` and folds every message into `{ run, steps }` with `applyLiveMessage`. When a `status` message makes the Run final, it reloads `GET /runs/:id` (for the Report and trace) and calls `onFinal`; the page calls `refreshTree()` |
+| Finished Run (`passed`/`failed`) | Steps come from `run.report.steps`, and `onFinal` is called (`refreshTree()`). A Run without a Report (`interrupted`/`internal` error) shows no steps and "No step results" |
+| Active Run (`queued`/`running`) | Opens the WebSocket at `liveUrl(baseUrl, runId, token)` and folds every message into `{ run, steps }` with `applyLiveMessage`. When `isFinalLiveMessage(message)` is `true` (a final `snapshot` or `status`), it reloads `GET /runs/:id` (for the Report and trace) and calls `onFinal`; the page calls `refreshTree()` |
 | Socket closes early | If the socket closes before the Run is final, the last state stays and "Live progress disconnected" shows in a `role="alert"` |
 | Leave | The socket is closed |
 
@@ -382,6 +383,7 @@ Below the steps, a collapsed "Source when it ran" section shows the Run's `sourc
 | `liveUrl(baseUrl, runId, token)` | `baseUrl` with `http` → `ws` and `https` → `wss`, then `/runs/<runId>/live?token=<encodeURIComponent(token)>` |
 | `runFileUrl(baseUrl, runId, path, token)` | `<baseUrl>/runs/<runId>/files/<path>?token=<encodeURIComponent(token)>` |
 | `isFinalStatus(status)` | `true` for `passed` and `failed`, `false` for `queued` and `running` |
+| `isFinalLiveMessage(message)` | `true` when `message` is a `snapshot` or `status` whose `run.status` is final (`isFinalStatus`) |
 | `runErrorText(error)` | `timeout` → "Timed out: <message>"; `interrupted` → "Interrupted: <message>"; `infrastructure` → "Browser error: <message>"; `internal` → "Something went wrong while running the test. Try running it again.", since its message is the server's error name |
 | `applyLiveMessage(state, message)` | Pure. `snapshot` → `{ run, steps }` from the message; `step` → the step with the same `index` is replaced (inserted in `index` order if absent); `status` → `run` replaced, steps kept. Never mutates `state` |
 
