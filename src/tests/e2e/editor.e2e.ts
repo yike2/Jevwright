@@ -192,7 +192,9 @@ test("TC-ED-07 saves a source of up to 262,144 characters", async ({ page }) => 
 
   await source.fill(`${largest}x`);
   await save.click();
-  await expect(alertsOf(page)).toHaveText("The test file is too long: it can be at most 262,144 characters.");
+  // Live validation may also show the same message in the Debug console; this checks the save's own alert.
+  const saveAlert = alertsOf(page).and(page.locator(':not([data-testid="debug"] *)'));
+  await expect(saveAlert).toHaveText("The test file is too long: it can be at most 262,144 characters.");
   await expect(state).toHaveText("Unsaved");
 });
 
