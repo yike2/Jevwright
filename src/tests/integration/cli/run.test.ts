@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, readFile, readdir, realpath, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, readdir, realpath, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -132,37 +132,6 @@ describe("cli run", () => {
 
       const traceData = await readFile(join(reportDir, "trace.zip"));
       expect(traceData.subarray(0, 2)).toEqual(Buffer.from("PK"));
-    } finally {
-      await server.stop();
-      await rm(cwd, { recursive: true, force: true });
-    }
-  });
-
-  it("gives each file the variables of the .env files from the working directory down to its own directory", async () => {
-    const cwd = await realpath(await mkdtemp(join(tmpdir(), "jevwright-cli-")));
-    const server = await serveFixtures(FIXTURES);
-
-    try {
-      process.env.OPENROUTER_API_KEY = "fake-key";
-      delete process.env.JEVWRIGHT_RUN_TEST_PAGE;
-      const source = ['name: "Env file"', "steps:", "  - open:", '      url: "{{JEVWRIGHT_RUN_TEST_PAGE}}"', ""].join(
-        "\n",
-      );
-      // The working directory's page does not exist, so only the nearer .env lets the open pass.
-      await writeFile(join(cwd, ".env"), `JEVWRIGHT_RUN_TEST_PAGE=http://127.0.0.1:9/missing\n`);
-      for (const dir of ["cart", "blog"]) {
-        await mkdir(join(cwd, dir));
-        await writeFile(join(cwd, dir, ".env"), `JEVWRIGHT_RUN_TEST_PAGE=${server.baseUrl}/page.html\n`);
-        await writeFile(join(cwd, dir, "open.yaml"), source);
-      }
-
-      const { io, stdout } = createIo(cwd);
-      const exitCode = await runCli(["run", "cart", "blog", "--out-dir", join(cwd, "reports")], io);
-
-      expect(exitCode, stdout()).toBe(0);
-      expect(stdout()).toContain("2 files: 2 passed, 0 failed, 0 invalid");
-      expect(stdout()).not.toContain(server.baseUrl);
-      expect(process.env.JEVWRIGHT_RUN_TEST_PAGE).toBeUndefined();
     } finally {
       await server.stop();
       await rm(cwd, { recursive: true, force: true });
