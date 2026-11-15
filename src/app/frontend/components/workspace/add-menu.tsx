@@ -33,11 +33,12 @@ export function AddMenu({ name, canAddFolder, onNewFolder, onNewTestFile, onUplo
 
   return (
     <DropdownMenu
+      onOpenChange={(open) => {
+        if (open) chosen.current = null;
+      }}
       onOpenChangeComplete={(open) => {
-        if (open) return;
-        const choice = chosen.current;
-        chosen.current = null;
-        choice?.action();
+        // The choice stays set until the menu opens again: the focus may go back after this runs, and must not then.
+        if (!open) chosen.current?.action();
       }}
     >
       <DropdownMenuTrigger
