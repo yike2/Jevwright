@@ -39,6 +39,7 @@ const NEUTRALS = [
   "input",
 ];
 const ROLES = ["destructive", "success", "warning", "info"];
+const SYNTAX = ["syntax-key", "syntax-string", "syntax-literal", "syntax-comment"];
 
 describe.each([":root", ".dark"] as const)("the %s tokens", (selector) => {
   const t = Object.fromEntries(Object.entries(tokens(selector)).map(([name, hex]) => [name, rgb(hex)])) as Record<
@@ -87,6 +88,12 @@ describe.each([":root", ".dark"] as const)("the %s tokens", (selector) => {
     expect(pair("code-foreground", "code")).toBeGreaterThanOrEqual(TEXT);
   });
 
+  // The YAML highlighting (design-system.md 2.1): every token color stays readable on the editor and its active line.
+  it.each(SYNTAX.map((token) => [token]))("keeps %s readable on the editor and its active line", (token) => {
+    expect(pair(token, "code")).toBeGreaterThanOrEqual(TEXT);
+    expect(ratio(t[token]!, tint(t.foreground!, t.code!, 0.08))).toBeGreaterThanOrEqual(TEXT);
+  });
+
   it.each(["background", "card", "popover", "sidebar", "code"].map((surface) => [surface]))(
     "keeps the scrollbar thumb visible on %s, and darker or brighter still on hover",
     (surface) => {
@@ -102,4 +109,25 @@ describe.each([":root", ".dark"] as const)("the %s tokens", (selector) => {
       expect(pair("ring", surface)).toBeGreaterThanOrEqual(NON_TEXT);
     },
   );
+});
+
+// One scrollbar style (design-system.md 2.9): defined once as a utility, applied to every element by the base layer,
+// so the editor, the consoles, the sheet and the sidebar tree scroll with the same bar.
+describe("the scrollbar style", () => {
+  const utility = /@utility scrollbar-thin \{\n([\s\S]*?)^\}/m.exec(css)?.[1] ?? "";
+
+  it("is one scrollbar-thin utility on the tokens", () => {
+    expect(utility).toContain("scrollbar-width: thin;");
+    expect(utility).toContain("scrollbar-color: var(--scrollbar-thumb) transparent;");
+    expect(utility).toContain("var(--scrollbar-thumb-hover)");
+  });
+
+  it("is applied to every element by the base layer", () => {
+    expect(css).toMatch(/^ {2}\* \{\n {4}@apply scrollbar-thin;\n {2}\}/m);
+  });
+
+  it("is not written anywhere else", () => {
+    const outside = css.replace(utility, "");
+    expect(outside).not.toMatch(/scrollbar-(width|color):|::-webkit-scrollbar/);
+  });
 });

@@ -1,9 +1,21 @@
-import { CircleCheck, CircleDashed, CircleX, Clock, LoaderCircle, type LucideIcon } from "lucide-react";
+import {
+  Check,
+  CircleCheck,
+  CircleDashed,
+  CircleDot,
+  CircleX,
+  Clock,
+  LoaderCircle,
+  type LucideIcon,
+} from "lucide-react";
 import { cn } from "cn";
 import { Badge } from "@/components/ui/badge";
 
-/** Every status the UI shows: a Run's, a Step's, and a Test File's latest Run (`none` = never run). */
-export type Status = "queued" | "running" | "passed" | "failed" | "pending" | "active" | "none";
+/**
+ * Every status the UI shows: a Run's, a Step's, a Test File's latest Run (`none` = never run), and an open file's
+ * `saved` or `unsaved` draft.
+ */
+export type Status = "queued" | "running" | "passed" | "failed" | "pending" | "active" | "none" | "saved" | "unsaved";
 
 type Look = { role: "success" | "destructive" | "warning" | "muted"; Icon: LucideIcon; spin?: boolean };
 
@@ -17,6 +29,8 @@ const LOOKS: Record<Status, Look> = {
   queued: { role: "muted", Icon: Clock },
   pending: { role: "muted", Icon: CircleDashed },
   none: { role: "muted", Icon: CircleDashed },
+  saved: { role: "muted", Icon: Check },
+  unsaved: { role: "warning", Icon: CircleDot },
 };
 
 const TEXT: Record<Look["role"], string> = {

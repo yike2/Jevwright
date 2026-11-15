@@ -18,6 +18,11 @@ export function runStatusLabel(status: Run["status"]): string {
   }
 }
 
+/** True for the statuses a Run ends with, `passed` and `failed`. */
+export function isFinalStatus(status: Run["status"]): boolean {
+  return status === "passed" || status === "failed";
+}
+
 export function stepStatusLabel(status: Step["status"]): string {
   switch (status) {
     case "pending":

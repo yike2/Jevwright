@@ -243,7 +243,8 @@ describeDb("workspace routes", () => {
       "3 Invalid files - fix the errors",
       "4 Jev - find and check by description",
     ]);
-    expect((await as.get(`/projects/${res.body.id}/variables`)).body.items).toEqual(["BASE", "SWAG_PASSWORD"]);
+    const variables = (await as.get(`/projects/${res.body.id}/variables`)).body.items;
+    expect(variables.map((variable: { name: string }) => variable.name)).toEqual(["BASE", "SWAG_PASSWORD"]);
   });
 
   it("answers 409 when the account already has a project named Quick Start, and adds nothing", async () => {
@@ -262,7 +263,7 @@ describeDb("workspace routes", () => {
     expect(tree[0].modules).toEqual([]);
   });
 
-  it("sets, lists by name only, and deletes Project Variables", async () => {
+  it("sets, lists with their values, and deletes Project Variables", async () => {
     const as = await client();
     const { project } = await workspace(as);
 
@@ -272,12 +273,18 @@ describeDb("workspace routes", () => {
 
     const listed = await as.get(`/projects/${project.id}/variables`);
     expect(listed.status).toBe(200);
-    expect(listed.body).toEqual({ items: ["BASE", "PASSWORD"] });
-    expect(JSON.stringify(listed.body)).not.toContain("hunter2");
+    expect(listed.body).toEqual({
+      items: [
+        { name: "BASE", value: "https://b.example" },
+        { name: "PASSWORD", value: "hunter2" },
+      ],
+    });
     expect((await db().variable.findFirstOrThrow({ where: { name: "BASE" } })).value).toBe("https://b.example");
 
     expect((await as.delete(`/projects/${project.id}/variables/PASSWORD`)).status).toBe(204);
-    expect((await as.get(`/projects/${project.id}/variables`)).body).toEqual({ items: ["BASE"] });
+    expect((await as.get(`/projects/${project.id}/variables`)).body).toEqual({
+      items: [{ name: "BASE", value: "https://b.example" }],
+    });
     expect((await as.delete(`/projects/${project.id}/variables/PASSWORD`)).status).toBe(404);
   });
 

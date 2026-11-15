@@ -37,6 +37,11 @@ export function testFileBaseName(name: string): string {
   return name.endsWith(".yaml") ? name.slice(0, -".yaml".length) : name;
 }
 
+/** The Test File name for an uploaded file: its name with `.yaml` in place of a `.yaml` or `.yml` extension. */
+export function uploadedTestFileName(fileName: string): string {
+  return toTestFileName(fileName.replace(/\.ya?ml$/i, ""));
+}
+
 export function initials(email: string): string {
   const local = email.split("@")[0] ?? "";
   return local.slice(0, 2).toUpperCase();

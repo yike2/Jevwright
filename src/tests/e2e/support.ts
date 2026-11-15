@@ -113,11 +113,67 @@ export async function waitForFinalStatus(page: Page): Promise<"Passed" | "Failed
   return (await status.textContent()) === "Status: Passed" ? "Passed" : "Failed";
 }
 
+export function sidebarOf(page: Page): Locator {
+  return page.getByRole("navigation", { name: "Projects", exact: true });
+}
+
+/** Clicks a sidebar "New …" button, types the name into the row it adds, and presses Enter; returns the input. */
+export async function createInSidebar(page: Page, opener: string, name: string): Promise<Locator> {
+  const sidebar = sidebarOf(page);
+  await sidebar.getByRole("button", { name: opener, exact: true }).click();
+  const input = sidebar.getByRole("textbox", { name: "Name", exact: true });
+  await input.fill(name);
+  await input.press("Enter");
+  return input;
+}
+
+export type Editor = {
+  source: Locator;
+  state: Locator;
+  save: Locator;
+  run: Locator;
+  debug: Locator;
+  output: Locator;
+  statusBar: Locator;
+};
+
+export function editorOf(page: Page): Editor {
+  return {
+    source: page.getByRole("textbox", { name: "Test file YAML", exact: true }),
+    state: page.getByRole("status", { name: "File state", exact: true }),
+    save: page.getByRole("button", { name: "Save", exact: true }),
+    run: page.getByRole("button", { name: "Run", exact: true }),
+    debug: page.getByRole("region", { name: "Debug", exact: true }),
+    output: page.getByRole("region", { name: "Output", exact: true }),
+    statusBar: page.getByRole("region", { name: "Status bar", exact: true }),
+  };
+}
+
+/**
+ * The editor's whole text, or null before the editor is on the page. CodeMirror renders only the lines in view, so
+ * this reads its document through the view CodeMirror 6 (6.43) keeps on the content element, the way its own
+ * `EditorView.findFromDOM` finds it.
+ */
+export async function sourceOf(page: Page): Promise<string | null> {
+  return page.evaluate(() => {
+    type Tile = { root?: { view?: { state: { doc: { toString(): string } } } } };
+    const content = document.querySelector(".cm-content") as (Element & { cmTile?: Tile }) | null;
+    const view = content?.cmTile?.root?.view;
+    return view ? view.state.doc.toString() : null;
+  });
+}
+
+/** The diagnostics the Debug console lists, as "Line <n>: <message>". */
+export function problemItemsOf(page: Page): Locator {
+  return editorOf(page).debug.getByRole("listitem").getByRole("button");
+}
+
+/** Opens the editor, clicks Run, opens the new Run's details full page, and waits for its final status (S5). */
 export async function runFromEditor(page: Page, testFileId: string): Promise<"Passed" | "Failed"> {
   await page.goto(`/files/${testFileId}`);
-  await page.getByRole("button", { name: "Run", exact: true }).click();
-  await expect(page.getByRole("status")).toHaveText("Run queued.");
-  await page.getByRole("link", { name: "View run" }).click();
+  await editorOf(page).run.click();
+  await editorOf(page).output.getByRole("button", { name: "Open run details", exact: true }).click();
+  await page.getByRole("dialog").getByRole("link", { name: "Open full page", exact: true }).click();
   await expect(page).toHaveURL(/\/runs\/[^/]+$/);
   return waitForFinalStatus(page);
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type MouseEvent } from "react";
 import { apiClient, type Run } from "@/lib/api";
 import { formatDuration, runStatusLabel } from "@/lib/runs";
 import { errorText } from "@/lib/format-error";
@@ -10,10 +10,13 @@ import { StatusIcon } from "@/components/workspace/status-badge";
 type RunListProps = {
   testFileId: string;
   reloadKey: number;
+  // Opens a Run's details in place; a click with a modifier key still opens the Run's own page.
+  onOpen: (runId: string) => void;
 };
 
-export function RunList({ testFileId, reloadKey }: RunListProps) {
-  const [runs, setRuns] = useState<Run[]>([]);
+/** A Test File's Run history, newest first (frontend.md 1.9). */
+export function RunList({ testFileId, reloadKey, onOpen }: RunListProps) {
+  const [runs, setRuns] = useState<Run[] | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -24,18 +27,9 @@ export function RunList({ testFileId, reloadKey }: RunListProps) {
 
       try {
         const response = await apiClient.listRuns(testFileId);
-
-        if (cancelled) {
-          return;
-        }
-
-        setRuns(response.items);
+        if (!cancelled) setRuns(response.items);
       } catch (error) {
-        if (cancelled) {
-          return;
-        }
-
-        setErrorMessage(errorText(error));
+        if (!cancelled) setErrorMessage(errorText(error));
       }
     };
 
@@ -46,24 +40,31 @@ export function RunList({ testFileId, reloadKey }: RunListProps) {
     };
   }, [testFileId, reloadKey]);
 
+  const open = (event: MouseEvent<HTMLAnchorElement>, runId: string) => {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+    event.preventDefault();
+    onOpen(runId);
+  };
+
   return (
-    <section aria-label="Runs" className="space-y-2 rounded-xl bg-card p-3 ring-1 ring-foreground/10">
-      <h2 className="font-heading font-semibold">Runs</h2>
+    <section aria-label="Runs" className="space-y-1">
+      <h3 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">History</h3>
       {errorMessage && (
         <p role="alert" className="text-destructive">
           {errorMessage}
         </p>
       )}
 
-      {!errorMessage && runs.length === 0 && <p className="text-muted-foreground">No runs yet</p>}
+      {!errorMessage && runs !== null && runs.length === 0 && <p className="text-muted-foreground">No runs yet</p>}
 
-      {!errorMessage && runs.length > 0 && (
+      {!errorMessage && runs !== null && runs.length > 0 && (
         <ul className="divide-y">
           {runs.map((run) => (
-            <li key={run.id} className="py-1.5">
+            <li key={run.id}>
               <Link
-                className="inline-flex items-center gap-2 rounded-sm underline-offset-4 hover:underline"
+                className="flex items-center gap-2 rounded-sm px-1 py-1.5 hover:bg-accent"
                 href={`/runs/${run.id}`}
+                onClick={(event) => open(event, run.id)}
               >
                 <StatusIcon status={run.status} />
                 {runStatusLabel(run.status)} · {new Date(run.createdAt).toLocaleString()} ·{" "}

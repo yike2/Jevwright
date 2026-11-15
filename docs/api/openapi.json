@@ -1464,7 +1464,7 @@
     },
     "/projects/{projectId}/variables": {
       "get": {
-        "summary": "List the Project Variable names; values are never returned",
+        "summary": "List the Project Variables with their values",
         "security": [
           {
             "bearer": []
@@ -1484,7 +1484,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Names",
+            "description": "Variables",
             "content": {
               "application/json": {
                 "schema": {
@@ -1493,8 +1493,21 @@
                     "items": {
                       "type": "array",
                       "items": {
-                        "type": "string",
-                        "pattern": "^[A-Z_][A-Z0-9_]*$"
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "pattern": "^[A-Z_][A-Z0-9_]*$"
+                          },
+                          "value": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "value"
+                        ],
+                        "additionalProperties": false
                       }
                     }
                   },

@@ -3,6 +3,7 @@ import {
   type Account,
   addTestFile,
   API_URL,
+  createInSidebar,
   fixture,
   runFromEditor,
   runToEnd,
@@ -76,19 +77,15 @@ test("TC-SEC-05 shows HTML in Project and Module names as text", async ({ page }
   });
   await signUp(page);
   await page.goto(WORKSPACE);
-  const sidebar = page.getByRole("navigation", { name: "Projects", exact: true });
 
   // Test File names allow no < or > at all (TC-WS-09), so only Project and Module names can hold HTML.
-  for (const [opener, dialogName, name] of [
-    ["New project", "New project", html],
-    [`New module in ${html}`, "New module", html],
-    [`New test file in ${html}`, "New test file", "plain"],
+  for (const [opener, name] of [
+    ["New project", html],
+    [`New module in ${html}`, html],
+    [`New test file in ${html}`, "plain"],
   ] as const) {
-    await sidebar.getByRole("button", { name: opener, exact: true }).click();
-    const dialog = page.getByRole("dialog", { name: dialogName, exact: true });
-    await dialog.getByLabel("Name").fill(name);
-    await dialog.getByRole("button", { name: "Create", exact: true }).click();
-    await expect(dialog).toBeHidden();
+    const input = await createInSidebar(page, opener, name);
+    await expect(input).toHaveCount(0);
   }
 
   await expect(page.getByRole("heading", { name: "plain.yaml", exact: true })).toBeVisible();
