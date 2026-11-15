@@ -217,7 +217,7 @@ describe("execute", () => {
       await run(test, {}, { vars, jev });
 
       expect(sent.length).toBeGreaterThan(0);
-      expect(JSON.stringify(sent)).not.toMatch(/s3ssion|t0ken/);
+      expect(JSON.stringify(sent)).not.toMatch(/s3ssion|t0ken|e2e|standard_user/);
     });
   });
 

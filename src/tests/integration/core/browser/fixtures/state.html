@@ -11,15 +11,28 @@
 <p id="local"></p>
 <p id="session"></p>
 <p id="cookie"></p>
+<p id="header"></p>
+<p id="fetch-header"></p>
 <a id="new-tab" href="/state.html?tab=new" target="_blank" rel="noopener">New tab</a>
+<button id="popup" onclick="window.open('/state.html?tab=popup')">Popup</button>
+<a id="cross-link" href="/state.html">Cross link</a>
 <button id="change" onclick="localStorage.setItem('authToken', 'changed'); sessionStorage.setItem('tabId', 'changed')">
   Change
 </button>
+<script src="/header.js"></script>
 <script>
   document.getElementById("local").textContent = String(first.local);
   document.getElementById("session").textContent = String(first.session);
   document.getElementById("cookie").textContent = first.cookie || "(none)";
-  // ?other=<url> requests a resource from another origin.
-  const other = new URLSearchParams(location.search).get("other");
-  if (other) fetch(other, { mode: "no-cors" });
+  const params = new URLSearchParams(location.search);
+  const link = params.get("link");
+  if (link) document.getElementById("cross-link").href = link;
+  // ?other=<url> fetches from this origin and from another origin.
+  const other = params.get("other");
+  if (other) {
+    fetch("/echo")
+      .then((res) => res.text())
+      .then((text) => (document.getElementById("fetch-header").textContent = text));
+    fetch(other, { mode: "no-cors" });
+  }
 </script>

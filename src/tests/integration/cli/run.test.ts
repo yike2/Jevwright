@@ -179,4 +179,91 @@ describe("cli run", () => {
       await rm(cwd, { recursive: true, force: true });
     }
   });
+
+  it("resolves browser state Variables from .env so the page reads them, and redacts their values in stdout and report.json", async () => {
+    const cwd = await realpath(await mkdtemp(join(tmpdir(), "jevwright-cli-")));
+    const server = await serveFixtures();
+    const envKeys = ["BASE", "API_TOKEN", "SESSION_COOKIE", "LOCAL_TOKEN", "TAB_TOKEN"] as const;
+
+    try {
+      delete process.env.OPENROUTER_API_KEY;
+      for (const key of envKeys) delete process.env[key];
+
+      const envContent = [
+        "OPENROUTER_API_KEY=fake-key",
+        `BASE=${server.baseUrl}`,
+        "API_TOKEN=cli-header-secret",
+        "SESSION_COOKIE=cli-cookie-secret",
+        "LOCAL_TOKEN=cli-local-secret",
+        "TAB_TOKEN=cli-tab-secret",
+        "",
+      ].join("\n");
+      await writeFile(join(cwd, ".env"), envContent);
+
+      const headerBlock = [
+        'baseUrl: "{{BASE}}"',
+        "timeoutMs: 1000",
+        "headers:",
+        '  Authorization: "Bearer {{API_TOKEN}}"',
+        "cookies:",
+        '  session: "{{SESSION_COOKIE}}"',
+        "localStorage:",
+        '  authToken: "{{LOCAL_TOKEN}}"',
+        "sessionStorage:",
+        '  tabId: "{{TAB_TOKEN}}"',
+      ].join("\n");
+
+      const passSource = [
+        'name: "Passing browser state"',
+        headerBlock,
+        "steps:",
+        '  - open: { url: "/state.html" }',
+        '  - assert: { selector: "#header", text: "Bearer {{API_TOKEN}}" }',
+        '  - assert: { selector: "#cookie", text: "session={{SESSION_COOKIE}}" }',
+        '  - assert: { selector: "#local", text: "{{LOCAL_TOKEN}}" }',
+        '  - assert: { selector: "#session", text: "{{TAB_TOKEN}}" }',
+        "",
+      ].join("\n");
+      await writeFile(join(cwd, "pass-state.yaml"), passSource);
+
+      const failSource = [
+        'name: "Failing browser state"',
+        headerBlock,
+        "steps:",
+        '  - open: { url: "/state.html" }',
+        '  - assert: { selector: "body", text: "nothing" }',
+        "",
+      ].join("\n");
+      await writeFile(join(cwd, "fail-state.yaml"), failSource);
+
+      const outDir = join(cwd, "reports");
+      const { io, stdout, stderr } = createIo(cwd);
+      const exitCode = await runCli(["run", "pass-state.yaml", "fail-state.yaml", "--out-dir", outDir], io);
+
+      expect(exitCode).toBe(1);
+      expect(stderr()).toBe("");
+      expect(stdout()).toMatch(/\{\{LOCAL_TOKEN\}\}.*\{\{TAB_TOKEN\}\}.*\{\{SESSION_COOKIE\}\}.*\{\{API_TOKEN\}\}/s);
+      expect(stdout()).not.toMatch(/cli-header-secret|cli-cookie-secret|cli-local-secret|cli-tab-secret/);
+
+      const [timestampDir] = await readdir(outDir);
+      const passReport = JSON.parse(await readFile(join(outDir, timestampDir!, "pass-state", "report.json"), "utf8"));
+      expect(passReport.status).toBe("passed");
+      expect(passReport.browserState).toEqual({
+        headers: ["Authorization"],
+        cookies: ["session"],
+        localStorage: ["authToken"],
+        sessionStorage: ["tabId"],
+      });
+
+      const failReport = JSON.parse(await readFile(join(outDir, timestampDir!, "fail-state", "report.json"), "utf8"));
+      expect(failReport.status).toBe("failed");
+      expect(JSON.stringify({ passReport, failReport })).not.toMatch(
+        /cli-header-secret|cli-cookie-secret|cli-local-secret|cli-tab-secret/,
+      );
+    } finally {
+      for (const key of envKeys) delete process.env[key];
+      await server.stop();
+      await rm(cwd, { recursive: true, force: true });
+    }
+  });
 });

@@ -2,6 +2,7 @@ import { createServer, type IncomingHttpHeaders, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { StepEvent } from "@/core/executor/index.js";
+import type { JevClient } from "@/core/jev/index.js";
 import { runTest } from "@/core/pipeline/index.js";
 import type { Report, ReportBundle } from "@/core/report/index.js";
 import { serveDemoApp } from "../../../benchmark/server.js";
@@ -48,8 +49,8 @@ beforeEach(() => {
   toOther.length = 0;
 });
 
-// Runs `source` through the pipeline by selector only; returns the saved Report and every Step event.
-async function run(source: string, vars: Record<string, string>) {
+// Runs `source` through the pipeline; returns the saved Report and every Step event.
+async function run(source: string, vars: Record<string, string>, jev: JevClient = throwingJev) {
   const bundles: ReportBundle[] = [];
   const events: StepEvent[] = [];
   const result = await runTest(
@@ -57,7 +58,7 @@ async function run(source: string, vars: Record<string, string>) {
     {
       headed: false,
       vars,
-      jev: throwingJev,
+      jev,
       store: { save: async (bundle) => void bundles.push(bundle) },
       onEvent: (event) => events.push(event),
     },
@@ -133,35 +134,95 @@ steps:
     expect(reasons(report)).toEqual([]);
   });
 
-  it("redacts resolved values in reasons, events, and the Report, which records only the names", async () => {
+  it("resolves Variables in headers, short- and full-form cookies, localStorage, and sessionStorage, read by the page", async () => {
+    const { report } = await run(
+      `
+name: "Variables in browser state"
+baseUrl: "{{BASE}}"
+headers:
+  Authorization: "Bearer {{HEADER_TOKEN}}"
+cookies:
+  user: "{{COOKIE_USER}}"
+  session:
+    value: "{{COOKIE_SESSION}}"
+    domain: "{{COOKIE_DOMAIN}}"
+localStorage:
+  authToken: "{{LOCAL_TOKEN}}"
+sessionStorage:
+  tabId: "{{TAB_ID}}"
+steps:
+  - open: { url: "/state.html?other={{OTHER}}/plain.html" }
+  - assert: { selector: "#header", text: "Bearer {{HEADER_TOKEN}}" }
+  - assert: { selector: "#fetch-header", text: "Bearer {{HEADER_TOKEN}}" }
+  - assert: { selector: "#cookie", text: "user={{COOKIE_USER}}; session={{COOKIE_SESSION}}" }
+  - assert: { selector: "#local", text: "{{LOCAL_TOKEN}}" }
+  - assert: { selector: "#session", text: "{{TAB_ID}}" }
+  - click: { selector: "#new-tab" }
+  - switchTab: { url: "**/state.html?tab=new" }
+  - assert: { selector: "#session", text: "{{TAB_ID}}" }
+`,
+      {
+        BASE: `http://app.shop.localhost:${fixtures.port}`,
+        OTHER: other.baseUrl,
+        HEADER_TOKEN: "h3ader-value",
+        COOKIE_USER: "standard_user",
+        COOKIE_SESSION: "s3ssion-value",
+        COOKIE_DOMAIN: ".shop.localhost",
+        LOCAL_TOKEN: "l0cal-value",
+        TAB_ID: "t4b-value",
+      },
+    );
+
+    expect(reasons(report)).toEqual([]);
+    expect(report.status).toBe("passed");
+  });
+
+  it("redacts resolved values of every field in step reasons, events, and the Report, and never sends them to Jev", async () => {
+    const jevCalls: unknown[] = [];
+    const jev: JevClient = {
+      bbox: async (...args: unknown[]) => (jevCalls.push(args), { ok: false as const, reason: "no" }),
+      choice: async (...args: unknown[]) => (jevCalls.push(args), { ok: false as const, reason: "no" }),
+      noul: async (prompt) => (jevCalls.push(prompt), { ok: true as const, data: { probability: 0.1 } }),
+    };
     const { report, events } = await run(
       `
 name: "Redaction"
 baseUrl: "{{BASE}}"
 timeoutMs: 1000
 headers:
-  Authorization: "Bearer {{TOKEN}}"
+  Authorization: "Bearer {{HEADER_TOKEN}}"
 cookies:
-  session: "{{SESSION}}"
+  session: "{{COOKIE_SESSION}}"
 localStorage:
-  authToken: "{{TOKEN}}"
+  authToken: "{{LOCAL_TOKEN}}"
 sessionStorage:
-  tabId: "{{TAB}}"
+  tabId: "{{TAB_ID}}"
 steps:
   - open: { url: "/state.html" }
-  - assert: { selector: "#cookie", text: "nothing" }
+  - assert: { selector: "body", text: "nothing", statement: "The page is blank" }
 `,
-      { BASE: fixtures.baseUrl, TOKEN: "t0ken-value", SESSION: "s3ssion-value", TAB: "tab-value" },
+      {
+        BASE: fixtures.baseUrl,
+        HEADER_TOKEN: "h3ader-value",
+        COOKIE_SESSION: "s3ssion-value",
+        LOCAL_TOKEN: "l0cal-value",
+        TAB_ID: "t4b-value",
+      },
+      jev,
     );
 
-    expect(reasons(report)).toEqual([expect.stringContaining('"session={{SESSION}}"')]);
+    expect(reasons(report)).toEqual([
+      expect.stringMatching(/\{\{LOCAL_TOKEN\}\}.*\{\{TAB_ID\}\}.*\{\{COOKIE_SESSION\}\}.*\{\{HEADER_TOKEN\}\}/s),
+    ]);
+    expect(jevCalls).toHaveLength(1);
+    expect(JSON.stringify(jevCalls)).not.toMatch(/h3ader-value|s3ssion-value|l0cal-value|t4b-value/);
     expect(report.browserState).toEqual({
       headers: ["Authorization"],
       cookies: ["session"],
       localStorage: ["authToken"],
       sessionStorage: ["tabId"],
     });
-    expect(JSON.stringify(report)).not.toMatch(/t0ken-value|s3ssion-value|tab-value/);
-    expect(JSON.stringify(events)).not.toMatch(/t0ken-value|s3ssion-value|tab-value/);
+    expect(JSON.stringify(report)).not.toMatch(/h3ader-value|s3ssion-value|l0cal-value|t4b-value/);
+    expect(JSON.stringify(events)).not.toMatch(/h3ader-value|s3ssion-value|l0cal-value|t4b-value/);
   });
 });
