@@ -536,7 +536,7 @@ Lint, format, and type-check coverage include the frontend package:
 - `pnpm format` and `pnpm format:check` cover the frontend source files in the package
 - `pnpm typecheck` includes the frontend TypeScript project
 
-`apiClient` reads its base URL from `NEXT_PUBLIC_API_URL` (inlined at build time), falling back to `http://127.0.0.1:4000/api/v1`. The frontend environment file sets `NEXT_PUBLIC_API_URL=http://127.0.0.1:4000/api/v1`; use `127.0.0.1` because the backend listens on IPv4 only (`docs/deploy/backend-local.md`). The browser must open `http://localhost:3000`, not `127.0.0.1:3000`, because the backend CORS default is `http://localhost:3000`.
+`apiClient` reads its base URL from `NEXT_PUBLIC_API_URL` (inlined at build time), falling back to `http://127.0.0.1:4000/api/v1`. The frontend environment file sets `NEXT_PUBLIC_API_URL=http://127.0.0.1:4000/api/v1`; use `127.0.0.1` because the backend listens on IPv4 only (`docs/deploy/local.md`). The browser must open `http://localhost:3000`, not `127.0.0.1:3000`, because the backend accepts browser calls from `CORS_ORIGIN` only, which `.env.example` sets to `http://localhost:3000`.
 
 `next.config.ts` maps `.js` imports to `.ts`/`.tsx` (`webpack.resolve.extensionAlias`), because lib files use `.js` relative imports for the root NodeNext typecheck.
 

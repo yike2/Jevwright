@@ -62,7 +62,7 @@ Each case has an ID `TC-<AREA>-<nn>`, a title, its priority, execution type, the
 
 | Part | How |
 | ---- | --- |
-| PostgreSQL | `docker compose -f compose.dev.yaml up -d postgres`, then `pnpm --filter @jevwright/backend exec prisma migrate deploy` (`docs/deploy/backend-local.md`) |
+| PostgreSQL | `docker compose -f compose.dev.yaml up -d postgres`, then `pnpm --filter @jevwright/backend exec prisma migrate deploy` (`docs/deploy/local.md`) |
 | Backend | `pnpm backend` (dev mode, `RUN_CONCURRENCY=1`), `http://127.0.0.1:4000` |
 | Frontend | `pnpm frontend`, `http://localhost:3000` |
 | Demo App | `http://127.0.0.1:8080`, served as in `docs/deploy/demo-app.md` 6. A dev-mode backend's Runs may open local addresses |
