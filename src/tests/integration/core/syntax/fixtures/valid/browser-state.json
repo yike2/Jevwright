@@ -1,0 +1,23 @@
+{
+  "name": "Cart",
+  "baseUrl": "https://shop.example.com",
+  "timeoutMs": 15000,
+  "runTimeoutMs": 600000,
+  "headers": { "Authorization": "Bearer {{API_TOKEN}}", "X-Tenant": "acme", "X-Empty": "" },
+  "cookies": {
+    "session-username": { "value": "standard_user" },
+    "visits": { "value": "3" },
+    "session": {
+      "value": "{{SESSION}}",
+      "domain": ".example.com",
+      "path": "/",
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "None"
+    },
+    "theme": { "value": "" }
+  },
+  "localStorage": { "onboardingDone": "true", "authToken": "{{API_TOKEN}}" },
+  "sessionStorage": { "tabId": "e2e" },
+  "steps": [{ "line": 25, "action": "open", "url": "/inventory.html" }]
+}

@@ -24,6 +24,15 @@ export type Report = {
   steps: ReportStep[];
   trace?: string;
   error?: RunError;
+  browserState?: BrowserStateNames;
+};
+
+// The names of the headers, cookies, and storage entries a Run set, never their values.
+export type BrowserStateNames = {
+  headers?: string[];
+  cookies?: string[];
+  localStorage?: string[];
+  sessionStorage?: string[];
 };
 
 export type ReportFile = { path: string; data: Buffer };

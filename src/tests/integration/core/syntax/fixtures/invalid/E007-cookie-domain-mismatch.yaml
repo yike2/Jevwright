@@ -1,0 +1,17 @@
+name: "Domain"
+baseUrl: "https://shop.example.com"
+cookies:
+  a:
+    value: "x"
+    domain: "other.com"
+  b:
+    value: "x"
+    domain: "app.shop.example.com"
+  c:
+    value: "x"
+    domain: ".Example.com"
+  d:
+    value: "x"
+    domain: "ample.com"
+steps:
+  - reload: {}

@@ -1,0 +1,25 @@
+<!doctype html>
+<title>Browser state</title>
+<script>
+  // The first script on the page: what it reads was set before the page started.
+  const first = {
+    local: localStorage.getItem("authToken"),
+    session: sessionStorage.getItem("tabId"),
+    cookie: document.cookie,
+  };
+</script>
+<p id="local"></p>
+<p id="session"></p>
+<p id="cookie"></p>
+<a id="new-tab" href="/state.html?tab=new" target="_blank" rel="noopener">New tab</a>
+<button id="change" onclick="localStorage.setItem('authToken', 'changed'); sessionStorage.setItem('tabId', 'changed')">
+  Change
+</button>
+<script>
+  document.getElementById("local").textContent = String(first.local);
+  document.getElementById("session").textContent = String(first.session);
+  document.getElementById("cookie").textContent = first.cookie || "(none)";
+  // ?other=<url> requests a resource from another origin.
+  const other = new URLSearchParams(location.search).get("other");
+  if (other) fetch(other, { mode: "no-cors" });
+</script>

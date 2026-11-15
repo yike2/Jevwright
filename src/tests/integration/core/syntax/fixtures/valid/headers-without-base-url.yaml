@@ -1,0 +1,5 @@
+name: "Headers without a baseUrl"
+headers:
+  X-Tenant: "acme"
+steps:
+  - open: { url: "https://example.com/" }

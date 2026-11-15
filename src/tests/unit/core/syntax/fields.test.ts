@@ -133,4 +133,21 @@ describe("FieldReader", () => {
       expect(positions(diagnostics)).toEqual([{ code: "E004", line: 3 }]);
     });
   });
+
+  describe("keys", () => {
+    it("lists every key with its name and line, numbers by their source text", () => {
+      const { reader } = readerFor('headers:\n  X-Tenant: "acme"\n  030: "x"\n');
+
+      expect(reader.keys().map(({ name, node }) => ({ name, line: reader.line(node) }))).toEqual([
+        { name: "X-Tenant", line: 2 },
+        { name: "030", line: 3 },
+      ]);
+    });
+
+    it("gives no name for a key that is a list or an object, and follows an aliased key", () => {
+      const { reader } = readerFor('headers:\n  ? [a]\n  : "x"\n  &k X-A: "1"\n  *k : "2"\n');
+
+      expect(reader.keys().map(({ name }) => name)).toEqual([undefined, "X-A", "X-A"]);
+    });
+  });
 });

@@ -131,6 +131,23 @@ describe("createRedact", () => {
     );
   });
 
+  it("redacts Variables used in the headers, cookies, and storage", () => {
+    const redact = createRedact(
+      {
+        ...testCase({ line: 1, action: "back" }),
+        headers: { "X-Mail": "{{EMAIL}}" },
+        cookies: { session: { value: "{{PASSWORD}}", domain: "{{DOMAIN}}" } },
+        localStorage: { a: "{{LOCAL}}" },
+        sessionStorage: { b: "{{SESSION}}" },
+      },
+      { ...vars, DOMAIN: "demo.test", LOCAL: "l0cal", SESSION: "s3ssion" },
+    );
+
+    expect(redact("student@x.com s3cret demo.test l0cal s3ssion")).toBe(
+      "{{EMAIL}} {{PASSWORD}} {{DOMAIN}} {{LOCAL}} {{SESSION}}",
+    );
+  });
+
   it("replaces the longest value first when one value contains another", () => {
     const redact = createRedact(testCase({ line: 1, action: "assert", statement: "{{SHORT}} {{LONG}}" }), {
       SHORT: "abc",

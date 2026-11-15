@@ -1,0 +1,12 @@
+name: "SameSite None"
+baseUrl: "https://example.com"
+cookies:
+  a:
+    value: "x"
+    sameSite: "None"
+  b:
+    value: "x"
+    sameSite: "None"
+    secure: false
+steps:
+  - reload: {}

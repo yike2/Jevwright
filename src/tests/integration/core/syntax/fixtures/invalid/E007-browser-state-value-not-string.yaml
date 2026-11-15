@@ -1,0 +1,14 @@
+name: "Values"
+baseUrl: "https://example.com"
+headers:
+  X-List: ["a"]
+  X-Null:
+localStorage:
+  settings: { theme: "dark" }
+sessionStorage:
+  tabs: [1]
+cookies:
+  session: ["x"]
+  empty:
+steps:
+  - reload: {}

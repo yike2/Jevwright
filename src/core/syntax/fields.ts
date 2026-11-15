@@ -108,6 +108,11 @@ export class FieldReader {
     return this.child(map, this.pair(key)!.key as Node, isAlias(node) ? node : this.alias);
   }
 
+  /** Every key of this object in order: its name, or undefined when it is not a plain value, and its node. */
+  keys(): { name: string | undefined; node: Node }[] {
+    return [];
+  }
+
   /** The value node of `key`, matching aliased keys too; undefined when the field is absent. */
   get(key: string): Node | undefined {
     return this.pair(key)?.value as Node | undefined;

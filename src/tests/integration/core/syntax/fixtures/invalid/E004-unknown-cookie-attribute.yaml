@@ -1,0 +1,8 @@
+name: "Unknown attribute"
+baseUrl: "https://example.com"
+cookies:
+  session:
+    value: "x"
+    expires: 3600
+steps:
+  - reload: {}

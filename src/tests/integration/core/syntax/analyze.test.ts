@@ -44,4 +44,50 @@ describe("analyze", () => {
     expect(diagnostics).toEqual([{ code: "E006", line: 3, message: expect.stringMatching(/key/) }]);
     expect(diagnostics[0].message).not.toMatch(/parameters/);
   });
+
+  describe("browser state messages", () => {
+    const messages = (source: string) => analyze(source).diagnostics.map(({ code, message }) => ({ code, message }));
+
+    it("names the baseUrl whose host a cookie domain must match", () => {
+      expect(
+        messages(
+          'name: a\nbaseUrl: "https://shop.example.com"\ncookies:\n  s: { value: "x", domain: "other.com" }\nsteps:\n  - reload: {}\n',
+        ),
+      ).toEqual([
+        {
+          code: "E007",
+          message:
+            'Cookie "s" is for "other.com", which is not the host of the baseUrl "https://shop.example.com" or a parent of it',
+        },
+      ]);
+    });
+
+    it("says why cookies and storage need a baseUrl", () => {
+      expect(messages('name: a\nlocalStorage:\n  k: "v"\nsteps:\n  - reload: {}\n')).toEqual([
+        { code: "E008", message: '"localStorage" needs a "baseUrl": it is set for the baseUrl\'s origin' },
+      ]);
+    });
+
+    it("says what a header or cookie name may hold", () => {
+      expect(
+        messages(
+          'name: a\nbaseUrl: "https://example.com"\nheaders:\n  "X Tenant": "acme"\ncookies:\n  "": "x"\nsteps:\n  - reload: {}\n',
+        ),
+      ).toEqual([
+        {
+          code: "E009",
+          message: 'Header name "X Tenant" is not valid: use letters, digits, and - _ . ! # $ % & \' * + ^ ` | ~',
+        },
+        { code: "E009", message: "Cookie names must not be empty" },
+      ]);
+    });
+
+    it("says that sameSite None needs secure", () => {
+      expect(
+        messages(
+          'name: a\nbaseUrl: "https://example.com"\ncookies:\n  s: { value: "x", sameSite: "None" }\nsteps:\n  - reload: {}\n',
+        ),
+      ).toEqual([{ code: "E008", message: '"sameSite: None" needs "secure: true"' }]);
+    });
+  });
 });

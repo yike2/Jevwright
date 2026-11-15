@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { LaunchOptions } from "@/core/browser/index.js";
 import { execute, type ExecuteOptions, type StepEvent } from "@/core/executor/index.js";
+import type { JevClient } from "@/core/jev/index.js";
 import type { Step, TestCase } from "@/core/syntax/index.js";
 import { failed, fakeAdapter, PNG, throwingJev, TRACE } from "./fake-adapter.js";
 
@@ -124,6 +125,100 @@ describe("execute", () => {
       { type: "started", step: { index: 0, line: 3, action: "open" } },
       { type: "finished", result: result.steps[0] },
     ]);
+  });
+
+  describe("browser state", () => {
+    const state: Partial<TestCase> = {
+      baseUrl: "{{BASE}}",
+      headers: { Authorization: "Bearer {{TOKEN}}" },
+      cookies: {
+        "session-username": { value: "standard_user" },
+        session: { value: "{{SESSION}}", domain: ".demo.test", httpOnly: true },
+      },
+      localStorage: { authToken: "{{TOKEN}}" },
+      sessionStorage: { tabId: "e2e" },
+    };
+    const vars = { BASE: "https://shop.demo.test", TOKEN: "t0ken", SESSION: "s3ssion" };
+
+    it("launches the browser with the headers, cookies, and storage, their Variables filled in", async () => {
+      const { launches } = await run(testCase(state), {}, { vars });
+
+      expect(launches).toEqual([
+        {
+          headed: false,
+          baseUrl: "https://shop.demo.test",
+          timeoutMs: 1000,
+          headers: { Authorization: "Bearer t0ken" },
+          cookies: {
+            "session-username": { value: "standard_user" },
+            session: { value: "s3ssion", domain: ".demo.test", httpOnly: true },
+          },
+          localStorage: { authToken: "t0ken" },
+          sessionStorage: { tabId: "e2e" },
+        },
+      ]);
+    });
+
+    it("fails the first step without launching when a Variable in the browser state is missing", async () => {
+      const { result, launches } = await run(testCase(state), {}, { vars: { BASE: vars.BASE } });
+
+      expect(launches).toEqual([]);
+      expect(result.steps.map(({ status }) => status)).toEqual(["failed", "pending", "pending"]);
+      expect(result.steps[0]).toMatchObject({ reason: "Variables {{TOKEN}}, {{SESSION}} are not set", dialogs: [] });
+    });
+
+    it("lists a missing baseUrl Variable before the browser state's", async () => {
+      const { result } = await run(testCase(state), {}, { vars: { TOKEN: "t0ken", SESSION: "s3ssion" } });
+
+      expect(result.steps[0]).toMatchObject({ reason: "Variable {{BASE}} is not set" });
+    });
+
+    it("fails the first step without launching when a cookie domain from a Variable does not match the baseUrl", async () => {
+      const test = testCase({ ...state, cookies: { session: { value: "{{SESSION}}", domain: "{{DOMAIN}}" } } });
+
+      const { result, launches } = await run(test, {}, { vars: { ...vars, DOMAIN: "other.test" } });
+
+      expect(launches).toEqual([]);
+      expect(result.steps[0]).toMatchObject({
+        status: "failed",
+        reason:
+          'Cookie "session" is for "{{DOMAIN}}", which is not the host of the baseUrl "{{BASE}}" or a parent of it',
+      });
+    });
+
+    it("fails the first step when the baseUrl from a Variable is not a URL and cookies need its host", async () => {
+      const { result, launches } = await run(testCase(state), {}, { vars: { ...vars, BASE: "shop" } });
+
+      expect(launches).toEqual([]);
+      expect(result.steps[0]).toMatchObject({ status: "failed", reason: '"baseUrl" is not a valid URL: "{{BASE}}"' });
+    });
+
+    it("redacts the values of browser state Variables in reasons and events", async () => {
+      const { result, events } = await run(
+        testCase(state),
+        { perform: () => failed("Cookie s3ssion and token t0ken were rejected") },
+        { vars },
+      );
+
+      const reason = "Cookie {{SESSION}} and token {{TOKEN}} were rejected";
+      expect(result.steps[0]).toMatchObject({ status: "failed", reason });
+      expect(JSON.stringify(events)).not.toMatch(/s3ssion|t0ken/);
+    });
+
+    it("never sends the browser state values to Jev", async () => {
+      const sent: unknown[] = [];
+      const jev: JevClient = {
+        bbox: async (...args: unknown[]) => (sent.push(args), { ok: false as const, reason: "no" }),
+        choice: async (...args: unknown[]) => (sent.push(args), { ok: false as const, reason: "no" }),
+        noul: async (...args: unknown[]) => (sent.push(args), { ok: false as const, reason: "no" }),
+      };
+      const test = testCase({ ...state, steps: [{ line: 3, action: "assert", statement: "The cart is empty" }] });
+
+      await run(test, {}, { vars, jev });
+
+      expect(sent.length).toBeGreaterThan(0);
+      expect(JSON.stringify(sent)).not.toMatch(/s3ssion|t0ken/);
+    });
   });
 
   it("returns no Step results for a TestCase without steps, even with a missing baseUrl Variable", async () => {

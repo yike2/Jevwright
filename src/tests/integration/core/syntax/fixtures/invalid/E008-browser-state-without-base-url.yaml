@@ -1,0 +1,10 @@
+name: "No baseUrl"
+cookies:
+  a: "x"
+localStorage:
+  b: "y"
+sessionStorage: {}
+headers:
+  X-A: "z"
+steps:
+  - reload: {}

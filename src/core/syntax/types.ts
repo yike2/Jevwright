@@ -39,12 +39,27 @@ export type StepBody =
 // `line` is the step's line in the source file, used for errors and reports.
 export type Step = { line: number } & StepBody;
 
+export type SameSite = "Strict" | "Lax" | "None";
+// A short-form cookie (`name: "value"`) has only `value`.
+export type Cookie = {
+  value: string;
+  domain?: string;
+  path?: string;
+  httpOnly?: boolean;
+  secure?: boolean;
+  sameSite?: SameSite;
+};
+
 export type TestCase = {
   name: string;
   description?: string;
   baseUrl?: string;
   timeoutMs: number;
   runTimeoutMs: number;
+  headers?: Record<string, string>;
+  cookies?: Record<string, Cookie>;
+  localStorage?: Record<string, string>;
+  sessionStorage?: Record<string, string>;
   steps: Step[];
 };
 

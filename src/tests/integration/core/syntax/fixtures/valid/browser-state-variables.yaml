@@ -1,0 +1,12 @@
+name: "State with a Variable baseUrl"
+baseUrl: "{{BASE}}"
+cookies:
+  session:
+    value: "{{SESSION}}"
+    domain: ".example.com"
+  tenant:
+    value: "acme"
+    domain: "{{COOKIE_DOMAIN}}"
+localStorage: {}
+steps:
+  - open: { url: "/" }
