@@ -7,7 +7,9 @@ import {
   fileStateLabel,
   formatDiagnostic,
   hasNewDiagnostics,
+  DEFAULT_CONSOLE_SPLIT,
   openConsole,
+  parseConsoleSplit,
   parseConsolesOpen,
   problemsSummary,
   toggleConsole,
@@ -168,5 +170,26 @@ describe("parseConsolesOpen", () => {
     ["a value that is not a boolean", '{"debug":"yes","output":true}'],
   ])("opens both for %s", (_name, stored) => {
     expect(parseConsolesOpen(stored)).toEqual(both);
+  });
+});
+
+describe("parseConsoleSplit", () => {
+  it("reads a stored share", () => {
+    expect(parseConsoleSplit("62.5")).toBe(62.5);
+  });
+
+  it("splits evenly by default", () => {
+    expect(DEFAULT_CONSOLE_SPLIT).toBe(50);
+  });
+
+  it.each([
+    ["nothing", null],
+    ["text that is not a number", "wide"],
+    ["an empty text", ""],
+    ["a share below 10", "5"],
+    ["a share above 90", "95"],
+    ["a layout object", '{"debug":60,"output":40}'],
+  ])("splits evenly for %s", (_name, stored) => {
+    expect(parseConsoleSplit(stored)).toBe(50);
   });
 });

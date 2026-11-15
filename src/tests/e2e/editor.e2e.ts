@@ -223,11 +223,13 @@ test("TC-ED-12 fills the window: sidebar, editor and consoles edge to edge, abou
   expect(Math.abs(debugBox.x + debugBox.width - 1366)).toBeLessThanOrEqual(1);
   expect(Math.abs(editor.width - (1366 - sidebar.width - debugBox.width))).toBeLessThanOrEqual(3);
   expect(editor.width / (editor.width + debugBox.width)).toBeCloseTo(0.6, 1);
-  // Debug on top, Output below, sharing the column evenly; only the editor | consoles split has a handle.
+  // Debug on top, Output below, sharing the column evenly by default.
   expect(outputBox.y).toBeGreaterThan(debugBox.y);
   expect(Math.abs(outputBox.height - debugBox.height)).toBeLessThanOrEqual(3);
-  await expect(page.getByRole("separator")).toHaveCount(2);
-  await expect(page.getByRole("separator", { name: "Resize consoles" })).toHaveCount(1);
+  // Three handles: the sidebar's, editor | consoles, and Debug / Output while both consoles are open.
+  await expect(page.getByRole("separator")).toHaveCount(3);
+  await expect(page.getByRole("separator", { name: "Resize consoles", exact: true })).toHaveCount(1);
+  await expect(page.getByRole("separator", { name: "Resize Debug and Output consoles", exact: true })).toHaveCount(1);
   // The page itself never scrolls.
   expect(await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight)).toBe(true);
 });
@@ -319,9 +321,12 @@ test("TC-ED-18 opens and collapses each console on its own, in every combination
   const debugToggle = debug.getByRole("button", { name: "Debug console", exact: true });
   const outputToggle = output.getByRole("button", { name: "Output console", exact: true });
   const columnToggle = page.getByRole("button", { name: "Toggle consoles", exact: true }).first();
+  const split = page.getByRole("separator", { name: "Resize Debug and Output consoles", exact: true });
   const expectOpen = async (debugOpen: boolean, outputOpen: boolean) => {
     await expect(debugToggle).toHaveAttribute("aria-expanded", String(debugOpen));
     await expect(outputToggle).toHaveAttribute("aria-expanded", String(outputOpen));
+    // The handle between the consoles is there only while both are open.
+    await expect(split).toHaveCount(debugOpen && outputOpen ? 1 : 0);
     const [d, o] = [await box(debug), await box(output)];
     // An open console takes the room the other leaves; a collapsed one keeps only its header.
     if (debugOpen && outputOpen) expect(Math.abs(d.height - o.height)).toBeLessThanOrEqual(3);
@@ -358,4 +363,69 @@ test("TC-ED-18 opens and collapses each console on its own, in every combination
   // A new problem opens Debug and leaves Output open.
   await editorOf(page).source.fill(fixture("invalid/yaml-syntax.yaml"));
   await expectOpen(true, true);
+});
+
+test("TC-ED-19 drags the split between the consoles, keeps it per browser, and restores it on reopening", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  const { debug, output } = await openNewFile(page);
+  const split = page.getByRole("separator", { name: "Resize Debug and Output consoles", exact: true });
+  const outputToggle = output.getByRole("button", { name: "Output console", exact: true });
+  const share = async () => {
+    const [d, o] = [await box(debug), await box(output)];
+    return d.height / (d.height + o.height);
+  };
+  expect(await share()).toBeCloseTo(0.5, 1);
+
+  // The handle moves with the keyboard as well as by dragging.
+  await split.focus();
+  for (let i = 0; i < 10; i += 1) await page.keyboard.press("ArrowUp");
+  await expect.poll(share).toBeLessThan(0.4);
+  const dragged = await share();
+
+  await outputToggle.click();
+  await expect(split).toHaveCount(0);
+  await outputToggle.click();
+  await expect.poll(share).toBeCloseTo(dragged, 2);
+
+  await page.reload();
+  await expect(split).toHaveCount(1);
+  await expect.poll(share).toBeCloseTo(dragged, 2);
+});
+
+test("TC-ED-20 gives every scrollable region of the editor page the editor's scrollbar, in both themes", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await openNewFile(page, fixture("invalid/multiple-errors.yaml"));
+
+  for (const theme of ["light", "dark"] as const) {
+    await page.emulateMedia({ colorScheme: theme });
+    const styles = await page.evaluate(() => {
+      const body = (name: string) => {
+        const toggle = document.querySelector(`section[aria-label="${name}"] button[aria-controls]`);
+        return toggle ? document.getElementById(toggle.getAttribute("aria-controls") ?? "") : null;
+      };
+      const regions: Record<string, Element | null> = {
+        editor: document.querySelector(".cm-scroller"),
+        tree: document.querySelector('nav[aria-label="Projects"] .overflow-auto'),
+        debug: body("Debug"),
+        output: body("Output"),
+      };
+      return Object.fromEntries(
+        Object.entries(regions).map(([name, element]) => {
+          if (!element) return [name, "missing"];
+          const style = getComputedStyle(element);
+          return [name, `${style.overflowY} ${style.scrollbarWidth} ${style.scrollbarColor}`];
+        }),
+      );
+    });
+    const thumb = await page.evaluate(() =>
+      getComputedStyle(document.documentElement).getPropertyValue("--scrollbar-thumb").trim(),
+    );
+    expect(thumb).toBe(theme === "light" ? "#8a8a8a" : "#737373");
+    expect(styles.editor, "editor").toMatch(/^auto thin /);
+    for (const name of ["tree", "debug", "output"]) expect(styles[name], name).toBe(styles.editor);
+  }
 });

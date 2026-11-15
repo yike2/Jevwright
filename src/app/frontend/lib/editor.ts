@@ -111,3 +111,12 @@ export function parseConsolesOpen(stored: string | null): ConsolesOpen {
     return both;
   }
 }
+
+/** The Debug console's share of the column, in percent, when both consoles are open; the Output console has the rest. */
+export const DEFAULT_CONSOLE_SPLIT = 50;
+
+/** The stored Debug share, or the default for nothing stored, text that is not a number, or one outside 10–90. */
+export function parseConsoleSplit(stored: string | null): number {
+  void stored;
+  return 0;
+}
