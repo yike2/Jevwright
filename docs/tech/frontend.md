@@ -575,7 +575,7 @@ The replay is the page's only animation; with `prefers-reduced-motion: reduce` i
 | `FIXES` | `{ problem, playwright, jevwright, note }` for four scenarios; each `jevwright` is a list of steps the Syntax Analyzer accepts |
 | `DEMO_APP_URL` | `https://demo.94.72.126.118.sslip.io` |
 | `QUICK_START_FILES` | `{ feature, file, folder }`: Quick Start files the backend seeds in that folder, among them the cookie file |
-| `STATS` | The number of actions, of locate methods, `0` test files rewritten, and the sign-in Run's duration from its report |
+| `STATS` | The number of actions, of locate methods, `0` test files rewritten, and the duration and step count of the `sign-in-and-see-products.yaml` Run from its report, named by file since the replay opens on another Run |
 | `QUICK_START_FOLDERS` | The Quick Start folder names, as `quickStartProject` creates them, with what each teaches |
 
 #### Accessible names (landing)
