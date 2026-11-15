@@ -63,9 +63,14 @@ describeDb("workspace routes", () => {
     return folder;
   }
 
-  async function addRun(userId: string, ids: { project: { id: string }; testFile: { id: string } }) {
+  async function addRun(
+    userId: string,
+    ids: { project: { id: string }; testFile: { id: string } },
+    createdAt = new Date(),
+  ) {
     return db().run.create({
       data: {
+        createdAt,
         userId,
         projectId: ids.project.id,
         testFileId: ids.testFile.id,
@@ -591,7 +596,8 @@ describeDb("workspace routes", () => {
     const inner = (await as.post(`/projects/${ids.project.id}/folders`, { name: "Coupons", parentId: ids.folder.id }))
       .body;
     const empty = (await as.post(`/projects/${ids.project.id}/folders`, { name: "Empty" })).body;
-    await addRun(as.user.id, ids);
+    // An explicitly older Run, so two Runs created in the same millisecond can't tie on createdAt.
+    await addRun(as.user.id, ids, new Date(Date.now() - 60_000));
     const latest = await addRun(as.user.id, ids);
 
     const res = await as.get("/tree");
