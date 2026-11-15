@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useDefaultLayout, type LayoutStorage } from "react-resizable-panels";
-import { parseConsolesOpen, type ConsolesOpen } from "./editor.js";
+import { parseConsoleSplit, parseConsolesOpen, type ConsolesOpen } from "./editor.js";
 
 // Sizes are kept per browser; a browser that blocks storage still gets the default sizes.
 const storage: LayoutStorage = {
@@ -36,4 +36,18 @@ export function useConsolesOpen() {
     storage.setItem(CONSOLES_KEY, JSON.stringify(open));
   }, [open]);
   return [open, setOpen] as const;
+}
+
+const SPLIT_KEY = "jevwright:console-split";
+
+/**
+ * The Debug console's share of the column, in percent, while both consoles are open, kept per browser under
+ * `jevwright:console-split`, so collapsing and reopening a console, or a reload, restores the last dragged split.
+ */
+export function useConsoleSplit() {
+  const [split, setSplit] = useState(() => parseConsoleSplit(storage.getItem(SPLIT_KEY)));
+  useEffect(() => {
+    storage.setItem(SPLIT_KEY, String(split));
+  }, [split]);
+  return [split, setSplit] as const;
 }

@@ -15,7 +15,7 @@ import {
   type ConsoleKey,
 } from "@/lib/editor";
 import { errorText } from "@/lib/format-error";
-import { useConsolesOpen, usePanelLayout } from "@/lib/panel-layout";
+import { useConsoleSplit, useConsolesOpen, usePanelLayout } from "@/lib/panel-layout";
 import { useMediaQuery } from "@/lib/use-media-query";
 import { useRun } from "@/lib/use-run";
 import { formatDuration, runErrorText, runStatusLabel, stepStatusLabel } from "@/lib/runs";
@@ -134,6 +134,7 @@ function Workbench({ testFileId, loadedName, saved, draft, onSaved, onDraftChang
   // The column collapses through its panel; the two consoles in it open and collapse on their own (frontend.md 1.7).
   const [columnOpen, setColumnOpen] = useState(true);
   const [consoles, setConsoles] = useConsolesOpen();
+  const [split, setSplit] = useConsoleSplit();
   const outerLayout = usePanelLayout(isDesktop ? "editor" : "editor-narrow");
 
   const dirty = draft !== saved;
@@ -455,10 +456,33 @@ function Workbench({ testFileId, loadedName, saved, draft, onSaved, onDraftChang
           onResize={trackColumn}
         >
           {/* A collapsed column is out of the tab order, as if it were closed. With both consoles open they share the
-              column evenly; a collapsed one keeps its header and the open one takes the rest. */}
+              column, split by a handle; a collapsed one keeps its header and the open one takes the rest. */}
           <div className="flex h-full flex-col" inert={!columnOpen}>
-            <div className={cn("min-h-0", consoles.debug ? "flex-1" : "shrink-0")}>{debugConsole}</div>
-            <div className={cn("min-h-0 border-t", consoles.output ? "flex-1" : "shrink-0")}>{outputConsole}</div>
+            {consoles.debug && consoles.output ? (
+              // Both open: a split the user can drag; its share is kept and comes back when both are open again.
+              <ResizablePanelGroup
+                id="console-split"
+                orientation="vertical"
+                className="min-h-0 flex-1"
+                defaultLayout={{ debug: split, output: 100 - split }}
+                onLayoutChanged={(layout) => {
+                  if (typeof layout.debug === "number") setSplit(layout.debug);
+                }}
+              >
+                <ResizablePanel id="debug" minSize="64px">
+                  {debugConsole}
+                </ResizablePanel>
+                <ResizableHandle aria-label="Resize Debug and Output consoles" />
+                <ResizablePanel id="output" minSize="64px">
+                  {outputConsole}
+                </ResizablePanel>
+              </ResizablePanelGroup>
+            ) : (
+              <>
+                <div className={cn("min-h-0", consoles.debug ? "flex-1" : "shrink-0")}>{debugConsole}</div>
+                <div className={cn("min-h-0 border-t", consoles.output ? "flex-1" : "shrink-0")}>{outputConsole}</div>
+              </>
+            )}
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>

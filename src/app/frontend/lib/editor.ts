@@ -117,6 +117,7 @@ export const DEFAULT_CONSOLE_SPLIT = 50;
 
 /** The stored Debug share, or the default for nothing stored, text that is not a number, or one outside 10–90. */
 export function parseConsoleSplit(stored: string | null): number {
-  void stored;
-  return 0;
+  if (stored === null || stored.trim() === "") return DEFAULT_CONSOLE_SPLIT;
+  const share = Number(stored);
+  return Number.isFinite(share) && share >= 10 && share <= 90 ? share : DEFAULT_CONSOLE_SPLIT;
 }
