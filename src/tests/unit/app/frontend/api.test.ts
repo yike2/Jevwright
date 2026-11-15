@@ -598,8 +598,13 @@ describe("api client", () => {
     });
   });
 
-  it("sends GET /projects/p-1/variables and resolves the names", async () => {
-    const response: VariableListResponse = { items: ["BASE", "SWAG_PASSWORD"] };
+  it("sends GET /projects/p-1/variables and resolves the Variables with their values", async () => {
+    const response: VariableListResponse = {
+      items: [
+        { name: "BASE", value: "http://127.0.0.1:8080" },
+        { name: "SWAG_PASSWORD", value: "secret_sauce" },
+      ],
+    };
 
     const fetchImpl = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
       expect(url).toBe("http://localhost:4000/api/v1/projects/p-1/variables");

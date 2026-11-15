@@ -118,9 +118,9 @@ export function workspaceHandlers({ db, demoAppUrl }: WorkspaceDeps): Handlers {
       const variables = await db.variable.findMany({
         where: { projectId },
         orderBy: { name: "asc" },
-        select: { name: true },
+        select: { name: true, value: true },
       });
-      res.json({ items: variables.map((variable) => variable.name) });
+      res.json({ items: variables });
     },
     "put /projects/:projectId/variables/:name": async (input, res) => {
       const { projectId, name } = input.params as VariableParams;

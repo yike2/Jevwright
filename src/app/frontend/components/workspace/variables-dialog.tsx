@@ -45,7 +45,7 @@ export function VariablesDialog({ open, projectId, onOpenChange }: VariablesDial
       try {
         const response = await apiClient.listVariables(projectId);
         if (!cancelled) {
-          setVariableNames(response.items);
+          setVariableNames(response.items.map((variable) => variable.name));
         }
       } catch (error) {
         if (!cancelled) {
@@ -70,7 +70,7 @@ export function VariablesDialog({ open, projectId, onOpenChange }: VariablesDial
 
     try {
       const response = await apiClient.listVariables(projectId);
-      setVariableNames(response.items);
+      setVariableNames(response.items.map((variable) => variable.name));
     } finally {
       setIsLoading(false);
     }

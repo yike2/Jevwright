@@ -825,7 +825,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List the Project Variable names; values are never returned */
+        /** List the Project Variables with their values */
         get: {
             parameters: {
                 query?: never;
@@ -837,14 +837,17 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description Names */
+                /** @description Variables */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
                         "application/json": {
-                            items: string[];
+                            items: {
+                                name: string;
+                                value: string;
+                            }[];
                         };
                     };
                 };

@@ -171,10 +171,10 @@ export const ROUTES: readonly Route[] = [
   route({
     method: "get",
     path: "/projects/:projectId/variables",
-    summary: "List the Project Variable names; values are never returned",
+    summary: "List the Project Variables with their values",
     auth: "bearer",
     params: projectParams,
-    responses: { 200: ok("Names", items(variableName)) },
+    responses: { 200: ok("Variables", items(z.object({ name: variableName, value: z.string() }))) },
   }),
   route({
     method: "put",
