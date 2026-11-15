@@ -147,11 +147,13 @@ The workspace is every authenticated page. A shared layout guards auth and fills
 | Logo            | Above the tree, outside the "Projects" navigation: a link to the landing page `/` named "Jevwright home"                     |
 | Width           | A draggable split (shadcn `resizable`): 320px by default, 220px at least and 600px at most, kept per browser in `localStorage` under `jevwright:sidebar`. The handle is a `separator` named "Resize sidebar" that also moves with the arrow keys |
 | Header          | "Projects" with a "+" that adds a new Project row (below)                                                                     |
-| Tree            | Projects → Modules → Test Files from `GET /tree`, in API order. Projects and Modules toggle open/closed; all open by default |
-| Row "+"         | On a Project: a new Module row. On a Module: a new Test File row                                                             |
-| Row "Variables" | On a Project: a link to its Variables page (1.8)                                                                             |
-| Row "Upload file" | On a Module: opens a file picker accepting `.yaml` and `.yml`; the file becomes a new Test File in that Module named `uploadedTestFileName(file.name)`, with the file's text as its source, and opens. A name that breaks the rules, or a taken one, shows `<file name>: <problem>` in a `role="alert"` under the Module row and adds nothing |
-| Row actions     | On every Project, Module and Test File: Rename and Delete (1.11)                                                             |
+| Tree            | Projects from `GET /tree`, each with its folders nested to any level and its Test Files, in API order: in each Project or folder, its folders, then its Test Files. Projects and folders toggle open/closed; all open by default, also ones added later |
+| Row "+"         | On a Project or folder: a menu (`components/ui/dropdown-menu.tsx`, shadcn's `dropdown-menu`) with **New folder**, **New test file**, and **Upload files…**. A folder at level 4 (`MAX_LEVEL`, counting the Project) has no New folder. New folder and New test file add a row named in place (below); the menu runs the choice once it has closed, so the new input keeps the focus |
+| Upload files…   | Opens the system file picker for several `.yaml` and `.yml` files at once and imports them into that Project or folder (Import, below). One file imported with nothing skipped opens, as a new Test File does |
+| Row "Variables" | On a Project: a link to its Variables page (1.8). Folders have no Variables: every Test File in the Project, at any level, runs with the Project's |
+| Row actions     | On every Project, folder and Test File: Rename and Delete (1.11); on every folder and Test File also Move to… (below) |
+| Add the Quick Start project | Under the tree while no Project is named `Quick Start` (`hasQuickStart`), as in the overview (1.10) |
+| Messages        | A `role="status"` region named "Sidebar messages" under the header shows the last move (`Moved <name> to <place>.`) or import result, with a Dismiss button; a refused move shows in a `role="alert"` instead (`<name> was not moved. <the backend's message>`) |
 | Long names      | A name cut off with an ellipsis shows in full in a tooltip on hover and on keyboard focus (shadcn `tooltip`); the row's accessible name is always the full name |
 | Status icon     | From `statusOf(latestRun)`, with the icon and role of design-system.md 2.3: `passed` check, `failed` cross, `active` spinner, `none` dashed circle |
 | Selection       | The Test File in the current route is highlighted                                                                            |
@@ -165,12 +167,36 @@ New and renamed rows are named in the tree itself, like a file manager; there is
 | Step | Behavior |
 | ---- | -------- |
 | Open | "+" adds a row with an empty input under its parent (opening the parent). Rename, or F2 on a focused row, turns that row's name into an input in the same spot, focused, with the name selected. A Test File's input holds the name without `.yaml` (`testFileBaseName`), and the fixed `.yaml` stays shown after it, as Windows selects a name without its extension |
-| Type | The name is checked as the user types: Project and Module names with `nameProblem`, Test File names with `testFileNameProblem` (1.3). A problem shows under the input in a `role="alert"`, and the input gets `aria-invalid` and `aria-describedby` |
+| Type | The name is checked as the user types: Project and folder names with `nameProblem`, Test File names with `testFileNameProblem` (1.3). A problem shows under the input in a `role="alert"`, and the input gets `aria-invalid` and `aria-describedby` |
 | Save | Enter or a click away saves. A name with a problem sends nothing and keeps the input open. An unchanged name, or a new row left empty by a click away, closes the input without a request; Enter on an empty new row shows "Enter a name." |
 | Cancel | Escape closes the input and restores the name; a new row disappears |
 | Fail | A save that fails, such as `409 conflict` for a taken name, keeps the input open with `errorText(error)` (1.3) under it |
 
-Create submits `POST /projects`, `POST /projects/:id/modules`, or `POST /modules/:id/test-files` (`toTestFileName(name)`, created with `starterSource(name)`), then reloads the tree; a new Test File opens. Names follow the backend rules (`backend.md` 1.3).
+Create submits `POST /projects`, `POST /projects/:id/folders` with the parent folder's `parentId`, or `POST /projects/:id/test-files` with its `folderId` (`toTestFileName(name)`, created with `starterSource(name)`), then reloads the tree; a new Test File opens. Names follow the backend rules (`backend.md` 1.3): a taken name, also one a folder and a Test File would share, keeps the input open with the backend's message.
+
+#### Moving
+
+A folder or Test File moves to another Project or folder by drag and drop, like VS Code's explorer, or with **Move to…**; both send `PATCH /folders/:id` with `{ projectId, parentId }` or `PATCH /test-files/:id` with `{ projectId, folderId }` (`moveFolder`, `moveTestFile`), then reload the tree and open the target. The backend checks every rule (`backend.md` 1.3): a taken name, a folder into itself or one of its own folders, and more than 4 levels are refused with its message, and nothing changes. Moving keeps every Run; in another Project the file runs with that Project's Variables.
+
+| Step | Behavior |
+| ---- | -------- |
+| Drag | Folder and Test File rows are draggable (native HTML5 drag and drop, the row's id as `application/x-jevwright-row`); Projects are not |
+| Hover | Project and folder rows are drop targets. The one under the pointer gets the focus ring's outline and the text "Move here", so the highlight is not color alone, and a visually hidden `aria-live="polite"` line says `Drop to move <name> to <place>.` |
+| Drop | Moves the row there; a drop on the parent it is already in does nothing. A refused move shows `<name> was not moved. <message>` in the sidebar's alert |
+| Move to… | The keyboard way: the row's Move button opens a dialog titled `Move <name>` listing `moveDestinations(tree, row)` as buttons labelled by their path, such as `Demo Shop / checkout`: every Project and folder except where the row is, and for a folder, except itself and the folders inside it. A choice moves it and closes the dialog; a refused move keeps the dialog open with the message in a `role="alert"` |
+
+#### Importing
+
+Dropping `.yaml` files, or whole folders, from the computer onto a Project or folder row imports them there, as **Upload files…** does with picked files. The drop reads `DataTransferItem.webkitGetAsEntry()`, which current Chrome, Edge, Firefox and Safari support, through `readDroppedEntries` (`lib/drop-entries.ts`), which reads every batch of a folder's entries and skips `node_modules` and hidden folders such as `.git` inside a dropped folder, as the CLI does; an item without an entry falls back to its file. While files are over a row it shows "Import here" and the live line says `Drop to import into <place>.`
+
+`importEntries(target, entries, deps)` (`lib/import.ts`) then imports one entry at a time, waiting for each request:
+
+| Entry | Behavior |
+| ----- | -------- |
+| Folder | Kept with its subfolders: created with `createFolder`, or, when the parent already has a folder of that name, the files go into that one (nothing is overwritten). A folder below level 4, a name `nameProblem` refuses, or one the backend refuses is skipped once as `<path>/`, and so is everything inside it |
+| File | Not `.yaml` or `.yml`: skipped with `Only .yaml and .yml files can be imported.` Named `uploadedTestFileName(name)`; a name `testFileNameProblem` refuses is skipped with that problem. A source over 262,144 characters is skipped with the backend's `The test file is too long: …` without a request (a file over three times that in bytes without being read). Otherwise it becomes a Test File with its text, saved with its diagnostics like any other; a taken name or other API error skips it with `errorText(error)` |
+
+Afterwards "Sidebar messages" shows `importSummary(result)`, such as `Imported 2 test files. 1 skipped:`, and a list named "Skipped" with `<path>: <reason>` for each skipped entry, paths from the drop target down.
 
 The tree is loaded once in the layout and exposed through a `refreshTree()` context, so later pages (editor save, finished run) can update the status dots.
 
@@ -180,6 +206,11 @@ The tree is loaded once in the layout and exposed through a `refreshTree()` cont
 | `toTestFileName(input)` | Trims and adds `.yaml`; a trailing `.yaml` already typed is not doubled; empty input stays `""` |
 | `testFileBaseName(name)` | The name without a trailing `.yaml`, for the Rename input |
 | `uploadedTestFileName(fileName)` | The uploaded file's name with `.yaml` in place of a `.yaml` or `.yml` extension, any case: `checkout.yml` → `checkout.yaml` |
+| `hasQuickStart(tree)` | Whether a Project is named exactly `Quick Start` |
+| `allTestFiles(tree)` | Every Test File at any level, a level's files before its folders' (`lib/tree.ts`, like the rows below) |
+| `canAddFolder(level)` | A Project (level 1) and folders above level 4 can hold a new folder |
+| `parentOf(tree, row)`, `levelOf(tree, parent)`, `childFolderId(tree, parent, name)` | Where a folder or Test File sits; a parent's level; the folder of that name directly in a parent |
+| `moveDestinations(tree, row)` | The places Move to… offers, with their paths, as above |
 | `starterSource(name)`   | A valid Test Case: `name` is the file name without `.yaml`, one `open` step with `url: "https://example.com"`                                                   |
 | `initials(email)`       | First two characters of the part before `@`, upper-cased                                                                                                        |
 
@@ -201,10 +232,11 @@ E2E tests locate elements by role and accessible name, so these names are part o
 | Logo                  | link "Jevwright home" to `/`                                                                                                                                                                   |
 | Sidebar               | `navigation` named "Projects"; `separator` "Resize sidebar"                                                                                                                                    |
 | Header "+"            | button "New project"                                                                                                                                                                           |
-| Project row "+"       | button "New module in <project name>"                                                                                                                                                          |
+| Project or folder "+" | button "New in <name>", opening a `menu` with `menuitem`s "New folder" (not at level 4), "New test file", and "Upload files…"                                                                 |
 | Project row Variables | link "Variables for <project name>"                                                                                                                                                            |
-| Module row "+"        | button "New test file in <module name>"                                                                                                                                                        |
-| Module row Upload     | button "Upload file to <module name>"                                                                                                                                                          |
+| Folder                | button named by the folder name, with `aria-expanded`, like a Project's                                                                                                                       |
+| Move                  | buttons "Move folder <name>", "Move test file <name>"; `dialog` "Move <name>" with a `list` "Places" of buttons named by path, and "Cancel"                                                    |
+| Messages              | `status` "Sidebar messages", with a `list` "Skipped" after an import that skipped entries, and button "Dismiss"; a refused move in a `role="alert"`                                              |
 | Name input            | `textbox` labelled "Name" in the row; its problem in a `role="alert"` under it                                                                                                                 |
 | Test File             | link named by the file name; the current one has `aria-current="page"`                                                                                                                         |
 | Status icon           | inside the Test File link; `data-status` of `none`, `active`, `passed`, or `failed`, with a title: "Never run", "Running", "Passed", "Failed"                                                  |
@@ -212,8 +244,10 @@ E2E tests locate elements by role and accessible name, so these names are part o
 | Account               | `region` named "Signed in as <email>" showing the email alone, cut off with an ellipsis and in full in a tooltip on hover and focus; `group` "Theme" with buttons "Light", "Dark", "System"; button "Log out"                                                                                     |
 
 #### Tests
-- Unit: the helpers above.
-- E2E `sidebar.e2e.ts`: a new user with an empty workspace creates a Project, a Module, and a Test File in place, with no dialog; each appears in the tree; the new file opens at `/files/<id>`, is marked current, and has status `none`; after a reload the tree is unchanged; a taken name keeps the input open with an alert; name rules as the user types; the sidebar widens with its handle, keeps its width after a reload, and shows a cut-off name in full on hover and focus.
+- Unit: the helpers above, `importEntries`, `importSummary` (`import.test.ts`), `readDroppedEntries` (`drop-entries.test.ts`).
+- E2E `folders.e2e.ts`: folders nest in place down to level 4, whose "+" offers no New folder, and Test Files sit at level 4 and in the Project; a folder is renamed and deleted with everything inside, the open file inside returns to `/files`, and its Run stays with its path; a Test File and a folder move by drag and drop, also to another Project, with "Move here" on the target and their Runs kept; a drop that would take a name, put a folder into its own folder, or go below level 4 says why and changes nothing; Move to… moves with the keyboard and offers a folder no place inside itself; files and folders dropped from the computer are imported with their subfolders, `.yml` named `.yaml` and invalid files saved, `.git` skipped unseen, and a taken name, a non-`.yaml` file and a too-deep folder listed with their reasons while nothing is overwritten.
+- E2E `editor.e2e.ts` (TC-ED-03, TC-ED-21): Upload files… from a folder's "+" imports one file and opens it, skips a second upload of the same name with the reason, and imports several files at once, listing the one it skips.
+- E2E `sidebar.e2e.ts`: a new user with an empty workspace creates a Project, a folder, and a Test File in place through the "+" menus, with no dialog; each appears in the tree; the new file opens at `/files/<id>`, is marked current, and has status `none`; after a reload the tree is unchanged; a taken name, also a folder named like a Test File beside it, keeps the input open with an alert; name rules as the user types; the sidebar widens with its handle, keeps its width after a reload, and shows a cut-off name in full on hover and focus.
 
 ### 1.7 Test file editor
 
@@ -332,7 +366,7 @@ A `region` named "Output" in the editor's console column (1.7).
 | Socket closes early | If the socket closes before the Run is final, the last state stays and "Live progress disconnected" shows in a `role="alert"` |
 | Leave | The socket is closed |
 
-The page header shows a "Back to <fileName>" link to `/files/<testFileId>` (hidden when `testFileId` is `null`) and the file name as the heading. `RunReport` shows "Status: <runStatusLabel>", the trigger time, `formatDuration(durationMs)`, the summary as "<passed>/<total> passed" once it exists, and the Run error as `runErrorText(error)` when there is one. After the Run is final, a "Download report" link points to `runFileUrl(baseUrl, runId, "report.json", token)`, and a "Download trace" link to `runFileUrl(…, report.trace, token)` when `report.trace` exists.
+The page header shows a "Back to <fileName>" link to `/files/<testFileId>` (hidden when `testFileId` is `null`), the file name as the heading, and, for a file in a folder, `Path when run: <path>`, the file's path in its Project when the Run was triggered. `RunReport` shows "Status: <runStatusLabel>", the trigger time, `formatDuration(durationMs)`, the summary as "<passed>/<total> passed" once it exists, and the Run error as `runErrorText(error)` when there is one. After the Run is final, a "Download report" link points to `runFileUrl(baseUrl, runId, "report.json", token)`, and a "Download trace" link to `runFileUrl(…, report.trace, token)` when `report.trace` exists.
 
 `StepList` renders an ordered list named "Steps". Each step is one list item with "Step <index + 1>", the action, "line <line>", `runStatusLabel`-style status text (Pending, Running, Passed, Failed), and, when present, `formatDuration(durationMs)`, the locate method, the failure `reason`, and the screenshot as an `img` with alt "Step <index + 1> screenshot" from `runFileUrl(baseUrl, runId, step.screenshot, token)`. Dialog records are not shown.
 
@@ -372,7 +406,7 @@ Below the steps, a collapsed "Source when it ran" section shows the Run's `sourc
 - E2E `runs.e2e.ts`: Run in the editor is followed live in the Output console without a navigation, to "6/6 passed", with the history and the sidebar status updated; the sheet shows the steps; the Run page, opened through "Open full page", for every other case.
 - E2E `reports.e2e.ts`: the history lists every Run newest first and opens each in the sheet with its own source; the sheet covers most of the editor from the right, closes with Escape, the close button and a click on the uncovered part, keeps the editor's draft, and opens full page at the Run's URL.
 
-Out of scope: project or module dashboards, charts, filters, pagination, showing dialog records.
+Out of scope: project or folder dashboards, charts, filters, pagination, showing dialog records.
 
 ### 1.10 Files overview
 
@@ -381,14 +415,14 @@ Out of scope: project or module dashboards, charts, filters, pagination, showing
 | Element | Behavior |
 | ------- | -------- |
 | Region | A `region` named "Test files" |
-| Groups | `overviewGroups(tree)`: one heading (level 2) per Project and one heading (level 3) per Module, in API order |
+| Groups | `overviewGroups(tree)`: one heading (level 2) per Project; under it the Test Files directly in the Project, then one heading (level 3) per folder that holds Test Files, named by its path in the Project (`auth/session`), in tree order. Each group's files are a `list` named `In <project name>` or `In <path>` |
 | File | One list item per Test File: a link to `/files/<id>` named by the file name, a status badge with the text `statusTitle(statusOf(latestRun))` (design-system.md 2.3), and, when `latestRun` exists, its trigger time (`latestRun.createdAt`, `toLocaleString()`) |
-| Empty | When `overviewGroups(tree)` is empty: "No test files yet" and the button "Add the Quick Start project" |
-| Add the Quick Start project | `POST /projects/quick-start` (`addQuickStart()`, backend.md 1.10), then `refreshTree()`, so the overview and the sidebar show the new Project. Disabled while the request is in flight; an error, such as the `409` for an existing project named Quick Start, shows `errorText(error)` (1.3) in a `role="alert"` |
+| Empty | When `overviewGroups(tree)` is empty: "No test files yet", and "Add the Quick Start project" while no Project is named Quick Start |
+| Add the Quick Start project | Shown whenever no Project is named `Quick Start` (`hasQuickStart`), above the groups when there are any, and in the sidebar too (1.6); `components/workspace/add-quick-start.tsx`. `POST /projects/quick-start` (`addQuickStart()`, backend.md 1.10), then `refreshTree()`, so the overview and the sidebar show the new Project and the buttons go. Disabled while the request is in flight; an error, such as the `409` when another tab added a project named Quick Start meanwhile, shows `errorText(error)` (1.3) in a `role="alert"` |
 
 | Helper | Rule |
 | ------ | ---- |
-| `overviewGroups(tree)` | Pure. Returns the tree's Projects in API order with the same shape, keeping only Modules that have at least one Test File and only Projects that keep at least one Module. Never mutates `tree` |
+| `overviewGroups(tree)` | Pure. Returns `{ id, name, groups }` per Project in API order; `groups` are `{ id, path, testFiles }`, the Project's own files first (`id` the Project's, `path` `""`), then each folder at any level that has Test Files, in tree order, with its path joined by `/`. Projects without groups are left out. Never mutates `tree` |
 | `statusTitle(status)` | `none` → "Never run"; `active` → "Running"; `passed` → "Passed"; `failed` → "Failed" (the status dot titles in 1.6 use the same helper) |
 
 #### Accessible names (overview)
@@ -397,58 +431,60 @@ Out of scope: project or module dashboards, charts, filters, pagination, showing
 | ------- | ------------- |
 | Overview | `region` named "Test files" |
 | Project | `heading` level 2 named by the Project name |
-| Module | `heading` level 3 named by the Module name |
+| Folder | `heading` level 3 named by the folder's path in the Project; each group's `list` named "In <project name>" or "In <path>" |
 | Test File | `listitem` containing a `link` named by the file name, the status text, and the trigger time |
-| Empty | text "No test files yet"; button "Add the Quick Start project"; errors in a `role="alert"` |
+| Empty | text "No test files yet" |
+| Quick Start | button "Add the Quick Start project" while no Project is named Quick Start; errors in a `role="alert"` |
 
 The sidebar has links with the same names, so E2E tests scope overview lookups to the "Test files" region.
 
 #### Tests
 - Unit: `overviewGroups`, `statusTitle` (5.5).
-- E2E `overview.e2e.ts`: a user with an empty workspace opens `/files` and sees "No test files yet"; after creating a Project, a Module and a Test File and opening `/files` again, the "Test files" region shows the Project and Module headings and the file link with "Never run"; clicking the link opens `/files/<id>`.
-- E2E `quick-start.e2e.ts`: an account registered through the form lands on `/files` with the Quick Start project, its four numbered Modules (`backend.md` 1.10) and its Variables `BASE` and `SWAG_PASSWORD`, and its `sign-in-and-see-products.yaml` opens with its three-line header and passes; an empty workspace's "Add the Quick Start project" adds it to the overview and the sidebar; with a project named Quick Start already there, the button shows the backend's `409` message.
+- E2E `overview.e2e.ts`: a user with an empty workspace opens `/files` and sees "No test files yet"; after creating a Project with a file in it, a folder, and a folder inside that, each with a file, and opening `/files` again, the "Test files" region shows the Project heading, the folder paths `Shopping` and `Shopping/Cart`, and the file link with "Never run"; clicking the link opens `/files/<id>`.
+- E2E `quick-start.e2e.ts`: an account registered through the form lands on `/files` with the Quick Start project, its four numbered folders (`backend.md` 1.10) and its Variables `BASE` and `SWAG_PASSWORD`, no "Add the Quick Start project", and its `sign-in-and-see-products.yaml` opens with its three-line header and passes; an empty workspace's "Add the Quick Start project" adds it to the overview and the sidebar; a workspace with other Projects offers it in both, and again once it is renamed; a project named Quick Start added by another tab meanwhile makes the button show the backend's `409` message.
 
 Out of scope: filters, sorting, charts, pagination, distinguishing `queued` from `running`.
 
 ### 1.11 Rename and delete
 
-Every Project, Module and Test File row in the sidebar has a Rename and a Delete button. Moving a Test File to another Module is out of scope.
+Every Project, folder and Test File row in the sidebar has a Rename and a Delete button; moving is in 1.6.
 
 | Action | Behavior |
 | ------ | -------- |
-| Rename | The button, or F2 on the focused row, names the row in place (1.6): a Test File's name shows without its fixed `.yaml` and is saved with `toTestFileName`. Submits `PATCH /projects/:id`, `PATCH /modules/:id`, or `PATCH /test-files/:id` with `{ name }`, then calls `refreshTree()` |
-| Delete | Opens a confirmation dialog titled "Delete project", "Delete module", or "Delete test file" with the text `confirmDeleteText(kind, name)`. Delete submits `DELETE /projects/:id`, `DELETE /modules/:id`, or `DELETE /test-files/:id`. If `deletesTestFile(tree, target, currentTestFileId)` is true, or the open Variables page belongs to the deleted Project, the page navigates with `router.replace("/files")`. Then it calls `refreshTree()` and closes |
+| Rename | The button, or F2 on the focused row, names the row in place (1.6): a Test File's name shows without its fixed `.yaml` and is saved with `toTestFileName`. Submits `PATCH /projects/:id`, `PATCH /folders/:id`, or `PATCH /test-files/:id` with `{ name }`, then calls `refreshTree()` |
+| Delete | Opens a confirmation dialog titled "Delete project", "Delete folder", or "Delete test file" with the text `confirmDeleteText(kind, name)`. Delete submits `DELETE /projects/:id`, `DELETE /folders/:id`, or `DELETE /test-files/:id`. If `deletesTestFile(tree, target, currentTestFileId)` is true, or the open Variables page belongs to the deleted Project, the page navigates with `router.replace("/files")`. Then it calls `refreshTree()` and closes |
 
 API errors on delete show `errorText(error)` (1.3) in a `role="alert"` inside the dialog, and the dialog stays open; a failing rename keeps its input open with the message (1.6). Buttons are disabled while the request is in flight. A failing `refreshTree()` after a successful change is ignored, as in 1.6.
 
 The editor heading (1.7) shows the Test File's name from the tree when the file is in it, falling back to the loaded `testFile.name`, so renaming the open file updates the heading at once.
 
-The backend cascades: deleting a Project deletes its Modules, Test Files and Variables; deleting a Module deletes its Test Files. Runs are kept with their ids set to `null`.
+The backend cascades: deleting a Project deletes its folders, Test Files and Variables; deleting a folder deletes every folder and Test File inside it. Runs are kept with their ids set to `null`.
 
 | Helper | Rule |
 | ------ | ---- |
-| `confirmDeleteText(kind, name)` | `project` → `Delete project "<name>" and all its modules, test files and variables? Run history is kept.`; `module` → `Delete module "<name>" and all its test files? Run history is kept.`; `testFile` → `Delete test file "<name>"? Run history is kept.` |
-| `deletesTestFile(tree, target, testFileId)` | Pure. `target` is `{ kind: "project" \| "module" \| "testFile"; id: string }`. `false` when `testFileId` is `null`; otherwise `true` when `testFileId` is the target Test File or belongs to the target Module or Project in `tree` |
+| `confirmDeleteText(kind, name)` | `project` → `Delete project "<name>" and all its folders, test files and variables? Run history is kept.`; `folder` → `Delete folder "<name>" and every folder and test file in it? Run history is kept.`; `testFile` → `Delete test file "<name>"? Run history is kept.` |
+| `deletesTestFile(tree, target, testFileId)` | Pure. `target` is `{ kind: "project" \| "folder" \| "testFile"; id: string }`. `false` when `testFileId` is `null`; otherwise `true` when `testFileId` is the target Test File or sits in the target folder or Project at any depth in `tree` |
 
-`kind` is `"project" | "module" | "testFile"`.
+`kind` is `"project" | "folder" | "testFile"`.
 
 #### Accessible names (rename and delete)
 
 | Element | Role and name |
 | ------- | ------------- |
-| Row buttons | "Rename project <name>", "Delete project <name>", "Rename module <name>", "Delete module <name>", "Rename test file <name>", "Delete test file <name>" |
+| Row buttons | "Rename project <name>", "Delete project <name>", "Rename folder <name>", "Delete folder <name>", "Rename test file <name>", "Delete test file <name>" |
 | Rename input | `textbox` labelled "Name" in the row, as in 1.6 |
-| Delete dialog | `dialog` titled "Delete project", "Delete module", or "Delete test file"; the confirmation text; buttons "Delete" and "Cancel"; errors in a `role="alert"` |
+| Delete dialog | `dialog` titled "Delete project", "Delete folder", or "Delete test file"; the confirmation text; buttons "Delete" and "Cancel"; errors in a `role="alert"` |
 
 Row buttons sit next to the Test File link, never inside it. They may be revealed on hover on wide screens, but must stay in the accessibility tree and be shown on keyboard focus. The dialogs' "Delete" button shares a prefix with the row buttons, so E2E tests scope it to the dialog.
 
 #### Tests
 - Unit: `confirmDeleteText`, `deletesTestFile` (5.5), and the API client functions (5.1).
 - E2E `sidebar-actions.e2e.ts`:
-  - renaming the open Test File in place selects its name without `.yaml`, which stays after the input, and shows the new name in the sidebar and the editor heading; a Module by Enter and a Project by a click away;
+  - renaming the open Test File in place selects its name without `.yaml`, which stays after the input, and shows the new name in the sidebar and the editor heading; a folder by Enter and a Project by a click away;
   - F2 renames the focused row, Escape restores the name, a taken name keeps the input open with an alert, and a problem shows as the user types;
   - deleting the open Test File returns to `/files` and removes its link;
-  - deleting the Project shows the cascade text in the confirmation, then the "Test files" region shows "No test files yet".
+  - deleting the Project shows the cascade text in the confirmation, then the "Test files" region shows "No test files yet";
+  - deleting a folder is in `folders.e2e.ts` (1.6).
 
 ### 1.12 Packages and exact pins
 
@@ -463,7 +499,7 @@ The frontend package uses these exact versions:
 - `@tailwindcss/postcss@4.3.5`
 - `openapi-typescript@7.13.0`
 
-shadcn tooling and UI primitives are pinned exactly (no `^`). Primitives are added with `shadcn add` only as pages need them (currently `badge`, `button`, `card`, `dialog`, `input`, `label`, `resizable`, `sheet`, `tabs`, `toggle`, `toggle-group`, `tooltip`); every dependency that command adds is pinned to its exact installed version and listed below. `next-themes` is the theme provider that shadcn's Next.js dark-mode guide uses (design-system.md 3).
+shadcn tooling and UI primitives are pinned exactly (no `^`). Primitives are added with `shadcn add` only as pages need them (currently `badge`, `button`, `card`, `dialog`, `dropdown-menu`, `input`, `label`, `resizable`, `sheet`, `tabs`, `toggle`, `toggle-group`, `tooltip`); every dependency that command adds is pinned to its exact installed version and listed below. `next-themes` is the theme provider that shadcn's Next.js dark-mode guide uses (design-system.md 3).
 
 
 
@@ -517,7 +553,7 @@ Lint, format, and type-check coverage include the frontend package:
 | 04 What runs where? | A diagram of the parts (web app, CLI and REST API, Core, Playwright and Chromium, Jev through OpenRouter), links to the interactive architecture and run sequence diagrams on GitHub Pages, and how this differs from runners where a model plans the test |
 | Checked before it runs | Validate, Run, Report, each with real output: `VALIDATE_RECEIPT` and `RUN_RECEIPT`, captured from `jevwright validate` and `jevwright run` on the seeded Quick Start files, and the located step from the replayed report; each with the matching state of the web app |
 | Light and dark | Screenshots of the workspace in both themes (`public/landing/workspace-light.webp`, `workspace-dark.webp`) |
-| Quick start | Tabs: Web (three steps and `QUICK_START_MODULES`) and CLI (install, validate, run, as in the README) |
+| Quick start | Tabs: Web (three steps and `QUICK_START_FOLDERS`, a list named "Quick Start folders") and CLI (install, validate, run, as in the README) |
 | What it is, and what it is not | Questions and answers on planning, self-healing, steps without a locator, the cost of Jev, browsers, and private networks |
 | Closing | One line, the command again, "Get started" and GitHub |
 | Footer | Docs, API reference, architecture, GitHub |
@@ -533,7 +569,7 @@ The replay is the page's only animation; with `prefers-reduced-motion: reduce` i
 | `RUN_RECEIPT` | Real `run` output for `sign-in-and-see-products.yaml`; one passed line per step, at the seeded file's lines |
 | `REPLAY_RUNS` | `{ file, note, assets, report }` for the two Runs; both passed 6 of 6, and each step's screenshot is shipped |
 | `STATS` | The number of actions, of locate methods, `0` test files rewritten, and the sign-in Run's duration from its report |
-| `QUICK_START_MODULES` | The Quick Start Module names, as `quickStartProject` creates them, with what each teaches |
+| `QUICK_START_FOLDERS` | The Quick Start folder names, as `quickStartProject` creates them, with what each teaches |
 
 #### Accessible names (landing)
 
@@ -545,7 +581,7 @@ The replay is the page's only animation; with `prefers-reduced-motion: reduce` i
 | Sections | `heading` level 2 per section title; the Quick start section is a `region` "Quick start" with `tab`s "Web" and "CLI" |
 
 #### Tests
-- Unit `landing.test.ts`: `ACTIONS` are 15 distinct Syntax Analyzer actions; `LOCATE_METHODS`; `VALIDATE_RECEIPT` and `RUN_RECEIPT` match the Syntax Analyzer on the seeded Quick Start files; `REPLAY_RUNS` are passed 6 of 6 with shipped screenshots and the expected locate methods; `STATS` come from those; `QUICK_START_MODULES` match the backend.
+- Unit `landing.test.ts`: `ACTIONS` are 15 distinct Syntax Analyzer actions; `LOCATE_METHODS`; `VALIDATE_RECEIPT` and `RUN_RECEIPT` match the Syntax Analyzer on the seeded Quick Start files; `REPLAY_RUNS` are passed 6 of 6 with shipped screenshots and the expected locate methods; `STATS` come from those; `QUICK_START_FOLDERS` match the backend.
 - E2E `landing.e2e.ts`: the hero, every section heading, the command and the header links, with one Sign in button and no Log in or Register; Get started opens `/register` in Register mode; Sign in opens `/login`, where the mode switches to Register; Open workspace instead of Sign in with a token; the logo links to `/` with and without a token, also from the workspace sidebar; the replay shows six steps, a screenshot per step, and the Jev Run's `visual` or `dom` step; with reduced motion every step shows its result at once; the Quick start tabs.
 
 ## 2. Internal Flow
@@ -643,8 +679,8 @@ export function createApiClient(config?: ApiClientConfig): {
   getTree(): Promise<TreeResponse>;
   createProject(name: string): Promise<CreateProjectResponse>;
   addQuickStart(): Promise<CreateProjectResponse>; // POST /projects/quick-start → 201 Project; 409 when one named Quick Start exists
-  createModule(projectId: string, name: string): Promise<CreateModuleResponse>;
-  createTestFile(moduleId: string, name: string, source: string): Promise<CreateTestFileResponse>; // { testFile, diagnostics }
+  createFolder(parent: Parent, name: string): Promise<CreateFolderResponse>; // POST /projects/:projectId/folders { name, parentId }
+  createTestFile(parent: Parent, name: string, source: string): Promise<CreateTestFileResponse>; // POST /projects/:projectId/test-files { name, source, folderId } → { testFile, diagnostics }
   getTestFile(testFileId: string): Promise<TestFile>;
   updateTestFile(testFileId: string, source: string): Promise<UpdateTestFileResponse>; // { testFile, diagnostics }
   validateSource(source: string): Promise<ValidateResponse>; // { diagnostics }
@@ -655,17 +691,19 @@ export function createApiClient(config?: ApiClientConfig): {
   listRuns(testFileId: string): Promise<RunListResponse>; // GET /runs?testFileId=&limit=20 → { items, nextCursor }
   getRun(runId: string): Promise<Run>; // with source and, once finished, report
   renameProject(projectId: string, name: string): Promise<UpdateProjectResponse>; // PATCH /projects/:id
-  renameModule(moduleId: string, name: string): Promise<UpdateModuleResponse>; // PATCH /modules/:id
+  renameFolder(folderId: string, name: string): Promise<UpdateFolderResponse>; // PATCH /folders/:id
   renameTestFile(testFileId: string, name: string): Promise<UpdateTestFileResponse>; // PATCH /test-files/:id → { testFile, diagnostics }
-  deleteProject(projectId: string): Promise<void>; // 204; cascades to Modules, Test Files, Variables
-  deleteModule(moduleId: string): Promise<void>; // 204; cascades to Test Files
+  moveFolder(folderId: string, to: Parent): Promise<UpdateFolderResponse>; // PATCH /folders/:id { projectId, parentId }
+  moveTestFile(testFileId: string, to: Parent): Promise<UpdateTestFileResponse>; // PATCH /test-files/:id { projectId, folderId }
+  deleteProject(projectId: string): Promise<void>; // 204; cascades to folders, Test Files, Variables
+  deleteFolder(folderId: string): Promise<void>; // 204; cascades to everything inside
   deleteTestFile(testFileId: string): Promise<void>; // 204
 };
 
 export const apiClient: ReturnType<typeof createApiClient>;
 ```
 
-`TreeResponse`, `CreateProjectResponse`, `CreateModuleResponse`, `CreateTestFileResponse`, `UpdateProjectResponse`, `UpdateModuleResponse`, `TestFile`, `Run`, `UpdateTestFileResponse`, `ValidateResponse`, `VariableListResponse`, `RunListResponse`, `Step`, and `LiveMessage` are aliases of the generated `components`/`paths` types for these routes; none are written by hand.
+`Parent` is `{ projectId: string; folderId: string | null }`: a folder of a Project, or the Project itself with `folderId` `null`. `TreeResponse`, `CreateProjectResponse`, `CreateFolderResponse`, `CreateTestFileResponse`, `UpdateProjectResponse`, `UpdateFolderResponse`, `TestFile`, `Run`, `UpdateTestFileResponse`, `ValidateResponse`, `VariableListResponse`, `RunListResponse`, `Step`, and `LiveMessage` are aliases of the generated `components`/`paths` types for these routes; none are written by hand.
 
 ### 3.2 Request rules
 
@@ -713,6 +751,9 @@ This fallback is implemented in the client itself when the backend response is n
 | `lib/validation.ts`                           | Form checks with the backend's rules and words (1.3)        |
 | `lib/utils.ts`                                | Re-exports `cn` from the `cn` package for shadcn components |
 | `lib/sidebar.ts`                              | Sidebar helpers (1.6, 1.10 `statusTitle`, 1.11)             |
+| `lib/tree.ts`                                 | The nested tree's types and lookups, `moveDestinations` (1.6) |
+| `lib/import.ts`                               | `importEntries`, `importSummary`: drop and upload import (1.6) |
+| `lib/drop-entries.ts`                         | `readDroppedEntries`: a drop's files and folders (1.6)      |
 | `lib/overview.ts`                             | Overview helper `overviewGroups` (1.10)                     |
 | `lib/editor.ts`                               | Editor helpers (1.7)                                        |
 | `lib/runs.ts`                                 | Run helpers (1.9)                                           |
@@ -733,7 +774,10 @@ This fallback is implemented in the client itself when the backend response is n
 | `components/landing/brand-mark.tsx`           | The product mark                                            |
 | `components/theme/`                           | Theme provider and switch (design-system.md 3)              |
 | `components/workspace/status-badge.tsx`       | Status icons and badges (design-system.md 2.3)              |
-| `components/workspace/sidebar-nav.tsx`        | Sidebar tree, naming in place, upload, account              |
+| `components/workspace/sidebar-nav.tsx`        | Sidebar tree, naming in place, moves, imports, account      |
+| `components/workspace/add-menu.tsx`           | A Project's or folder's "+" menu (1.6)                      |
+| `components/workspace/move-dialog.tsx`        | Move to… (1.6)                                              |
+| `components/workspace/add-quick-start.tsx`    | Add the Quick Start project, in the overview and sidebar (1.10) |
 | `components/workspace/inline-name-input.tsx`  | A row's name as an input in place (1.6, 1.11)               |
 | `components/workspace/tree-name.tsx`          | The full-name tooltip of a cut-off row (1.6)                |
 | `components/workspace/confirm-delete-dialog.tsx` | Delete confirmation dialog (1.11)                        |
@@ -788,6 +832,7 @@ src/app/frontend/
 │   │   ├── button.tsx
 │   │   ├── card.tsx
 │   │   ├── dialog.tsx
+│   │   ├── dropdown-menu.tsx
 │   │   ├── input.tsx
 │   │   ├── label.tsx
 │   │   ├── resizable.tsx
@@ -797,10 +842,13 @@ src/app/frontend/
 │   │   ├── toggle.tsx
 │   │   └── tooltip.tsx
 │   └── workspace/
+│       ├── add-menu.tsx
+│       ├── add-quick-start.tsx
 │       ├── code-editor.tsx
 │       ├── confirm-delete-dialog.tsx
 │       ├── console-panel.tsx
 │       ├── inline-name-input.tsx
+│       ├── move-dialog.tsx
 │       ├── run-details-sheet.tsx
 │       ├── run-list.tsx
 │       ├── run-report.tsx
@@ -811,8 +859,10 @@ src/app/frontend/
 ├── lib/
 │   ├── api.ts
 │   ├── api-schema.ts
+│   ├── drop-entries.ts
 │   ├── editor.ts
 │   ├── format-error.ts
+│   ├── import.ts
 │   ├── landing.ts
 │   ├── landing-runs/    # the replayed Run reports
 │   ├── overview.ts
@@ -820,6 +870,7 @@ src/app/frontend/
 │   ├── routes.ts
 │   ├── runs.ts
 │   ├── sidebar.ts
+│   ├── tree.ts
 │   ├── use-media-query.ts
 │   ├── use-run.ts
 │   ├── utils.ts
@@ -846,16 +897,19 @@ src/app/frontend/
 | Unit | Form checks (1.3)                                                                                                | `src/tests/unit/app/frontend/validation.test.ts`        |
 | Unit | Sidebar helpers (1.6, 1.10, 1.11)                                                                                | `src/tests/unit/app/frontend/sidebar.test.ts`           |
 | Unit | Overview helper (1.10)                                                                                           | `src/tests/unit/app/frontend/overview.test.ts`          |
+| Unit | Tree lookups and Move to… places (1.6)                                                                           | `src/tests/unit/app/frontend/tree.test.ts`              |
+| Unit | Drop and upload import, and reading a drop's entries (1.6)                                                       | `src/tests/unit/app/frontend/import.test.ts`, `drop-entries.test.ts` |
 | Unit | Editor helpers (1.7)                                                                                             | `src/tests/unit/app/frontend/editor.test.ts`            |
 | Unit | Run helpers (1.9)                                                                                                | `src/tests/unit/app/frontend/runs.test.ts`              |
 | Unit | Auth page guard: no token, accepted, rejected and cleared, network and server failures (1.5)                    | `src/tests/unit/app/frontend/auth-guard.test.ts`        |
-| Unit | Landing content checked against the code: actions, receipts, replayed reports, stats, Quick Start Modules (1.14) | `src/tests/unit/app/frontend/landing.test.ts`           |
+| Unit | Landing content checked against the code: actions, receipts, replayed reports, stats, Quick Start folders (1.14) | `src/tests/unit/app/frontend/landing.test.ts`           |
 | Unit | Token contrast in both themes (design-system.md 2.2)                                                             | `src/tests/unit/app/frontend/design-tokens.test.ts`     |
 | E2E  | Landing page: sections, command, Log in, Register, Open workspace, logo, Run replay, Quick start tabs (1.14)    | `src/tests/e2e/landing.e2e.ts`                          |
 | E2E  | Themes: system default, persisted choice, no flash, switch placement (design-system.md 3)                       | `src/tests/e2e/theme.e2e.ts`                            |
-| E2E  | Quick Start: seeded on register and runnable, added from the empty overview, `409` message (1.10)                | `src/tests/e2e/quick-start.e2e.ts`                      |
+| E2E  | Quick Start: seeded on register and runnable, offered whenever no Project is named Quick Start, `409` message (1.10) | `src/tests/e2e/quick-start.e2e.ts`                  |
 | E2E  | Auth flow                                                                                                        | `src/tests/e2e/auth.e2e.ts`                             |
 | E2E  | Sidebar: create in place, duplicate names, name rules, width and full names (1.6)                                | `src/tests/e2e/sidebar.e2e.ts`                          |
+| E2E  | Folders: nesting to level 4, rename and delete, drag and drop and Move to…, refused moves, drop import (1.6)     | `src/tests/e2e/folders.e2e.ts`                          |
 | E2E  | Editor: diagnostics as you type, save, upload, shortcuts, layout, consoles (1.7)                                 | `src/tests/e2e/editor.e2e.ts`                           |
 | E2E  | Variables page: add, show and hide, replace, invalid name, delete (1.8)                                          | `src/tests/e2e/variables.e2e.ts`                        |
 | E2E  | Runs: the Output console, the sheet and the Run page (1.9)                                                          | `src/tests/e2e/runs.e2e.ts`, `reports.e2e.ts`           |
@@ -1022,9 +1076,9 @@ The tests use `fetchImpl`, `getToken`, `setToken`, and `onUnauthorized` injectio
     - expected request: `PATCH /projects/p-1`, body `{"name":"Shop"}`
     - expected value: the mocked body
 
-22. `it("sends PATCH /modules/m-1 with the name and resolves the body", async () => { ... })`
-    - call: `renameModule("m-1", "Cart")`
-    - expected request: `PATCH /modules/m-1`, body `{"name":"Cart"}`
+22. `it("sends PATCH /folders/f-1 with the name and resolves the body", async () => { ... })`
+    - call: `renameFolder("f-1", "Cart")`
+    - expected request: `PATCH /folders/f-1`, body `{"name":"Cart"}`
     - expected value: the mocked body
 
 23. `it("sends PATCH /test-files/tf-1 with the name and resolves { testFile, diagnostics }", async () => { ... })`
@@ -1034,13 +1088,17 @@ The tests use `fetchImpl`, `getToken`, `setToken`, and `onUnauthorized` injectio
 
 24. `it("sends DELETE /projects/p-1 and resolves undefined on 204", async () => { ... })`
 
-25. `it("sends DELETE /modules/m-1 and resolves undefined on 204", async () => { ... })`
+25. `it("sends DELETE /folders/f-1 and resolves undefined on 204", async () => { ... })`
 
 26. `it("sends DELETE /test-files/tf-1 and resolves undefined on 204", async () => { ... })`
 
 27. `it("sends POST /projects/quick-start without a body and resolves the Quick Start project", async () => { ... })`
     - expected request: `POST /projects/quick-start`, no body
     - expected value: the mocked Project named `Quick Start`
+
+28. `createFolder({ projectId: "p1", folderId: "f0" }, "Auth")` sends `POST /projects/p1/folders` with `{"name":"Auth","parentId":"f0"}`; `createTestFile({ projectId: "p1", folderId: null }, "login.yaml", "name: x\n")` sends `POST /projects/p1/test-files` with `{"name":"login.yaml","source":"name: x\n","folderId":null}`
+
+29. `moveFolder("f-1", { projectId: "p-2", folderId: null })` sends `PATCH /folders/f-1` with `{"projectId":"p-2","parentId":null}`; `moveTestFile("tf-1", { projectId: "p-1", folderId: "f-2" })` sends `PATCH /test-files/tf-1` with `{"projectId":"p-1","folderId":"f-2"}`
 
 28. `it("rejects addQuickStart with the backend's 409 message when the project exists", async () => { ... })`
     - mocked response: `409 { error: { code: "conflict", message: "You already have a project named Quick Start. Rename or delete it, then add it again." } }`
@@ -1100,23 +1158,31 @@ These exact values are the source of truth for the API client tests and are inte
 1. `statusTitle`: `"none"` → `"Never run"`; `"active"` → `"Running"`; `"passed"` → `"Passed"`; `"failed"` → `"Failed"`
 
 2. `confirmDeleteText`
-   - `("project", "Shop")` → `Delete project "Shop" and all its modules, test files and variables? Run history is kept.`
-   - `("module", "Cart")` → `Delete module "Cart" and all its test files? Run history is kept.`
+   - `("project", "Shop")` → `Delete project "Shop" and all its folders, test files and variables? Run history is kept.`
+   - `("folder", "Cart")` → `Delete folder "Cart" and every folder and test file in it? Run history is kept.`
    - `("testFile", "login.yaml")` → `Delete test file "login.yaml"? Run history is kept.`
 
-3. `deletesTestFile`, with a tree of Project `p-1` → Module `m-1` → Test File `tf-1`, and Project `p-2` → Module `m-2` → Test File `tf-2`:
+3. `deletesTestFile`, with a tree of Project `p-1` → folder `f-1` → folder `f-2` → Test File `tf-1`, and Project `p-2` with folder `f-3` and Test File `tf-2` directly in it:
    - `{ kind: "testFile", id: "tf-1" }`, current `"tf-1"` → `true`
    - `{ kind: "testFile", id: "tf-2" }`, current `"tf-1"` → `false`
-   - `{ kind: "module", id: "m-1" }`, current `"tf-1"` → `true`
-   - `{ kind: "module", id: "m-2" }`, current `"tf-1"` → `false`
-   - `{ kind: "project", id: "p-1" }`, current `"tf-1"` → `true`
+   - `{ kind: "folder", id: "f-2" }` and `{ kind: "folder", id: "f-1" }`, current `"tf-1"` → `true`
+   - `{ kind: "folder", id: "f-3" }`, current `"tf-1"` → `false`
+   - `{ kind: "project", id: "p-1" }`, current `"tf-1"` → `true`; `{ kind: "project", id: "p-2" }`, current `"tf-2"` → `true`
    - `{ kind: "project", id: "p-2" }`, current `"tf-1"` → `false`
    - `{ kind: "project", id: "p-1" }`, current `null` → `false`
 
-4. `overviewGroups`
-   - a tree of Project `p-1` (Module `m-1` with Test File `tf-1`, Module `m-empty` with none), Project `p-2` (no Modules), and Project `p-3` (Module `m-3` with Test Files `tf-3`, `tf-4`) → Project `p-1` with only Module `m-1`, then Project `p-3` with Module `m-3` and both Test Files in order
-   - an empty tree → no Projects
-   - the input tree is not mutated (compare with a deep copy)
+4. `overviewGroups`, with Project `Shop` (`smoke.yaml`, folder `auth` with `login.yaml` and folder `session` with `expire.yaml`, empty folder `empty`), Project `Blog` (an empty folder), and Project `Checkout` (folder `cart` with `add.yaml`):
+   - `Shop`'s groups are `""` (`smoke.yaml`), `auth` (`login.yaml`), `auth/session` (`expire.yaml`), keyed by the Project's and the folders' ids
+   - only `Shop` and `Checkout` are kept, `Checkout` with the group `cart`
+   - the input tree is not mutated
+
+5. `hasQuickStart`: `true` with a Project named `Quick Start`; `false` for none, `Quick Start 2`, or `quick start`
+
+6. `tree.test.ts` (`lib/tree.ts`), with Shop (`smoke.yaml`, `checkout/` with `pay.yaml` and `cards/` with `visa.yaml`, `cart/`) and Blog (`posts/`): `allTestFiles` lists `smoke`, `pay`, `visa`; `canAddFolder` is true for levels 1 to 3 and false for 4; `parentOf` answers the Project or folder a row sits in, or `undefined`; `levelOf` counts the Project as 1; `childFolderId` finds a folder by name only directly in its parent; `moveDestinations` offers `pay.yaml` `Shop`, `Shop / checkout / cards`, `Shop / cart`, `Blog`, `Blog / posts`, and `checkout/` only `Shop / cart`, `Blog`, `Blog / posts`
+
+7. `import.test.ts` (`lib/import.ts`), with a fake API that records requests: a file becomes a Test File with its text; a dropped folder and its subfolders are created before what is in them, also an empty one; an existing folder of the name is reused; `.yml` is named `.yaml`; a non-`.yaml` file, a bad name, and a source over the limit are skipped without a request; a taken name is skipped with the backend's message and the next file still comes in; a folder below level 4, a bad folder name, and a folder the backend refuses are skipped once with everything inside; `importSummary` counts the imported files and the skipped entries
+
+8. `drop-entries.test.ts` (`lib/drop-entries.ts`), with fake entries: dropped files by name; a folder, its subfolders and files by path; every batch of a large folder; each file's text; `node_modules`, `.git` and `.github` inside a dropped folder skipped
 
 ### 5.6 Exact validation helper unit-test cases
 
@@ -1128,5 +1194,6 @@ These exact values are the source of truth for the API client tests and are inte
 4. `testFileNameProblem`: `"sign-in"`, `"sign_in"`, `"v1.2"`, `"Checkout2"` → `null`; `"  "` → "Enter a name."; `"sign in"`, `"商店"`, `"a/b"`, `"<img>"` → the characters sentence; 96 characters → the length sentence, 95 → `null`
 5. `variableNameProblem`: `"BASE"`, `"_BASE_1"`, `"API_KEY2"` → `null`; `"base"`, `"1BASE"`, `"MY-VAR"`, `"MY VAR"`, `""` → the sentence with the example
 6. `variableValueProblem`: 10,000 characters → `null`; 10,001 → the value sentence
+7. `sourceProblem`: 262,144 characters → `null`; 262,145 → `The test file is too long: it can be at most 262,144 characters.`
 
 `sidebar.test.ts` also covers `toTestFileName` (`"login"`, `"login.yaml"`, and `"  login  "` → `"login.yaml"`; `"v1.2"` → `"v1.2.yaml"`; `""` and `"   "` → `""`) and `testFileBaseName` (`"sign-in.yaml"` → `"sign-in"`; `"notes"` → `"notes"`), and `uploadedTestFileName` (`"checkout.yaml"`, `"checkout.yml"` → `"checkout.yaml"`; `"Checkout.YML"` → `"Checkout.yaml"`; `"v1.2.yaml"` → `"v1.2.yaml"`).

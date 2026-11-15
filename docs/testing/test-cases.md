@@ -44,7 +44,8 @@ Each case has an ID `TC-<AREA>-<nn>`, a title, its priority, execution type, the
 | `THEME` | Light, Dark, and System themes |
 | `AUTH` | Register, log in, log out, access without a token |
 | `QS` | The Quick Start project |
-| `WS` | Sidebar: Projects, Modules, Test Files, rename, delete |
+| `WS` | Sidebar: Projects, folders, Test Files, rename, delete |
+| `FLD` | Nested folders, moves by drag and drop and Move to…, imports dropped from the computer |
 | `ED` | Editor: edit, problems as you type, save, upload, shortcuts, layout and consoles |
 | `VAR` | Project Variables |
 | `RUN` | Running a Test File, Live Progress, the Run Queue |
@@ -84,13 +85,13 @@ The deployed frontend and API, with the Demo App at its public `DEMO_DOMAIN` (`d
 
 **Accounts**: each case registers a new account, `e2e-<timestamp>-<random>@example.com` with password `e2e-password-123`, so cases do not depend on each other. A new account starts with the Quick Start project (TC-QS-01); unless a case says otherwise, delete it first (**Delete project Quick Start**), so the workspace starts empty. The E2E helper `signUp` does this through the API. Isolation cases (TC-SEC-01, TC-SEC-02) use two accounts, A and B.
 
-**Workspace**: unless a case says otherwise, Project `Demo Shop`, Module `Shopping`, and the Test File named in the case, with the source of the fixture named in the case.
+**Workspace**: unless a case says otherwise, Project `Demo Shop`, the folder `Shopping` in it, and the Test File named in the case, with the source of the fixture named in the case.
 
 **Demo App users**: `standard_user` and `locked_out_user` (`docs/tech/benchmark.md` 1.2).
 
 ### 2.4 Test files
 
-The test files are in `src/tests/e2e/fixtures/`, grouped by expected outcome. E2E tests read them from there; manual testers add them with a Module's **Upload file** (TC-ED-03) or paste them (Appendix A). The first line of each file states its expected result. Every file uses only `{{BASE}}` and `{{SWAG_PASSWORD}}`, except `pass/variable-value.yaml`, which also needs `{{DISPLAY_NAME}}` (TC-VAR-06), so each runs unchanged locally and in production.
+The test files are in `src/tests/e2e/fixtures/`, grouped by expected outcome. E2E tests read them from there; manual testers add them with a folder's **Upload files…** (TC-ED-03), drop them onto the sidebar (TC-FLD-06), or paste them (Appendix A). The first line of each file states its expected result. Every file uses only `{{BASE}}` and `{{SWAG_PASSWORD}}`, except `pass/variable-value.yaml`, which also needs `{{DISPLAY_NAME}}` (TC-VAR-06), so each runs unchanged locally and in production.
 
 | File | Locates by | Expected outcome | Used by |
 | ---- | ---------- | ---------------- | ------- |
@@ -135,9 +136,9 @@ The test files are in `src/tests/e2e/fixtures/`, grouped by expected outcome. E2
 Cases refer to these instead of repeating them.
 
 - **S1 Sign up**: open `/login`, click **Register** (the mode button), enter a new email and the password, click **Register** in the form. You are on `/files` and the sidebar's account area shows the email alone, with no "Signed in as" prefix. Delete the Quick Start project (2.3).
-- **S2 Create the workspace**: in the sidebar, click **New project**, type `Demo Shop` into the new row and press Enter; on `Demo Shop` click **New module in Demo Shop**, type `Shopping`, Enter.
+- **S2 Create the workspace**: in the sidebar, click **New project**, type `Demo Shop` into the new row and press Enter; on `Demo Shop` click **New in Demo Shop**, choose **New folder**, type `Shopping`, Enter.
 - **S3 Set the Variables**: click **Variables for Demo Shop**; on the Variables page save `BASE` and `SWAG_PASSWORD` with the values of 2.3.
-- **S4 Add a Test File**: on `Shopping` click **Upload file to Shopping** and choose the fixture; a Test File named after it is created and opens. For another name, click **New test file in Shopping**, type the name, Enter, and paste the fixture, then **Save**.
+- **S4 Add a Test File**: on `Shopping` click **New in Shopping**, choose **Upload files…**, and choose the fixture; a Test File named after it is created and opens. For another name, choose **New test file** in the same menu, type the name, Enter, and paste the fixture, then **Save**.
 - **S5 Run**: in the editor click **Run**; the Output console follows it. Click **Open run details**, then **Open full page**, and wait until the status is final (`Passed` or `Failed`).
 
 ## 4. Test Cases
@@ -204,7 +205,7 @@ Covers PRD 4.2.2. Pre: none.
 
 1. Open `/`; in **Quick start** look at **Web**, then choose **CLI**.
 
-Expected: **Web** lists the Quick Start Modules, starting with `1 Passing tests`; **CLI** shows `pnpm jevwright validate tests/login.yaml` and the run command.
+Expected: **Web** lists the Quick Start folders, starting with `1 Passing tests`; **CLI** shows `pnpm jevwright validate tests/login.yaml` and the run command.
 
 #### TC-LAND-08 The landing page on a phone — P2, Manual
 
@@ -355,7 +356,7 @@ Covers PRD 4.2.2. Pre: the backend's `DEMO_APP_URL` is the Demo App of 2.1 or 2.
 2. Click **Variables for Quick Start**, then go back to `/files`.
 3. Open `sign-in-and-see-products.yaml` from the overview and click **Run**.
 
-Expected: step 1 opens `/files`, where the overview shows the heading `Quick Start` with the Modules `1 Passing tests`, `2 Failing tests - see why they fail`, `3 Invalid files - fix the errors`, and `4 Jev - find and check by description`, in that order, and their files (`docs/tech/backend.md` 1.10); step 2 lists `BASE` and `SWAG_PASSWORD`; in step 3 the editor shows the three header lines (what it does, `# Expect:`, `# Try:`) and `baseUrl: "{{BASE}}"`, and Run makes the file state "Passed".
+Expected: step 1 opens `/files`, where the overview shows the heading `Quick Start` with the folders `1 Passing tests`, `2 Failing tests - see why they fail`, `3 Invalid files - fix the errors`, and `4 Jev - find and check by description`, in that order, and their files (`docs/tech/backend.md` 1.10), and neither the overview nor the sidebar offers **Add the Quick Start project**; step 2 lists `BASE` and `SWAG_PASSWORD`; in step 3 the editor shows the three header lines (what it does, `# Expect:`, `# Try:`) and `baseUrl: "{{BASE}}"`, and Run makes the file state "Passed".
 
 #### TC-QS-02 Add the Quick Start project to an empty workspace — P1, E2E
 
@@ -368,9 +369,11 @@ Expected: step 1 shows "No test files yet" and the button; after step 2 the over
 
 #### TC-QS-03 The Quick Start project exists already — P2, E2E
 
-Covers PRD 4.2.2. Pre: S1, then an empty Project named `Quick Start`.
+Covers PRD 4.2.2. Pre: S1.
 
-1. Open `/files` and click **Add the Quick Start project**.
+1. Open `/files`.
+2. In another tab, or through the API, create an empty Project named `Quick Start`.
+3. Back on the first tab, without reloading, click **Add the Quick Start project**.
 
 Expected: an alert says `You already have a project named Quick Start. Rename or delete it, then add it again.`; nothing is added.
 
@@ -378,20 +381,29 @@ Expected: an alert says `You already have a project named Quick Start. Rename or
 
 Covers PRD 4.2.2. Pre: TC-QS-01.
 
-1. Run every file of the first two Modules, and validate both files of the third.
-2. On a backend with a real `OPENROUTER_API_KEY`, run every file of the `4 Jev` Module (Live).
+1. Run every file of the first two folders, and validate both files of the third.
+2. On a backend with a real `OPENROUTER_API_KEY`, run every file of the `4 Jev` folder (Live).
 3. In one file, do what its `# Try:` line says, and run or validate it again.
 
 Expected: each result matches the `# Expect:` line of its file: the passing files pass, the failing files fail at the stated step, the invalid files show their validation errors, two lines below the fixture's lines because of the header (`seven-errors-at-once.yaml` at lines 5, 8, 9, 10, 15, 17 and 20), and cannot run, and the Jev files pass or fail as TC-JEV-01 – TC-JEV-04 state; in step 3 the result changes as the line says.
 
+#### TC-QS-05 The Quick Start project is offered whenever none is named Quick Start — P1, E2E
+
+Covers PRD 4.2.2. Pre: S1, S2.
+
+1. Open `/files`; in the sidebar click **Add the Quick Start project**.
+2. Rename the Project `Quick Start` to `My examples` and reload.
+
+Expected: before step 1 both the overview and the sidebar offer the button, next to `Demo Shop`; after it the sidebar shows `Quick Start` and `Demo Shop` and neither button is shown; after step 2 the sidebar offers it again.
+
 ### 4.2 Workspace sidebar (`WS`)
 
-#### TC-WS-01 Create a Project, a Module, and a Test File — P0, E2E
+#### TC-WS-01 Create a Project, a folder, and a Test File — P0, E2E
 
 Covers US-4.3.3. Pre: S1.
 
 1. Do S2.
-2. Click **New test file in Shopping**, type `login` (no extension) into the new row, press Enter.
+2. Click **New in Shopping**, choose **New test file**, type `login` (no extension) into the new row, press Enter.
 3. Reload the page.
 
 Expected: no dialog opens: each "New …" adds a row with a focused, empty input, and `.yaml` shows after the Test File's input; the tree shows `Demo Shop → Shopping → login.yaml`; the editor opens at `/files/<id>` with the heading `login.yaml`; the file link is marked current and its status dot is gray with the title "Never run"; after the reload the tree is the same.
@@ -401,11 +413,12 @@ Expected: no dialog opens: each "New …" adds a row with a focused, empty input
 Covers US-4.3.3. Pre: S1, S2, and `login.yaml` in `Shopping`.
 
 1. Create a second Project named `Demo Shop`.
-2. Create a second Module named `Shopping` in `Demo Shop`.
+2. Create a second folder named `Shopping` in `Demo Shop`.
 3. Create a second Test File named `login.yaml` in `Shopping`.
-4. Create a Project named `Other`, a Module `Shopping` in it, and `login.yaml` in that Module.
+4. Create a folder named `login.yaml` in `Shopping`.
+5. Create a Project named `Other`, a folder `Shopping` in it, and `login.yaml` in that folder.
 
-Expected: steps 1–3 keep the row's input open with an alert under it, and nothing is added; Escape removes the row; step 4 succeeds, since names are unique only within their parent.
+Expected: steps 1–4 keep the row's input open with an alert under it, and nothing is added, since a folder and a Test File in one folder cannot share a name either; Escape removes the row; step 5 succeeds, since names are unique only within their parent.
 
 #### TC-WS-03 Name length boundaries — P2, E2E
 
@@ -417,12 +430,12 @@ Covers US-4.3.3. Pre: S1.
 
 Expected: step 1 is refused with "Enter a name." under the input; step 2 succeeds; step 3 shows "Names can be at most 100 characters." under the input as it is typed and adds nothing.
 
-#### TC-WS-04 Rename a Project, a Module, and the open Test File in place — P1, E2E
+#### TC-WS-04 Rename a Project, a folder, and the open Test File in place — P1, E2E
 
 Covers US-4.3.3. Pre: S1, S2, `login.yaml` open in the editor.
 
 1. Click **Rename test file login.yaml**, type `sign-in`, press Enter.
-2. Click **Rename module Shopping**, type `Checkout`, press Enter.
+2. Click **Rename folder Shopping**, type `Checkout`, press Enter.
 3. Click **Rename project Demo Shop**, type `Swag Labs`, click somewhere else.
 
 Expected: no dialog opens; the row's name turns into a focused input in the same spot with the name selected, and a Test File's input holds the name without `.yaml`, which stays shown after it; steps 1–3 update the tree at once; after step 1 the editor heading is `sign-in.yaml`.
@@ -441,13 +454,13 @@ Covers US-4.3.3. Pre: S1, S2, S3, a Test File in `Shopping`.
 
 1. Click **Delete project Demo Shop**; check the text; click **Delete**.
 
-Expected: the dialog says `Delete project "Demo Shop" and all its modules, test files and variables? Run history is kept.`; afterwards the overview shows "No test files yet".
+Expected: the dialog says `Delete project "Demo Shop" and all its folders, test files and variables? Run history is kept.`; afterwards the overview shows "No test files yet".
 
 #### TC-WS-07 Collapse and expand the tree — P2, Manual
 
 Covers US-4.3.3. Pre: S1, S2, a Test File.
 
-1. Click the Project row, then the Module row, then each again.
+1. Click the Project row, then the folder row, then each again.
 2. Narrow the window below the mobile breakpoint.
 
 Expected: rows toggle their children; on a narrow window the sidebar hides behind a ☰ button that opens it.
@@ -466,7 +479,7 @@ Expected: step 1 shows the name unchanged, also after a reload; step 2 is saved 
 
 Covers US-4.3.3. Pre: S1, S2.
 
-1. Click **New test file in Shopping**: `.yaml` is shown after the new row's input.
+1. Click **New in Shopping** and choose **New test file**: `.yaml` is shown after the new row's input.
 2. Create Test Files named `sign in`, `商店`, and `a/b`, one at a time.
 3. Create Test Files named `  spaced  `, `v1.2`, and `pasted.yaml`.
 
@@ -492,6 +505,74 @@ Covers US-4.3.3. Pre: S1, S2, `login.yaml` and `checkout.yaml` in `Shopping`.
 
 Expected: step 1 restores `login.yaml`; step 2 keeps the input open with the backend's conflict message under it, linked with `aria-describedby`; step 3 shows "Enter a name." under the input as it is typed, the input marked invalid.
 
+### 4.2a Folders, moves, and imports (`FLD`)
+
+#### TC-FLD-01 Nested folders down to level 4 — P0, E2E
+
+Covers US-4.3.3. Pre: S1.
+
+1. Create the Project `Shop`, in it the folder `account`, in that `profile`, and in that `avatar`, each with **New in <name>** → **New folder**.
+2. Open **New in avatar**.
+3. Create the Test File `upload` in `avatar` and `smoke` in `Shop`; reload.
+
+Expected: each folder opens under its parent with a focused, empty input; step 2's menu offers only **New test file** and **Upload files…**, since `avatar` is level 4 counting the Project; after step 3 both files are in the tree, `upload.yaml` opened and current.
+
+#### TC-FLD-02 Rename and delete a folder — P1, E2E
+
+Covers US-4.3.3. Pre: S1, S2, a folder `Cart` in `Shopping` with `add.yaml`, which has a Run, open in the editor.
+
+1. Click **Rename folder Shopping**, type `Store`, press Enter.
+2. Click **Delete folder Store**; check the text; click **Delete**.
+
+Expected: step 1 renames it in place; the dialog says `Delete folder "Store" and every folder and test file in it? Run history is kept.`; afterwards the app is on `/files`, `Cart` and `add.yaml` are gone, and the Run is still listed for the Project with the path `Shopping/Cart/add.yaml`.
+
+#### TC-FLD-03 Move by drag and drop — P0, E2E
+
+Covers US-4.3.3. Pre: S1, S2, a folder `Checkout` in `Demo Shop`, a Project `Blog`, and `login.yaml` in `Shopping` with a Run.
+
+1. Drag `login.yaml` onto `Checkout`; before releasing, look at `Checkout`.
+2. Drag `Checkout` onto `Blog`.
+
+Expected: in step 1 `Checkout` is outlined and says "Move here"; after it the sidebar says `Moved login.yaml to Demo Shop / Checkout.` and the file is in `Checkout`; after step 2 `Checkout` and the file are in `Blog`, which says `Moved Checkout to Blog.`; the file keeps its Run and its status icon.
+
+#### TC-FLD-04 A move that breaks a rule — P1, E2E
+
+Covers US-4.3.3. Pre: S1, S2, `login.yaml` in `Demo Shop` and in `Shopping/Cart`, folders `a/b` and `x/y` in `Demo Shop`.
+
+1. Drag the `login.yaml` of `Demo Shop` onto `Cart`.
+2. Drag `Shopping` onto `Cart`.
+3. Drag `x` onto `b`.
+
+Expected: each drop shows an alert, `login.yaml was not moved. A folder or test file with this name already exists in this folder.`, `Shopping was not moved. A folder cannot be moved into itself or into one of its own folders.`, and `x was not moved. Folders can be at most 4 levels deep, counting the project.`, and nothing moves.
+
+#### TC-FLD-05 Move with the keyboard — P1, E2E
+
+Covers US-4.3.3. Pre: S1, S2, a folder `Checkout` in `Demo Shop`, `login.yaml` in `Shopping`.
+
+1. Tab to **Move test file login.yaml** and press Enter.
+2. Tab to `Demo Shop / Checkout` and press Enter.
+3. Open **Move folder Shopping**.
+
+Expected: step 1 opens a dialog `Move login.yaml` listing `Demo Shop` and `Demo Shop / Checkout`, not `Shopping`, where it is; step 2 moves it, closes the dialog, and says `Moved login.yaml to Demo Shop / Checkout.`; step 3 lists only `Demo Shop / Checkout`, nothing inside `Shopping` itself.
+
+#### TC-FLD-06 Import files and folders dropped from the computer — P0, E2E
+
+Covers US-4.3.3. Pre: S1, S2, `login.yaml` in `Demo Shop`, folders `a/b` in `Demo Shop`.
+
+1. Drop onto `Demo Shop` a file `login.yaml` and a folder `checkout` holding `pay.yaml`, `notes.md`, a `.git` folder, and a folder `cards` with `visa.yml` (the text of `invalid/multiple-errors.yaml`).
+2. Drop onto `b` a folder `deep` holding `y.yaml` and a folder `deeper` with `x.yaml`.
+
+Expected: step 1 says `Imported 2 test files. 2 skipped:` and lists `login.yaml: A folder or test file with this name already exists in this project.` and `checkout/notes.md: Only .yaml and .yml files can be imported.`; `checkout/pay.yaml` and `checkout/cards/visa.yaml` are created, the latter with its problems, `.git` is skipped without a line, and the old `login.yaml` keeps its source; step 2 says `Imported 1 test file. 1 skipped:` with `deep/deeper/: Folders can be at most 4 levels deep, counting the project.`
+
+#### TC-FLD-07 Drop a real folder in each browser — P2, Manual
+
+Covers US-4.3.3. Pre: S1, S2, a folder on the computer with `.yaml` files in a subfolder, and more than 100 files in one folder.
+
+1. In current Chrome, Edge, Firefox and Safari, drag the folder from the file manager onto `Shopping`; then drag a single `.yaml` file onto `Demo Shop`.
+2. Drag `Shopping` onto `Demo Shop` and back by its name.
+
+Expected: in every browser the row says "Import here" while files are over it, the folder arrives with its subfolder and every file, and the single file lands in `Demo Shop`; step 2 moves the folder in every browser.
+
 ### 4.3 Editor (`ED`)
 
 #### TC-ED-01 Starter source and the file state — P0, E2E
@@ -502,7 +583,7 @@ Covers US-4.3.3. Pre: S1, S2, a new Test File `editor.yaml`.
 2. Type a character.
 3. Delete it again.
 
-Expected: step 1 shows `name: "editor"` with one `open` step, with YAML highlighting and line numbers, the file state "Saved", and neither a **Validate** nor an **Upload file** button on the page (upload is in the sidebar); step 2 shows "Unsaved" in the header and the status bar and enables **Save**; step 3 shows "Saved" and disables **Save**.
+Expected: step 1 shows `name: "editor"` with one `open` step, with YAML highlighting and line numbers, the file state "Saved", and neither a **Validate** nor an upload button on the page (upload is in the sidebar's "+" menus); step 2 shows "Unsaved" in the header and the status bar and enables **Save**; step 3 shows "Saved" and disables **Save**.
 
 #### TC-ED-02 Save, keep showing, and reload — P0, E2E
 
@@ -517,10 +598,10 @@ Expected: after step 1 the file state is "Saved", the editor still shows the sav
 
 Covers US-4.3.3. Pre: S1, S2.
 
-1. On `Shopping`, click **Upload file to Shopping** and choose `pass/checkout.yaml`.
+1. Click **New in Shopping**, choose **Upload files…**, and choose `pass/checkout.yaml`.
 2. Upload it again.
 
-Expected: step 1 creates `checkout.yaml` in `Shopping` with the file's text, opens it, and marks it current; the editor shows the file, "Saved". Step 2 shows the conflict message, starting with the file name, under the Module row and adds nothing. The picker accepts `.yaml` and `.yml`; a `.yml` file becomes a `.yaml` Test File.
+Expected: step 1 creates `checkout.yaml` in `Shopping` with the file's text, opens it, and marks it current; the editor shows the file, "Saved". Step 2 shows `Imported no test files. 1 skipped:` in the sidebar's messages, with `checkout.yaml: A folder or test file with this name already exists in this folder.`, and overwrites nothing. The picker accepts `.yaml` and `.yml`; a `.yml` file becomes a `.yaml` Test File.
 
 #### TC-ED-04 A file with several errors, as it is typed — P0, E2E
 
@@ -670,6 +751,14 @@ Covers US-4.3.1. Pre: S1, S2, a Test File open; the check while typing unavailab
 
 Expected: each save lists the diagnostics it answers in the Debug console: step 1 `Line 7: …`, step 2 the two `"ms"` lines.
 
+#### TC-ED-21 Upload several files at once — P1, E2E
+
+Covers US-4.3.3. Pre: S1, S2.
+
+1. Click **New in Demo Shop**, choose **Upload files…**, and choose `sign-in.yaml`, `checkout.yml`, and `sign in.yaml` together.
+
+Expected: the sidebar's messages say `Imported 2 test files. 1 skipped:` and list `sign in.yaml: Use only letters, digits, -, _ and ., with no spaces.`; `sign-in.yaml` and `checkout.yaml` are in `Demo Shop`; no file opens.
+
 ### 4.4 Project Variables (`VAR`)
 
 #### TC-VAR-01 Add, replace, and delete a Variable — P0, E2E
@@ -704,7 +793,7 @@ Expected: Status `Failed`; step 1 Passed; step 2 Failed with `Variable {{NOT_SET
 
 #### TC-VAR-04 Variables are per Project — P2, E2E
 
-Covers US-4.3.3. Pre: S1–S3, a second Project `Other` with a Module and `pass/sign-in.yaml`, and no Variables.
+Covers US-4.3.3. Pre: S1–S3, a second Project `Other` with `pass/sign-in.yaml` in it, and no Variables.
 
 1. Run the file in `Other`.
 
@@ -727,6 +816,14 @@ Covers US-4.3.4. Pre: S1–S3, and `DISPLAY_NAME` set to `Zoë "the <b>Swag</b>"
 1. S4 with `pass/variable-value.yaml`; S5.
 
 Expected: `Passed`, "3/3 passed": the value is typed into the prompt and read back unchanged, without being treated as HTML.
+
+#### TC-VAR-07 Files at any folder depth read the Project's Variables — P1, E2E
+
+Covers US-4.3.3. Pre: S1–S3, folders `Account/Profile` inside `Shopping`, and `pass/sign-in.yaml` in `Profile`.
+
+1. S5 with that file.
+
+Expected: `Passed`: folders have no Variables of their own, and the file runs with those of `Demo Shop`.
 
 ### 4.5 Runs and Live Progress (`RUN`)
 
@@ -1013,11 +1110,11 @@ Covers PRD 4.3.10 (blocking private networks is in scope). Pre: production; S1, 
 
 Expected: both Runs fail at step 1 with `net::ERR_FAILED` or `net::ERR_CONNECTION_REFUSED`; no page content from those addresses appears in the screenshot.
 
-#### TC-SEC-05 HTML in Project and Module names is shown as text — P1, E2E
+#### TC-SEC-05 HTML in Project and folder names is shown as text — P1, E2E
 
 Covers US-4.3.7. Pre: S1.
 
-1. Create a Project and a Module named `<img src=x onerror=alert(1)>`, and in it a Test File named `plain` (Test File names allow no `<` or `>`, TC-WS-09).
+1. Create a Project and a folder named `<img src=x onerror=alert(1)>`, and in it a Test File named `plain` (Test File names allow no `<` or `>`, TC-WS-09).
 2. Open `/files` and the Test File.
 
 Expected: the names show as the literal text in the sidebar and the overview; no `img` element is added and no dialog opens.
@@ -1120,7 +1217,7 @@ Expected: the docs load; the Run answers `202` and then its result, with the sha
 
 Pre: S1–S3, a Test File.
 
-1. Without a mouse, sign in, create a Project, Module, and Test File (F2 to rename one), open the Variables page, edit, save with `Ctrl+S`, run with `Ctrl+Enter`, resize the splits with the arrow keys, collapse and reopen each console, and open and close the Run details.
+1. Without a mouse, sign in, create a Project, a folder, and a Test File through the "+" menus (F2 to rename one), move the file with **Move to…**, open the Variables page, edit, save with `Ctrl+S`, run with `Ctrl+Enter`, resize the splits with the arrow keys, collapse and reopen each console, and open and close the Run details.
 
 Expected: every control is reachable with Tab and has a visible focus ring, the split handles included; Tab leaves the editor after Escape; dialogs and the sheet take focus and close with Escape; row actions show on focus; a collapsed console column is skipped.
 

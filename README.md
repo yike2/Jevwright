@@ -39,6 +39,8 @@ pnpm jevwright validate tests/login.yaml   # check a test file without a browser
 pnpm jevwright run tests/login.yaml        # run it; add --headed to watch the browser
 ```
 
+`run` gives each test file the variables of every `.env` from the working directory down to the file's own directory; a nearer `.env` wins, and a variable already set in the shell wins over all (`docs/tech/cli.md` 1.2).
+
 `run` writes each file's report, trace, and screenshots to `jevwright-reports/<timestamp>/`. See [docs/tech/cli.md](docs/tech/cli.md) for the output and exit codes.
 
 ### Backend

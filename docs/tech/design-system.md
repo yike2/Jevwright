@@ -253,7 +253,7 @@ These rules apply to every message the frontend shows and every `message` the ba
 | `Too small: expected string to have >=8 characters` | Password must be at least 8 characters. |
 | `Invalid name` | Use only letters, digits, -, _ and ., with no spaces. |
 | `Request failed (500)` | Something went wrong on the server. Try again in a moment. |
-| `Unique constraint failed` | A module with this name already exists in this project. |
+| `Unique constraint failed` | A folder or test file with this name already exists in this folder. |
 
 ## 7. Accessibility
 

@@ -10,7 +10,7 @@ Each command expands each argument as follows:
 
 - A path that contains `*`, `?`, or `[` is expanded with `fs.glob` from `node:fs/promises`.
 - Entries matched by a glob that are directories are ignored; only files are kept.
-- A directory is searched recursively for files ending in `.yaml`.
+- A directory is searched recursively for files ending in `.yaml`. The search never enters `node_modules`, `.git`, or any other hidden directory (a name starting with `.`), though a hidden directory named as an argument is searched, and hidden `.yaml` files are kept.
 - A file path is used as given, whatever its extension.
 - Results are de-duplicated and sorted.
 - Every file must be inside the current working directory.
@@ -19,19 +19,21 @@ Each command expands each argument as follows:
 
 ### 1.2 Configuration for `run`
 
-- If `.env` exists in the working directory, it is loaded with `process.loadEnvFile`.
-- A missing `.env` is not an error.
-- Variables already set in the environment are not overridden by `.env`.
-- `OPENROUTER_API_KEY` must be non-empty; otherwise the CLI prints `OPENROUTER_API_KEY is not set` to stderr and exits `2` before processing any file.
-- `validate` does not require `OPENROUTER_API_KEY`.
-- `vars` passed to `runTest()` are every string value in `process.env` except `OPENROUTER_API_KEY`.
+Each file gets its own `vars`, from the `.env` files on its way down from the working directory, like the folders of a repository:
+
+- For a file, the CLI reads the `.env` of the working directory and of every directory below it down to the file's own directory (`envDirsFor`), and nothing above the working directory. Path expansion (1.1) keeps every file inside the working directory.
+- `.env` files are parsed with `util.parseEnv` from `node:util`, never loaded into `process.env`, so one file's variables never reach another file. A missing `.env` is not an error.
+- When two `.env` files set the same name, the one nearer the file wins: `suite/.env` over the working directory's, `suite/login/.env` over both. A variable already set in the shell wins over every `.env`.
+- `vars` passed to `runTest()` are those merged values and every string value of `process.env`, except `OPENROUTER_API_KEY`, which is never a test variable. With only a `.env` in the working directory, every file gets the same `vars`, its variables and the shell's.
+- `OPENROUTER_API_KEY` comes from the shell, or else from the working directory's `.env`; a `.env` below the working directory does not set it. It must be non-empty; otherwise the CLI prints `OPENROUTER_API_KEY is not set` to stderr and exits `2` before processing any file.
+- `validate` does not require `OPENROUTER_API_KEY` and reads no `.env`.
 - The CLI does not check test variables; a missing variable fails its step in the Executor.
 - The CLI creates the Jev client with `createJevClient({ apiKey, fetch: globalThis.fetch })`.
 - The CLI never prints variable values, the API key, or unredacted error messages.
 
 ### 1.3 Running Each File
 
-For every accepted file, the CLI reads the source and calls `runTest({ file, source }, { headed, vars, jev, store, onEvent })`.
+For every accepted file, the CLI reads the source and calls `runTest({ file, source }, { headed, vars, jev, store, onEvent })`, with that file's `vars` (1.2).
 
 - `file` is the file path relative to the working directory, using `/` on every OS.
 - The output directory for a file is `<out-dir>/<timestamp>/<file without .yaml>/`.
@@ -89,9 +91,9 @@ flowchart TD
   C -->|validate| D[expand paths and validate working-directory rules]
   C -->|run| E[expand paths and validate working-directory rules]
   D --> F[read files and collect diagnostics]
-  E --> G[load .env if present]
-  G --> H[validate OPENROUTER_API_KEY and config]
-  H --> I[process files one by one]
+  E --> G[read OPENROUTER_API_KEY from the shell or the working directory's .env]
+  G --> H[validate OPENROUTER_API_KEY]
+  H --> I[process files one by one, each with the vars of its .env files]
   F --> J[print validate output]
   I --> K[runTest per file]
   K --> L[store the report bundle]
@@ -103,8 +105,8 @@ flowchart TD
 
 1. Parse the command and arguments.
 2. Expand and validate any path input before any file is processed.
-3. For `run`, load `.env` if present and validate the API key.
-4. For each accepted file, read the source, run the file, and save its bundle.
+3. For `run`, read and validate the API key.
+4. For each accepted file, merge its `.env` files and the shell into its `vars`, read the source, run the file, and save its bundle.
 5. Print the command output for that file or for the full batch.
 6. Merge the per-file results into the final exit code.
 
@@ -170,7 +172,7 @@ The source for the exit-code rules is docs/PRD.md section 7.2.
 | `main.ts`           | Process entry point: calls `runCli` with the command-line arguments and sets `process.exitCode` |
 | `run-cli.ts`        | Commander setup and dispatch to `validate` and `run`; returns the exit code instead of exiting  |
 | `path-expansion.ts` | Expand each path argument, enforce working-directory rules, and dedupe/sort results             |
-| `config.ts`         | Load `.env`, validate required configuration for `run`, and assemble the runtime `vars` object  |
+| `config.ts`         | Parse `.env` files (`readEnvFile`), the directories a file reads them from (`envDirsFor`), each file's `vars` (`varsFor`), and the API key for `run` (`readConfig`) |
 | `report-store.ts`   | File-system ReportStore: create directories, write `report.json`, and wrap file-system errors   |
 | `output.ts`         | Human-readable output for validation and `run`, plus JSON serialization for `validate --json`   |
 | `exit-codes.ts`     | Merge per-file outcomes into the final exit code                                                |
@@ -192,10 +194,10 @@ src/cli/
 
 | Type        | Coverage                                                                                                                                                                                                                                                                  | Location                                     |
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
-| Unit        | Path expansion: glob matching, directory recursion for `.yaml`, file pass-through, dedupe and sort, working-directory enforcement, missing paths and empty yields, and invalid files outside the working directory                                                        | `src/tests/unit/cli/path-expansion.test.ts`  |
-| Unit        | Configuration: `.env` loading when present, missing `.env` as acceptable, `OPENROUTER_API_KEY` empty/absent handling, and `vars` built from `process.env` excluding the API key                                                                                           | `src/tests/unit/cli/config.test.ts`          |
+| Unit        | Path expansion: glob matching, directory recursion for `.yaml`, `node_modules` and hidden directories skipped while a named hidden directory and hidden files are kept, file pass-through, dedupe and sort, working-directory enforcement, missing paths and empty yields, and invalid files outside the working directory | `src/tests/unit/cli/path-expansion.test.ts`  |
+| Unit        | Configuration: a `.env` parsed and not loaded into `process.env`, a missing one as empty; the directories from the working directory down; one `.env` for every file, every `.env` on the way merged, the nearer winning, each file only its own way down, the shell winning, nothing above the working directory, the API key never a variable; the API key from the shell first, else the working directory's `.env` only, and empty or absent as an error | `src/tests/unit/cli/config.test.ts`          |
 | Unit        | Report-store behavior: write `report.json` with 2-space indentation and a trailing newline, create nested bundle directories, write each bundle file at its path, and wrap file-system errors with only the output directory and error code (or `UNKNOWN`) in the message | `src/tests/unit/cli/report-store.test.ts`    |
 | Unit        | Output formatting: validate success/failure formatting and `--json` payload shape; run step output formatting with success/failure lines, final summary, and report `error` prefix                                                                                        | `src/tests/unit/cli/output.test.ts`          |
 | Unit        | Exit-code aggregation: `0` when all files pass, `1` when any file fails, and `2` when invalid files or usage/configuration problems occur                                                                                                                                 | `src/tests/unit/cli/exit-codes.test.ts`      |
 | Integration | CLI `validate` command: valid file output, invalid file diagnostics, `--json`, and exit codes `0` and `2`                                                                                                                                                                 | `src/tests/integration/cli/validate.test.ts` |
-| Integration | CLI `run` command with selector-only steps, `--out-dir`, exit codes `0`, `1`, and `2` when `OPENROUTER_API_KEY` is missing; verify `report.json`, `trace.zip` (starts with `PK`), and a failed step screenshot (PNG signature) exist on disk under the expected directory | `src/tests/integration/cli/run.test.ts`      |
+| Integration | CLI `run` command with selector-only steps, `--out-dir`, exit codes `0`, `1`, and `2` when `OPENROUTER_API_KEY` is missing; two files in different directories each passing with the `{{VAR}}` of their own nearer `.env`, which is neither printed nor left in `process.env`; verify `report.json`, `trace.zip` (starts with `PK`), and a failed step screenshot (PNG signature) exist on disk under the expected directory | `src/tests/integration/cli/run.test.ts`      |
