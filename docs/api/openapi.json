@@ -92,8 +92,7 @@
                   "type": "object",
                   "properties": {
                     "token": {
-                      "type": "string",
-                      "description": "JWT: send as Authorization: Bearer"
+                      "type": "string"
                     },
                     "user": {
                       "type": "object",
@@ -154,8 +153,7 @@
                             "type": "object",
                             "properties": {
                               "path": {
-                                "type": "string",
-                                "description": "e.g. body.email"
+                                "type": "string"
                               },
                               "message": {
                                 "type": "string"
@@ -196,8 +194,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -261,8 +258,7 @@
                   "type": "object",
                   "properties": {
                     "token": {
-                      "type": "string",
-                      "description": "JWT: send as Authorization: Bearer"
+                      "type": "string"
                     },
                     "user": {
                       "type": "object",
@@ -323,8 +319,7 @@
                             "type": "object",
                             "properties": {
                               "path": {
-                                "type": "string",
-                                "description": "e.g. body.email"
+                                "type": "string"
                               },
                               "message": {
                                 "type": "string"
@@ -365,8 +360,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -444,8 +438,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -471,7 +464,7 @@
     },
     "/tree": {
       "get": {
-        "summary": "Every Project with its Modules and Test Files, for the sidebar and the files overview",
+        "summary": "Every Project with its folders and Test Files, nested, for the sidebar and the files overview",
         "security": [
           {
             "bearer": []
@@ -509,7 +502,13 @@
                             "format": "date-time",
                             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
                           },
-                          "modules": {
+                          "folders": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/components/schemas/TreeFolder"
+                            }
+                          },
+                          "testFiles": {
                             "type": "array",
                             "items": {
                               "type": "object",
@@ -524,6 +523,18 @@
                                   "format": "uuid",
                                   "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                                 },
+                                "folderId": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "format": "uuid",
+                                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
                                 "name": {
                                   "type": "string"
                                 },
@@ -537,92 +548,52 @@
                                   "format": "date-time",
                                   "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
                                 },
-                                "testFiles": {
-                                  "type": "array",
-                                  "items": {
-                                    "type": "object",
-                                    "properties": {
-                                      "id": {
-                                        "type": "string",
-                                        "format": "uuid",
-                                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                "latestRun": {
+                                  "anyOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "id": {
+                                          "type": "string",
+                                          "format": "uuid",
+                                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                        },
+                                        "status": {
+                                          "type": "string",
+                                          "enum": [
+                                            "queued",
+                                            "running",
+                                            "passed",
+                                            "failed"
+                                          ]
+                                        },
+                                        "createdAt": {
+                                          "type": "string",
+                                          "format": "date-time",
+                                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                        }
                                       },
-                                      "moduleId": {
-                                        "type": "string",
-                                        "format": "uuid",
-                                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-                                      },
-                                      "name": {
-                                        "type": "string"
-                                      },
-                                      "createdAt": {
-                                        "type": "string",
-                                        "format": "date-time",
-                                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
-                                      },
-                                      "updatedAt": {
-                                        "type": "string",
-                                        "format": "date-time",
-                                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
-                                      },
-                                      "latestRun": {
-                                        "anyOf": [
-                                          {
-                                            "type": "object",
-                                            "properties": {
-                                              "id": {
-                                                "type": "string",
-                                                "format": "uuid",
-                                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-                                              },
-                                              "status": {
-                                                "type": "string",
-                                                "enum": [
-                                                  "queued",
-                                                  "running",
-                                                  "passed",
-                                                  "failed"
-                                                ]
-                                              },
-                                              "createdAt": {
-                                                "type": "string",
-                                                "format": "date-time",
-                                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
-                                                "description": "Trigger time"
-                                              }
-                                            },
-                                            "required": [
-                                              "id",
-                                              "status",
-                                              "createdAt"
-                                            ],
-                                            "additionalProperties": false
-                                          },
-                                          {
-                                            "type": "null"
-                                          }
-                                        ]
-                                      }
+                                      "required": [
+                                        "id",
+                                        "status",
+                                        "createdAt"
+                                      ],
+                                      "additionalProperties": false
                                     },
-                                    "required": [
-                                      "id",
-                                      "moduleId",
-                                      "name",
-                                      "createdAt",
-                                      "updatedAt",
-                                      "latestRun"
-                                    ],
-                                    "additionalProperties": false
-                                  }
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
                                 }
                               },
                               "required": [
                                 "id",
                                 "projectId",
+                                "folderId",
                                 "name",
                                 "createdAt",
                                 "updatedAt",
-                                "testFiles"
+                                "latestRun"
                               ],
                               "additionalProperties": false
                             }
@@ -633,7 +604,8 @@
                           "name",
                           "createdAt",
                           "updatedAt",
-                          "modules"
+                          "folders",
+                          "testFiles"
                         ],
                         "additionalProperties": false
                       }
@@ -658,8 +630,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -753,8 +724,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -866,8 +836,7 @@
                             "type": "object",
                             "properties": {
                               "path": {
-                                "type": "string",
-                                "description": "e.g. body.email"
+                                "type": "string"
                               },
                               "message": {
                                 "type": "string"
@@ -908,8 +877,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -941,8 +909,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -969,7 +936,7 @@
     "/projects/quick-start": {
       "post": {
         "summary": "Add the Quick Start project",
-        "description": "Adds the Quick Start project that every new account gets: Modules of passing, failing, and invalid example Test Files, and the Variables BASE and SWAG_PASSWORD.",
+        "description": "Adds the Quick Start project that every new account gets: folders of passing, failing, invalid, and Jev example Test Files, and the Variables BASE and SWAG_PASSWORD.",
         "security": [
           {
             "bearer": []
@@ -1025,8 +992,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -1058,8 +1024,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -1184,8 +1149,7 @@
                             "type": "object",
                             "properties": {
                               "path": {
-                                "type": "string",
-                                "description": "e.g. body.email"
+                                "type": "string"
                               },
                               "message": {
                                 "type": "string"
@@ -1226,8 +1190,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -1259,8 +1222,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -1292,8 +1254,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -1317,7 +1278,7 @@
         }
       },
       "delete": {
-        "summary": "Delete a Project with its Modules, Test Files, and Variables; Runs are kept",
+        "summary": "Delete a Project with its folders, Test Files, and Variables; Runs are kept",
         "security": [
           {
             "bearer": []
@@ -1362,8 +1323,7 @@
                             "type": "object",
                             "properties": {
                               "path": {
-                                "type": "string",
-                                "description": "e.g. body.email"
+                                "type": "string"
                               },
                               "message": {
                                 "type": "string"
@@ -1404,8 +1364,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -1437,8 +1396,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -1542,8 +1500,7 @@
                             "type": "object",
                             "properties": {
                               "path": {
-                                "type": "string",
-                                "description": "e.g. body.email"
+                                "type": "string"
                               },
                               "message": {
                                 "type": "string"
@@ -1584,8 +1541,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -1617,8 +1573,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -1680,8 +1635,7 @@
                 "properties": {
                   "value": {
                     "type": "string",
-                    "maxLength": 10000,
-                    "description": "At most 10,000 characters"
+                    "maxLength": 10000
                   }
                 },
                 "required": [
@@ -1718,8 +1672,7 @@
                             "type": "object",
                             "properties": {
                               "path": {
-                                "type": "string",
-                                "description": "e.g. body.email"
+                                "type": "string"
                               },
                               "message": {
                                 "type": "string"
@@ -1760,8 +1713,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -1793,8 +1745,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -1826,8 +1777,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -1905,8 +1855,7 @@
                             "type": "object",
                             "properties": {
                               "path": {
-                                "type": "string",
-                                "description": "e.g. body.email"
+                                "type": "string"
                               },
                               "message": {
                                 "type": "string"
@@ -1947,8 +1896,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -1980,8 +1928,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -2005,9 +1952,9 @@
         }
       }
     },
-    "/projects/{projectId}/modules": {
+    "/projects/{projectId}/folders": {
       "get": {
-        "summary": "List a Project's Modules",
+        "summary": "List every folder of a Project, at any level",
         "security": [
           {
             "bearer": []
@@ -2027,7 +1974,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Modules",
+            "description": "Folders, by name",
             "content": {
               "application/json": {
                 "schema": {
@@ -2048,6 +1995,18 @@
                             "format": "uuid",
                             "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                           },
+                          "parentId": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
                           "name": {
                             "type": "string"
                           },
@@ -2065,6 +2024,7 @@
                         "required": [
                           "id",
                           "projectId",
+                          "parentId",
                           "name",
                           "createdAt",
                           "updatedAt"
@@ -2104,8 +2064,7 @@
                             "type": "object",
                             "properties": {
                               "path": {
-                                "type": "string",
-                                "description": "e.g. body.email"
+                                "type": "string"
                               },
                               "message": {
                                 "type": "string"
@@ -2146,8 +2105,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -2179,8 +2137,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -2204,7 +2161,7 @@
         }
       },
       "post": {
-        "summary": "Create a Module",
+        "summary": "Create a folder in a Project or in one of its folders, at most 4 levels deep counting the Project",
         "security": [
           {
             "bearer": []
@@ -2233,6 +2190,18 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 100
+                  },
+                  "parentId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
                   }
                 },
                 "required": [
@@ -2260,6 +2229,18 @@
                       "format": "uuid",
                       "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                     },
+                    "parentId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
                     "name": {
                       "type": "string"
                     },
@@ -2277,6 +2258,7 @@
                   "required": [
                     "id",
                     "projectId",
+                    "parentId",
                     "name",
                     "createdAt",
                     "updatedAt"
@@ -2287,7 +2269,7 @@
             }
           },
           "400": {
-            "description": "A field breaks its rule",
+            "description": "A field breaks its rule, or the folder would be more than 4 levels deep",
             "content": {
               "application/json": {
                 "schema": {
@@ -2309,8 +2291,7 @@
                             "type": "object",
                             "properties": {
                               "path": {
-                                "type": "string",
-                                "description": "e.g. body.email"
+                                "type": "string"
                               },
                               "message": {
                                 "type": "string"
@@ -2351,8 +2332,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -2374,7 +2354,7 @@
             }
           },
           "404": {
-            "description": "No such resource for this user, or an id that is not a uuid",
+            "description": "No such Project, or no such parent folder in it, for this user",
             "content": {
               "application/json": {
                 "schema": {
@@ -2384,8 +2364,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -2407,7 +2386,7 @@
             }
           },
           "409": {
-            "description": "The name is taken",
+            "description": "A folder or Test File in the parent has the name",
             "content": {
               "application/json": {
                 "schema": {
@@ -2417,8 +2396,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -2442,9 +2420,9 @@
         }
       }
     },
-    "/modules/{moduleId}": {
+    "/folders/{folderId}": {
       "patch": {
-        "summary": "Rename a Module",
+        "summary": "Rename a folder, or move it with everything inside to another folder or Project",
         "security": [
           {
             "bearer": []
@@ -2452,7 +2430,7 @@
         ],
         "parameters": [
           {
-            "name": "moduleId",
+            "name": "folderId",
             "in": "path",
             "required": true,
             "schema": {
@@ -2473,18 +2451,32 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 100
+                  },
+                  "projectId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "parentId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
                   }
-                },
-                "required": [
-                  "name"
-                ]
+                }
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Renamed",
+            "description": "Saved",
             "content": {
               "application/json": {
                 "schema": {
@@ -2499,6 +2491,18 @@
                       "type": "string",
                       "format": "uuid",
                       "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "parentId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
                     },
                     "name": {
                       "type": "string"
@@ -2517,6 +2521,7 @@
                   "required": [
                     "id",
                     "projectId",
+                    "parentId",
                     "name",
                     "createdAt",
                     "updatedAt"
@@ -2527,7 +2532,7 @@
             }
           },
           "400": {
-            "description": "A field breaks its rule",
+            "description": "A field breaks its rule, the move goes into the folder itself or one of its folders, or a folder would be more than 4 levels deep",
             "content": {
               "application/json": {
                 "schema": {
@@ -2549,8 +2554,7 @@
                             "type": "object",
                             "properties": {
                               "path": {
-                                "type": "string",
-                                "description": "e.g. body.email"
+                                "type": "string"
                               },
                               "message": {
                                 "type": "string"
@@ -2591,8 +2595,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -2614,7 +2617,7 @@
             }
           },
           "404": {
-            "description": "No such resource for this user, or an id that is not a uuid",
+            "description": "No such folder, or no such target Project or folder, for this user",
             "content": {
               "application/json": {
                 "schema": {
@@ -2624,8 +2627,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -2647,7 +2649,7 @@
             }
           },
           "409": {
-            "description": "The name is taken",
+            "description": "A folder or Test File in the target parent has the name",
             "content": {
               "application/json": {
                 "schema": {
@@ -2657,8 +2659,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -2682,7 +2683,7 @@
         }
       },
       "delete": {
-        "summary": "Delete a Module with its Test Files; Runs are kept",
+        "summary": "Delete a folder with every folder and Test File inside; Runs are kept",
         "security": [
           {
             "bearer": []
@@ -2690,7 +2691,7 @@
         ],
         "parameters": [
           {
-            "name": "moduleId",
+            "name": "folderId",
             "in": "path",
             "required": true,
             "schema": {
@@ -2727,8 +2728,7 @@
                             "type": "object",
                             "properties": {
                               "path": {
-                                "type": "string",
-                                "description": "e.g. body.email"
+                                "type": "string"
                               },
                               "message": {
                                 "type": "string"
@@ -2769,8 +2769,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -2802,8 +2801,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -2827,9 +2825,9 @@
         }
       }
     },
-    "/modules/{moduleId}/test-files": {
+    "/projects/{projectId}/test-files": {
       "get": {
-        "summary": "List a Module's Test Files",
+        "summary": "List every Test File of a Project, at any level",
         "security": [
           {
             "bearer": []
@@ -2837,7 +2835,7 @@
         ],
         "parameters": [
           {
-            "name": "moduleId",
+            "name": "projectId",
             "in": "path",
             "required": true,
             "schema": {
@@ -2849,7 +2847,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Test Files, without sources",
+            "description": "Test Files, without sources, by name",
             "content": {
               "application/json": {
                 "schema": {
@@ -2865,16 +2863,27 @@
                             "format": "uuid",
                             "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                           },
-                          "moduleId": {
+                          "projectId": {
                             "type": "string",
                             "format": "uuid",
                             "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                          },
+                          "folderId": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
                           },
                           "name": {
                             "type": "string"
                           },
                           "source": {
-                            "description": "In GET /test-files/{testFileId} and in the answer of saving a Test File, not in lists",
                             "type": "string"
                           },
                           "createdAt": {
@@ -2890,7 +2899,8 @@
                         },
                         "required": [
                           "id",
-                          "moduleId",
+                          "projectId",
+                          "folderId",
                           "name",
                           "createdAt",
                           "updatedAt"
@@ -2930,8 +2940,7 @@
                             "type": "object",
                             "properties": {
                               "path": {
-                                "type": "string",
-                                "description": "e.g. body.email"
+                                "type": "string"
                               },
                               "message": {
                                 "type": "string"
@@ -2972,8 +2981,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -3005,8 +3013,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -3038,7 +3045,7 @@
         ],
         "parameters": [
           {
-            "name": "moduleId",
+            "name": "projectId",
             "in": "path",
             "required": true,
             "schema": {
@@ -3063,8 +3070,19 @@
                   },
                   "source": {
                     "type": "string",
-                    "maxLength": 262144,
-                    "description": "The .yaml source, at most 256 Ki characters"
+                    "maxLength": 262144
+                  },
+                  "folderId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
                   }
                 },
                 "required": [
@@ -3091,16 +3109,27 @@
                           "format": "uuid",
                           "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                         },
-                        "moduleId": {
+                        "projectId": {
                           "type": "string",
                           "format": "uuid",
                           "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "folderId": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
                         },
                         "name": {
                           "type": "string"
                         },
                         "source": {
-                          "description": "In GET /test-files/{testFileId} and in the answer of saving a Test File, not in lists",
                           "type": "string"
                         },
                         "createdAt": {
@@ -3116,7 +3145,8 @@
                       },
                       "required": [
                         "id",
-                        "moduleId",
+                        "projectId",
+                        "folderId",
                         "name",
                         "createdAt",
                         "updatedAt"
@@ -3129,8 +3159,7 @@
                         "type": "object",
                         "properties": {
                           "code": {
-                            "type": "string",
-                            "description": "E001–E008, see syntax-analyzer.md 3.3"
+                            "type": "string"
                           },
                           "message": {
                             "type": "string"
@@ -3138,8 +3167,7 @@
                           "line": {
                             "type": "integer",
                             "minimum": -9007199254740991,
-                            "maximum": 9007199254740991,
-                            "description": "1-based"
+                            "maximum": 9007199254740991
                           }
                         },
                         "required": [
@@ -3183,8 +3211,7 @@
                             "type": "object",
                             "properties": {
                               "path": {
-                                "type": "string",
-                                "description": "e.g. body.email"
+                                "type": "string"
                               },
                               "message": {
                                 "type": "string"
@@ -3225,8 +3252,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -3248,7 +3274,7 @@
             }
           },
           "404": {
-            "description": "No such resource for this user, or an id that is not a uuid",
+            "description": "No such Project, or no such folder in it, for this user",
             "content": {
               "application/json": {
                 "schema": {
@@ -3258,8 +3284,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -3281,7 +3306,7 @@
             }
           },
           "409": {
-            "description": "The name is taken",
+            "description": "A folder or Test File in the parent has the name",
             "content": {
               "application/json": {
                 "schema": {
@@ -3291,8 +3316,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -3324,8 +3348,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -3367,8 +3390,7 @@
                 "properties": {
                   "source": {
                     "type": "string",
-                    "maxLength": 262144,
-                    "description": "The .yaml source, at most 256 Ki characters"
+                    "maxLength": 262144
                   }
                 },
                 "required": [
@@ -3392,8 +3414,7 @@
                         "type": "object",
                         "properties": {
                           "code": {
-                            "type": "string",
-                            "description": "E001–E008, see syntax-analyzer.md 3.3"
+                            "type": "string"
                           },
                           "message": {
                             "type": "string"
@@ -3401,8 +3422,7 @@
                           "line": {
                             "type": "integer",
                             "minimum": -9007199254740991,
-                            "maximum": 9007199254740991,
-                            "description": "1-based"
+                            "maximum": 9007199254740991
                           }
                         },
                         "required": [
@@ -3445,8 +3465,7 @@
                             "type": "object",
                             "properties": {
                               "path": {
-                                "type": "string",
-                                "description": "e.g. body.email"
+                                "type": "string"
                               },
                               "message": {
                                 "type": "string"
@@ -3487,8 +3506,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -3520,8 +3538,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -3578,16 +3595,27 @@
                       "format": "uuid",
                       "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                     },
-                    "moduleId": {
+                    "projectId": {
                       "type": "string",
                       "format": "uuid",
                       "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "folderId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
                     },
                     "name": {
                       "type": "string"
                     },
                     "source": {
-                      "description": "In GET /test-files/{testFileId} and in the answer of saving a Test File, not in lists",
                       "type": "string"
                     },
                     "createdAt": {
@@ -3603,7 +3631,8 @@
                   },
                   "required": [
                     "id",
-                    "moduleId",
+                    "projectId",
+                    "folderId",
                     "name",
                     "createdAt",
                     "updatedAt"
@@ -3636,8 +3665,7 @@
                             "type": "object",
                             "properties": {
                               "path": {
-                                "type": "string",
-                                "description": "e.g. body.email"
+                                "type": "string"
                               },
                               "message": {
                                 "type": "string"
@@ -3678,8 +3706,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -3711,8 +3738,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -3736,7 +3762,7 @@
         }
       },
       "patch": {
-        "summary": "Rename, move to another Module, or change the source of a Test File; saved even with diagnostics",
+        "summary": "Rename, move to another folder or Project, or change the source of a Test File; saved even with diagnostics",
         "security": [
           {
             "bearer": []
@@ -3767,15 +3793,26 @@
                     "maxLength": 100,
                     "pattern": "^[A-Za-z0-9._-]+\\.yaml$"
                   },
-                  "moduleId": {
+                  "source": {
+                    "type": "string",
+                    "maxLength": 262144
+                  },
+                  "projectId": {
                     "type": "string",
                     "format": "uuid",
                     "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                   },
-                  "source": {
-                    "type": "string",
-                    "maxLength": 262144,
-                    "description": "The .yaml source, at most 256 Ki characters"
+                  "folderId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
                   }
                 }
               }
@@ -3798,16 +3835,27 @@
                           "format": "uuid",
                           "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                         },
-                        "moduleId": {
+                        "projectId": {
                           "type": "string",
                           "format": "uuid",
                           "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "folderId": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
                         },
                         "name": {
                           "type": "string"
                         },
                         "source": {
-                          "description": "In GET /test-files/{testFileId} and in the answer of saving a Test File, not in lists",
                           "type": "string"
                         },
                         "createdAt": {
@@ -3823,7 +3871,8 @@
                       },
                       "required": [
                         "id",
-                        "moduleId",
+                        "projectId",
+                        "folderId",
                         "name",
                         "createdAt",
                         "updatedAt"
@@ -3836,8 +3885,7 @@
                         "type": "object",
                         "properties": {
                           "code": {
-                            "type": "string",
-                            "description": "E001–E008, see syntax-analyzer.md 3.3"
+                            "type": "string"
                           },
                           "message": {
                             "type": "string"
@@ -3845,8 +3893,7 @@
                           "line": {
                             "type": "integer",
                             "minimum": -9007199254740991,
-                            "maximum": 9007199254740991,
-                            "description": "1-based"
+                            "maximum": 9007199254740991
                           }
                         },
                         "required": [
@@ -3890,8 +3937,7 @@
                             "type": "object",
                             "properties": {
                               "path": {
-                                "type": "string",
-                                "description": "e.g. body.email"
+                                "type": "string"
                               },
                               "message": {
                                 "type": "string"
@@ -3932,8 +3978,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -3955,7 +4000,7 @@
             }
           },
           "404": {
-            "description": "No such Test File, or no such target Module, for this user",
+            "description": "No such Test File, or no such target Project or folder, for this user",
             "content": {
               "application/json": {
                 "schema": {
@@ -3965,8 +4010,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -3988,7 +4032,7 @@
             }
           },
           "409": {
-            "description": "The name is taken in the target Module",
+            "description": "A folder or Test File in the target parent has the name",
             "content": {
               "application/json": {
                 "schema": {
@@ -3998,8 +4042,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -4031,8 +4074,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -4101,8 +4143,7 @@
                             "type": "object",
                             "properties": {
                               "path": {
-                                "type": "string",
-                                "description": "e.g. body.email"
+                                "type": "string"
                               },
                               "message": {
                                 "type": "string"
@@ -4143,8 +4184,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -4176,8 +4216,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -4244,8 +4283,7 @@
                         {
                           "type": "null"
                         }
-                      ],
-                      "description": "null once the Test File is deleted"
+                      ]
                     },
                     "projectId": {
                       "anyOf": [
@@ -4257,28 +4295,16 @@
                         {
                           "type": "null"
                         }
-                      ],
-                      "description": "null once the Project is deleted"
-                    },
-                    "moduleId": {
-                      "anyOf": [
-                        {
-                          "type": "string",
-                          "format": "uuid",
-                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
-                      "description": "null once the Module is deleted"
+                      ]
                     },
                     "fileName": {
                       "type": "string"
                     },
+                    "path": {
+                      "type": "string"
+                    },
                     "name": {
-                      "type": "string",
-                      "description": "The TestCase name from the source"
+                      "type": "string"
                     },
                     "status": {
                       "type": "string",
@@ -4292,8 +4318,7 @@
                     "createdAt": {
                       "type": "string",
                       "format": "date-time",
-                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
-                      "description": "Trigger time"
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
                     },
                     "startedAt": {
                       "anyOf": [
@@ -4385,8 +4410,7 @@
                               ]
                             },
                             "message": {
-                              "type": "string",
-                              "description": "Redacted; no Variable values"
+                              "type": "string"
                             }
                           },
                           "required": [
@@ -4398,23 +4422,19 @@
                         {
                           "type": "null"
                         }
-                      ],
-                      "description": "Why the Run ended early: timeout, crash, restart, or a server error"
+                      ]
                     },
                     "source": {
-                      "description": "Only in GET /runs/{runId}",
                       "type": "string"
                     },
                     "report": {
-                      "description": "Only in GET /runs/{runId}, once the Run has finished",
                       "type": "object",
                       "properties": {
                         "file": {
                           "type": "string"
                         },
                         "name": {
-                          "type": "string",
-                          "description": "The TestCase name"
+                          "type": "string"
                         },
                         "status": {
                           "type": "string",
@@ -4560,7 +4580,6 @@
                                     "maximum": 9007199254740991
                                   },
                                   "locateMethod": {
-                                    "description": "Element actions only",
                                     "type": "string",
                                     "enum": [
                                       "selector",
@@ -4593,8 +4612,7 @@
                                           ]
                                         },
                                         "expected": {
-                                          "type": "boolean",
-                                          "description": "false for a dialog the step did not expect"
+                                          "type": "boolean"
                                         }
                                       },
                                       "required": [
@@ -4607,7 +4625,6 @@
                                     }
                                   },
                                   "screenshot": {
-                                    "description": "Path under /runs/{runId}/files/, e.g. screenshots/step-0.png",
                                     "type": "string"
                                   },
                                   "status": {
@@ -4653,7 +4670,6 @@
                                     "maximum": 9007199254740991
                                   },
                                   "locateMethod": {
-                                    "description": "Element actions only",
                                     "type": "string",
                                     "enum": [
                                       "selector",
@@ -4686,8 +4702,7 @@
                                           ]
                                         },
                                         "expected": {
-                                          "type": "boolean",
-                                          "description": "false for a dialog the step did not expect"
+                                          "type": "boolean"
                                         }
                                       },
                                       "required": [
@@ -4700,7 +4715,6 @@
                                     }
                                   },
                                   "screenshot": {
-                                    "description": "Path under /runs/{runId}/files/, e.g. screenshots/step-0.png",
                                     "type": "string"
                                   },
                                   "status": {
@@ -4708,8 +4722,7 @@
                                     "const": "failed"
                                   },
                                   "reason": {
-                                    "type": "string",
-                                    "description": "Redacted by Core"
+                                    "type": "string"
                                   }
                                 },
                                 "required": [
@@ -4724,17 +4737,13 @@
                                 ],
                                 "additionalProperties": false
                               }
-                            ],
-                            "description": "A step; `running` appears only in Live Progress"
-                          },
-                          "description": "One per step, in order; never `running`"
+                            ]
+                          }
                         },
                         "trace": {
-                          "description": "trace.zip under /runs/{runId}/files/; absent when empty",
                           "type": "string"
                         },
                         "error": {
-                          "description": "Core's Run error; absent when the Run ended normally",
                           "type": "object",
                           "properties": {
                             "kind": {
@@ -4771,8 +4780,8 @@
                     "id",
                     "testFileId",
                     "projectId",
-                    "moduleId",
                     "fileName",
+                    "path",
                     "name",
                     "status",
                     "createdAt",
@@ -4810,8 +4819,7 @@
                             "type": "object",
                             "properties": {
                               "path": {
-                                "type": "string",
-                                "description": "e.g. body.email"
+                                "type": "string"
                               },
                               "message": {
                                 "type": "string"
@@ -4852,8 +4860,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -4885,8 +4892,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -4930,8 +4936,7 @@
                             "type": "object",
                             "properties": {
                               "code": {
-                                "type": "string",
-                                "description": "E001–E008, see syntax-analyzer.md 3.3"
+                                "type": "string"
                               },
                               "message": {
                                 "type": "string"
@@ -4939,8 +4944,7 @@
                               "line": {
                                 "type": "integer",
                                 "minimum": -9007199254740991,
-                                "maximum": 9007199254740991,
-                                "description": "1-based"
+                                "maximum": 9007199254740991
                               }
                             },
                             "required": [
@@ -5049,8 +5053,7 @@
                               {
                                 "type": "null"
                               }
-                            ],
-                            "description": "null once the Test File is deleted"
+                            ]
                           },
                           "projectId": {
                             "anyOf": [
@@ -5062,28 +5065,16 @@
                               {
                                 "type": "null"
                               }
-                            ],
-                            "description": "null once the Project is deleted"
-                          },
-                          "moduleId": {
-                            "anyOf": [
-                              {
-                                "type": "string",
-                                "format": "uuid",
-                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-                              },
-                              {
-                                "type": "null"
-                              }
-                            ],
-                            "description": "null once the Module is deleted"
+                            ]
                           },
                           "fileName": {
                             "type": "string"
                           },
+                          "path": {
+                            "type": "string"
+                          },
                           "name": {
-                            "type": "string",
-                            "description": "The TestCase name from the source"
+                            "type": "string"
                           },
                           "status": {
                             "type": "string",
@@ -5097,8 +5088,7 @@
                           "createdAt": {
                             "type": "string",
                             "format": "date-time",
-                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
-                            "description": "Trigger time"
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
                           },
                           "startedAt": {
                             "anyOf": [
@@ -5190,8 +5180,7 @@
                                     ]
                                   },
                                   "message": {
-                                    "type": "string",
-                                    "description": "Redacted; no Variable values"
+                                    "type": "string"
                                   }
                                 },
                                 "required": [
@@ -5203,23 +5192,19 @@
                               {
                                 "type": "null"
                               }
-                            ],
-                            "description": "Why the Run ended early: timeout, crash, restart, or a server error"
+                            ]
                           },
                           "source": {
-                            "description": "Only in GET /runs/{runId}",
                             "type": "string"
                           },
                           "report": {
-                            "description": "Only in GET /runs/{runId}, once the Run has finished",
                             "type": "object",
                             "properties": {
                               "file": {
                                 "type": "string"
                               },
                               "name": {
-                                "type": "string",
-                                "description": "The TestCase name"
+                                "type": "string"
                               },
                               "status": {
                                 "type": "string",
@@ -5365,7 +5350,6 @@
                                           "maximum": 9007199254740991
                                         },
                                         "locateMethod": {
-                                          "description": "Element actions only",
                                           "type": "string",
                                           "enum": [
                                             "selector",
@@ -5398,8 +5382,7 @@
                                                 ]
                                               },
                                               "expected": {
-                                                "type": "boolean",
-                                                "description": "false for a dialog the step did not expect"
+                                                "type": "boolean"
                                               }
                                             },
                                             "required": [
@@ -5412,7 +5395,6 @@
                                           }
                                         },
                                         "screenshot": {
-                                          "description": "Path under /runs/{runId}/files/, e.g. screenshots/step-0.png",
                                           "type": "string"
                                         },
                                         "status": {
@@ -5458,7 +5440,6 @@
                                           "maximum": 9007199254740991
                                         },
                                         "locateMethod": {
-                                          "description": "Element actions only",
                                           "type": "string",
                                           "enum": [
                                             "selector",
@@ -5491,8 +5472,7 @@
                                                 ]
                                               },
                                               "expected": {
-                                                "type": "boolean",
-                                                "description": "false for a dialog the step did not expect"
+                                                "type": "boolean"
                                               }
                                             },
                                             "required": [
@@ -5505,7 +5485,6 @@
                                           }
                                         },
                                         "screenshot": {
-                                          "description": "Path under /runs/{runId}/files/, e.g. screenshots/step-0.png",
                                           "type": "string"
                                         },
                                         "status": {
@@ -5513,8 +5492,7 @@
                                           "const": "failed"
                                         },
                                         "reason": {
-                                          "type": "string",
-                                          "description": "Redacted by Core"
+                                          "type": "string"
                                         }
                                       },
                                       "required": [
@@ -5529,17 +5507,13 @@
                                       ],
                                       "additionalProperties": false
                                     }
-                                  ],
-                                  "description": "A step; `running` appears only in Live Progress"
-                                },
-                                "description": "One per step, in order; never `running`"
+                                  ]
+                                }
                               },
                               "trace": {
-                                "description": "trace.zip under /runs/{runId}/files/; absent when empty",
                                 "type": "string"
                               },
                               "error": {
-                                "description": "Core's Run error; absent when the Run ended normally",
                                 "type": "object",
                                 "properties": {
                                   "kind": {
@@ -5576,8 +5550,8 @@
                           "id",
                           "testFileId",
                           "projectId",
-                          "moduleId",
                           "fileName",
+                          "path",
                           "name",
                           "status",
                           "createdAt",
@@ -5591,7 +5565,6 @@
                       }
                     },
                     "nextCursor": {
-                      "description": "null on the last page",
                       "type": [
                         "string",
                         "null"
@@ -5630,8 +5603,7 @@
                             "type": "object",
                             "properties": {
                               "path": {
-                                "type": "string",
-                                "description": "e.g. body.email"
+                                "type": "string"
                               },
                               "message": {
                                 "type": "string"
@@ -5672,8 +5644,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -5740,8 +5711,7 @@
                         {
                           "type": "null"
                         }
-                      ],
-                      "description": "null once the Test File is deleted"
+                      ]
                     },
                     "projectId": {
                       "anyOf": [
@@ -5753,28 +5723,16 @@
                         {
                           "type": "null"
                         }
-                      ],
-                      "description": "null once the Project is deleted"
-                    },
-                    "moduleId": {
-                      "anyOf": [
-                        {
-                          "type": "string",
-                          "format": "uuid",
-                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
-                      "description": "null once the Module is deleted"
+                      ]
                     },
                     "fileName": {
                       "type": "string"
                     },
+                    "path": {
+                      "type": "string"
+                    },
                     "name": {
-                      "type": "string",
-                      "description": "The TestCase name from the source"
+                      "type": "string"
                     },
                     "status": {
                       "type": "string",
@@ -5788,8 +5746,7 @@
                     "createdAt": {
                       "type": "string",
                       "format": "date-time",
-                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
-                      "description": "Trigger time"
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
                     },
                     "startedAt": {
                       "anyOf": [
@@ -5881,8 +5838,7 @@
                               ]
                             },
                             "message": {
-                              "type": "string",
-                              "description": "Redacted; no Variable values"
+                              "type": "string"
                             }
                           },
                           "required": [
@@ -5894,23 +5850,19 @@
                         {
                           "type": "null"
                         }
-                      ],
-                      "description": "Why the Run ended early: timeout, crash, restart, or a server error"
+                      ]
                     },
                     "source": {
-                      "description": "Only in GET /runs/{runId}",
                       "type": "string"
                     },
                     "report": {
-                      "description": "Only in GET /runs/{runId}, once the Run has finished",
                       "type": "object",
                       "properties": {
                         "file": {
                           "type": "string"
                         },
                         "name": {
-                          "type": "string",
-                          "description": "The TestCase name"
+                          "type": "string"
                         },
                         "status": {
                           "type": "string",
@@ -6056,7 +6008,6 @@
                                     "maximum": 9007199254740991
                                   },
                                   "locateMethod": {
-                                    "description": "Element actions only",
                                     "type": "string",
                                     "enum": [
                                       "selector",
@@ -6089,8 +6040,7 @@
                                           ]
                                         },
                                         "expected": {
-                                          "type": "boolean",
-                                          "description": "false for a dialog the step did not expect"
+                                          "type": "boolean"
                                         }
                                       },
                                       "required": [
@@ -6103,7 +6053,6 @@
                                     }
                                   },
                                   "screenshot": {
-                                    "description": "Path under /runs/{runId}/files/, e.g. screenshots/step-0.png",
                                     "type": "string"
                                   },
                                   "status": {
@@ -6149,7 +6098,6 @@
                                     "maximum": 9007199254740991
                                   },
                                   "locateMethod": {
-                                    "description": "Element actions only",
                                     "type": "string",
                                     "enum": [
                                       "selector",
@@ -6182,8 +6130,7 @@
                                           ]
                                         },
                                         "expected": {
-                                          "type": "boolean",
-                                          "description": "false for a dialog the step did not expect"
+                                          "type": "boolean"
                                         }
                                       },
                                       "required": [
@@ -6196,7 +6143,6 @@
                                     }
                                   },
                                   "screenshot": {
-                                    "description": "Path under /runs/{runId}/files/, e.g. screenshots/step-0.png",
                                     "type": "string"
                                   },
                                   "status": {
@@ -6204,8 +6150,7 @@
                                     "const": "failed"
                                   },
                                   "reason": {
-                                    "type": "string",
-                                    "description": "Redacted by Core"
+                                    "type": "string"
                                   }
                                 },
                                 "required": [
@@ -6220,17 +6165,13 @@
                                 ],
                                 "additionalProperties": false
                               }
-                            ],
-                            "description": "A step; `running` appears only in Live Progress"
-                          },
-                          "description": "One per step, in order; never `running`"
+                            ]
+                          }
                         },
                         "trace": {
-                          "description": "trace.zip under /runs/{runId}/files/; absent when empty",
                           "type": "string"
                         },
                         "error": {
-                          "description": "Core's Run error; absent when the Run ended normally",
                           "type": "object",
                           "properties": {
                             "kind": {
@@ -6267,8 +6208,8 @@
                     "id",
                     "testFileId",
                     "projectId",
-                    "moduleId",
                     "fileName",
+                    "path",
                     "name",
                     "status",
                     "createdAt",
@@ -6306,8 +6247,7 @@
                             "type": "object",
                             "properties": {
                               "path": {
-                                "type": "string",
-                                "description": "e.g. body.email"
+                                "type": "string"
                               },
                               "message": {
                                 "type": "string"
@@ -6348,8 +6288,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -6381,8 +6320,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -6434,8 +6372,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "description": "e.g. screenshots/step-0.png"
+              "type": "string"
             }
           }
         ],
@@ -6466,8 +6403,7 @@
                             "type": "object",
                             "properties": {
                               "path": {
-                                "type": "string",
-                                "description": "e.g. body.email"
+                                "type": "string"
                               },
                               "message": {
                                 "type": "string"
@@ -6508,8 +6444,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -6541,8 +6476,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -6614,8 +6548,7 @@
                             "type": "object",
                             "properties": {
                               "path": {
-                                "type": "string",
-                                "description": "e.g. body.email"
+                                "type": "string"
                               },
                               "message": {
                                 "type": "string"
@@ -6656,8 +6589,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -6689,8 +6621,7 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string",
-                          "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                          "type": "string"
                         },
                         "message": {
                           "type": "string"
@@ -6773,7 +6704,7 @@
         ],
         "additionalProperties": false
       },
-      "Module": {
+      "Folder": {
         "type": "object",
         "properties": {
           "id": {
@@ -6785,6 +6716,18 @@
             "type": "string",
             "format": "uuid",
             "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "parentId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "name": {
             "type": "string"
@@ -6803,6 +6746,7 @@
         "required": [
           "id",
           "projectId",
+          "parentId",
           "name",
           "createdAt",
           "updatedAt"
@@ -6817,16 +6761,27 @@
             "format": "uuid",
             "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
           },
-          "moduleId": {
+          "projectId": {
             "type": "string",
             "format": "uuid",
             "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "folderId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "name": {
             "type": "string"
           },
           "source": {
-            "description": "In GET /test-files/{testFileId} and in the answer of saving a Test File, not in lists",
             "type": "string"
           },
           "createdAt": {
@@ -6842,7 +6797,8 @@
         },
         "required": [
           "id",
-          "moduleId",
+          "projectId",
+          "folderId",
           "name",
           "createdAt",
           "updatedAt"
@@ -6853,8 +6809,7 @@
         "type": "object",
         "properties": {
           "code": {
-            "type": "string",
-            "description": "E001–E008, see syntax-analyzer.md 3.3"
+            "type": "string"
           },
           "message": {
             "type": "string"
@@ -6862,8 +6817,7 @@
           "line": {
             "type": "integer",
             "minimum": -9007199254740991,
-            "maximum": 9007199254740991,
-            "description": "1-based"
+            "maximum": 9007199254740991
           }
         },
         "required": [
@@ -7007,7 +6961,6 @@
                 "maximum": 9007199254740991
               },
               "locateMethod": {
-                "description": "Element actions only",
                 "type": "string",
                 "enum": [
                   "selector",
@@ -7040,8 +6993,7 @@
                       ]
                     },
                     "expected": {
-                      "type": "boolean",
-                      "description": "false for a dialog the step did not expect"
+                      "type": "boolean"
                     }
                   },
                   "required": [
@@ -7054,7 +7006,6 @@
                 }
               },
               "screenshot": {
-                "description": "Path under /runs/{runId}/files/, e.g. screenshots/step-0.png",
                 "type": "string"
               },
               "status": {
@@ -7100,7 +7051,6 @@
                 "maximum": 9007199254740991
               },
               "locateMethod": {
-                "description": "Element actions only",
                 "type": "string",
                 "enum": [
                   "selector",
@@ -7133,8 +7083,7 @@
                       ]
                     },
                     "expected": {
-                      "type": "boolean",
-                      "description": "false for a dialog the step did not expect"
+                      "type": "boolean"
                     }
                   },
                   "required": [
@@ -7147,7 +7096,6 @@
                 }
               },
               "screenshot": {
-                "description": "Path under /runs/{runId}/files/, e.g. screenshots/step-0.png",
                 "type": "string"
               },
               "status": {
@@ -7155,8 +7103,7 @@
                 "const": "failed"
               },
               "reason": {
-                "type": "string",
-                "description": "Redacted by Core"
+                "type": "string"
               }
             },
             "required": [
@@ -7171,8 +7118,7 @@
             ],
             "additionalProperties": false
           }
-        ],
-        "description": "A step; `running` appears only in Live Progress"
+        ]
       },
       "RunError": {
         "type": "object",
@@ -7187,8 +7133,7 @@
             ]
           },
           "message": {
-            "type": "string",
-            "description": "Redacted; no Variable values"
+            "type": "string"
           }
         },
         "required": [
@@ -7204,8 +7149,7 @@
             "type": "string"
           },
           "name": {
-            "type": "string",
-            "description": "The TestCase name"
+            "type": "string"
           },
           "status": {
             "type": "string",
@@ -7351,7 +7295,6 @@
                       "maximum": 9007199254740991
                     },
                     "locateMethod": {
-                      "description": "Element actions only",
                       "type": "string",
                       "enum": [
                         "selector",
@@ -7384,8 +7327,7 @@
                             ]
                           },
                           "expected": {
-                            "type": "boolean",
-                            "description": "false for a dialog the step did not expect"
+                            "type": "boolean"
                           }
                         },
                         "required": [
@@ -7398,7 +7340,6 @@
                       }
                     },
                     "screenshot": {
-                      "description": "Path under /runs/{runId}/files/, e.g. screenshots/step-0.png",
                       "type": "string"
                     },
                     "status": {
@@ -7444,7 +7385,6 @@
                       "maximum": 9007199254740991
                     },
                     "locateMethod": {
-                      "description": "Element actions only",
                       "type": "string",
                       "enum": [
                         "selector",
@@ -7477,8 +7417,7 @@
                             ]
                           },
                           "expected": {
-                            "type": "boolean",
-                            "description": "false for a dialog the step did not expect"
+                            "type": "boolean"
                           }
                         },
                         "required": [
@@ -7491,7 +7430,6 @@
                       }
                     },
                     "screenshot": {
-                      "description": "Path under /runs/{runId}/files/, e.g. screenshots/step-0.png",
                       "type": "string"
                     },
                     "status": {
@@ -7499,8 +7437,7 @@
                       "const": "failed"
                     },
                     "reason": {
-                      "type": "string",
-                      "description": "Redacted by Core"
+                      "type": "string"
                     }
                   },
                   "required": [
@@ -7515,17 +7452,13 @@
                   ],
                   "additionalProperties": false
                 }
-              ],
-              "description": "A step; `running` appears only in Live Progress"
-            },
-            "description": "One per step, in order; never `running`"
+              ]
+            }
           },
           "trace": {
-            "description": "trace.zip under /runs/{runId}/files/; absent when empty",
             "type": "string"
           },
           "error": {
-            "description": "Core's Run error; absent when the Run ended normally",
             "type": "object",
             "properties": {
               "kind": {
@@ -7575,8 +7508,7 @@
               {
                 "type": "null"
               }
-            ],
-            "description": "null once the Test File is deleted"
+            ]
           },
           "projectId": {
             "anyOf": [
@@ -7588,28 +7520,16 @@
               {
                 "type": "null"
               }
-            ],
-            "description": "null once the Project is deleted"
-          },
-          "moduleId": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid",
-                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "null once the Module is deleted"
+            ]
           },
           "fileName": {
             "type": "string"
           },
+          "path": {
+            "type": "string"
+          },
           "name": {
-            "type": "string",
-            "description": "The TestCase name from the source"
+            "type": "string"
           },
           "status": {
             "type": "string",
@@ -7623,8 +7543,7 @@
           "createdAt": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
-            "description": "Trigger time"
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           },
           "startedAt": {
             "anyOf": [
@@ -7716,8 +7635,7 @@
                     ]
                   },
                   "message": {
-                    "type": "string",
-                    "description": "Redacted; no Variable values"
+                    "type": "string"
                   }
                 },
                 "required": [
@@ -7729,23 +7647,19 @@
               {
                 "type": "null"
               }
-            ],
-            "description": "Why the Run ended early: timeout, crash, restart, or a server error"
+            ]
           },
           "source": {
-            "description": "Only in GET /runs/{runId}",
             "type": "string"
           },
           "report": {
-            "description": "Only in GET /runs/{runId}, once the Run has finished",
             "type": "object",
             "properties": {
               "file": {
                 "type": "string"
               },
               "name": {
-                "type": "string",
-                "description": "The TestCase name"
+                "type": "string"
               },
               "status": {
                 "type": "string",
@@ -7891,7 +7805,6 @@
                           "maximum": 9007199254740991
                         },
                         "locateMethod": {
-                          "description": "Element actions only",
                           "type": "string",
                           "enum": [
                             "selector",
@@ -7924,8 +7837,7 @@
                                 ]
                               },
                               "expected": {
-                                "type": "boolean",
-                                "description": "false for a dialog the step did not expect"
+                                "type": "boolean"
                               }
                             },
                             "required": [
@@ -7938,7 +7850,6 @@
                           }
                         },
                         "screenshot": {
-                          "description": "Path under /runs/{runId}/files/, e.g. screenshots/step-0.png",
                           "type": "string"
                         },
                         "status": {
@@ -7984,7 +7895,6 @@
                           "maximum": 9007199254740991
                         },
                         "locateMethod": {
-                          "description": "Element actions only",
                           "type": "string",
                           "enum": [
                             "selector",
@@ -8017,8 +7927,7 @@
                                 ]
                               },
                               "expected": {
-                                "type": "boolean",
-                                "description": "false for a dialog the step did not expect"
+                                "type": "boolean"
                               }
                             },
                             "required": [
@@ -8031,7 +7940,6 @@
                           }
                         },
                         "screenshot": {
-                          "description": "Path under /runs/{runId}/files/, e.g. screenshots/step-0.png",
                           "type": "string"
                         },
                         "status": {
@@ -8039,8 +7947,7 @@
                           "const": "failed"
                         },
                         "reason": {
-                          "type": "string",
-                          "description": "Redacted by Core"
+                          "type": "string"
                         }
                       },
                       "required": [
@@ -8055,17 +7962,13 @@
                       ],
                       "additionalProperties": false
                     }
-                  ],
-                  "description": "A step; `running` appears only in Live Progress"
-                },
-                "description": "One per step, in order; never `running`"
+                  ]
+                }
               },
               "trace": {
-                "description": "trace.zip under /runs/{runId}/files/; absent when empty",
                 "type": "string"
               },
               "error": {
-                "description": "Core's Run error; absent when the Run ended normally",
                 "type": "object",
                 "properties": {
                   "kind": {
@@ -8102,8 +8005,8 @@
           "id",
           "testFileId",
           "projectId",
-          "moduleId",
           "fileName",
+          "path",
           "name",
           "status",
           "createdAt",
@@ -8136,7 +8039,13 @@
             "format": "date-time",
             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           },
-          "modules": {
+          "folders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TreeFolder"
+            }
+          },
+          "testFiles": {
             "type": "array",
             "items": {
               "type": "object",
@@ -8151,6 +8060,18 @@
                   "format": "uuid",
                   "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                 },
+                "folderId": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
                 "name": {
                   "type": "string"
                 },
@@ -8164,92 +8085,52 @@
                   "format": "date-time",
                   "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
                 },
-                "testFiles": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "id": {
-                        "type": "string",
-                        "format": "uuid",
-                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                "latestRun": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "queued",
+                            "running",
+                            "passed",
+                            "failed"
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        }
                       },
-                      "moduleId": {
-                        "type": "string",
-                        "format": "uuid",
-                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-                      },
-                      "name": {
-                        "type": "string"
-                      },
-                      "createdAt": {
-                        "type": "string",
-                        "format": "date-time",
-                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
-                      },
-                      "updatedAt": {
-                        "type": "string",
-                        "format": "date-time",
-                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
-                      },
-                      "latestRun": {
-                        "anyOf": [
-                          {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string",
-                                "format": "uuid",
-                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-                              },
-                              "status": {
-                                "type": "string",
-                                "enum": [
-                                  "queued",
-                                  "running",
-                                  "passed",
-                                  "failed"
-                                ]
-                              },
-                              "createdAt": {
-                                "type": "string",
-                                "format": "date-time",
-                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
-                                "description": "Trigger time"
-                              }
-                            },
-                            "required": [
-                              "id",
-                              "status",
-                              "createdAt"
-                            ],
-                            "additionalProperties": false
-                          },
-                          {
-                            "type": "null"
-                          }
-                        ]
-                      }
+                      "required": [
+                        "id",
+                        "status",
+                        "createdAt"
+                      ],
+                      "additionalProperties": false
                     },
-                    "required": [
-                      "id",
-                      "moduleId",
-                      "name",
-                      "createdAt",
-                      "updatedAt",
-                      "latestRun"
-                    ],
-                    "additionalProperties": false
-                  }
+                    {
+                      "type": "null"
+                    }
+                  ]
                 }
               },
               "required": [
                 "id",
                 "projectId",
+                "folderId",
                 "name",
                 "createdAt",
                 "updatedAt",
-                "testFiles"
+                "latestRun"
               ],
               "additionalProperties": false
             }
@@ -8260,7 +8141,158 @@
           "name",
           "createdAt",
           "updatedAt",
-          "modules"
+          "folders",
+          "testFiles"
+        ],
+        "additionalProperties": false
+      },
+      "TreeFolder": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "projectId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "parentId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The folder it sits in; null directly in the Project"
+          },
+          "name": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "folders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TreeFolder"
+            }
+          },
+          "testFiles": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "projectId": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "folderId": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "The folder it sits in; null directly in the Project"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                },
+                "updatedAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                },
+                "latestRun": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "queued",
+                            "running",
+                            "passed",
+                            "failed"
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                          "description": "Trigger time"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "status",
+                        "createdAt"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "projectId",
+                "folderId",
+                "name",
+                "createdAt",
+                "updatedAt",
+                "latestRun"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "id",
+          "projectId",
+          "parentId",
+          "name",
+          "createdAt",
+          "updatedAt",
+          "folders",
+          "testFiles"
         ],
         "additionalProperties": false
       },
@@ -8271,8 +8303,7 @@
             "type": "object",
             "properties": {
               "code": {
-                "type": "string",
-                "description": "invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added"
+                "type": "string"
               },
               "message": {
                 "type": "string"
@@ -8309,8 +8340,7 @@
                   "type": "object",
                   "properties": {
                     "path": {
-                      "type": "string",
-                      "description": "e.g. body.email"
+                      "type": "string"
                     },
                     "message": {
                       "type": "string"
@@ -8356,8 +8386,7 @@
                   "type": "object",
                   "properties": {
                     "code": {
-                      "type": "string",
-                      "description": "E001–E008, see syntax-analyzer.md 3.3"
+                      "type": "string"
                     },
                     "message": {
                       "type": "string"
@@ -8365,8 +8394,7 @@
                     "line": {
                       "type": "integer",
                       "minimum": -9007199254740991,
-                      "maximum": 9007199254740991,
-                      "description": "1-based"
+                      "maximum": 9007199254740991
                     }
                   },
                   "required": [
@@ -8418,8 +8446,7 @@
                       {
                         "type": "null"
                       }
-                    ],
-                    "description": "null once the Test File is deleted"
+                    ]
                   },
                   "projectId": {
                     "anyOf": [
@@ -8431,28 +8458,16 @@
                       {
                         "type": "null"
                       }
-                    ],
-                    "description": "null once the Project is deleted"
-                  },
-                  "moduleId": {
-                    "anyOf": [
-                      {
-                        "type": "string",
-                        "format": "uuid",
-                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "description": "null once the Module is deleted"
+                    ]
                   },
                   "fileName": {
                     "type": "string"
                   },
+                  "path": {
+                    "type": "string"
+                  },
                   "name": {
-                    "type": "string",
-                    "description": "The TestCase name from the source"
+                    "type": "string"
                   },
                   "status": {
                     "type": "string",
@@ -8466,8 +8481,7 @@
                   "createdAt": {
                     "type": "string",
                     "format": "date-time",
-                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
-                    "description": "Trigger time"
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
                   },
                   "startedAt": {
                     "anyOf": [
@@ -8559,8 +8573,7 @@
                             ]
                           },
                           "message": {
-                            "type": "string",
-                            "description": "Redacted; no Variable values"
+                            "type": "string"
                           }
                         },
                         "required": [
@@ -8572,16 +8585,15 @@
                       {
                         "type": "null"
                       }
-                    ],
-                    "description": "Why the Run ended early: timeout, crash, restart, or a server error"
+                    ]
                   }
                 },
                 "required": [
                   "id",
                   "testFileId",
                   "projectId",
-                  "moduleId",
                   "fileName",
+                  "path",
                   "name",
                   "status",
                   "createdAt",
@@ -8688,7 +8700,6 @@
                           "maximum": 9007199254740991
                         },
                         "locateMethod": {
-                          "description": "Element actions only",
                           "type": "string",
                           "enum": [
                             "selector",
@@ -8721,8 +8732,7 @@
                                 ]
                               },
                               "expected": {
-                                "type": "boolean",
-                                "description": "false for a dialog the step did not expect"
+                                "type": "boolean"
                               }
                             },
                             "required": [
@@ -8735,7 +8745,6 @@
                           }
                         },
                         "screenshot": {
-                          "description": "Path under /runs/{runId}/files/, e.g. screenshots/step-0.png",
                           "type": "string"
                         },
                         "status": {
@@ -8781,7 +8790,6 @@
                           "maximum": 9007199254740991
                         },
                         "locateMethod": {
-                          "description": "Element actions only",
                           "type": "string",
                           "enum": [
                             "selector",
@@ -8814,8 +8822,7 @@
                                 ]
                               },
                               "expected": {
-                                "type": "boolean",
-                                "description": "false for a dialog the step did not expect"
+                                "type": "boolean"
                               }
                             },
                             "required": [
@@ -8828,7 +8835,6 @@
                           }
                         },
                         "screenshot": {
-                          "description": "Path under /runs/{runId}/files/, e.g. screenshots/step-0.png",
                           "type": "string"
                         },
                         "status": {
@@ -8836,8 +8842,7 @@
                           "const": "failed"
                         },
                         "reason": {
-                          "type": "string",
-                          "description": "Redacted by Core"
+                          "type": "string"
                         }
                       },
                       "required": [
@@ -8852,10 +8857,8 @@
                       ],
                       "additionalProperties": false
                     }
-                  ],
-                  "description": "A step; `running` appears only in Live Progress"
-                },
-                "description": "Every step of the source; not yet run ones are `pending`"
+                  ]
+                }
               }
             },
             "required": [
@@ -8890,8 +8893,7 @@
                       {
                         "type": "null"
                       }
-                    ],
-                    "description": "null once the Test File is deleted"
+                    ]
                   },
                   "projectId": {
                     "anyOf": [
@@ -8903,28 +8905,16 @@
                       {
                         "type": "null"
                       }
-                    ],
-                    "description": "null once the Project is deleted"
-                  },
-                  "moduleId": {
-                    "anyOf": [
-                      {
-                        "type": "string",
-                        "format": "uuid",
-                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "description": "null once the Module is deleted"
+                    ]
                   },
                   "fileName": {
                     "type": "string"
                   },
+                  "path": {
+                    "type": "string"
+                  },
                   "name": {
-                    "type": "string",
-                    "description": "The TestCase name from the source"
+                    "type": "string"
                   },
                   "status": {
                     "type": "string",
@@ -8938,8 +8928,7 @@
                   "createdAt": {
                     "type": "string",
                     "format": "date-time",
-                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
-                    "description": "Trigger time"
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
                   },
                   "startedAt": {
                     "anyOf": [
@@ -9031,8 +9020,7 @@
                             ]
                           },
                           "message": {
-                            "type": "string",
-                            "description": "Redacted; no Variable values"
+                            "type": "string"
                           }
                         },
                         "required": [
@@ -9044,16 +9032,15 @@
                       {
                         "type": "null"
                       }
-                    ],
-                    "description": "Why the Run ended early: timeout, crash, restart, or a server error"
+                    ]
                   }
                 },
                 "required": [
                   "id",
                   "testFileId",
                   "projectId",
-                  "moduleId",
                   "fileName",
+                  "path",
                   "name",
                   "status",
                   "createdAt",
@@ -9063,8 +9050,7 @@
                   "summary",
                   "error"
                 ],
-                "additionalProperties": false,
-                "description": "The Run after the change"
+                "additionalProperties": false
               }
             },
             "required": [
@@ -9173,7 +9159,6 @@
                         "maximum": 9007199254740991
                       },
                       "locateMethod": {
-                        "description": "Element actions only",
                         "type": "string",
                         "enum": [
                           "selector",
@@ -9206,8 +9191,7 @@
                               ]
                             },
                             "expected": {
-                              "type": "boolean",
-                              "description": "false for a dialog the step did not expect"
+                              "type": "boolean"
                             }
                           },
                           "required": [
@@ -9220,7 +9204,6 @@
                         }
                       },
                       "screenshot": {
-                        "description": "Path under /runs/{runId}/files/, e.g. screenshots/step-0.png",
                         "type": "string"
                       },
                       "status": {
@@ -9266,7 +9249,6 @@
                         "maximum": 9007199254740991
                       },
                       "locateMethod": {
-                        "description": "Element actions only",
                         "type": "string",
                         "enum": [
                           "selector",
@@ -9299,8 +9281,7 @@
                               ]
                             },
                             "expected": {
-                              "type": "boolean",
-                              "description": "false for a dialog the step did not expect"
+                              "type": "boolean"
                             }
                           },
                           "required": [
@@ -9313,7 +9294,6 @@
                         }
                       },
                       "screenshot": {
-                        "description": "Path under /runs/{runId}/files/, e.g. screenshots/step-0.png",
                         "type": "string"
                       },
                       "status": {
@@ -9321,8 +9301,7 @@
                         "const": "failed"
                       },
                       "reason": {
-                        "type": "string",
-                        "description": "Redacted by Core"
+                        "type": "string"
                       }
                     },
                     "required": [
@@ -9337,8 +9316,7 @@
                     ],
                     "additionalProperties": false
                   }
-                ],
-                "description": "A step; `running` appears only in Live Progress"
+                ]
               }
             },
             "required": [
@@ -9374,8 +9352,7 @@
                   {
                     "type": "null"
                   }
-                ],
-                "description": "null once the Test File is deleted"
+                ]
               },
               "projectId": {
                 "anyOf": [
@@ -9387,28 +9364,16 @@
                   {
                     "type": "null"
                   }
-                ],
-                "description": "null once the Project is deleted"
-              },
-              "moduleId": {
-                "anyOf": [
-                  {
-                    "type": "string",
-                    "format": "uuid",
-                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "description": "null once the Module is deleted"
+                ]
               },
               "fileName": {
                 "type": "string"
               },
+              "path": {
+                "type": "string"
+              },
               "name": {
-                "type": "string",
-                "description": "The TestCase name from the source"
+                "type": "string"
               },
               "status": {
                 "type": "string",
@@ -9422,8 +9387,7 @@
               "createdAt": {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
-                "description": "Trigger time"
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
               },
               "startedAt": {
                 "anyOf": [
@@ -9515,8 +9479,7 @@
                         ]
                       },
                       "message": {
-                        "type": "string",
-                        "description": "Redacted; no Variable values"
+                        "type": "string"
                       }
                     },
                     "required": [
@@ -9528,16 +9491,15 @@
                   {
                     "type": "null"
                   }
-                ],
-                "description": "Why the Run ended early: timeout, crash, restart, or a server error"
+                ]
               }
             },
             "required": [
               "id",
               "testFileId",
               "projectId",
-              "moduleId",
               "fileName",
+              "path",
               "name",
               "status",
               "createdAt",
@@ -9644,7 +9606,6 @@
                       "maximum": 9007199254740991
                     },
                     "locateMethod": {
-                      "description": "Element actions only",
                       "type": "string",
                       "enum": [
                         "selector",
@@ -9677,8 +9638,7 @@
                             ]
                           },
                           "expected": {
-                            "type": "boolean",
-                            "description": "false for a dialog the step did not expect"
+                            "type": "boolean"
                           }
                         },
                         "required": [
@@ -9691,7 +9651,6 @@
                       }
                     },
                     "screenshot": {
-                      "description": "Path under /runs/{runId}/files/, e.g. screenshots/step-0.png",
                       "type": "string"
                     },
                     "status": {
@@ -9737,7 +9696,6 @@
                       "maximum": 9007199254740991
                     },
                     "locateMethod": {
-                      "description": "Element actions only",
                       "type": "string",
                       "enum": [
                         "selector",
@@ -9770,8 +9728,7 @@
                             ]
                           },
                           "expected": {
-                            "type": "boolean",
-                            "description": "false for a dialog the step did not expect"
+                            "type": "boolean"
                           }
                         },
                         "required": [
@@ -9784,7 +9741,6 @@
                       }
                     },
                     "screenshot": {
-                      "description": "Path under /runs/{runId}/files/, e.g. screenshots/step-0.png",
                       "type": "string"
                     },
                     "status": {
@@ -9792,8 +9748,7 @@
                       "const": "failed"
                     },
                     "reason": {
-                      "type": "string",
-                      "description": "Redacted by Core"
+                      "type": "string"
                     }
                   },
                   "required": [
@@ -9808,10 +9763,8 @@
                   ],
                   "additionalProperties": false
                 }
-              ],
-              "description": "A step; `running` appears only in Live Progress"
-            },
-            "description": "Every step of the source; not yet run ones are `pending`"
+              ]
+            }
           }
         },
         "required": [
@@ -9846,8 +9799,7 @@
                   {
                     "type": "null"
                   }
-                ],
-                "description": "null once the Test File is deleted"
+                ]
               },
               "projectId": {
                 "anyOf": [
@@ -9859,28 +9811,16 @@
                   {
                     "type": "null"
                   }
-                ],
-                "description": "null once the Project is deleted"
-              },
-              "moduleId": {
-                "anyOf": [
-                  {
-                    "type": "string",
-                    "format": "uuid",
-                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "description": "null once the Module is deleted"
+                ]
               },
               "fileName": {
                 "type": "string"
               },
+              "path": {
+                "type": "string"
+              },
               "name": {
-                "type": "string",
-                "description": "The TestCase name from the source"
+                "type": "string"
               },
               "status": {
                 "type": "string",
@@ -9894,8 +9834,7 @@
               "createdAt": {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
-                "description": "Trigger time"
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
               },
               "startedAt": {
                 "anyOf": [
@@ -9987,8 +9926,7 @@
                         ]
                       },
                       "message": {
-                        "type": "string",
-                        "description": "Redacted; no Variable values"
+                        "type": "string"
                       }
                     },
                     "required": [
@@ -10000,16 +9938,15 @@
                   {
                     "type": "null"
                   }
-                ],
-                "description": "Why the Run ended early: timeout, crash, restart, or a server error"
+                ]
               }
             },
             "required": [
               "id",
               "testFileId",
               "projectId",
-              "moduleId",
               "fileName",
+              "path",
               "name",
               "status",
               "createdAt",
@@ -10019,8 +9956,7 @@
               "summary",
               "error"
             ],
-            "additionalProperties": false,
-            "description": "The Run after the change"
+            "additionalProperties": false
           }
         },
         "required": [
@@ -10129,7 +10065,6 @@
                     "maximum": 9007199254740991
                   },
                   "locateMethod": {
-                    "description": "Element actions only",
                     "type": "string",
                     "enum": [
                       "selector",
@@ -10162,8 +10097,7 @@
                           ]
                         },
                         "expected": {
-                          "type": "boolean",
-                          "description": "false for a dialog the step did not expect"
+                          "type": "boolean"
                         }
                       },
                       "required": [
@@ -10176,7 +10110,6 @@
                     }
                   },
                   "screenshot": {
-                    "description": "Path under /runs/{runId}/files/, e.g. screenshots/step-0.png",
                     "type": "string"
                   },
                   "status": {
@@ -10222,7 +10155,6 @@
                     "maximum": 9007199254740991
                   },
                   "locateMethod": {
-                    "description": "Element actions only",
                     "type": "string",
                     "enum": [
                       "selector",
@@ -10255,8 +10187,7 @@
                           ]
                         },
                         "expected": {
-                          "type": "boolean",
-                          "description": "false for a dialog the step did not expect"
+                          "type": "boolean"
                         }
                       },
                       "required": [
@@ -10269,7 +10200,6 @@
                     }
                   },
                   "screenshot": {
-                    "description": "Path under /runs/{runId}/files/, e.g. screenshots/step-0.png",
                     "type": "string"
                   },
                   "status": {
@@ -10277,8 +10207,7 @@
                     "const": "failed"
                   },
                   "reason": {
-                    "type": "string",
-                    "description": "Redacted by Core"
+                    "type": "string"
                   }
                 },
                 "required": [
@@ -10293,8 +10222,7 @@
                 ],
                 "additionalProperties": false
               }
-            ],
-            "description": "A step; `running` appears only in Live Progress"
+            ]
           }
         },
         "required": [

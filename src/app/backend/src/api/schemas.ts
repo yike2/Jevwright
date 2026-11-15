@@ -9,11 +9,19 @@ export const User = z.object({ id, email: z.email(), createdAt: timestamp });
 
 export const Project = z.object({ id, name: z.string(), createdAt: timestamp, updatedAt: timestamp });
 
-export const Module = z.object({ id, projectId: id, name: z.string(), createdAt: timestamp, updatedAt: timestamp });
+export const Folder = z.object({
+  id,
+  projectId: id,
+  parentId: id.nullable().meta({ description: "The folder it sits in; null directly in the Project" }),
+  name: z.string(),
+  createdAt: timestamp,
+  updatedAt: timestamp,
+});
 
 export const TestFile = z.object({
   id,
-  moduleId: id,
+  projectId: id,
+  folderId: id.nullable().meta({ description: "The folder it sits in; null directly in the Project" }),
   name: z.string(),
   source: z
     .string()
@@ -91,8 +99,10 @@ export const Run = z.object({
   id,
   testFileId: id.nullable().meta({ description: "null once the Test File is deleted" }),
   projectId: id.nullable().meta({ description: "null once the Project is deleted" }),
-  moduleId: id.nullable().meta({ description: "null once the Module is deleted" }),
   fileName: z.string(),
+  path: z
+    .string()
+    .meta({ description: "The file's path in its Project at trigger time, e.g. checkout/wrong-total.yaml" }),
   name: z.string().meta({ description: "The TestCase name from the source" }),
   status: RunStatus,
   createdAt: timestamp.meta({ description: "Trigger time" }),
@@ -109,8 +119,20 @@ export const Run = z.object({
 
 const LatestRun = Run.pick({ id: true, status: true, createdAt: true });
 export const TreeTestFile = TestFile.omit({ source: true }).extend({ latestRun: LatestRun.nullable() });
-export const TreeModule = Module.extend({ testFiles: z.array(TreeTestFile) });
-export const TreeProject = Project.extend({ modules: z.array(TreeModule) });
+export const TreeFolder = Folder.extend({
+  get folders(): z.ZodArray<typeof TreeFolder> {
+    return z.array(TreeFolder);
+  },
+  testFiles: z.array(TreeTestFile),
+});
+export const TreeProject = Project.extend({
+  folders: z.array(TreeFolder).meta({ description: "The folders directly in the Project, by name" }),
+  testFiles: z.array(TreeTestFile).meta({ description: "The Test Files directly in the Project, by name" }),
+});
+
+/** Components that other schemas refer to by $ref instead of repeating them, such as a folder's own folders. */
+export const REFERENCED = z.registry<{ id: string }>();
+REFERENCED.add(TreeFolder, { id: "TreeFolder" });
 
 const errorCode = z.string().meta({
   description:
@@ -146,7 +168,7 @@ export const LiveMessage = z.discriminatedUnion("type", [LiveSnapshot, LiveStatu
 export const COMPONENTS = {
   User,
   Project,
-  Module,
+  Folder,
   TestFile,
   Diagnostic,
   RunStatus,
@@ -156,6 +178,7 @@ export const COMPONENTS = {
   Report,
   Run,
   TreeProject,
+  TreeFolder,
   ErrorBody,
   ValidationError,
   InvalidTestError,

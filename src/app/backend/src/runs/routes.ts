@@ -5,6 +5,8 @@ import type { Db } from "../db.js";
 import type { Prisma, Run } from "../generated/prisma/client.js";
 import { requireUserId } from "../http/auth.js";
 import { ApiError } from "../http/errors.js";
+import { pathOf } from "../workspace/folders.js";
+import { projectFolders } from "../workspace/parents.js";
 import { resolveRunFile } from "./run-files.js";
 import { toRun, toRunDetail } from "./to-run.js";
 
@@ -52,22 +54,21 @@ export function runsHandlers({ db, runsDir, enqueue }: RunsDeps): Handlers {
     "post /test-files/:testFileId/runs": async (input, res) => {
       const { testFileId } = input.params as { testFileId: string };
       const userId = requireUserId(input);
-      const testFile = await db.testFile.findFirst({
-        where: { id: testFileId, module: { project: { userId } } },
-        include: { module: { select: { projectId: true } } },
-      });
+      const testFile = await db.testFile.findFirst({ where: { id: testFileId, project: { userId } } });
       if (!testFile) throw new ApiError("not_found", "No such Test File");
       const { diagnostics, testCase } = analyze(testFile.source);
       if (diagnostics.length > 0 || testCase === undefined)
         throw new ApiError("invalid_test", "The Test File has diagnostics", diagnostics);
-      // The Run keeps its own copy of the source and names, so later edits and deletes do not change it.
+      // The Run keeps its own copy of the source, names, and path, so later edits, moves, and deletes do not change
+      // it. Its Project is the file's Project now, whose Variables it runs with.
+      const folders = testFile.folderId === null ? [] : await projectFolders(db, testFile.projectId);
       const run = await db.run.create({
         data: {
           userId,
           testFileId,
-          moduleId: testFile.moduleId,
-          projectId: testFile.module.projectId,
+          projectId: testFile.projectId,
           fileName: testFile.name,
+          path: pathOf(folders, testFile.folderId, testFile.name),
           name: testCase.name,
           source: testFile.source,
         },
