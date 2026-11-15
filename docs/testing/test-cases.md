@@ -151,7 +151,7 @@ Covers PRD 4.2.2. Pre: no token.
 1. Open `/`.
 2. Click **Register** at the top right.
 
-Expected: step 1 shows the heading "Web tests in plain YAML", the feature headings Plain YAML steps, Jev locating, Live runs, History and reports, and CLI and API, the sample file `sign-in.yaml`, and **Log in** and **Register** at the top right, with no **Open workspace**; step 2 opens `/register` with the heading "Register".
+Expected: step 1 shows the heading starting "Web tests as plain YAML steps.", the command `pnpm jevwright run tests/sign-in.yaml` with **Copy command**, the sections How does Jev find an element?, What does it fix?, Which should I write?, What runs where?, Checked before it runs, Light and dark, Quick start, and What it is, and what it is not, a **Docs** link to `https://yike2.github.io/Jevwright/`, and **Log in** and **Register** at the top right, with no **Open workspace**; step 2 opens `/register` with the heading "Register".
 
 #### TC-LAND-02 Log in from the landing page — P1, E2E
 
@@ -169,6 +169,49 @@ Covers PRD 4.2.2. Pre: S1.
 2. Click **Open workspace** at the top right.
 
 Expected: step 1 shows **Open workspace** instead of **Log in** and **Register**; step 2 opens `/files` with the sidebar.
+
+#### TC-LAND-04 The logo leads to the dashboard — P1, E2E
+
+Covers PRD 4.2.2. Pre: none.
+
+1. Without a token, open `/login` and look at the logo's link.
+2. Do S1 with a Test File, open `/`, and look at the logo's link.
+3. Open the Test File and click the logo at the top of the sidebar.
+
+Expected: step 1 links to `/` ("Jevwright home"); step 2 links to `/files` ("Jevwright, go to dashboard"); step 3 opens `/files`.
+
+#### TC-LAND-05 The real Run replay — P1, E2E
+
+Covers PRD 4.2.2. Pre: none.
+
+1. Open `/`; in **Run replay** click **Show all steps**, then the button of step 4.
+2. Choose the tab `fall-back-from-a-stale-selector.yaml` and click **Show all steps**.
+
+Expected: step 1 lists six steps, step 4 is `click` with `selector` and `Passed`, and its screenshot "Step 4 screenshot" shows; in step 2 step 4 shows `visual` or `dom`.
+
+#### TC-LAND-06 The replay with reduced motion — P2, E2E
+
+Covers AGENTS.md 7.2. Pre: the system set to reduce motion.
+
+1. Open `/`.
+
+Expected: the replay shows all six steps as `Passed` at once, with no animation.
+
+#### TC-LAND-07 Quick start tabs — P2, E2E
+
+Covers PRD 4.2.2. Pre: none.
+
+1. Open `/`; in **Quick start** look at **Web**, then choose **CLI**.
+
+Expected: **Web** lists the Quick Start Modules, starting with `1 Passing tests`; **CLI** shows `pnpm jevwright validate tests/login.yaml` and the run command.
+
+#### TC-LAND-08 The landing page on a phone — P2, Manual
+
+Covers AGENTS.md 7.2. Pre: a 400px wide window, both themes.
+
+1. Scroll through `/`.
+
+Expected: nothing scrolls sideways except code boxes and the choice table; every diagram reads top to bottom; text and badges are readable in both themes.
 
 #### TC-THEME-01 The theme follows the system by default — P1, E2E
 
@@ -212,7 +255,7 @@ Covers `docs/tech/design-system.md` 2.2. Pre: S1–S3, a passed and a failed Run
 
 1. In each theme, look at the landing page, `/login`, the overview, the editor with diagnostics, and both Run pages.
 
-Expected: text, status badges, icons, inputs, and focus rings are clearly readable on every surface; no status is shown by color alone.
+Expected: text, status badges, icons, inputs, and focus rings are clearly readable on every surface; no status is shown by color alone; scrollbars, the editor's included, are thin, with a thumb that stands out from its surface and changes on hover.
 
 ### 4.1 Authentication (`AUTH`)
 
@@ -293,9 +336,9 @@ Covers PRD 4.2.2. Pre: the backend's `DEMO_APP_URL` is the Demo App of 2.1 or 2.
 
 1. Open `/register`, enter a new email and the password, and click **Register** in the form.
 2. Click **Variables for Quick Start**.
-3. Open `sign-in.yaml` from the overview and do S5.
+3. Open `sign-in-and-see-products.yaml` from the overview and do S5.
 
-Expected: step 1 opens `/files`, where the overview shows the heading `Quick Start` with the Modules `1 Passing`, `2 Failing`, `3 Invalid`, and `4 Jev`, in that order, and their files (`docs/tech/backend.md` 1.10); step 2 lists `BASE` and `SWAG_PASSWORD`; in step 3 the editor shows `baseUrl: "{{BASE}}"` and the Run passes.
+Expected: step 1 opens `/files`, where the overview shows the heading `Quick Start` with the Modules `1 Passing tests`, `2 Failing tests - see why they fail`, `3 Invalid files - fix the errors`, and `4 Jev - find and check by description`, in that order, and their files (`docs/tech/backend.md` 1.10); step 2 lists `BASE` and `SWAG_PASSWORD`; in step 3 the editor shows the three header lines (what it does, `# Expect:`, `# Try:`) and `baseUrl: "{{BASE}}"`, and the Run passes.
 
 #### TC-QS-02 Add the Quick Start project to an empty workspace — P1, E2E
 
@@ -318,10 +361,11 @@ Expected: an alert says `You already have a project named Quick Start. Rename or
 
 Covers PRD 4.2.2. Pre: TC-QS-01.
 
-1. Run every file of `1 Passing` and `2 Failing`, and validate both files of `3 Invalid`.
-2. On a backend with a real `OPENROUTER_API_KEY`, run every file of `4 Jev` (Live).
+1. Run every file of the first two Modules, and validate both files of the third.
+2. On a backend with a real `OPENROUTER_API_KEY`, run every file of the `4 Jev` Module (Live).
+3. In one file, do what its `# Try:` line says, and run or validate it again.
 
-Expected: each result matches the first-line comment of its file (2.4): the `1 Passing` files pass, the `2 Failing` files fail at the stated step, the `3 Invalid` files show their validation errors and cannot run, and the `4 Jev` files pass or fail as TC-JEV-01 – TC-JEV-04 state.
+Expected: each result matches the `# Expect:` line of its file: the passing files pass, the failing files fail at the stated step, the invalid files show their validation errors, two lines below the fixture's lines because of the header (`seven-errors-at-once.yaml` at lines 5, 8, 9, 10, 15, 17 and 20), and cannot run, and the Jev files pass or fail as TC-JEV-01 – TC-JEV-04 state; in step 3 the result changes as the line says.
 
 ### 4.2 Workspace sidebar (`WS`)
 
@@ -963,7 +1007,7 @@ Expected: every status has text or a title, not only a color; step updates are a
 | US-4.3.5 History and reports | RPT-01 – RPT-06, RUN-16 |
 | US-4.3.6 Local CLI | CLI-01, CLI-02 |
 | US-4.3.7 Authentication and isolation | AUTH-01 – AUTH-08, SEC-01 – SEC-03, SEC-05 – SEC-07 |
-| PRD 4.2.2 Landing page and Quick Start | LAND-01 – LAND-03, QS-01 – QS-04 |
+| PRD 4.2.2 Landing page and Quick Start | LAND-01 – LAND-08, QS-01 – QS-04 |
 | `docs/tech/design-system.md` Themes and contrast | THEME-01 – THEME-05 |
 | US-4.3.8 Public API | API-01 |
 | PRD 5.4.3 Files overview | OV-01, OV-02 |

@@ -218,6 +218,7 @@ export function SidebarNav({ email, tree, refreshTree, onLogout, onNavigate }: W
         <div className="flex h-12 shrink-0 items-center gap-2 border-b border-sidebar-border px-3">
           <Link
             href={WORKSPACE_HOME}
+            aria-label="Jevwright, go to dashboard"
             className="flex items-center gap-2 rounded-md font-heading font-semibold"
             onClick={() => onNavigate?.()}
           >

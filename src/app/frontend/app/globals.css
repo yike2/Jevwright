@@ -34,6 +34,8 @@
   --ring: #0090f1;
   --code: #ffffff;
   --code-foreground: #1f1f1f;
+  --scrollbar-thumb: #8a8a8a;
+  --scrollbar-thumb-hover: #6b6b6b;
   --chart-1: #005fb8;
   --chart-2: #187534;
   --chart-3: #c42b1c;
@@ -78,6 +80,8 @@
   --ring: #0078d4;
   --code: #1f1f1f;
   --code-foreground: #cccccc;
+  --scrollbar-thumb: #737373;
+  --scrollbar-thumb-hover: #8f8f8f;
   --chart-1: #4daafc;
   --chart-2: #3fb950;
   --chart-3: #fb625a;
@@ -158,6 +162,35 @@
 
   body {
     @apply min-h-screen bg-background text-sm leading-[1.45] text-foreground antialiased;
+  }
+
+  /* Thin scrollbars from the tokens (design-system.md 2.9): the thumb keeps 3:1 against every surface it crosses, on
+     a transparent track. Browsers with the standard properties use the first rule; Safari uses ::-webkit-scrollbar. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
+  }
+
+  *:hover {
+    scrollbar-color: var(--scrollbar-thumb-hover) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background: var(--scrollbar-thumb);
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
   }
 
   /* One focus style everywhere (design-system.md 5): a solid ring outline, on keyboard focus only. Components

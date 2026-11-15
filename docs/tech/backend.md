@@ -127,19 +127,23 @@ Project Variable values are stored in plain text, and Run Files are never delete
 
 Every new account gets a Project named `Quick Start`, so a new user can run a test within a minute. Register creates the user and the Project with its Modules, Test Files and Variables in one nested Prisma create, which is one transaction: a failed register, such as a taken email, leaves neither.
 
-| Module | Test Files |
-| ------ | ---------- |
-| `1 Passing` | `sign-in.yaml`, `checkout.yaml`, `locked-out.yaml` |
-| `2 Failing` | `wrong-total.yaml`, `missing-element.yaml`, `unexpected-dialog.yaml` |
-| `3 Invalid` | `multiple-errors.yaml`, `yaml-syntax.yaml` |
-| `4 Jev` | `target-sign-in.yaml` (`target` locating), `stale-selector.yaml` (a stale `selector` falls back to Jev), `statement-holds.yaml` and `statement-fails.yaml` (`statement` judging) |
+The Project's Modules, files and headers are a manifest in `workspace/quick-start.ts`. Each Module name starts with a number and says what it teaches, so the tree, which lists Modules by name (1.3), shows them in learning order. Each file name says what the test does:
+
+| Module | Test File | Made from fixture |
+| ------ | --------- | ----------------- |
+| `1 Passing tests` | `sign-in-and-see-products.yaml`, `buy-a-backpack.yaml`, `locked-out-user-sees-an-error.yaml` | `pass/sign-in.yaml`, `pass/checkout.yaml`, `pass/locked-out.yaml` |
+| `2 Failing tests - see why they fail` | `wrong-total-fails-at-the-total.yaml`, `missing-button-fails.yaml`, `unexpected-alert-fails.yaml` | `fail/wrong-total.yaml`, `fail/missing-element.yaml`, `fail/unexpected-dialog.yaml` |
+| `3 Invalid files - fix the errors` | `seven-errors-at-once.yaml`, `yaml-syntax-error.yaml` | `invalid/multiple-errors.yaml`, `invalid/yaml-syntax.yaml` |
+| `4 Jev - find and check by description` | `find-elements-by-description.yaml` (`target` locating), `fall-back-from-a-stale-selector.yaml` (a stale `selector` falls back to its `target`), `judge-a-true-statement.yaml`, `judge-a-false-statement.yaml` (`statement` judging) | `jev/target-sign-in.yaml`, `jev/stale-selector.yaml`, `jev/statement-holds.yaml`, `jev/statement-fails.yaml` |
 
 | Variable | Value |
 | -------- | ----- |
 | `BASE` | `DEMO_APP_URL` (1.8), which is always set |
 | `SWAG_PASSWORD` | `secret_sauce`, the password the Demo App shows on its own sign-in page |
 
-The sources are the E2E fixtures of the same names in `src/tests/e2e/fixtures/` (`docs/testing/test-cases.md` 2.4), read from disk when the Project is created, so the fixtures stay their single source; each keeps its first-line comment with the expected result. They use only `{{BASE}}` and `{{SWAG_PASSWORD}}` and finish within seconds. The files of `1 Passing`, `2 Failing` and `3 Invalid` locate by `selector` only, so their Runs never call Jev; the Runs of `4 Jev` call Jev through the server's `OPENROUTER_API_KEY` (1.8), and `pnpm test:e2e` never runs them. Fixtures that need another Variable (`pass/variable-value.yaml`, `fail/missing-variable.yaml`) or long waits (`pass/slow.yaml`, `fail/run-timeout.yaml`) are left out, as are `pass/all-actions.yaml`, whose 35 steps make a poor first example, and the fixtures that repeat a case above. Modules and files are listed by name, like every Project (1.3), so the number prefix keeps the Modules in learning order.
+Each seeded file opens with a three-line header from the manifest, in plain words: what the test does, what result to expect and why (`# Expect: failed at step 14 because the total is $32.39, not $99.99; ...`), and one thing to try (`# Try: change $99.99 to $32.39 and run it again.`). The rest of the file is its fixture from `src/tests/e2e/fixtures/` (`docs/testing/test-cases.md` 2.4) without the fixture's first-line `# Expect:` comment, read from disk when the Project is created, so the fixtures stay the single source of the test bodies and keep the line numbers the E2E tests rely on. The header replaces one line with three, so every line of a seeded file is two lines below its line in the fixture; `seven-errors-at-once.yaml` reports its seven diagnostics at lines 5, 8, 9, 10, 15, 17 and 20.
+
+The files use only `{{BASE}}` and `{{SWAG_PASSWORD}}` and finish within seconds. The files of the first three Modules locate by `selector` only, so their Runs never call Jev; the Runs of the `4 Jev` Module call Jev through the server's `OPENROUTER_API_KEY` (1.8), and `pnpm test:e2e` never runs them. Fixtures that need another Variable (`pass/variable-value.yaml`, `fail/missing-variable.yaml`) or long waits (`pass/slow.yaml`, `fail/run-timeout.yaml`) are left out, as are `pass/all-actions.yaml`, whose 35 steps make a poor first example, and the fixtures that repeat a case above.
 
 `POST /projects/quick-start` adds the same Project to an account that has none, for accounts made before it existed or after deleting it. An account that already has a Project named `Quick Start` gets `409` with `You already have a project named Quick Start. Rename or delete it, then add it again.`, and nothing is added. `workspace/quick-start.ts` builds the nested create for both.
 
@@ -314,7 +318,7 @@ Integration tests need PostgreSQL: CI runs a `postgres` service container, and l
 | Type | Coverage | Location |
 | ---- | -------- | -------- |
 | Unit | `env`: missing and invalid variables stop start-up; dev mode picks `network: "any"` only on a loopback `HOST`; `DEMO_APP_URL` required outside dev mode, also when empty, `http(s)` only, and the local Demo App in dev mode when missing | `src/tests/unit/app/backend/env.test.ts` |
-| Unit | Quick Start project: its name, Modules and files, sources equal to the fixtures, names by the naming rule, valid and invalid files, Modules in learning order by name, `BASE` from `DEMO_APP_URL` | `src/tests/unit/app/backend/workspace/quick-start.test.ts` |
+| Unit | Quick Start project: its name, Modules and files, names by the naming rules, Modules in learning order by name, the three-line header of every file, the fixture body after it unchanged, valid and invalid files, the invalid files' diagnostics two lines down, `BASE` from `DEMO_APP_URL` | `src/tests/unit/app/backend/workspace/quick-start.test.ts` |
 | Unit | `password`, `token`: hash and verify, wrong password, no expiry, tampered tokens and other secrets | `src/tests/unit/app/backend/auth/` |
 | Unit | `RunQueue`: FIFO order, the concurrency limit, a failing Run does not stop the queue | `src/tests/unit/app/backend/runs/queue.test.ts` |
 | Unit | `run-files`: paths outside the Run's folder rejected | `src/tests/unit/app/backend/runs/run-files.test.ts` |

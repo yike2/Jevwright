@@ -1,0 +1,78 @@
+{
+  "file": "sign-in-and-see-products.yaml",
+  "name": "Sign in",
+  "status": "passed",
+  "startedAt": "2026-11-15T01:50:23.511Z",
+  "durationMs": 1647,
+  "summary": {
+    "total": 6,
+    "passed": 6,
+    "failed": 0,
+    "pending": 0
+  },
+  "steps": [
+    {
+      "index": 0,
+      "line": 8,
+      "action": "open",
+      "startedAt": "2026-11-15T01:50:24.050Z",
+      "durationMs": 174,
+      "dialogs": [],
+      "status": "passed",
+      "screenshot": "screenshots/step-0.png"
+    },
+    {
+      "index": 1,
+      "line": 10,
+      "action": "input",
+      "startedAt": "2026-11-15T01:50:24.307Z",
+      "durationMs": 71,
+      "locateMethod": "selector",
+      "dialogs": [],
+      "status": "passed",
+      "screenshot": "screenshots/step-1.png"
+    },
+    {
+      "index": 2,
+      "line": 13,
+      "action": "input",
+      "startedAt": "2026-11-15T01:50:24.455Z",
+      "durationMs": 43,
+      "locateMethod": "selector",
+      "dialogs": [],
+      "status": "passed",
+      "screenshot": "screenshots/step-2.png"
+    },
+    {
+      "index": 3,
+      "line": 16,
+      "action": "click",
+      "startedAt": "2026-11-15T01:50:24.567Z",
+      "durationMs": 105,
+      "locateMethod": "selector",
+      "dialogs": [],
+      "status": "passed",
+      "screenshot": "screenshots/step-3.png"
+    },
+    {
+      "index": 4,
+      "line": 18,
+      "action": "waitFor",
+      "startedAt": "2026-11-15T01:50:24.771Z",
+      "durationMs": 3,
+      "dialogs": [],
+      "status": "passed",
+      "screenshot": "screenshots/step-4.png"
+    },
+    {
+      "index": 5,
+      "line": 20,
+      "action": "assert",
+      "startedAt": "2026-11-15T01:50:24.886Z",
+      "durationMs": 30,
+      "dialogs": [],
+      "status": "passed",
+      "screenshot": "screenshots/step-5.png"
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { analyze } from "@/core/syntax/index.js";
 import { isAction } from "@/core/syntax/steps.js";
@@ -14,7 +14,15 @@ import {
 } from "@/app/frontend/lib/landing.js";
 
 const PUBLIC = new URL("../../../../app/frontend/public/", import.meta.url);
-const fixture = (path: string) => readFileSync(new URL(`../../../e2e/fixtures/${path}`, import.meta.url), "utf8");
+// The receipts come from the Quick Start files as the backend seeds them.
+const seeded = (name: string) =>
+  (
+    quickStartProject("https://demo.example.com").modules as {
+      create: { testFiles: { create: { name: string; source: string }[] } }[];
+    }
+  ).create
+    .flatMap((module) => module.testFiles.create)
+    .find((testFile) => testFile.name === name)!.source;
 
 // Every claim on the landing page is checked against the code it describes (frontend.md 1.14).
 describe("landing page content", () => {
@@ -29,7 +37,7 @@ describe("landing page content", () => {
   });
 
   it("shows validate output whose errors are the Syntax Analyzer's, line by line", () => {
-    const expected = analyze(fixture("invalid/multiple-errors.yaml")).diagnostics.map(
+    const expected = analyze(seeded("seven-errors-at-once.yaml")).diagnostics.map(
       (d) => `✖ tests/seven-errors-at-once.yaml:${d.line} — Error: ${d.message}`,
     );
 
@@ -38,7 +46,7 @@ describe("landing page content", () => {
   });
 
   it("shows run output with one passed line per step of the sign-in file", () => {
-    const steps = analyze(fixture("pass/sign-in.yaml")).testCase!.steps;
+    const steps = analyze(seeded("sign-in-and-see-products.yaml")).testCase!.steps;
     const passed = RUN_RECEIPT.split("\n").filter((line) => line.trimStart().startsWith("✔ line"));
 
     expect(passed.map((line) => Number(/line (\d+)/.exec(line)![1]))).toEqual(steps.map((step) => step.line));

@@ -86,7 +86,7 @@ Shared setup for the tests. Requests go straight to the backend at `API_URL` (`h
 | `playwright.config.ts` | Test location, `baseURL`, Chromium project, `webServer` for backend, frontend, and Demo App, trace on failure |
 | `src/tests/e2e/demo-app.ts` | Serves the Demo App on `127.0.0.1:8080` with `serveDemoApp(8080)` (`benchmark.md` 1.4) until it is stopped |
 | `src/tests/e2e/support.ts` | Setup helpers (3.1) |
-| `src/tests/e2e/landing.e2e.ts` | TC-LAND-01 – 03 |
+| `src/tests/e2e/landing.e2e.ts` | TC-LAND-01 – 07 |
 | `src/tests/e2e/theme.e2e.ts` | TC-THEME-01 – 04 |
 | `src/tests/e2e/auth.e2e.ts` | TC-AUTH-01 – 05, 07, 08 |
 | `src/tests/e2e/quick-start.e2e.ts` | TC-QS-01 – 03 |

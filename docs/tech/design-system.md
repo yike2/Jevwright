@@ -64,6 +64,7 @@ The tokens are CSS variables in `app/globals.css`: `:root` holds the light theme
 | `--input` | `#858585` | `#7a7a7a` | Borders of inputs and outline controls, which need 3:1 |
 | `--ring` | `#0090f1` | `#0078d4` | The focus ring |
 | `--code`, `--code-foreground` | `#ffffff`, `#1f1f1f` | `#1f1f1f`, `#cccccc` | The YAML editor and source blocks |
+| `--scrollbar-thumb`, `--scrollbar-thumb-hover` | `#8a8a8a`, `#6b6b6b` | `#737373`, `#8f8f8f` | Scrollbar thumbs (2.9) |
 | `--chart-1` … `--chart-5` | info, success, destructive, warning, muted-foreground | the same roles | Charts, once a page has one |
 
 Most values are VS Code's own. Four differ so that every pair passes 2.2:
@@ -91,6 +92,7 @@ All ratios are WCAG 2 contrast ratios. Body text needs 4.5:1; input borders, the
 | `code-foreground` on `code` | 16.5 | 10.3 |
 | `input` border on `background`, `card`, `popover`, `sidebar` | ≥ 3.4 | ≥ 3.5 |
 | `ring` on `background`, `card`, `popover`, `sidebar` | ≥ 3.1 | ≥ 3.3 |
+| `scrollbar-thumb` on `background`, `card`, `popover`, `sidebar`, `code` | ≥ 3.2 | ≥ 3.2 |
 
 Tints (`bg-success/12` and the hover fill) are computed in sRGB in the test; the browser mixes `color-mix(in oklch, ...)` slightly differently, so every tinted pair keeps a margin above its threshold.
 
@@ -149,6 +151,10 @@ The workspace is an editor: a tree, a code area, and panels of results. Its colo
 | Graphite or zinc neutrals with a near-black primary | Quiet, but the main action and links lose their color cue, and selection and focus need a separate accent anyway |
 | Teal accent | Distinct, but close to `success` green, so a primary button and a passed status are easy to confuse |
 
+### 2.9 Scrollbars
+
+Scrollbars are thin everywhere, the editor's textarea included. The base layer sets `scrollbar-width: thin` and `scrollbar-color: var(--scrollbar-thumb) transparent` on every element, switching to `--scrollbar-thumb-hover` while the pointer is over it. Safari reads `::-webkit-scrollbar` instead: 8px wide, a transparent track, and a fully rounded thumb that takes the hover color under the pointer. The track is transparent, so the thumb is measured against every surface it can cross; it keeps 3:1 on all of them (2.2), and the hover color is darker in light and brighter in dark.
+
 ## 3. Themes
 
 The app has a Light, a Dark and a System theme. System, the default, follows the operating system's `prefers-color-scheme` and changes with it while the page is open.
@@ -169,7 +175,7 @@ The app has a Light, a Dark and a System theme. System, the default, follows the
 
 | Layout | Pages | Skeleton |
 | ------ | ----- | -------- |
-| Site | `/` | A sticky header (brand, theme switch, Log in and Register, or Open workspace), full-width sections with a centered 72rem column, a footer |
+| Site | `/` | A sticky header (logo, docs links, theme switch, Log in and Register, or Open workspace), full-width sections with a centered 72rem column that alternate `background` and `card`, a footer (frontend.md 1.14) |
 | Auth | `/login`, `/register` | The site header without the auth links, and one centered card |
 | Workspace | `/files`, `/files/:id`, `/runs/:id` | A 320px sidebar on the left (brand, Projects tree, account and theme switch) and the page on the right in a centered column of at most 64rem. Below 768px the sidebar is behind a menu button |
 
@@ -193,6 +199,7 @@ These rules follow the VS Code UX guidelines for the regions of an editor-like a
 | `Card` | Panels: overview groups, the Runs list, the Validation result, landing features |
 | `Badge` | Short labels; the `success`, `warning`, `destructive`, `info` and `muted` variants are the status roles (2.3) |
 | `ToggleGroup` | A choice among a few options shown at once, such as the theme |
+| `Tabs` | Alternative views of one thing, such as the replayed Runs and the Web / CLI quick start on the landing page |
 | `Dialog` | Through the workspace dialogs only (frontend.md 1.6, 1.8, 1.11) |
 | `Input`, `Label` | Every field has a visible `Label`; a problem shows under the field (6) |
 | Icons | lucide-react, `aria-hidden` when a label is next to them |
@@ -240,5 +247,5 @@ The design system meets WCAG 2.1 AA (AGENTS.md 7.2): contrast as in 2.2; status 
 
 | Type | Coverage | Location |
 | ---- | -------- | -------- |
-| Unit | Every token pair of 2.2 in both themes | `src/tests/unit/app/frontend/design-tokens.test.ts` |
+| Unit | Every token pair of 2.2 in both themes, the scrollbar thumbs, and that the neutrals are true greys | `src/tests/unit/app/frontend/design-tokens.test.ts` |
 | E2E | The theme follows the system by default; a chosen theme persists after a reload; System follows the setting again; the stored theme is set before the page's scripts run; the switch is on the login page and in the workspace | `src/tests/e2e/theme.e2e.ts` |

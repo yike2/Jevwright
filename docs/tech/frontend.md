@@ -137,6 +137,7 @@ The workspace is every authenticated page. A shared layout guards auth, renders 
 
 | Element         | Behavior                                                                                                                     |
 | --------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Logo            | Above the tree, outside the "Projects" navigation: a link to `/files` named "Jevwright, go to dashboard"                     |
 | Header          | "Projects" with a "+" that opens the New Project dialog                                                                      |
 | Tree            | Projects → Modules → Test Files from `GET /tree`, in API order. Projects and Modules toggle open/closed; all open by default |
 | Row "+"         | On a Project: New Module dialog. On a Module: New Test File dialog                                                           |
@@ -178,6 +179,7 @@ E2E tests locate elements by role and accessible name, so these names are part o
 
 | Element               | Role and name                                                                                                                                                                                  |
 | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Logo                  | link "Jevwright, go to dashboard" to `/files`                                                                                                                                                  |
 | Sidebar               | `navigation` named "Projects"                                                                                                                                                                  |
 | Header "+"            | button "New project"                                                                                                                                                                           |
 | Project row "+"       | button "New module in <project name>"                                                                                                                                                          |
@@ -341,7 +343,7 @@ The sidebar has links with the same names, so E2E tests scope overview lookups t
 #### Tests
 - Unit: `overviewGroups`, `statusTitle` (5.5).
 - E2E `overview.e2e.ts`: a user with an empty workspace opens `/files` and sees "No test files yet"; after creating a Project, a Module and a Test File and opening `/files` again, the "Test files" region shows the Project and Module headings and the file link with "Never run"; clicking the link opens `/files/<id>`.
-- E2E `quick-start.e2e.ts`: an account registered through the form lands on `/files` with the Quick Start project, its `1 Passing`, `2 Failing`, `3 Invalid` and `4 Jev` Modules and its Variables `BASE` and `SWAG_PASSWORD`, and its `sign-in.yaml` passes; an empty workspace's "Add the Quick Start project" adds it to the overview and the sidebar; with a project named Quick Start already there, the button shows the backend's `409` message.
+- E2E `quick-start.e2e.ts`: an account registered through the form lands on `/files` with the Quick Start project, its four numbered Modules (`backend.md` 1.10) and its Variables `BASE` and `SWAG_PASSWORD`, and its `sign-in-and-see-products.yaml` opens with its three-line header and passes; an empty workspace's "Add the Quick Start project" adds it to the overview and the sidebar; with a project named Quick Start already there, the button shows the backend's `409` message.
 
 Out of scope: filters, sorting, charts, pagination, distinguishing `queued` from `running`.
 
@@ -398,7 +400,7 @@ The frontend package uses these exact versions:
 - `@tailwindcss/postcss@4.3.5`
 - `openapi-typescript@7.13.0`
 
-shadcn tooling and UI primitives are pinned exactly (no `^`). Primitives are added with `shadcn add` only as pages need them (currently `badge`, `button`, `card`, `dialog`, `input`, `label`, `toggle`, `toggle-group`); every dependency that command adds is pinned to its exact installed version and listed below. `next-themes` is the theme provider that shadcn's Next.js dark-mode guide uses (design-system.md 3).
+shadcn tooling and UI primitives are pinned exactly (no `^`). Primitives are added with `shadcn add` only as pages need them (currently `badge`, `button`, `card`, `dialog`, `input`, `label`, `tabs`, `toggle`, `toggle-group`); every dependency that command adds is pinned to its exact installed version and listed below. `next-themes` is the theme provider that shadcn's Next.js dark-mode guide uses (design-system.md 3).
 
 
 
@@ -430,36 +432,49 @@ Lint, format, and type-check coverage include the frontend package:
 
 ### 1.14 Landing page
 
-`/` is the product page, a server component (`app/page.tsx`) that needs no token. Its content (`SAMPLE_TEST`, `FEATURES`) is in `lib/landing.ts`, so a unit test can check it.
+`/` is the product page, a server component (`app/page.tsx`) that needs no token; the header, the Run replay and the copy buttons are client components. It shows real product output rather than mockups, and every claim on it is true of the code: its content is in `lib/landing.ts`, and a unit test checks each number and each receipt against the code it describes.
 
 | Section | Content |
 | ------- | ------- |
-| Header | `SiteHeader` (`components/landing/site-header.tsx`): the brand linking to `/`, the theme switch, and the links "Log in" (`/login`) and "Register" (`/register`). A visitor whose browser holds a token sees one link "Open workspace" (`/files`) instead; the header checks the token after mount, so the server renders the visitor's links. `/login` and `/register` use the same header without the auth links |
-| Hero | The heading "Web tests in plain YAML", a lead paragraph, the links "Get started" (`/register`) and "See a test file", and the sample test file `SAMPLE_TEST` in a `figure` captioned "sign-in.yaml" |
-| Features | One card per entry of `FEATURES`, in order: Plain YAML steps, Jev locating, Live runs, History and reports, CLI and API |
-| Steps | Write, Validate, Run |
-| Call to action | "Create an account" (`/register`), with a line on the Quick Start project |
-| Footer | Links to the API reference on GitHub Pages and the repository |
+| Header | `SiteHeader` (`components/landing/site-header.tsx`): the logo, links to the docs on GitHub Pages, the API reference and the repository (hidden below 768px), the theme switch, and "Log in" (`/login`) and "Register" (`/register`). A visitor whose browser holds a token sees "Open workspace" (`/files`) instead of Log in and Register, and the logo leads to `/files` instead of `/`; the header checks the token after mount, so the server renders the visitor's links. `/login` and `/register` use the same header without the auth links |
+| Hero | A two-beat heading ("Web tests as plain YAML steps." and a payoff line with one emphasized phrase), two sentences, "Get started" (`/register`), "See a real Run" (to the replay), and the copyable command `COMMAND` (`pnpm jevwright run tests/sign-in.yaml`, cli.md 3.1) |
+| A real Run, not a screenshot | `RunReplay` (`components/landing/run-replay.tsx`): one tab per entry of `REPLAY_RUNS`, real Run reports of the Quick Start files `sign-in-and-see-products.yaml` and `fall-back-from-a-stale-selector.yaml` (the second called Jev and located step 4 with `visual`). Once the replay scrolls into view, its steps tick from pending to their real status with their locate method and duration; a step's button shows its screenshot. "Replay" starts it again and "Show all steps" shows the end state. Below it, the stat strip `STATS` |
+| 01 How does Jev find an element? | Two small diagrams (`Flow`): a selector that matches skips Jev; a target, or a selector that matches nothing, goes to Visual Locate, then DOM Locate if Jev is unsure, then Playwright acts, with the method recorded (locator.md 1.2) |
+| 02 What does it fix? | Four scenarios with a before and an after line |
+| 03 Which should I write? | A table: `selector`, `target`, both, a Playwright `assert`, a `statement`, each with when and why, and the cost of Jev calls |
+| 04 What runs where? | A diagram of the parts (web app, CLI and REST API, Core, Playwright and Chromium, Jev through OpenRouter), links to the interactive architecture and run sequence diagrams on GitHub Pages, and how this differs from runners where a model plans the test |
+| Checked before it runs | Validate, Run, Report, each with real output: `VALIDATE_RECEIPT` and `RUN_RECEIPT`, captured from `jevwright validate` and `jevwright run` on the seeded Quick Start files, and the located step from the replayed report; each with the matching state of the web app |
+| Light and dark | Screenshots of the workspace in both themes (`public/landing/workspace-light.webp`, `workspace-dark.webp`) |
+| Quick start | Tabs: Web (three steps and `QUICK_START_MODULES`) and CLI (install, validate, run, as in the README) |
+| What it is, and what it is not | Questions and answers on planning, self-healing, steps without a locator, the cost of Jev, browsers, and private networks |
+| Closing | One line, the command again, "Get started" and GitHub |
+| Footer | Docs, API reference, architecture, GitHub |
 
-A signed-in visitor reaches the workspace in one click with "Open workspace". A stored token that the backend no longer accepts still shows that link; the workspace then redirects to `/login` (1.2).
+The replay is the page's only animation; with `prefers-reduced-motion: reduce` it shows every step's result at once. The shipped reports are the backend's `report.json` of each Run without the `trace` field, since the trace is not shipped; their screenshots are in `public/landing/runs/<file>/step-<n>.webp`, resized to 800px wide.
 
 | Helper | Rule |
 | ------ | ---- |
-| `SAMPLE_TEST` | A Test File of the Demo App's sign-in with `selector` and `target` locating and an `assert` with a `statement`; the Syntax Analyzer finds no diagnostics in it |
-| `FEATURES` | The five features, each `{ title, description }` |
+| `ACTIONS` | The 15 actions of syntax-analyzer.md 1.2; each is an action of the Syntax Analyzer |
+| `LOCATE_METHODS` | `selector`, `visual`, `dom` |
+| `COMMAND` | The hero and closing command |
+| `VALIDATE_RECEIPT` | Real `validate` output for `seven-errors-at-once.yaml`; its error lines are the Syntax Analyzer's diagnostics of the seeded file |
+| `RUN_RECEIPT` | Real `run` output for `sign-in-and-see-products.yaml`; one passed line per step, at the seeded file's lines |
+| `REPLAY_RUNS` | `{ file, note, assets, report }` for the two Runs; both passed 6 of 6, and each step's screenshot is shipped |
+| `STATS` | The number of actions, of locate methods, `0` test files rewritten, and the sign-in Run's duration from its report |
+| `QUICK_START_MODULES` | The Quick Start Module names, as `quickStartProject` creates them, with what each teaches |
 
 #### Accessible names (landing)
 
 | Element | Role and name |
 | ------- | ------------- |
-| Header | `banner` with links "Log in" and "Register", or "Open workspace"; `group` "Theme" |
-| Hero | `heading` level 1 "Web tests in plain YAML" |
-| Features | `heading` level 3 per feature title |
-| Sample | `figure` named "sign-in.yaml" |
+| Header | `banner` with links "Jevwright home" (or "Jevwright, go to dashboard" with a token), "Docs", "API reference", "GitHub", and "Log in" and "Register", or "Open workspace"; `group` "Theme" |
+| Hero | `heading` level 1 starting "Web tests as plain YAML steps."; button "Copy command" with a `role="status"` that says "Copied" |
+| Replay | `region` "Run replay"; one `tab` per file name; buttons "Replay" and "Show all steps"; `list` "Replay steps" with one `listitem` per step; `img` "Step <n> screenshot" |
+| Sections | `heading` level 2 per section title; the Quick start section is a `region` "Quick start" with `tab`s "Web" and "CLI" |
 
 #### Tests
-- Unit `landing.test.ts`: `SAMPLE_TEST` has no diagnostics; `FEATURES` has the five titles in order.
-- E2E `landing.e2e.ts`: a visitor sees the hero, the five feature headings, the sample file, and Log in and Register but no Open workspace; Register opens `/register` in Register mode; Log in opens `/login`; a visitor with a token sees Open workspace instead of Log in, and it opens `/files` with the sidebar.
+- Unit `landing.test.ts`: `ACTIONS` are 15 distinct Syntax Analyzer actions; `LOCATE_METHODS`; `VALIDATE_RECEIPT` and `RUN_RECEIPT` match the Syntax Analyzer on the seeded Quick Start files; `REPLAY_RUNS` are passed 6 of 6 with shipped screenshots and the expected locate methods; `STATS` come from those; `QUICK_START_MODULES` match the backend.
+- E2E `landing.e2e.ts`: the hero, every section heading, the command and the header links; Register and Log in; Open workspace with a token; the logo leads to `/` without a token and to `/files` with one, also from a Test File page in the workspace; the replay shows six steps, a screenshot per step, and the Jev Run's `visual` or `dom` step; with reduced motion every step shows its result at once; the Quick start tabs.
 
 ## 2. Internal Flow
 
@@ -630,7 +645,12 @@ This fallback is implemented in the client itself when the backend response is n
 | `lib/runs.ts`                                 | Run helpers (1.9)                                           |
 | `lib/workspace-context.tsx`                   | `useWorkspace()`: `me`, `tree`, `refreshTree`               |
 | `lib/routes.ts`                               | `WORKSPACE_HOME`, the overview's path `/files`              |
-| `lib/landing.ts`                              | Landing content: `SAMPLE_TEST`, `FEATURES` (1.14)           |
+| `lib/landing.ts`                              | Landing content and receipts (1.14)                         |
+| `lib/landing-runs/`                           | The two replayed Run reports (1.14)                         |
+| `public/landing/`                             | Replay screenshots and the workspace screenshots (1.14)     |
+| `components/landing/run-replay.tsx`           | The Run replay (1.14)                                       |
+| `components/landing/flow.tsx`                 | The small landing diagrams (1.14)                           |
+| `components/landing/copy-command.tsx`         | A command with a copy button (1.14)                         |
 | `components/auth/auth-form.tsx`               | Two-mode auth form (Log in/Register, 1.5)                   |
 | `components/landing/site-header.tsx`          | Header of the landing and auth pages (1.14)                 |
 | `components/landing/brand-mark.tsx`           | The product mark                                            |
@@ -671,6 +691,9 @@ src/app/frontend/
 │   │   └── auth-form.tsx
 │   ├── landing/
 │   │   ├── brand-mark.tsx
+│   │   ├── copy-command.tsx
+│   │   ├── flow.tsx
+│   │   ├── run-replay.tsx
 │   │   └── site-header.tsx
 │   ├── theme/
 │   │   ├── theme-provider.tsx
@@ -682,6 +705,7 @@ src/app/frontend/
 │   │   ├── dialog.tsx
 │   │   ├── input.tsx
 │   │   ├── label.tsx
+│   │   ├── tabs.tsx
 │   │   ├── toggle-group.tsx
 │   │   └── toggle.tsx
 │   └── workspace/
@@ -698,6 +722,7 @@ src/app/frontend/
 │   ├── editor.ts
 │   ├── format-error.ts
 │   ├── landing.ts
+│   ├── landing-runs/    # the replayed Run reports
 │   ├── overview.ts
 │   ├── routes.ts
 │   ├── runs.ts
@@ -705,6 +730,8 @@ src/app/frontend/
 │   ├── utils.ts
 │   ├── validation.ts
 │   └── workspace-context.tsx
+├── public/
+│   └── landing/         # replay and workspace screenshots
 ├── .env.example
 ├── .gitignore
 ├── Dockerfile
@@ -726,9 +753,9 @@ src/app/frontend/
 | Unit | Overview helper (1.10)                                                                                           | `src/tests/unit/app/frontend/overview.test.ts`          |
 | Unit | Editor and Variables helpers (1.7, 1.8)                                                                          | `src/tests/unit/app/frontend/editor.test.ts`            |
 | Unit | Run helpers (1.9)                                                                                                | `src/tests/unit/app/frontend/runs.test.ts`              |
-| Unit | Landing content (1.14)                                                                                           | `src/tests/unit/app/frontend/landing.test.ts`           |
+| Unit | Landing content checked against the code: actions, receipts, replayed reports, stats, Quick Start Modules (1.14) | `src/tests/unit/app/frontend/landing.test.ts`           |
 | Unit | Token contrast in both themes (design-system.md 2.2)                                                             | `src/tests/unit/app/frontend/design-tokens.test.ts`     |
-| E2E  | Landing page: features, sample, Log in, Register, Open workspace (1.14)                                          | `src/tests/e2e/landing.e2e.ts`                          |
+| E2E  | Landing page: sections, command, Log in, Register, Open workspace, logo, Run replay, Quick start tabs (1.14)    | `src/tests/e2e/landing.e2e.ts`                          |
 | E2E  | Themes: system default, persisted choice, no flash, switch placement (design-system.md 3)                       | `src/tests/e2e/theme.e2e.ts`                            |
 | E2E  | Quick Start: seeded on register and runnable, added from the empty overview, `409` message (1.10)                | `src/tests/e2e/quick-start.e2e.ts`                      |
 | E2E  | Auth flow                                                                                                        | `src/tests/e2e/auth.e2e.ts`                             |
