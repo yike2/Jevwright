@@ -90,7 +90,10 @@ export const STATS: Stat[] = [
   { value: String(ACTIONS.length), label: "actions in the test syntax" },
   { value: String(LOCATE_METHODS.length), label: "locate methods, recorded per step" },
   { value: "0", label: "test files rewritten or self-healed" },
-  { value: `${(signInReport.durationMs / 1000).toFixed(1)} s`, label: "for the sign-in Run above, 6 steps" },
+  {
+    value: `${(signInReport.durationMs / 1000).toFixed(1)} s`,
+    label: `for sign-in-and-see-products.yaml, ${signInReport.steps.length} steps`,
+  },
 ];
 
 /** The Quick Start project's folders, as the backend creates them, and what each teaches. */
