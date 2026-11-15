@@ -115,9 +115,12 @@ export function parseConsolesOpen(stored: string | null): ConsolesOpen {
 /** The Debug console's share of the column, in percent, when both consoles are open; the Output console has the rest. */
 export const DEFAULT_CONSOLE_SPLIT = 50;
 
-/** The stored Debug share, or the default for nothing stored, text that is not a number, or one outside 10–90. */
+/**
+ * The stored Debug share, or the default for nothing stored, text that is not a number, or a share outside 0–100
+ * (exclusive). The panels' minimum heights already bound a dragged share, so any share they produced is kept.
+ */
 export function parseConsoleSplit(stored: string | null): number {
   if (stored === null || stored.trim() === "") return DEFAULT_CONSOLE_SPLIT;
   const share = Number(stored);
-  return Number.isFinite(share) && share >= 10 && share <= 90 ? share : DEFAULT_CONSOLE_SPLIT;
+  return Number.isFinite(share) && share > 0 && share < 100 ? share : DEFAULT_CONSOLE_SPLIT;
 }
