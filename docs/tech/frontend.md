@@ -796,6 +796,7 @@ This fallback is implemented in the client itself when the backend response is n
 ```text
 src/app/frontend/
 ├── app/
+│   ├── fonts/
 │   ├── globals.css
 │   ├── layout.tsx
 │   ├── page.tsx
