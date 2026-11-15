@@ -25,7 +25,19 @@ const tint = (color: Rgb, surface: Rgb, amount: number) =>
 
 const TEXT = 4.5;
 const NON_TEXT = 3;
-const SURFACES = ["background", "card", "sidebar", "muted"];
+const SURFACES = ["background", "card", "popover", "sidebar", "muted"];
+// The neutrals are true greys; blue is only for the primary fill, links (info), selection and focus.
+const NEUTRALS = [
+  "background",
+  "foreground",
+  "card",
+  "popover",
+  "sidebar",
+  "muted",
+  "muted-foreground",
+  "border",
+  "input",
+];
 const ROLES = ["destructive", "success", "warning", "info"];
 
 describe.each([":root", ".dark"] as const)("the %s tokens", (selector) => {
@@ -39,11 +51,20 @@ describe.each([":root", ".dark"] as const)("the %s tokens", (selector) => {
     return ratio(t[fg]!, t[bg]!);
   };
 
-  it.each(
-    SURFACES.flatMap((surface) => ["foreground", "muted-foreground", "primary", ...ROLES].map((fg) => [fg, surface])),
-  )("keeps %s text readable on %s", (fg, surface) => {
-    expect(pair(fg, surface)).toBeGreaterThanOrEqual(TEXT);
+  it.each(NEUTRALS.map((name) => [name]))("keeps %s a neutral grey", (name) => {
+    const [r, g, b] = t[name] ?? [];
+    expect(r, name).toBeDefined();
+    expect(g).toBe(r);
+    expect(b).toBe(r);
   });
+
+  // Links and other colored text use info; primary is a fill, read through primary-foreground.
+  it.each(SURFACES.flatMap((surface) => ["foreground", "muted-foreground", ...ROLES].map((fg) => [fg, surface])))(
+    "keeps %s text readable on %s",
+    (fg, surface) => {
+      expect(pair(fg, surface)).toBeGreaterThanOrEqual(TEXT);
+    },
+  );
 
   it.each(["primary", ...ROLES].map((role) => [role]))("keeps %s-foreground readable on a solid %s fill", (role) => {
     expect(pair(`${role}-foreground`, role)).toBeGreaterThanOrEqual(TEXT);
@@ -54,7 +75,8 @@ describe.each([":root", ".dark"] as const)("the %s tokens", (selector) => {
   });
 
   it("keeps tree rows readable when hovered or selected", () => {
-    const selected = tint(t["sidebar-primary"]!, t.sidebar!, 0.14);
+    const selected = t["sidebar-accent"]!;
+    expect(selected, "sidebar-accent").toBeDefined();
     const hovered = tint(t.foreground!, t.sidebar!, 0.07);
     expect(ratio(t["sidebar-foreground"]!, selected)).toBeGreaterThanOrEqual(TEXT);
     expect(ratio(t["muted-foreground"]!, selected)).toBeGreaterThanOrEqual(TEXT);
@@ -65,7 +87,7 @@ describe.each([":root", ".dark"] as const)("the %s tokens", (selector) => {
     expect(pair("code-foreground", "code")).toBeGreaterThanOrEqual(TEXT);
   });
 
-  it.each(["background", "card", "sidebar"].map((surface) => [surface]))(
+  it.each(["background", "card", "popover", "sidebar"].map((surface) => [surface]))(
     "keeps input borders and the focus ring visible on %s",
     (surface) => {
       expect(pair("input", surface)).toBeGreaterThanOrEqual(NON_TEXT);
