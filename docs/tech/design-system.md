@@ -125,7 +125,7 @@ The labels come from `runStatusLabel`, `stepStatusLabel`, `statusTitle` and `fil
 | `--font-sans`, `--font-heading` | IBM Plex Sans (400, 500, 600, 700) | All text |
 | `--font-mono` | IBM Plex Mono (400, 500) | YAML, file names, Variable names, selectors, locate methods, diagnostics |
 
-The fonts are loaded with `next/font/google` in `app/layout.tsx`, which serves them from the app's own origin. The app uses a productive type scale: 14px body with a 1.45 line height, 12px for secondary details, 13px mono, 16–20px for headings. The landing page uses an expressive scale on top of it: a 36–48px hero heading, 30px section headings and 16–18px lead text. Text uses sentence case; labels and headings have no end punctuation.
+The fonts are self-hosted: `app/fonts/` holds the woff2 files that are used (the Latin1 split from IBM's `@ibm/plex-sans` and `@ibm/plex-mono` packages, the same characters as Google Fonts' `latin` subset) and their OFL license, and `app/layout.tsx` loads them with `next/font/local`. The build therefore never downloads fonts; `next/font/google` is not used, because a response from Google Fonts that its loader cannot parse fails `next build`. The app uses a productive type scale: 14px body with a 1.45 line height, 12px for secondary details, 13px mono, 16–20px for headings. The landing page uses an expressive scale on top of it: a 36–48px hero heading, 30px section headings and 16–18px lead text. Text uses sentence case; labels and headings have no end punctuation.
 
 ### 2.5 Spacing and density
 
@@ -265,6 +265,7 @@ The design system meets WCAG 2.1 AA (AGENTS.md 7.2): contrast as in 2.2; status 
 | ---- | -------------- |
 | `app/globals.css` | The tokens of both themes, the Tailwind mapping, the base layer (fonts, body text, focus) |
 | `app/layout.tsx` | Fonts and the theme provider around every page |
+| `app/fonts/` | The self-hosted IBM Plex woff2 files and their OFL license (`LICENSE.txt`) |
 | `components/theme/theme-provider.tsx` | `next-themes` with the settings of 3 |
 | `components/theme/theme-toggle.tsx` | The Light / Dark / System switch |
 | `components/workspace/status-badge.tsx` | The status map of 2.3: `StatusIcon`, `StatusBadge` |
