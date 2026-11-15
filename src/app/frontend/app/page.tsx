@@ -87,7 +87,7 @@ function Code({ label, text }: { label: string; text: string }) {
   return (
     <pre
       aria-label={label}
-      className="h-full overflow-x-auto rounded-lg border bg-code p-3 font-mono text-xs leading-relaxed text-code-foreground"
+      className="overflow-x-auto rounded-lg border bg-code p-3 font-mono text-xs leading-relaxed text-code-foreground"
     >
       <code>{text}</code>
     </pre>
