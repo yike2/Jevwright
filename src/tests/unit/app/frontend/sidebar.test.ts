@@ -9,6 +9,7 @@ import {
   statusTitle,
   testFileBaseName,
   toTestFileName,
+  uploadedTestFileName,
   type LatestRun,
 } from "@/app/frontend/lib/sidebar.js";
 
@@ -90,6 +91,17 @@ describe("testFileBaseName", () => {
 
   it("keeps a name without the suffix", () => {
     expect(testFileBaseName("notes")).toBe("notes");
+  });
+});
+
+describe("uploadedTestFileName", () => {
+  it.each([
+    ["checkout.yaml", "checkout.yaml"],
+    ["checkout.yml", "checkout.yaml"],
+    ["Checkout.YML", "Checkout.yaml"],
+    ["v1.2.yaml", "v1.2.yaml"],
+  ])("names an upload of %s %s", (fileName, name) => {
+    expect(uploadedTestFileName(fileName)).toBe(name);
   });
 });
 

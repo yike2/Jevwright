@@ -39,6 +39,7 @@ const NEUTRALS = [
   "input",
 ];
 const ROLES = ["destructive", "success", "warning", "info"];
+const SYNTAX = ["syntax-key", "syntax-string", "syntax-literal", "syntax-comment"];
 
 describe.each([":root", ".dark"] as const)("the %s tokens", (selector) => {
   const t = Object.fromEntries(Object.entries(tokens(selector)).map(([name, hex]) => [name, rgb(hex)])) as Record<
@@ -85,6 +86,12 @@ describe.each([":root", ".dark"] as const)("the %s tokens", (selector) => {
 
   it("keeps the editor's code readable", () => {
     expect(pair("code-foreground", "code")).toBeGreaterThanOrEqual(TEXT);
+  });
+
+  // The YAML highlighting (design-system.md 2.1): every token color stays readable on the editor and its active line.
+  it.each(SYNTAX.map((token) => [token]))("keeps %s readable on the editor and its active line", (token) => {
+    expect(pair(token, "code")).toBeGreaterThanOrEqual(TEXT);
+    expect(ratio(t[token]!, tint(t.foreground!, t.code!, 0.08))).toBeGreaterThanOrEqual(TEXT);
   });
 
   it.each(["background", "card", "popover", "sidebar", "code"].map((surface) => [surface]))(

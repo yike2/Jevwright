@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { alertsOf, PASSWORD, QUICK_START, signUp, uniqueEmail, waitForFinalStatus, WORKSPACE } from "./support.js";
+import { alertsOf, editorOf, PASSWORD, QUICK_START, signUp, sourceOf, uniqueEmail, WORKSPACE } from "./support.js";
 
 const ADD = "Add the Quick Start project";
 
@@ -27,18 +27,16 @@ test("TC-QS-01 a new account starts with the Quick Start project and runs its pa
   // The Jev examples are listed but never run here: pnpm test:e2e makes no Jev calls (AGENTS.md 5).
   await expect(overview.getByRole("link", { name: "find-elements-by-description.yaml", exact: true })).toBeVisible();
 
-  await page.getByRole("button", { name: `Variables for ${QUICK_START}`, exact: true }).click();
-  const variables = page.getByRole("dialog", { name: "Variables" });
+  await page.getByRole("link", { name: `Variables for ${QUICK_START}`, exact: true }).click();
+  const variables = page.getByRole("list", { name: "Variables" });
   await expect(variables.getByRole("listitem")).toHaveText([/^BASE/, /^SWAG_PASSWORD/]);
-  await variables.getByRole("button", { name: "Close", exact: true }).click();
 
+  await page.goto(WORKSPACE);
   await overview.getByRole("link", { name: "sign-in-and-see-products.yaml", exact: true }).click();
-  const source = page.getByRole("textbox", { name: "Test file YAML" });
-  await expect(source).toHaveValue(/^# .+\n# Expect: .+\n# Try: .+\n/);
-  await expect(source).toHaveValue(/baseUrl: "\{\{BASE\}\}"/);
-  await page.getByRole("button", { name: "Run", exact: true }).click();
-  await page.getByRole("link", { name: "View run" }).click();
-  expect(await waitForFinalStatus(page)).toBe("Passed");
+  await expect.poll(() => sourceOf(page)).toMatch(/^# .+\n# Expect: .+\n# Try: .+\n/);
+  expect(await sourceOf(page)).toMatch(/baseUrl: "\{\{BASE\}\}"/);
+  await editorOf(page).run.click();
+  await expect(editorOf(page).state).toHaveText("Passed", { timeout: 60_000 });
 });
 
 test("TC-QS-02 an empty workspace offers to add the Quick Start project", async ({ page }) => {

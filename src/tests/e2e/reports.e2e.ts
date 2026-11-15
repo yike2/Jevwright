@@ -1,5 +1,14 @@
 import { expect, test, type Page } from "@playwright/test";
-import { addTestFile, fixture, runFromEditor, runToEnd, setUpDemoProject, signUp } from "./support.js";
+import {
+  addTestFile,
+  editorOf,
+  fixture,
+  runFromEditor,
+  runToEnd,
+  setUpDemoProject,
+  signUp,
+  sourceOf,
+} from "./support.js";
 
 type Report = {
   status: string;
@@ -95,16 +104,63 @@ test("TC-RPT-03 lists every run of a file, newest first, each with its own sourc
   await expect(runs.nth(1)).toContainText(/^Failed · /);
   await expect(runs.nth(2)).toContainText(/^Passed · /);
 
-  const source = page.getByLabel("Source when it ran", { exact: true });
+  const details = page.getByRole("dialog", { name: "flow.yaml", exact: true });
+  const source = details.getByLabel("Source when it ran", { exact: true });
   await runs.nth(2).getByRole("link").click();
-  await expect(page.getByRole("list", { name: "Steps" }).getByRole("listitem")).toHaveCount(6);
-  await page.getByText("Source when it ran", { exact: true }).click();
+  await expect(details.getByRole("list", { name: "Steps" }).getByRole("listitem")).toHaveCount(6);
+  await details.getByText("Source when it ran", { exact: true }).click();
   await expect(source).toHaveText(fixture("pass/sign-in.yaml"));
-  await page.goBack();
+  await page.keyboard.press("Escape");
+  await expect(details).toBeHidden();
   await runs.nth(0).getByRole("link").click();
-  await expect(page.getByRole("list", { name: "Steps" }).getByRole("listitem")).toHaveCount(16);
-  await page.getByText("Source when it ran", { exact: true }).click();
+  await expect(details.getByRole("list", { name: "Steps" }).getByRole("listitem")).toHaveCount(16);
+  await details.getByText("Source when it ran", { exact: true }).click();
   await expect(source).toHaveText(fixture("fail/wrong-total.yaml"));
+});
+
+test("TC-RPT-07 opens a run's details in a sheet over the editor, which keeps its draft", async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  const { api, moduleId } = await setUpDemoProject(page);
+  const testFileId = await addTestFile(api, moduleId, "sign-in.yaml", fixture("pass/sign-in.yaml"));
+  const runId = await runToEnd(api, testFileId);
+  await page.goto(`/files/${testFileId}`);
+  const { source, state } = editorOf(page);
+  const draft = `${fixture("pass/sign-in.yaml")}# a draft\n`;
+  await source.fill(draft);
+  await expect(state).toHaveText("Unsaved");
+  const run = page.getByRole("region", { name: "Runs" }).getByRole("link").first();
+  const details = page.getByRole("dialog", { name: "sign-in.yaml", exact: true });
+
+  // It slides in from the right over most of the editor, and Escape closes it.
+  await run.click();
+  await expect(details.getByText("Status: Passed", { exact: true })).toBeVisible();
+  await expect(details.getByRole("list", { name: "Steps" }).getByRole("listitem")).toHaveCount(6);
+  // Once it has slid in, its right edge is the window's.
+  await expect
+    .poll(async () => Math.round(((await details.boundingBox())?.x ?? 0) + ((await details.boundingBox())?.width ?? 0)))
+    .toBe(1366);
+  expect((await details.boundingBox())!.width).toBeGreaterThan(1366 * 0.6);
+  await expect(page).toHaveURL(`/files/${testFileId}`);
+  await page.keyboard.press("Escape");
+  await expect(details).toBeHidden();
+  expect(await sourceOf(page)).toBe(draft);
+  await expect(state).toHaveText("Unsaved");
+
+  // The close button and a click on the uncovered part close it too.
+  await run.click();
+  await details.getByRole("button", { name: "Close", exact: true }).click();
+  await expect(details).toBeHidden();
+  await run.click();
+  await expect(details).toBeVisible();
+  await page.mouse.click(20, 400);
+  await expect(details).toBeHidden();
+  expect(await sourceOf(page)).toBe(draft);
+
+  // It also opens full page, at the Run's own URL.
+  await run.click();
+  await details.getByRole("link", { name: "Open full page", exact: true }).click();
+  await expect(page).toHaveURL(`/runs/${runId}`);
+  await expect(page.getByRole("heading", { name: "sign-in.yaml", exact: true })).toBeVisible();
 });
 
 test("TC-RPT-04 keeps a run after its file is deleted", async ({ page }) => {

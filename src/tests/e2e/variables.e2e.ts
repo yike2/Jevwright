@@ -14,51 +14,65 @@ async function openVariables(page: Page): Promise<Locator> {
   const { api } = await signUp(page);
   await createWorkspace(api);
   await page.goto(WORKSPACE);
-  await page.getByRole("button", { name: "Variables for Demo Shop", exact: true }).click();
-  return page.getByRole("dialog", { name: "Variables", exact: true });
+  await page.getByRole("link", { name: "Variables for Demo Shop", exact: true }).click();
+  await expect(page).toHaveURL(/\/projects\/[^/]+\/variables$/);
+  const variables = page.getByRole("region", { name: "Variables", exact: true });
+  await expect(variables.getByRole("heading", { name: "Variables", level: 1 })).toBeVisible();
+  return variables;
 }
 
-async function saveVariable(dialog: Locator, name: string, value: string): Promise<void> {
-  await dialog.getByLabel("Name").fill(name);
-  await dialog.getByLabel("Value").fill(value);
-  await dialog.getByRole("button", { name: "Save", exact: true }).click();
+async function saveVariable(page: Locator, name: string, value: string): Promise<void> {
+  await page.getByLabel("Name", { exact: true }).fill(name);
+  await page.getByLabel("Value", { exact: true }).fill(value);
+  await page.getByRole("button", { name: "Save", exact: true }).click();
 }
 
-test("TC-VAR-01 adds, replaces, and deletes a variable without showing its value", async ({ page }) => {
-  const dialog = await openVariables(page);
-  await expect(dialog.getByText("No variables yet", { exact: true })).toBeVisible();
-  const items = dialog.getByRole("listitem").filter({ hasText: "BASE" });
+test("TC-VAR-01 adds, replaces, and deletes a variable, its value masked until shown", async ({ page }) => {
+  const variables = await openVariables(page);
+  await expect(variables.getByText("No variables yet", { exact: true })).toBeVisible();
+  const items = variables.getByRole("listitem").filter({ hasText: "BASE" });
+  const show = variables.getByRole("button", { name: "Show value of BASE", exact: true });
 
-  await saveVariable(dialog, "BASE", DEMO_URL);
+  await saveVariable(variables, "BASE", DEMO_URL);
   await expect(items).toHaveCount(1);
-  await expect(dialog.getByLabel("Value")).toHaveValue("");
+  await expect(items).toContainText("****");
+  await expect(variables.getByLabel("Value", { exact: true })).toHaveValue("");
   await expect(page.locator("body")).not.toContainText(DEMO_URL);
 
-  await saveVariable(dialog, "BASE", "http://127.0.0.1:9999");
+  await show.click();
+  await expect(show).toHaveAttribute("aria-pressed", "true");
+  await expect(items).toContainText(DEMO_URL);
+  await show.click();
+  await expect(items).not.toContainText(DEMO_URL);
+  await expect(items).toContainText("****");
+
+  await saveVariable(variables, "BASE", "http://127.0.0.1:9999");
   await expect(items).toHaveCount(1);
   await expect(page.locator("body")).not.toContainText("127.0.0.1:9999");
+  await show.click();
+  await expect(items).toContainText("http://127.0.0.1:9999");
 
-  await dialog.getByRole("button", { name: "Delete BASE", exact: true }).click();
+  await variables.getByRole("button", { name: "Delete BASE", exact: true }).click();
   await expect(items).toHaveCount(0);
 });
 
 test("TC-VAR-02 rejects names that are not upper snake case, before any request", async ({ page }) => {
-  const dialog = await openVariables(page);
+  const variables = await openVariables(page);
   const puts: string[] = [];
   page.on("request", (request) => {
     if (request.method() === "PUT") puts.push(request.url());
   });
 
   for (const name of ["base", "1BASE"]) {
-    await saveVariable(dialog, name, "value");
-    await expect(dialog.getByRole("alert")).toHaveText(
+    await saveVariable(variables, name, "value");
+    await expect(variables.getByRole("alert")).toHaveText(
       "Variable names use capital letters, digits and _, and do not start with a digit, for example BASE_URL.",
     );
   }
   expect(puts).toEqual([]);
 
-  await saveVariable(dialog, "_BASE_1", "value");
-  await expect(dialog.getByRole("listitem").filter({ hasText: "_BASE_1" })).toHaveCount(1);
+  await saveVariable(variables, "_BASE_1", "value");
+  await expect(variables.getByRole("listitem").filter({ hasText: "_BASE_1" })).toHaveCount(1);
   expect(puts).toHaveLength(1);
 });
 
@@ -89,10 +103,10 @@ test("TC-VAR-04 uses only the variables of the file's own project", async ({ pag
 });
 
 test("TC-VAR-05 needs a name and a value of at most 10,000 characters", async ({ page }) => {
-  const dialog = await openVariables(page);
-  const name = dialog.getByLabel("Name");
-  const value = dialog.getByLabel("Value");
-  const save = dialog.getByRole("button", { name: "Save", exact: true });
+  const variables = await openVariables(page);
+  const name = variables.getByLabel("Name", { exact: true });
+  const value = variables.getByLabel("Value", { exact: true });
+  const save = variables.getByRole("button", { name: "Save", exact: true });
 
   await name.fill("LONG");
   await expect(save).toBeDisabled();
@@ -100,12 +114,12 @@ test("TC-VAR-05 needs a name and a value of at most 10,000 characters", async ({
   await value.fill("x");
   await expect(save).toBeDisabled();
 
-  await saveVariable(dialog, "LONG", "x".repeat(10_000));
-  await expect(dialog.getByRole("listitem").filter({ hasText: "LONG" })).toHaveCount(1);
+  await saveVariable(variables, "LONG", "x".repeat(10_000));
+  await expect(variables.getByRole("listitem").filter({ hasText: "LONG" })).toHaveCount(1);
 
-  await saveVariable(dialog, "LONG", "x".repeat(10_001));
-  await expect(dialog.getByRole("alert")).toHaveText("A Variable value can be at most 10,000 characters.");
-  await expect(dialog).toBeVisible();
+  await saveVariable(variables, "LONG", "x".repeat(10_001));
+  await expect(variables.getByRole("alert")).toHaveText("A Variable value can be at most 10,000 characters.");
+  await expect(variables.getByLabel("Value", { exact: true })).toHaveValue("x".repeat(10_001));
 });
 
 test("TC-VAR-06 passes a value with special characters to the page unchanged", async ({ page }) => {

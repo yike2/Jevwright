@@ -4,6 +4,7 @@ import type { LiveMessage, Run, Step } from "@/app/frontend/lib/api.js";
 import {
   applyLiveMessage,
   formatDuration,
+  isFinalStatus,
   liveUrl,
   runErrorText,
   runFileUrl,
@@ -166,5 +167,15 @@ describe("runErrorText", () => {
     expect(runErrorText({ kind: "internal", message: "TypeError" })).toBe(
       "Something went wrong while running the test. Try running it again.",
     );
+  });
+});
+
+describe("isFinalStatus", () => {
+  it.each(["passed", "failed"] as const)("is true for %s", (status) => {
+    expect(isFinalStatus(status)).toBe(true);
+  });
+
+  it.each(["queued", "running"] as const)("is false for %s", (status) => {
+    expect(isFinalStatus(status)).toBe(false);
   });
 });

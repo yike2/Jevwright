@@ -1,26 +1,23 @@
-import { expect, test, type Locator, type Page } from "@playwright/test";
-import { createWorkspace, signUp, WORKSPACE } from "./support.js";
+import { expect, test } from "@playwright/test";
+import { createInSidebar, createWorkspace, editorOf, sidebarOf, signUp, WORKSPACE } from "./support.js";
 
-function sidebarOf(page: Page): Locator {
-  return page.getByRole("navigation", { name: "Projects", exact: true });
-}
-
-async function create(page: Page, opener: string, dialogName: string, name: string): Promise<Locator> {
-  await sidebarOf(page).getByRole("button", { name: opener, exact: true }).click();
-  const dialog = page.getByRole("dialog", { name: dialogName, exact: true });
-  await dialog.getByLabel("Name").fill(name);
-  await dialog.getByRole("button", { name: "Create", exact: true }).click();
-  return dialog;
-}
-
-test("TC-WS-01 creates a project, module, and test file from the sidebar", async ({ page }) => {
+test("TC-WS-01 creates a project, module, and test file in place in the sidebar", async ({ page }) => {
   await signUp(page);
   await page.goto(WORKSPACE);
   const sidebar = sidebarOf(page);
+  const input = sidebar.getByRole("textbox", { name: "Name", exact: true });
 
-  await expect(await create(page, "New project", "New project", "Demo Shop")).toBeHidden();
-  await expect(await create(page, "New module in Demo Shop", "New module", "Shopping")).toBeHidden();
-  await expect(await create(page, "New test file in Shopping", "New test file", "login")).toBeHidden();
+  await createInSidebar(page, "New project", "Demo Shop");
+  await expect(input).toHaveCount(0);
+  await createInSidebar(page, "New module in Demo Shop", "Shopping");
+  await expect(input).toHaveCount(0);
+  // No dialog: the new row's name is an input in the tree, with the fixed .yaml after it.
+  await sidebar.getByRole("button", { name: "New test file in Shopping", exact: true }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(input).toBeFocused();
+  await expect(input).toHaveValue("");
+  await input.fill("login");
+  await input.press("Enter");
 
   await expect(page).toHaveURL(/\/files\/[^/]+$/);
   await expect(page.getByRole("heading", { name: "login.yaml", exact: true })).toBeVisible();
@@ -40,32 +37,36 @@ test("TC-WS-02 keeps names unique within their parent only", async ({ page }) =>
   await signUp(page);
   await page.goto(WORKSPACE);
   const sidebar = sidebarOf(page);
-  await create(page, "New project", "New project", "Demo Shop");
-  await create(page, "New module in Demo Shop", "New module", "Shopping");
-  await create(page, "New test file in Shopping", "New test file", "login");
+  await createInSidebar(page, "New project", "Demo Shop");
+  await createInSidebar(page, "New module in Demo Shop", "Shopping");
+  await createInSidebar(page, "New test file in Shopping", "login");
   await expect(page).toHaveURL(/\/files\/[^/]+$/);
 
-  for (const [opener, dialogName, name] of [
-    ["New project", "New project", "Demo Shop"],
-    ["New module in Demo Shop", "New module", "Shopping"],
-    ["New test file in Shopping", "New test file", "login.yaml"],
+  for (const [opener, name] of [
+    ["New project", "Demo Shop"],
+    ["New module in Demo Shop", "Shopping"],
+    ["New test file in Shopping", "login.yaml"],
   ] as const) {
-    const dialog = await create(page, opener, dialogName, name);
-    await expect(dialog).toBeVisible();
-    await expect(dialog.getByRole("alert")).toBeVisible();
-    await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
+    const input = await createInSidebar(page, opener, name);
+    // A save that fails keeps the input open with the message under it.
+    await expect(input).toBeVisible();
+    await expect(sidebar.getByRole("alert")).toBeVisible();
+    await expect(input).toHaveAttribute("aria-describedby", /.+/);
+    await input.press("Escape");
+    await expect(input).toHaveCount(0);
   }
   await expect(sidebar.getByText("Demo Shop", { exact: true })).toHaveCount(1);
   await expect(sidebar.getByText("Shopping", { exact: true })).toHaveCount(1);
   await expect(sidebar.getByRole("link", { name: "login.yaml", exact: true })).toHaveCount(1);
 
-  await expect(await create(page, "New project", "New project", "Other")).toBeHidden();
-  await expect(await create(page, "New module in Other", "New module", "Shopping")).toBeHidden();
+  await createInSidebar(page, "New project", "Other");
+  await expect(sidebar.getByText("Other", { exact: true })).toBeVisible();
+  await createInSidebar(page, "New module in Other", "Shopping");
+  await expect(sidebar.getByText("Shopping", { exact: true })).toHaveCount(2);
   await sidebar.getByRole("button", { name: "New test file in Shopping", exact: true }).last().click();
-  const fileDialog = page.getByRole("dialog", { name: "New test file", exact: true });
-  await fileDialog.getByLabel("Name").fill("login");
-  await fileDialog.getByRole("button", { name: "Create", exact: true }).click();
-  await expect(fileDialog).toBeHidden();
+  const input = sidebar.getByRole("textbox", { name: "Name", exact: true });
+  await input.fill("login");
+  await input.press("Enter");
   await expect(sidebar.getByRole("link", { name: "login.yaml", exact: true })).toHaveCount(2);
 });
 
@@ -74,18 +75,19 @@ test("TC-WS-03 accepts project names of 1 to 100 characters", async ({ page }) =
   await page.goto(WORKSPACE);
   const sidebar = sidebarOf(page);
 
-  const empty = await create(page, "New project", "New project", "");
+  const empty = await createInSidebar(page, "New project", "");
   await expect(empty).toBeVisible();
-  await empty.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(sidebar.getByRole("alert")).toHaveText("Enter a name.");
+  await empty.press("Escape");
 
   const longest = "P".repeat(100);
-  await expect(await create(page, "New project", "New project", longest)).toBeHidden();
-  await expect(sidebar.getByText(longest, { exact: true })).toBeVisible();
+  await createInSidebar(page, "New project", longest);
+  await expect(sidebar.getByText(longest, { exact: true })).toBeAttached();
 
-  const tooLong = await create(page, "New project", "New project", "Q".repeat(101));
+  const tooLong = await createInSidebar(page, "New project", "Q".repeat(101));
   await expect(tooLong).toBeVisible();
-  await expect(tooLong.getByRole("alert")).toBeVisible();
-  await tooLong.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(sidebar.getByRole("alert")).toHaveText("Names can be at most 100 characters.");
+  await tooLong.press("Escape");
   await expect(sidebar.getByText("Q".repeat(101), { exact: true })).toHaveCount(0);
 });
 
@@ -94,12 +96,14 @@ test("TC-WS-08 keeps Unicode names and trims surrounding spaces", async ({ page 
   await page.goto(WORKSPACE);
   const sidebar = sidebarOf(page);
 
-  await expect(await create(page, "New project", "New project", "Démo 商店 🛒")).toBeHidden();
-  await expect(await create(page, "New project", "New project", "  Padded  ")).toBeHidden();
-  const blank = await create(page, "New project", "New project", "   ");
+  await createInSidebar(page, "New project", "Démo 商店 🛒");
+  await expect(sidebar.getByText("Démo 商店 🛒", { exact: true })).toBeVisible();
+  await createInSidebar(page, "New project", "  Padded  ");
+  await expect(sidebar.getByText("Padded", { exact: true })).toBeVisible();
+  const blank = await createInSidebar(page, "New project", "   ");
   await expect(blank).toBeVisible();
-  await expect(blank.getByRole("alert")).toBeVisible();
-  await blank.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(sidebar.getByRole("alert")).toBeVisible();
+  await blank.press("Escape");
 
   await page.reload();
   await expect(sidebar.getByText("Démo 商店 🛒", { exact: true })).toBeVisible();
@@ -112,21 +116,54 @@ test("TC-WS-09 names test files with letters, digits, -, _ and ., before a fixed
   await createWorkspace(api);
   await page.goto(WORKSPACE);
   const sidebar = sidebarOf(page);
+  const requests: string[] = [];
+  page.on("request", (request) => {
+    if (request.method() === "POST" && request.url().includes("/test-files")) requests.push(request.url());
+  });
 
   for (const name of ["sign in", "商店", "a/b"]) {
-    const dialog = await create(page, "New test file in Shopping", "New test file", name);
-    await expect(dialog).toBeVisible();
-    await expect(dialog.getByRole("alert")).toHaveText("Use only letters, digits, -, _ and ., with no spaces.");
-    await expect(dialog.getByLabel("Name")).toHaveAttribute("aria-invalid", "true");
-    await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
+    const input = await createInSidebar(page, "New test file in Shopping", name);
+    // The problem shows as the user types, and nothing is sent.
+    await expect(sidebar.getByRole("alert")).toHaveText("Use only letters, digits, -, _ and ., with no spaces.");
+    await expect(input).toHaveAttribute("aria-invalid", "true");
+    await input.press("Escape");
   }
-  await expect(sidebar.getByRole("link")).toHaveCount(0);
+  await expect(sidebar.getByRole("link", { name: /\.yaml$/ })).toHaveCount(0);
+  expect(requests).toEqual([]);
 
-  await expect(await create(page, "New test file in Shopping", "New test file", "  spaced  ")).toBeHidden();
+  await createInSidebar(page, "New test file in Shopping", "  spaced  ");
   await expect(sidebar.getByRole("link", { name: "spaced.yaml", exact: true })).toBeVisible();
-  await expect(await create(page, "New test file in Shopping", "New test file", "v1.2")).toBeHidden();
+  await createInSidebar(page, "New test file in Shopping", "v1.2");
   await expect(sidebar.getByRole("link", { name: "v1.2.yaml", exact: true })).toBeVisible();
   // A pasted file name does not get a second .yaml.
-  await expect(await create(page, "New test file in Shopping", "New test file", "pasted.yaml")).toBeHidden();
+  await createInSidebar(page, "New test file in Shopping", "pasted.yaml");
   await expect(sidebar.getByRole("link", { name: "pasted.yaml", exact: true })).toBeVisible();
+  await expect(editorOf(page).source).toBeVisible();
+});
+
+test("TC-WS-10 widens the sidebar, keeps its width, and shows a cut-off name in full", async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  const { api } = await signUp(page);
+  const long = "Checkout flows for returning customers with saved cards";
+  await api("POST", "/projects", { name: long });
+  await page.goto(WORKSPACE);
+  const sidebar = sidebarOf(page);
+  const row = sidebar.getByRole("button", { name: long, exact: true });
+  const handle = page.getByRole("separator", { name: "Resize sidebar" });
+  const before = (await sidebar.boundingBox())!.width;
+
+  // A cut-off name shows in full on hover and on keyboard focus; the row's accessible name is the whole name.
+  await row.hover();
+  await expect(page.locator("[data-slot=tooltip-content]")).toHaveText(long);
+  await page.mouse.move(800, 400);
+  await row.focus();
+  await expect(page.locator("[data-slot=tooltip-content]")).toHaveText(long);
+
+  await handle.focus();
+  for (let i = 0; i < 5; i += 1) await page.keyboard.press("ArrowRight");
+  await expect.poll(async () => (await sidebar.boundingBox())!.width).toBeGreaterThan(before + 20);
+  const after = (await sidebar.boundingBox())!.width;
+
+  await page.reload();
+  await expect.poll(async () => Math.round((await sidebarOf(page).boundingBox())!.width)).toBe(Math.round(after));
 });
