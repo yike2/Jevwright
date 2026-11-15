@@ -30,6 +30,38 @@ describe("expandPaths", () => {
     });
   });
 
+  it("skips node_modules, .git, and other hidden directories when searching a directory", async () => {
+    const cwd = await makeTempDir();
+    for (const dir of ["node_modules/pkg", ".git", ".github/workflows", "suite/.cache", "suite/node_modules"])
+      await mkdir(join(cwd, dir), { recursive: true });
+    for (const file of [
+      "node_modules/pkg/a.yaml",
+      ".git/b.yaml",
+      ".github/workflows/ci.yaml",
+      "suite/.cache/c.yaml",
+      "suite/node_modules/d.yaml",
+      "suite/login.yaml",
+    ])
+      await writeFile(join(cwd, file), "x");
+
+    await expect(expandPaths(["."], cwd)).resolves.toEqual({ ok: true, files: ["suite/login.yaml"] });
+  });
+
+  it("searches a hidden directory named as an argument", async () => {
+    const cwd = await makeTempDir();
+    await mkdir(join(cwd, ".tests"), { recursive: true });
+    await writeFile(join(cwd, ".tests", "a.yaml"), "x");
+
+    await expect(expandPaths([".tests"], cwd)).resolves.toEqual({ ok: true, files: [".tests/a.yaml"] });
+  });
+
+  it("keeps a hidden .yaml file in a searched directory", async () => {
+    const cwd = await makeTempDir();
+    await writeFile(join(cwd, ".hidden.yaml"), "x");
+
+    await expect(expandPaths(["."], cwd)).resolves.toEqual({ ok: true, files: [".hidden.yaml"] });
+  });
+
   it("accepts a direct file path whatever its extension", async () => {
     const cwd = await makeTempDir();
     await writeFile(join(cwd, "config.yml"), "---");

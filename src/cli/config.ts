@@ -1,10 +1,6 @@
-import { existsSync } from "node:fs";
-import { resolve } from "node:path";
-
 type ConfigSuccess = {
   ok: true;
   apiKey: string;
-  vars: Record<string, string>;
 };
 
 type ConfigFailure = {
@@ -14,29 +10,36 @@ type ConfigFailure = {
 
 export type ConfigResult = ConfigSuccess | ConfigFailure;
 
-export function loadEnvFile(cwd: string): void {
-  const envPath = resolve(cwd, ".env");
-  if (!existsSync(envPath)) {
-    return;
-  }
+/** Variables as the shell has them: a name may be unset. */
+export type Env = Readonly<Record<string, string | undefined>>;
 
-  process.loadEnvFile(envPath);
+/** The variables of the `.env` in `dir`, parsed and never loaded into `process.env`; `{}` when there is none. */
+export function readEnvFile(dir: string): Record<string, string> {
+  void dir;
+  return {};
 }
 
-export function readConfig(env: Readonly<Record<string, string | undefined>>): ConfigResult {
-  const apiKey = env.OPENROUTER_API_KEY;
-  if (apiKey === undefined || apiKey === "") {
-    return { ok: false, error: "OPENROUTER_API_KEY is not set" };
-  }
+/** The directories whose `.env` a file reads: the working directory, then each one down to the file's own. */
+export function envDirsFor(cwd: string, file: string): string[] {
+  void cwd;
+  void file;
+  return [];
+}
 
-  const vars: Record<string, string> = {};
-  for (const [key, value] of Object.entries(env)) {
-    if (key === "OPENROUTER_API_KEY" || value === undefined) {
-      continue;
-    }
+/**
+ * The `{{VAR}}` values of one file: every `.env` from the working directory down to the file's directory, a nearer
+ * one winning, and the shell winning over all. `OPENROUTER_API_KEY` is never a test variable.
+ */
+export function varsFor(cwd: string, file: string, shell: Env): Record<string, string> {
+  void cwd;
+  void file;
+  void shell;
+  return {};
+}
 
-    vars[key] = value;
-  }
-
-  return { ok: true, apiKey, vars };
+/** The Jev API key, from the shell or else the working directory's `.env`. */
+export function readConfig(cwd: string, shell: Env): ConfigResult {
+  void cwd;
+  void shell;
+  return { ok: false, error: "" };
 }

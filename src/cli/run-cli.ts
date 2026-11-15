@@ -3,7 +3,7 @@ import { relative, resolve } from "node:path";
 
 import { Command, CommanderError } from "commander";
 
-import { readConfig, loadEnvFile } from "@/cli/config.js";
+import { readConfig, varsFor } from "@/cli/config.js";
 import { getExitCode, type FileOutcome } from "@/cli/exit-codes.js";
 import {
   formatMultiFileSummary,
@@ -176,8 +176,7 @@ async function runRun(invocation: RunInvocation, io: CliIo): Promise<number> {
     return 2;
   }
 
-  loadEnvFile(io.cwd);
-  const config = readConfig(process.env);
+  const config = readConfig(io.cwd, process.env);
   if (!config.ok) {
     writeStderrLine(io, config.error);
     return 2;
@@ -208,7 +207,7 @@ async function runRun(invocation: RunInvocation, io: CliIo): Promise<number> {
         { file, source },
         {
           headed: invocation.headed,
-          vars: config.vars,
+          vars: varsFor(io.cwd, file, process.env),
           jev,
           store,
           onEvent: (event) => {
