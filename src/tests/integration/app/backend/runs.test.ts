@@ -36,20 +36,22 @@ steps:
 describeDb("run routes", () => {
   const db = useTestDb("test_runs");
 
-  // A user with one Project, Module, and Test File holding `source`, and requests with its token.
+  // A user with one Project, a folder in it, and a Test File there holding `source`, and requests with its token.
   async function setup(source: string, options: TestBackendOptions = {}, email = "ada@example.com") {
     const { user, token } = await createUser(db(), email);
     const backend = createTestBackend(db(), options);
     const auth = { authorization: `Bearer ${token}` };
     const project = await db().project.create({ data: { userId: user.id, name: "Shop" } });
-    const module = await db().module.create({ data: { projectId: project.id, name: "Cart" } });
-    const testFile = await db().testFile.create({ data: { moduleId: module.id, name: "add.yaml", source } });
+    const folder = await db().folder.create({ data: { projectId: project.id, name: "Cart" } });
+    const testFile = await db().testFile.create({
+      data: { projectId: project.id, folderId: folder.id, name: "add.yaml", source },
+    });
     return {
       ...backend,
       user,
       token,
       project,
-      module,
+      folder,
       testFile,
       get: (path: string) => request(backend.app).get(`/api/v1${path}`).set(auth),
       trigger: (id = testFile.id) => request(backend.app).post(`/api/v1/test-files/${id}/runs`).set(auth),
@@ -58,14 +60,12 @@ describeDb("run routes", () => {
   }
 
   // Stores a finished Run directly, `minutesAgo` before now.
-  async function storeRun(
-    ids: { userId: string; projectId: string; moduleId: string; testFileId: string },
-    minutesAgo: number,
-  ) {
+  async function storeRun(ids: { userId: string; projectId: string; testFileId: string }, minutesAgo: number) {
     return db().run.create({
       data: {
         ...ids,
         fileName: "add.yaml",
+        path: "Cart/add.yaml",
         name: "Add to cart",
         source: "x",
         status: "passed",
@@ -105,9 +105,9 @@ describeDb("run routes", () => {
     expect(res.body).toEqual({
       id: expect.any(String),
       testFileId: as.testFile.id,
-      moduleId: as.module.id,
       projectId: as.project.id,
       fileName: "add.yaml",
+      path: "Cart/add.yaml",
       name: "Add to cart",
       status: "queued",
       createdAt: expect.any(String),
@@ -179,6 +179,62 @@ describeDb("run routes", () => {
     await as.queue.idle();
 
     expect((await as.get(`/runs/${id}`)).body.status).toBe("passed");
+  });
+
+  it("runs a Test File in a folder at any level with its Project's Variables", async () => {
+    const source = `name: "Vars"\nsteps:\n  - open:\n      url: "{{PAGE}}"\n`;
+    const as = await setup(source);
+    const inner = await db().folder.create({
+      data: { projectId: as.project.id, parentId: as.folder.id, name: "Deep" },
+    });
+    await db().testFile.update({ where: { id: as.testFile.id }, data: { folderId: inner.id } });
+    await db().variable.create({
+      data: { projectId: as.project.id, name: "PAGE", value: `${server.baseUrl}/page.html` },
+    });
+
+    const { id } = (await as.trigger()).body;
+    await as.queue.idle();
+
+    expect((await as.get(`/runs/${id}`)).body.status).toBe("passed");
+  });
+
+  it("records the file's path in its Project at trigger time, which a later move does not change", async () => {
+    const as = await setup(passing());
+    const inner = await db().folder.create({
+      data: { projectId: as.project.id, parentId: as.folder.id, name: "Deep" },
+    });
+    await db().testFile.update({ where: { id: as.testFile.id }, data: { folderId: inner.id } });
+
+    const { id } = (await as.trigger()).body;
+    await db().testFile.update({ where: { id: as.testFile.id }, data: { folderId: null, name: "moved.yaml" } });
+    await as.queue.idle();
+
+    expect((await as.get(`/runs/${id}`)).body).toMatchObject({ fileName: "add.yaml", path: "Cart/Deep/add.yaml" });
+  });
+
+  it("records the file name as the path of a Test File directly in its Project", async () => {
+    const as = await setup(passing());
+    await db().testFile.update({ where: { id: as.testFile.id }, data: { folderId: null } });
+
+    const res = await as.trigger();
+    await as.queue.idle();
+
+    expect(res.body.path).toBe("add.yaml");
+  });
+
+  it("runs a Test File moved to another Project with that Project's Variables", async () => {
+    const source = `name: "Vars"\nsteps:\n  - open:\n      url: "{{PAGE}}"\n`;
+    const as = await setup(source);
+    const blog = await db().project.create({ data: { userId: as.user.id, name: "Blog" } });
+    await db().variable.create({ data: { projectId: as.project.id, name: "PAGE", value: "http://127.0.0.1:9/" } });
+    await db().variable.create({ data: { projectId: blog.id, name: "PAGE", value: `${server.baseUrl}/page.html` } });
+    await db().testFile.update({ where: { id: as.testFile.id }, data: { projectId: blog.id, folderId: null } });
+
+    const res = await as.trigger();
+    await as.queue.idle();
+
+    expect(res.body.projectId).toBe(blog.id);
+    expect((await as.get(`/runs/${res.body.id}`)).body.status).toBe("passed");
   });
 
   it("fails a Run at its failed step, with the step's reason and no Run error", async () => {
@@ -306,21 +362,16 @@ describeDb("run routes", () => {
   it("lists the user's Runs newest first, without source and report, filtered by Test File or Project", async () => {
     const as = await setup(passing());
     const other = await setup(passing(), {}, "bob@example.com");
-    const ids = { userId: as.user.id, projectId: as.project.id, moduleId: as.module.id };
-    const second = await db().testFile.create({ data: { moduleId: as.module.id, name: "b.yaml", source: "x" } });
+    const ids = { userId: as.user.id, projectId: as.project.id };
+    const second = await db().testFile.create({
+      data: { projectId: as.project.id, folderId: as.folder.id, name: "b.yaml", source: "x" },
+    });
     const project2 = await db().project.create({ data: { userId: as.user.id, name: "Blog" } });
-    const module2 = await db().module.create({ data: { projectId: project2.id, name: "Posts" } });
-    const file3 = await db().testFile.create({ data: { moduleId: module2.id, name: "c.yaml", source: "x" } });
+    const file3 = await db().testFile.create({ data: { projectId: project2.id, name: "c.yaml", source: "x" } });
     const old = await storeRun({ ...ids, testFileId: as.testFile.id }, 30);
     const mid = await storeRun({ ...ids, testFileId: second.id }, 20);
-    const recent = await storeRun(
-      { userId: as.user.id, projectId: project2.id, moduleId: module2.id, testFileId: file3.id },
-      10,
-    );
-    await storeRun(
-      { userId: other.user.id, projectId: other.project.id, moduleId: other.module.id, testFileId: other.testFile.id },
-      5,
-    );
+    const recent = await storeRun({ userId: as.user.id, projectId: project2.id, testFileId: file3.id }, 10);
+    await storeRun({ userId: other.user.id, projectId: other.project.id, testFileId: other.testFile.id }, 5);
 
     const all = await as.get("/runs");
     const byFile = await as.get(`/runs?testFileId=${as.testFile.id}`);
@@ -336,7 +387,7 @@ describeDb("run routes", () => {
 
   it("pages through Runs with limit and nextCursor, also between Runs created at the same time", async () => {
     const as = await setup(passing());
-    const ids = { userId: as.user.id, projectId: as.project.id, moduleId: as.module.id, testFileId: as.testFile.id };
+    const ids = { userId: as.user.id, projectId: as.project.id, testFileId: as.testFile.id };
     const runs = [await storeRun(ids, 1), await storeRun(ids, 2), await storeRun(ids, 2), await storeRun(ids, 3)];
     const tied = await db().run.findMany({ where: { id: { in: [runs[1]!.id, runs[2]!.id] } } });
     await db().run.updateMany({
@@ -376,7 +427,7 @@ describeDb("run routes", () => {
     const as = await setup(passing());
     const other = await setup(passing(), {}, "bob@example.com");
     const theirs = await storeRun(
-      { userId: other.user.id, projectId: other.project.id, moduleId: other.module.id, testFileId: other.testFile.id },
+      { userId: other.user.id, projectId: other.project.id, testFileId: other.testFile.id },
       1,
     );
 
@@ -386,10 +437,7 @@ describeDb("run routes", () => {
 
   it("still lists a deleted Test File's Runs by Project", async () => {
     const as = await setup(passing());
-    const run = await storeRun(
-      { userId: as.user.id, projectId: as.project.id, moduleId: as.module.id, testFileId: as.testFile.id },
-      1,
-    );
+    const run = await storeRun({ userId: as.user.id, projectId: as.project.id, testFileId: as.testFile.id }, 1);
     await db().testFile.delete({ where: { id: as.testFile.id } });
 
     const res = await as.get(`/runs?projectId=${as.project.id}`);
@@ -399,7 +447,7 @@ describeDb("run routes", () => {
 
   it("fails the Runs a previous process left queued or running, and leaves finished ones", async () => {
     const as = await setup(passing());
-    const ids = { userId: as.user.id, projectId: as.project.id, moduleId: as.module.id, testFileId: as.testFile.id };
+    const ids = { userId: as.user.id, projectId: as.project.id, testFileId: as.testFile.id };
     const finished = await storeRun(ids, 3);
     const queued = await db().run.update({ where: { id: (await storeRun(ids, 2)).id }, data: { status: "queued" } });
     const running = await db().run.update({

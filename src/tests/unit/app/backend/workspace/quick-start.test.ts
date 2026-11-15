@@ -6,11 +6,11 @@ import { QUICK_START_NAME, quickStartProject } from "@/app/backend/src/workspace
 const FIXTURES = new URL("../../../../e2e/fixtures/", import.meta.url);
 const fixture = (path: string) => readFileSync(new URL(path, FIXTURES), "utf8");
 
-// The Quick Start project's Modules and Test Files, and the fixture each file is made from (backend.md 1.10), written
+// The Quick Start project's folders and Test Files, and the fixture each file is made from (backend.md 1.10), written
 // by hand.
 const EXPECTED = [
   {
-    module: "1 Passing tests",
+    folder: "1 Passing tests",
     files: [
       ["sign-in-and-see-products.yaml", "pass/sign-in.yaml"],
       ["buy-a-backpack.yaml", "pass/checkout.yaml"],
@@ -18,7 +18,7 @@ const EXPECTED = [
     ],
   },
   {
-    module: "2 Failing tests - see why they fail",
+    folder: "2 Failing tests - see why they fail",
     files: [
       ["wrong-total-fails-at-the-total.yaml", "fail/wrong-total.yaml"],
       ["missing-button-fails.yaml", "fail/missing-element.yaml"],
@@ -26,14 +26,14 @@ const EXPECTED = [
     ],
   },
   {
-    module: "3 Invalid files - fix the errors",
+    folder: "3 Invalid files - fix the errors",
     files: [
       ["seven-errors-at-once.yaml", "invalid/multiple-errors.yaml"],
       ["yaml-syntax-error.yaml", "invalid/yaml-syntax.yaml"],
     ],
   },
   {
-    module: "4 Jev - find and check by description",
+    folder: "4 Jev - find and check by description",
     files: [
       ["find-elements-by-description.yaml", "jev/target-sign-in.yaml"],
       ["fall-back-from-a-stale-selector.yaml", "jev/stale-selector.yaml"],
@@ -47,13 +47,16 @@ const DEMO_APP_URL = "https://demo.example.com";
 const SHIFT = 2;
 
 type Created = {
+  id: string;
   name: string;
-  modules: { create: { name: string; testFiles: { create: { name: string; source: string }[] } }[] };
+  folders: {
+    create: { name: string; testFiles: { create: { name: string; source: string; projectId: string }[] } }[];
+  };
   variables: { create: { name: string; value: string }[] };
 };
 
 const project = () => quickStartProject(DEMO_APP_URL) as unknown as Created;
-const testFiles = () => project().modules.create.flatMap((module) => module.testFiles.create);
+const testFiles = () => project().folders.create.flatMap((folder) => folder.testFiles.create);
 const seeded = (name: string) => testFiles().find((testFile) => testFile.name === name)!.source;
 const lines = (source: string) => analyze(source).diagnostics.map((diagnostic) => diagnostic.line);
 
@@ -63,23 +66,35 @@ describe("quickStartProject", () => {
     expect(project().name).toBe("Quick Start");
   });
 
-  it("has numbered Modules whose names say what each teaches, with self-explanatory file names", () => {
+  it("has numbered folders whose names say what each teaches, with self-explanatory file names", () => {
     expect(
-      project().modules.create.map((module) => ({
-        module: module.name,
-        files: module.testFiles.create.map((testFile) => testFile.name),
+      project().folders.create.map((folder) => ({
+        folder: folder.name,
+        files: folder.testFiles.create.map((testFile) => testFile.name),
       })),
-    ).toEqual(EXPECTED.map(({ module, files }) => ({ module, files: files.map(([name]) => name) })));
+    ).toEqual(EXPECTED.map(({ folder, files }) => ({ folder, files: files.map(([name]) => name) })));
   });
 
-  it("lists the Modules in learning order when sorted by name, as the tree shows them", () => {
-    const names = project().modules.create.map((module) => module.name);
+  it("puts every Test File in the Project it creates, whose id it sets", () => {
+    const created = project();
+
+    expect(created.id).toMatch(/^[0-9a-f-]{36}$/);
+    for (const folder of created.folders.create)
+      for (const testFile of folder.testFiles.create) expect(testFile.projectId, testFile.name).toBe(created.id);
+  });
+
+  it("gives every Quick Start project its own id", () => {
+    expect(project().id).not.toBe(project().id);
+  });
+
+  it("lists the folders in learning order when sorted by name, as the tree shows them", () => {
+    const names = project().folders.create.map((folder) => folder.name);
 
     expect([...names].sort()).toEqual(names);
   });
 
-  it("names every Module and Test File by the naming rules", () => {
-    for (const module of project().modules.create) expect(module.name.length).toBeLessThanOrEqual(100);
+  it("names every folder and Test File by the naming rules", () => {
+    for (const folder of project().folders.create) expect(folder.name.length).toBeLessThanOrEqual(100);
     for (const testFile of testFiles()) {
       expect(testFile.name).toMatch(/^[A-Za-z0-9._-]+\.yaml$/);
       expect(testFile.name.length).toBeLessThanOrEqual(100);
@@ -105,7 +120,7 @@ describe("quickStartProject", () => {
   });
 
   it("keeps passing, failing, and Jev files valid and invalid files invalid", () => {
-    const [passing, failing, invalid, jev] = project().modules.create;
+    const [passing, failing, invalid, jev] = project().folders.create;
 
     for (const testFile of [...passing!.testFiles.create, ...failing!.testFiles.create, ...jev!.testFiles.create])
       expect(analyze(testFile.source).diagnostics, testFile.name).toEqual([]);

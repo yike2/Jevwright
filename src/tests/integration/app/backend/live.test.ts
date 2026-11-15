@@ -56,16 +56,17 @@ describeDb("Live Progress", () => {
     await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
     const { port } = server.address() as AddressInfo;
     const project = await db().project.create({ data: { userId: user.id, name: "Shop" } });
-    const module = await db().module.create({ data: { projectId: project.id, name: "Cart" } });
-    const testFile = await db().testFile.create({ data: { moduleId: module.id, name: "add.yaml", source: source() } });
+    const testFile = await db().testFile.create({
+      data: { projectId: project.id, name: "add.yaml", source: source() },
+    });
     // A queued Run that is not enqueued yet, so a test can connect before it starts.
     const run = await db().run.create({
       data: {
         userId: user.id,
         projectId: project.id,
-        moduleId: module.id,
         testFileId: testFile.id,
         fileName: "add.yaml",
+        path: "add.yaml",
         name: "Add to cart",
         source: source(),
       },
