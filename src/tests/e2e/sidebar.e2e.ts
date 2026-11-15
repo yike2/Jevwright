@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
-import { createInSidebar, createWorkspace, editorOf, sidebarOf, signUp, WORKSPACE } from "./support.js";
+import { createInSidebar, createWorkspace, editorOf, pickNew, sidebarOf, signUp, WORKSPACE } from "./support.js";
 
-test("TC-WS-01 creates a project, module, and test file in place in the sidebar", async ({ page }) => {
+test("TC-WS-01 creates a project, folder, and test file in place in the sidebar", async ({ page }) => {
   await signUp(page);
   await page.goto(WORKSPACE);
   const sidebar = sidebarOf(page);
@@ -9,10 +9,10 @@ test("TC-WS-01 creates a project, module, and test file in place in the sidebar"
 
   await createInSidebar(page, "New project", "Demo Shop");
   await expect(input).toHaveCount(0);
-  await createInSidebar(page, "New module in Demo Shop", "Shopping");
+  await createInSidebar(page, { item: "New folder", in: "Demo Shop" }, "Shopping");
   await expect(input).toHaveCount(0);
   // No dialog: the new row's name is an input in the tree, with the fixed .yaml after it.
-  await sidebar.getByRole("button", { name: "New test file in Shopping", exact: true }).click();
+  await pickNew(page, "New test file", "Shopping");
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(input).toBeFocused();
   await expect(input).toHaveValue("");
@@ -38,16 +38,18 @@ test("TC-WS-02 keeps names unique within their parent only", async ({ page }) =>
   await page.goto(WORKSPACE);
   const sidebar = sidebarOf(page);
   await createInSidebar(page, "New project", "Demo Shop");
-  await createInSidebar(page, "New module in Demo Shop", "Shopping");
-  await createInSidebar(page, "New test file in Shopping", "login");
+  await createInSidebar(page, { item: "New folder", in: "Demo Shop" }, "Shopping");
+  await createInSidebar(page, { item: "New test file", in: "Shopping" }, "login");
   await expect(page).toHaveURL(/\/files\/[^/]+$/);
 
-  for (const [opener, name] of [
+  for (const [what, name] of [
     ["New project", "Demo Shop"],
-    ["New module in Demo Shop", "Shopping"],
-    ["New test file in Shopping", "login.yaml"],
+    [{ item: "New folder", in: "Demo Shop" }, "Shopping"],
+    [{ item: "New test file", in: "Shopping" }, "login.yaml"],
+    // A folder and a test file in the same folder cannot share a name either.
+    [{ item: "New folder", in: "Shopping" }, "login.yaml"],
   ] as const) {
-    const input = await createInSidebar(page, opener, name);
+    const input = await createInSidebar(page, what, name);
     // A save that fails keeps the input open with the message under it.
     await expect(input).toBeVisible();
     await expect(sidebar.getByRole("alert")).toBeVisible();
@@ -61,9 +63,9 @@ test("TC-WS-02 keeps names unique within their parent only", async ({ page }) =>
 
   await createInSidebar(page, "New project", "Other");
   await expect(sidebar.getByText("Other", { exact: true })).toBeVisible();
-  await createInSidebar(page, "New module in Other", "Shopping");
+  await createInSidebar(page, { item: "New folder", in: "Other" }, "Shopping");
   await expect(sidebar.getByText("Shopping", { exact: true })).toHaveCount(2);
-  await sidebar.getByRole("button", { name: "New test file in Shopping", exact: true }).last().click();
+  await pickNew(page, "New test file", "Shopping", true);
   const input = sidebar.getByRole("textbox", { name: "Name", exact: true });
   await input.fill("login");
   await input.press("Enter");
@@ -122,7 +124,7 @@ test("TC-WS-09 names test files with letters, digits, -, _ and ., before a fixed
   });
 
   for (const name of ["sign in", "商店", "a/b"]) {
-    const input = await createInSidebar(page, "New test file in Shopping", name);
+    const input = await createInSidebar(page, { item: "New test file", in: "Shopping" }, name);
     // The problem shows as the user types, and nothing is sent.
     await expect(sidebar.getByRole("alert")).toHaveText("Use only letters, digits, -, _ and ., with no spaces.");
     await expect(input).toHaveAttribute("aria-invalid", "true");
@@ -131,12 +133,12 @@ test("TC-WS-09 names test files with letters, digits, -, _ and ., before a fixed
   await expect(sidebar.getByRole("link", { name: /\.yaml$/ })).toHaveCount(0);
   expect(requests).toEqual([]);
 
-  await createInSidebar(page, "New test file in Shopping", "  spaced  ");
+  await createInSidebar(page, { item: "New test file", in: "Shopping" }, "  spaced  ");
   await expect(sidebar.getByRole("link", { name: "spaced.yaml", exact: true })).toBeVisible();
-  await createInSidebar(page, "New test file in Shopping", "v1.2");
+  await createInSidebar(page, { item: "New test file", in: "Shopping" }, "v1.2");
   await expect(sidebar.getByRole("link", { name: "v1.2.yaml", exact: true })).toBeVisible();
   // A pasted file name does not get a second .yaml.
-  await createInSidebar(page, "New test file in Shopping", "pasted.yaml");
+  await createInSidebar(page, { item: "New test file", in: "Shopping" }, "pasted.yaml");
   await expect(sidebar.getByRole("link", { name: "pasted.yaml", exact: true })).toBeVisible();
   await expect(editorOf(page).source).toBeVisible();
 });

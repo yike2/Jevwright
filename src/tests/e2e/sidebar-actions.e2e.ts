@@ -3,8 +3,8 @@ import { addTestFile, createWorkspace, fixture, setDemoVariables, sidebarOf, sig
 
 async function openWorkspaceFile(page: Page): Promise<void> {
   const { api } = await signUp(page);
-  const { moduleId } = await createWorkspace(api);
-  const testFileId = await addTestFile(api, moduleId, "login.yaml", fixture("pass/sign-in.yaml"));
+  const { folder } = await createWorkspace(api);
+  const testFileId = await addTestFile(api, folder, "login.yaml", fixture("pass/sign-in.yaml"));
   await page.goto(`/files/${testFileId}`);
   await expect(page.getByRole("heading", { name: "login.yaml", exact: true })).toBeVisible();
 }
@@ -25,7 +25,7 @@ async function selectionOf(page: Page): Promise<string> {
   });
 }
 
-test("TC-WS-04 renames a project, a module, and the open test file in place", async ({ page }) => {
+test("TC-WS-04 renames a project, a folder, and the open test file in place", async ({ page }) => {
   await openWorkspaceFile(page);
   const sidebar = sidebarOf(page);
   const input = sidebar.getByRole("textbox", { name: "Name", exact: true });
@@ -42,7 +42,7 @@ test("TC-WS-04 renames a project, a module, and the open test file in place", as
   await expect(sidebar.getByRole("link", { name: "sign-in.yaml", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "sign-in.yaml", exact: true })).toBeVisible();
 
-  await rename(page, "Rename module Shopping", "Checkout");
+  await rename(page, "Rename folder Shopping", "Checkout");
   await expect(sidebar.getByText("Checkout", { exact: true })).toBeVisible();
 
   // Clicking away saves too.
@@ -54,9 +54,9 @@ test("TC-WS-04 renames a project, a module, and the open test file in place", as
 
 test("TC-WS-11 renames with F2, cancels with Escape, and keeps a taken name's input open", async ({ page }) => {
   const { api } = await signUp(page);
-  const { moduleId } = await createWorkspace(api);
-  await addTestFile(api, moduleId, "login.yaml", fixture("pass/sign-in.yaml"));
-  await addTestFile(api, moduleId, "checkout.yaml", fixture("pass/checkout.yaml"));
+  const { folder } = await createWorkspace(api);
+  await addTestFile(api, folder, "login.yaml", fixture("pass/sign-in.yaml"));
+  await addTestFile(api, folder, "checkout.yaml", fixture("pass/checkout.yaml"));
   await page.goto(WORKSPACE);
   const sidebar = sidebarOf(page);
   const input = sidebar.getByRole("textbox", { name: "Name", exact: true });
@@ -100,17 +100,17 @@ test("TC-WS-05 deletes the open test file and returns to the overview", async ({
   await expect(page.getByRole("link", { name: "login.yaml", exact: true })).toHaveCount(0);
 });
 
-test("TC-WS-06 deletes a project with its modules, test files, and variables", async ({ page }) => {
+test("TC-WS-06 deletes a project with its folders, test files, and variables", async ({ page }) => {
   const { api } = await signUp(page);
-  const { projectId, moduleId } = await createWorkspace(api);
+  const { projectId, folder } = await createWorkspace(api);
   await setDemoVariables(api, projectId);
-  await addTestFile(api, moduleId, "login.yaml", fixture("pass/sign-in.yaml"));
+  await addTestFile(api, folder, "login.yaml", fixture("pass/sign-in.yaml"));
   await page.goto(WORKSPACE);
 
   await page.getByRole("button", { name: "Delete project Demo Shop", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "Delete project", exact: true });
   await expect(
-    dialog.getByText('Delete project "Demo Shop" and all its modules, test files and variables? Run history is kept.', {
+    dialog.getByText('Delete project "Demo Shop" and all its folders, test files and variables? Run history is kept.', {
       exact: true,
     }),
   ).toBeVisible();

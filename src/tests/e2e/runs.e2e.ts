@@ -40,14 +40,14 @@ function stepStatuses(messages: LiveMessage[], index: number): string[] {
 }
 
 async function runFixture(page: Page, path: string, name: string): Promise<"Passed" | "Failed"> {
-  const { api, moduleId } = await setUpDemoProject(page);
-  const testFileId = await addTestFile(api, moduleId, name, fixture(path));
+  const { api, folder } = await setUpDemoProject(page);
+  const testFileId = await addTestFile(api, folder, name, fixture(path));
   return runFromEditor(page, testFileId);
 }
 
 test("TC-RUN-01 runs a passing test and watches it live in the Output console", async ({ page }) => {
-  const { api, moduleId } = await setUpDemoProject(page);
-  const testFileId = await addTestFile(api, moduleId, "sign-in.yaml", fixture("pass/sign-in.yaml"));
+  const { api, folder } = await setUpDemoProject(page);
+  const testFileId = await addTestFile(api, folder, "sign-in.yaml", fixture("pass/sign-in.yaml"));
   await page.goto(`/files/${testFileId}`);
   const { run, state, output } = editorOf(page);
   const runs = output.getByRole("region", { name: "Runs" });
@@ -151,9 +151,9 @@ test("TC-RUN-06 fails a selector that matches nothing at its timeout", async ({ 
 });
 
 test("TC-RUN-07 keeps a second run queued until the first one finishes", async ({ page }) => {
-  const { api, moduleId } = await setUpDemoProject(page);
-  const slowId = await addTestFile(api, moduleId, "slow.yaml", fixture("pass/slow.yaml"));
-  const signInId = await addTestFile(api, moduleId, "sign-in.yaml", fixture("pass/sign-in.yaml"));
+  const { api, folder } = await setUpDemoProject(page);
+  const slowId = await addTestFile(api, folder, "slow.yaml", fixture("pass/slow.yaml"));
+  const signInId = await addTestFile(api, folder, "sign-in.yaml", fixture("pass/sign-in.yaml"));
   const sockets = recordLiveMessages(page);
 
   const slowRunId = await startRun(api, slowId);
@@ -176,8 +176,8 @@ test("TC-RUN-07 keeps a second run queued until the first one finishes", async (
 });
 
 test("TC-RUN-08 shows the steps done so far to a page opened late", async ({ page }) => {
-  const { api, moduleId, token } = await setUpDemoProject(page);
-  const testFileId = await addTestFile(api, moduleId, "slow.yaml", fixture("pass/slow.yaml"));
+  const { api, folder, token } = await setUpDemoProject(page);
+  const testFileId = await addTestFile(api, folder, "slow.yaml", fixture("pass/slow.yaml"));
   await page.goto(`/files/${testFileId}`);
   await editorOf(page).run.click();
   const history = editorOf(page).output.getByRole("region", { name: "Runs" }).getByRole("link");
@@ -220,8 +220,8 @@ test("TC-RUN-10 ends a run at its runTimeoutMs", async ({ page }) => {
 });
 
 test("TC-RUN-11 refuses to run an invalid file", async ({ page }) => {
-  const { api, moduleId } = await setUpDemoProject(page);
-  const testFileId = await addTestFile(api, moduleId, "invalid.yaml", fixture("invalid/multiple-errors.yaml"));
+  const { api, folder } = await setUpDemoProject(page);
+  const testFileId = await addTestFile(api, folder, "invalid.yaml", fixture("invalid/multiple-errors.yaml"));
   await page.goto(`/files/${testFileId}`);
 
   const { debug, output } = editorOf(page);
@@ -238,8 +238,8 @@ test("TC-RUN-11 refuses to run an invalid file", async ({ page }) => {
 });
 
 test("TC-RUN-12 saves unsaved changes before running them", async ({ page }) => {
-  const { api, moduleId } = await setUpDemoProject(page);
-  const testFileId = await addTestFile(api, moduleId, "flow.yaml", fixture("pass/locked-out.yaml"));
+  const { api, folder } = await setUpDemoProject(page);
+  const testFileId = await addTestFile(api, folder, "flow.yaml", fixture("pass/locked-out.yaml"));
   await page.goto(`/files/${testFileId}`);
   const { source, run, output } = editorOf(page);
 
@@ -255,8 +255,8 @@ test("TC-RUN-12 saves unsaved changes before running them", async ({ page }) => 
 });
 
 test("TC-RUN-15 queues one run for a double click", async ({ page }) => {
-  const { api, moduleId } = await setUpDemoProject(page);
-  const testFileId = await addTestFile(api, moduleId, "sign-in.yaml", fixture("pass/sign-in.yaml"));
+  const { api, folder } = await setUpDemoProject(page);
+  const testFileId = await addTestFile(api, folder, "sign-in.yaml", fixture("pass/sign-in.yaml"));
   await page.goto(`/files/${testFileId}`);
 
   await editorOf(page).run.dblclick();
@@ -269,9 +269,9 @@ test("TC-RUN-15 queues one run for a double click", async ({ page }) => {
 });
 
 test("TC-RUN-16 finishes a queued run whose file was deleted", async ({ page }) => {
-  const { api, moduleId } = await setUpDemoProject(page);
-  const slowId = await addTestFile(api, moduleId, "slow.yaml", fixture("pass/slow.yaml"));
-  const signInId = await addTestFile(api, moduleId, "sign-in.yaml", fixture("pass/sign-in.yaml"));
+  const { api, folder } = await setUpDemoProject(page);
+  const slowId = await addTestFile(api, folder, "slow.yaml", fixture("pass/slow.yaml"));
+  const signInId = await addTestFile(api, folder, "sign-in.yaml", fixture("pass/sign-in.yaml"));
   await startRun(api, slowId);
   const runId = await startRun(api, signInId);
   expect((await api<{ status: string }>("GET", `/runs/${runId}`)).status).toBe("queued");

@@ -19,7 +19,9 @@ const OK_STATUS = { GET: 200, POST: 201, PUT: 204, PATCH: 200, DELETE: 204 } as 
 type Method = keyof typeof OK_STATUS;
 export type Api = <T = unknown>(method: Method, path: string, body?: unknown, status?: number) => Promise<T>;
 export type Account = { email: string; token: string; api: Api };
-export type DemoProject = Account & { projectId: string; moduleId: string };
+/** A Project's folder, or the Project itself when `folderId` is null: where a Test File is added. */
+export type Parent = { projectId: string; folderId: string | null };
+export type DemoProject = Account & { projectId: string; folder: Parent };
 
 /** The page's own alerts; Next.js adds a hidden route announcer that also has role="alert". */
 export function alertsOf(page: Page): Locator {
@@ -66,10 +68,11 @@ export async function signUp(page: Page, options: { quickStart?: boolean } = {})
   return { email, token, api };
 }
 
-export async function createWorkspace(api: Api): Promise<{ projectId: string; moduleId: string }> {
+/** The Project "Demo Shop" with the folder "Shopping" in it. */
+export async function createWorkspace(api: Api): Promise<{ projectId: string; folder: Parent }> {
   const project = await api<{ id: string }>("POST", "/projects", { name: "Demo Shop" });
-  const module = await api<{ id: string }>("POST", `/projects/${project.id}/modules`, { name: "Shopping" });
-  return { projectId: project.id, moduleId: module.id };
+  const folder = await api<{ id: string }>("POST", `/projects/${project.id}/folders`, { name: "Shopping" });
+  return { projectId: project.id, folder: { projectId: project.id, folderId: folder.id } };
 }
 
 export async function setDemoVariables(api: Api, projectId: string): Promise<void> {
@@ -84,12 +87,22 @@ export async function setUpDemoProject(page: Page): Promise<DemoProject> {
   return { ...account, ...ids };
 }
 
-export async function addTestFile(api: Api, moduleId: string, name: string, source: string): Promise<string> {
-  const { testFile } = await api<{ testFile: { id: string } }>("POST", `/modules/${moduleId}/test-files`, {
+export async function addTestFile(api: Api, parent: Parent, name: string, source: string): Promise<string> {
+  const { testFile } = await api<{ testFile: { id: string } }>("POST", `/projects/${parent.projectId}/test-files`, {
     name,
     source,
+    folderId: parent.folderId,
   });
   return testFile.id;
+}
+
+/** A folder made through the API in a Project or folder; answers it as a parent for more folders and files. */
+export async function addFolder(api: Api, parent: Parent, name: string): Promise<Parent> {
+  const folder = await api<{ id: string }>("POST", `/projects/${parent.projectId}/folders`, {
+    name,
+    parentId: parent.folderId,
+  });
+  return { projectId: parent.projectId, folderId: folder.id };
 }
 
 export async function startRun(api: Api, testFileId: string): Promise<string> {
@@ -117,10 +130,21 @@ export function sidebarOf(page: Page): Locator {
   return page.getByRole("navigation", { name: "Projects", exact: true });
 }
 
-/** Clicks a sidebar "New …" button, types the name into the row it adds, and presses Enter; returns the input. */
-export async function createInSidebar(page: Page, opener: string, name: string): Promise<Locator> {
+/** What a sidebar "New" adds: a Project from the header, or a folder or Test File from a row's "+" menu. */
+export type NewRow = "New project" | { item: "New folder" | "New test file"; in: string; last?: boolean };
+
+/** Opens a row's "+" menu ("New in <name>"), the last such row with `last`, and picks the item. */
+export async function pickNew(page: Page, item: string, parentName: string, last = false): Promise<void> {
+  const buttons = sidebarOf(page).getByRole("button", { name: `New in ${parentName}`, exact: true });
+  await (last ? buttons.last() : buttons).click();
+  await page.getByRole("menuitem", { name: item, exact: true }).click();
+}
+
+/** Opens a sidebar "New …", types the name into the row it adds, and presses Enter; returns the input. */
+export async function createInSidebar(page: Page, what: NewRow, name: string): Promise<Locator> {
   const sidebar = sidebarOf(page);
-  await sidebar.getByRole("button", { name: opener, exact: true }).click();
+  if (what === "New project") await sidebar.getByRole("button", { name: what, exact: true }).click();
+  else await pickNew(page, what.item, what.in, what.last);
   const input = sidebar.getByRole("textbox", { name: "Name", exact: true });
   await input.fill(name);
   await input.press("Enter");

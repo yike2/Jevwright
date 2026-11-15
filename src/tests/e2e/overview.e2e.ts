@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { addTestFile, fixture, runToEnd, setUpDemoProject, signUp, startRun, WORKSPACE } from "./support.js";
+import { addFolder, addTestFile, fixture, runToEnd, setUpDemoProject, signUp, startRun, WORKSPACE } from "./support.js";
 
 const TRIGGER_TIME = /\d{1,2}:\d{2}/;
 
@@ -8,19 +8,25 @@ function fileItem(page: Page, name: string) {
   return overview.getByRole("listitem").filter({ has: page.getByRole("link", { name, exact: true }) });
 }
 
-test("TC-OV-01 shows an empty overview, then files grouped by project and module", async ({ page }) => {
+test("TC-OV-01 shows an empty overview, then files grouped by project and folder path", async ({ page }) => {
   const { api } = await signUp(page);
   await page.goto(WORKSPACE);
   const overview = page.getByRole("region", { name: "Test files", exact: true });
   await expect(overview.getByText("No test files yet", { exact: true })).toBeVisible();
 
   const project = await api<{ id: string }>("POST", "/projects", { name: "Demo Shop" });
-  const module = await api<{ id: string }>("POST", `/projects/${project.id}/modules`, { name: "Shopping" });
-  const testFileId = await addTestFile(api, module.id, "sign-in.yaml", fixture("pass/sign-in.yaml"));
+  const root = { projectId: project.id, folderId: null };
+  const shopping = await addFolder(api, root, "Shopping");
+  const cart = await addFolder(api, shopping, "Cart");
+  const testFileId = await addTestFile(api, shopping, "sign-in.yaml", fixture("pass/sign-in.yaml"));
+  await addTestFile(api, cart, "checkout.yaml", fixture("pass/checkout.yaml"));
+  await addTestFile(api, root, "smoke.yaml", fixture("pass/sign-in.yaml"));
   await page.goto(WORKSPACE);
 
   await expect(overview.getByRole("heading", { level: 2, name: "Demo Shop", exact: true })).toBeVisible();
-  await expect(overview.getByRole("heading", { level: 3, name: "Shopping", exact: true })).toBeVisible();
+  await expect(overview.getByRole("heading", { level: 3 })).toHaveText(["Shopping", "Shopping/Cart"]);
+  await expect(overview.getByRole("list", { name: "In Demo Shop", exact: true })).toContainText("smoke.yaml");
+  await expect(overview.getByRole("list", { name: "In Shopping/Cart", exact: true })).toContainText("checkout.yaml");
   await expect(fileItem(page, "sign-in.yaml")).toContainText("Never run");
 
   await overview.getByRole("link", { name: "sign-in.yaml", exact: true }).click();
@@ -28,9 +34,9 @@ test("TC-OV-01 shows an empty overview, then files grouped by project and module
 });
 
 test("TC-OV-02 shows the latest status of each file", async ({ page }) => {
-  const { api, moduleId } = await setUpDemoProject(page);
-  const passing = await addTestFile(api, moduleId, "sign-in.yaml", fixture("pass/sign-in.yaml"));
-  const failing = await addTestFile(api, moduleId, "wrong-total.yaml", fixture("fail/wrong-total.yaml"));
+  const { api, folder } = await setUpDemoProject(page);
+  const passing = await addTestFile(api, folder, "sign-in.yaml", fixture("pass/sign-in.yaml"));
+  const failing = await addTestFile(api, folder, "wrong-total.yaml", fixture("fail/wrong-total.yaml"));
   await runToEnd(api, passing);
   await runToEnd(api, failing);
 

@@ -24,8 +24,8 @@ async function downloadReport(page: Page): Promise<Report> {
 }
 
 test("TC-RPT-01 shows the report of a passed run", async ({ page }) => {
-  const { api, moduleId } = await setUpDemoProject(page);
-  const testFileId = await addTestFile(api, moduleId, "sign-in.yaml", fixture("pass/sign-in.yaml"));
+  const { api, folder } = await setUpDemoProject(page);
+  const testFileId = await addTestFile(api, folder, "sign-in.yaml", fixture("pass/sign-in.yaml"));
   expect(await runFromEditor(page, testFileId)).toBe("Passed");
 
   const steps = page.getByRole("list", { name: "Steps" }).getByRole("listitem");
@@ -68,8 +68,8 @@ test("TC-RPT-01 shows the report of a passed run", async ({ page }) => {
 });
 
 test("TC-RPT-02 shows the report of a failed run", async ({ page }) => {
-  const { api, moduleId } = await setUpDemoProject(page);
-  const testFileId = await addTestFile(api, moduleId, "wrong-total.yaml", fixture("fail/wrong-total.yaml"));
+  const { api, folder } = await setUpDemoProject(page);
+  const testFileId = await addTestFile(api, folder, "wrong-total.yaml", fixture("fail/wrong-total.yaml"));
   expect(await runFromEditor(page, testFileId)).toBe("Failed");
 
   const screenshot = page.getByRole("img", { name: "Step 14 screenshot" });
@@ -90,8 +90,8 @@ test("TC-RPT-02 shows the report of a failed run", async ({ page }) => {
 });
 
 test("TC-RPT-03 lists every run of a file, newest first, each with its own source", async ({ page }) => {
-  const { api, moduleId } = await setUpDemoProject(page);
-  const testFileId = await addTestFile(api, moduleId, "flow.yaml", fixture("pass/sign-in.yaml"));
+  const { api, folder } = await setUpDemoProject(page);
+  const testFileId = await addTestFile(api, folder, "flow.yaml", fixture("pass/sign-in.yaml"));
   await runToEnd(api, testFileId);
   await api("PATCH", `/test-files/${testFileId}`, { source: fixture("fail/wrong-total.yaml") }, 200);
   await runToEnd(api, testFileId);
@@ -120,8 +120,8 @@ test("TC-RPT-03 lists every run of a file, newest first, each with its own sourc
 
 test("TC-RPT-07 opens a run's details in a sheet over the editor, which keeps its draft", async ({ page }) => {
   await page.setViewportSize({ width: 1366, height: 768 });
-  const { api, moduleId } = await setUpDemoProject(page);
-  const testFileId = await addTestFile(api, moduleId, "sign-in.yaml", fixture("pass/sign-in.yaml"));
+  const { api, folder } = await setUpDemoProject(page);
+  const testFileId = await addTestFile(api, folder, "sign-in.yaml", fixture("pass/sign-in.yaml"));
   const runId = await runToEnd(api, testFileId);
   await page.goto(`/files/${testFileId}`);
   const { source, state } = editorOf(page);
@@ -164,8 +164,8 @@ test("TC-RPT-07 opens a run's details in a sheet over the editor, which keeps it
 });
 
 test("TC-RPT-04 keeps a run after its file is deleted", async ({ page }) => {
-  const { api, moduleId } = await setUpDemoProject(page);
-  const testFileId = await addTestFile(api, moduleId, "sign-in.yaml", fixture("pass/sign-in.yaml"));
+  const { api, folder } = await setUpDemoProject(page);
+  const testFileId = await addTestFile(api, folder, "sign-in.yaml", fixture("pass/sign-in.yaml"));
   const runId = await runToEnd(api, testFileId);
   await api("DELETE", `/test-files/${testFileId}`);
 

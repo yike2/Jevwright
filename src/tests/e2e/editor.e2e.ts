@@ -7,6 +7,7 @@ import {
   createWorkspace,
   editorOf,
   fixture,
+  pickNew,
   problemItemsOf,
   sidebarOf,
   signUp,
@@ -20,8 +21,8 @@ const STARTER = 'name: "editor"\nsteps:\n  - open:\n      url: "https://example.
 
 async function openNewFile(page: Page, source = fixture("pass/sign-in.yaml")): Promise<Editor> {
   const { api } = await signUp(page);
-  const { moduleId } = await createWorkspace(api);
-  const testFileId = await addTestFile(api, moduleId, "editor.yaml", source);
+  const { folder } = await createWorkspace(api);
+  const testFileId = await addTestFile(api, folder, "editor.yaml", source);
   await page.goto(`/files/${testFileId}`);
   const editor = editorOf(page);
   await expect.poll(() => sourceOf(page)).toBe(source);
@@ -38,7 +39,7 @@ test("TC-ED-01 shows the starter source and tracks unsaved changes", async ({ pa
   const { api } = await signUp(page);
   await createWorkspace(api);
   await page.goto(WORKSPACE);
-  await createInSidebar(page, "New test file in Shopping", "editor");
+  await createInSidebar(page, { item: "New test file", in: "Shopping" }, "editor");
   const { source, state, save } = editorOf(page);
 
   await expect.poll(() => sourceOf(page)).toBe(STARTER);
@@ -75,7 +76,7 @@ test("TC-ED-02 saves a source, keeps showing it, and shows it after a reload", a
   await expect.poll(() => sourceOf(page)).toBe(signIn);
 });
 
-test("TC-ED-03 uploads a file into a new test file from the module's actions", async ({ page }) => {
+test("TC-ED-03 uploads a file into a new test file from a folder's + menu", async ({ page }) => {
   const { api } = await signUp(page);
   await createWorkspace(api);
   await page.goto(WORKSPACE);
@@ -83,7 +84,7 @@ test("TC-ED-03 uploads a file into a new test file from the module's actions", a
   const checkout = fileURLToPath(new URL("./fixtures/pass/checkout.yaml", import.meta.url));
 
   const chooser = page.waitForEvent("filechooser");
-  await sidebar.getByRole("button", { name: "Upload file to Shopping", exact: true }).click();
+  await pickNew(page, "Upload files…", "Shopping");
   await (await chooser).setFiles(checkout);
 
   await expect(page).toHaveURL(/\/files\/[^/]+$/);
@@ -95,12 +96,44 @@ test("TC-ED-03 uploads a file into a new test file from the module's actions", a
   await expect(editorOf(page).state).toHaveText("Saved");
   await expect(page.locator('input[type="file"]')).toHaveAttribute("accept", ".yaml,.yml");
 
-  // A second upload of the same name is refused next to the module, and adds nothing.
+  // A second upload of the same name is skipped with the reason, and overwrites nothing.
   const again = page.waitForEvent("filechooser");
-  await sidebar.getByRole("button", { name: "Upload file to Shopping", exact: true }).click();
+  await pickNew(page, "Upload files…", "Shopping");
   await (await again).setFiles(checkout);
-  await expect(sidebar.getByRole("alert")).toContainText("checkout.yaml");
+  const messages = sidebar.getByRole("status", { name: "Sidebar messages", exact: true });
+  await expect(messages).toContainText("Imported no test files. 1 skipped:");
+  await expect(messages.getByRole("list", { name: "Skipped" })).toHaveText(
+    "checkout.yaml: A folder or test file with this name already exists in this folder.",
+  );
   await expect(sidebar.getByRole("link", { name: "checkout.yaml", exact: true })).toHaveCount(1);
+  await expect.poll(() => sourceOf(page)).toBe(fixture("pass/checkout.yaml"));
+});
+
+test("TC-ED-18 uploads several files at once and lists the ones it skips", async ({ page }) => {
+  const { api } = await signUp(page);
+  await createWorkspace(api);
+  await page.goto(WORKSPACE);
+  const sidebar = sidebarOf(page);
+
+  const chooser = page.waitForEvent("filechooser");
+  await pickNew(page, "Upload files…", "Demo Shop");
+  await (
+    await chooser
+  ).setFiles([
+    { name: "sign-in.yaml", mimeType: "application/yaml", buffer: Buffer.from(fixture("pass/sign-in.yaml")) },
+    { name: "checkout.yml", mimeType: "application/yaml", buffer: Buffer.from(fixture("pass/checkout.yaml")) },
+    { name: "sign in.yaml", mimeType: "application/yaml", buffer: Buffer.from("name: x\n") },
+  ]);
+
+  const messages = sidebar.getByRole("status", { name: "Sidebar messages", exact: true });
+  await expect(messages).toContainText("Imported 2 test files. 1 skipped:");
+  await expect(messages.getByRole("list", { name: "Skipped" })).toHaveText(
+    "sign in.yaml: Use only letters, digits, -, _ and ., with no spaces.",
+  );
+  await expect(sidebar.getByRole("link", { name: "sign-in.yaml", exact: true })).toBeVisible();
+  await expect(sidebar.getByRole("link", { name: "checkout.yaml", exact: true })).toBeVisible();
+  // Several files do not open one of them.
+  await expect(page).toHaveURL(WORKSPACE);
 });
 
 test("TC-ED-04 lists every error of an invalid file with its line as the user types", async ({ page }) => {
