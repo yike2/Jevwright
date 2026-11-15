@@ -149,6 +149,12 @@ describe("landing page content", () => {
     ]);
   });
 
+  it("names the replayed file its duration belongs to, since the replay opens on another one", () => {
+    const steps = runOf(SIGN_IN).report.steps.length;
+
+    expect(STATS[3]?.label).toBe(`for ${SIGN_IN}, ${steps} steps`);
+  });
+
   it("describes the Quick Start folders the backend creates, in order", () => {
     const folders = (quickStartProject("https://demo.example.com").folders as { create: { name: string }[] }).create;
 
