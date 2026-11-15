@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { analyze } from "@/core/syntax/index.js";
@@ -114,5 +114,23 @@ describe("user guide", () => {
       "public",
     ])
       expect(quickStart, text).toContain(text);
+  });
+
+  it("installs the Agent Skill with one prompt that fetches every skill file from main", () => {
+    const install = page("guide/agent-skill.md");
+    const skill = new URL("skills/jevwright-test-files/", ROOT);
+    const files = [
+      "SKILL.md",
+      "references/syntax.md",
+      ...readdirSync(new URL("examples/", skill)).map((name) => `examples/${name}`),
+    ];
+    const raw = "https://raw.githubusercontent.com/yike2/Jevwright/main/skills/jevwright-test-files/";
+    const prompt = /```text\n([\s\S]*?)\n```/.exec(install)?.[1] ?? "";
+
+    for (const file of files) expect(prompt, file).toContain(`${raw}${file}`);
+    for (const match of prompt.matchAll(/https:\/\/raw\.githubusercontent\.com\/yike2\/Jevwright\/main\/(\S+)/g))
+      expect(existsSync(new URL(match[1]!, ROOT)), match[1]).toBe(true);
+    expect(install).not.toMatch(/\.(claude|github|agents)\/skills/);
+    expect(install).toContain("Debug console");
   });
 });
