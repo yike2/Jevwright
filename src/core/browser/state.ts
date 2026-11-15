@@ -1,4 +1,5 @@
 import type { BrowserContext, BrowserContextOptions } from "playwright";
+import { firstLine } from "./errors.js";
 import type { LaunchOptions } from "./types.js";
 
 /** The context's `storageState`, which writes `localStorage` once for the baseUrl's origin (1.13). */
@@ -19,17 +20,22 @@ export async function applyState(context: BrowserContext, options: LaunchOptions
   const url = new URL(baseUrl);
   if (headers !== undefined) await sendHeaders(context, url.origin, headers);
   if (cookies !== undefined) {
-    await context.addCookies(
-      Object.entries(cookies).map(([name, cookie]) => ({
-        name,
-        value: cookie.value,
-        domain: cookie.domain ?? url.hostname,
-        path: cookie.path ?? "/",
-        httpOnly: cookie.httpOnly ?? false,
-        secure: cookie.secure ?? url.protocol === "https:",
-        sameSite: cookie.sameSite ?? "Lax",
-      })),
-    );
+    await context
+      .addCookies(
+        Object.entries(cookies).map(([name, cookie]) => ({
+          name,
+          value: cookie.value,
+          domain: cookie.domain ?? url.hostname,
+          path: cookie.path ?? "/",
+          httpOnly: cookie.httpOnly ?? false,
+          secure: cookie.secure ?? url.protocol === "https:",
+          sameSite: cookie.sameSite ?? "Lax",
+        })),
+      )
+      .catch((error: unknown) => {
+        // Playwright's message starts with its method and protocol call, e.g. "...(Storage.setCookies): Invalid cookie fields".
+        throw new Error(`The browser refused the cookies: ${firstLine(error).replace(/^.*: /, "")}`, { cause: error });
+      });
   }
   if (sessionStorage !== undefined) {
     // An init script runs in every new document of every tab before the page's scripts; JSON keeps the values literal.
