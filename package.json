@@ -14,6 +14,7 @@
     "docs:dev": "vitepress dev docs/guide-src",
     "docs:build": "vitepress build docs/guide-src",
     "docs:preview": "vitepress preview docs/guide-src",
+    "docs:screenshots": "tsx docs/guide-src/screenshots.ts",
     "test": "vitest run",
     "test:unit": "vitest run src/tests/unit",
     "test:integration": "vitest run src/tests/integration",
