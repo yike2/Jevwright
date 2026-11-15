@@ -329,6 +329,22 @@ Covers US-4.3.7. Pre: signed in, with the workspace open in two tabs.
 
 Expected: tab 2 goes to `/login` on its next request, since both tabs share the stored token.
 
+#### TC-AUTH-09 A signed-in user opens an auth page — P1, E2E
+
+Covers US-4.3.7. Pre: S1.
+
+1. Open `/login`, then `/register`.
+
+Expected: each shows only "Loading…" briefly, then opens `/files` with the sidebar; the form never shows.
+
+#### TC-AUTH-10 An auth page with a rejected token — P1, E2E
+
+Covers US-4.3.7. Pre: the stored token changed to `invalid` in `localStorage`.
+
+1. Open `/login`.
+
+Expected: the page stays on `/login` and shows the form; the stored token is removed. With the backend stopped instead, the form shows with "Cannot reach the server. Check your connection and try again." and the token is kept.
+
 ### 4.1a Quick Start project (`QS`)
 
 #### TC-QS-01 A new account starts with the Quick Start project — P0, E2E
@@ -1007,7 +1023,7 @@ Expected: every status has text or a title, not only a color; step updates are a
 | US-4.3.4 Live execution | RUN-01 – RUN-19, VAR-03, VAR-06 |
 | US-4.3.5 History and reports | RPT-01 – RPT-06, RUN-16 |
 | US-4.3.6 Local CLI | CLI-01, CLI-02 |
-| US-4.3.7 Authentication and isolation | AUTH-01 – AUTH-08, SEC-01 – SEC-03, SEC-05 – SEC-07 |
+| US-4.3.7 Authentication and isolation | AUTH-01 – AUTH-10, SEC-01 – SEC-03, SEC-05 – SEC-07 |
 | PRD 4.2.2 Landing page and Quick Start | LAND-01 – LAND-08, QS-01 – QS-04 |
 | `docs/tech/design-system.md` Themes and contrast | THEME-01 – THEME-05 |
 | US-4.3.8 Public API | API-01 |

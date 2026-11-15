@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { apiClient } from "@/lib/api";
 import { formatError } from "@/lib/format-error";
@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { WORKSPACE_HOME } from "@/lib/routes";
+import { checkSession } from "@/lib/auth-guard";
 import { SiteHeader } from "@/components/landing/site-header";
 
 export type AuthMode = "login" | "register";
@@ -26,6 +27,24 @@ export function AuthForm({ initialMode }: { initialMode: AuthMode }) {
     password: null,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // The guard of frontend.md 1.5: a signed-in user goes to the workspace, so the form shows only once that is ruled out.
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    void checkSession(apiClient).then((session) => {
+      if (cancelled) return;
+      if (session.kind === "signed-in") {
+        router.replace(WORKSPACE_HOME);
+        return;
+      }
+      if (session.kind === "unknown") setMessages([session.message]);
+      setChecking(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
 
   const handleModeChange = (nextMode: AuthMode) => {
     setMode(nextMode);
@@ -68,6 +87,17 @@ export function AuthForm({ initialMode }: { initialMode: AuthMode }) {
       setIsSubmitting(false);
     }
   };
+
+  if (checking) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <SiteHeader showAuthLinks={false} />
+        <main className="flex flex-1 items-center justify-center px-4 py-12">
+          <p className="text-muted-foreground">Loading…</p>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen flex-col">

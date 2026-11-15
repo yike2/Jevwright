@@ -88,7 +88,7 @@ Shared setup for the tests. Requests go straight to the backend at `API_URL` (`h
 | `src/tests/e2e/support.ts` | Setup helpers (3.1) |
 | `src/tests/e2e/landing.e2e.ts` | TC-LAND-01 – 07 |
 | `src/tests/e2e/theme.e2e.ts` | TC-THEME-01 – 04 |
-| `src/tests/e2e/auth.e2e.ts` | TC-AUTH-01 – 05, 07, 08 |
+| `src/tests/e2e/auth.e2e.ts` | TC-AUTH-01 – 05, 07 – 10 |
 | `src/tests/e2e/quick-start.e2e.ts` | TC-QS-01 – 03 |
 | `src/tests/e2e/sidebar.e2e.ts` | TC-WS-01 – 03, 08, 09 |
 | `src/tests/e2e/sidebar-actions.e2e.ts` | TC-WS-04 – 06 |

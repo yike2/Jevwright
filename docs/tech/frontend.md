@@ -113,6 +113,11 @@ The pages behave as follows:
 - The UI has exactly the PRD 7.1.1 form shape: email, password, submit.
 - Submit calls `apiClient.login(email, password)` in Log in mode and `apiClient.register(email, password)` in Register mode.
 - On successful login/register, the page navigates with `router.replace("/files")`, the workspace's home (`WORKSPACE_HOME` in `lib/routes.ts`).
+- Guard: before showing the form, the page calls `checkSession(apiClient)` (`lib/auth-guard.ts`) and shows only `Loading…` meanwhile, so a signed-in user never sees the form:
+  - no stored token: the form;
+  - `GET /auth/me` succeeds: `router.replace("/files")`;
+  - `401`: the token is cleared and the form shows. The request uses `skipAuthRedirect`, so the client's own `401` redirect to `/login` cannot loop;
+  - any other failure, such as `NetworkError` or a `5xx`: the form shows, with `errorText(error)` in the page's `role="alert"`, and the token is kept.
 - While the submit request is in flight, the submit button is disabled.
 - Submit first checks the email with `emailProblem`, and the password with `passwordProblem` in Register mode or as non-empty ("Enter your password.") in Log in mode; a problem shows under its field (1.3) and nothing is sent.
 - Auth errors from the backend show `formatError(error)` (1.3), one line each, in a `role="alert"`.
@@ -645,6 +650,7 @@ This fallback is implemented in the client itself when the backend response is n
 | `lib/runs.ts`                                 | Run helpers (1.9)                                           |
 | `lib/workspace-context.tsx`                   | `useWorkspace()`: `me`, `tree`, `refreshTree`               |
 | `lib/routes.ts`                               | `WORKSPACE_HOME`, the overview's path `/files`              |
+| `lib/auth-guard.ts`                           | `checkSession()`: the auth pages' guard (1.5)               |
 | `lib/landing.ts`                              | Landing content and receipts (1.14)                         |
 | `lib/landing-runs/`                           | The two replayed Run reports (1.14)                         |
 | `public/landing/`                             | Replay screenshots and the workspace screenshots (1.14)     |
@@ -753,6 +759,7 @@ src/app/frontend/
 | Unit | Overview helper (1.10)                                                                                           | `src/tests/unit/app/frontend/overview.test.ts`          |
 | Unit | Editor and Variables helpers (1.7, 1.8)                                                                          | `src/tests/unit/app/frontend/editor.test.ts`            |
 | Unit | Run helpers (1.9)                                                                                                | `src/tests/unit/app/frontend/runs.test.ts`              |
+| Unit | Auth page guard: no token, accepted, rejected and cleared, network and server failures (1.5)                    | `src/tests/unit/app/frontend/auth-guard.test.ts`        |
 | Unit | Landing content checked against the code: actions, receipts, replayed reports, stats, Quick Start Modules (1.14) | `src/tests/unit/app/frontend/landing.test.ts`           |
 | Unit | Token contrast in both themes (design-system.md 2.2)                                                             | `src/tests/unit/app/frontend/design-tokens.test.ts`     |
 | E2E  | Landing page: sections, command, Log in, Register, Open workspace, logo, Run replay, Quick start tabs (1.14)    | `src/tests/e2e/landing.e2e.ts`                          |
