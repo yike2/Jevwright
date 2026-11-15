@@ -134,7 +134,7 @@ test("TC-LAND-09 shows code for each choice and each fix, and lines up the check
   const choices = page.getByRole("region", { name: "Which should I write?" });
   await expect(choices.getByRole("listitem")).toHaveCount(5);
   for (const item of await choices.getByRole("listitem").all())
-    await expect(item.getByRole("code").or(item.locator("pre"))).toContainText(/selector|target|statement/);
+    await expect(item.locator("pre")).toContainText(/selector|target|statement/);
 
   const fixes = page.getByRole("region", { name: "What does it fix?" });
   await expect(fixes.getByText("Playwright", { exact: true }).first()).toBeVisible();
