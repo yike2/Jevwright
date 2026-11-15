@@ -41,7 +41,7 @@ docker compose logs frontend
 curl -I https://app.example.com/login   # 200
 ```
 
-Then open `https://<APP_DOMAIN>` in a browser: the landing page shows **Log in** and **Register**. Register, and check that the files overview at `/files` shows the account's email in the sidebar and the Quick Start project.
+Then open `https://<APP_DOMAIN>` in a browser: the landing page shows **Sign in** at the top right. Open it, switch to **Register**, register, and check that the files overview at `/files` shows the account's email in the sidebar and the Quick Start project.
 
 ## 4. The image
 

@@ -217,8 +217,8 @@ export function SidebarNav({ email, tree, refreshTree, onLogout, onNavigate }: W
         {/* The brand sits outside the "Projects" navigation, whose links are only the tree's Test Files. */}
         <div className="flex h-12 shrink-0 items-center gap-2 border-b border-sidebar-border px-3">
           <Link
-            href={WORKSPACE_HOME}
-            aria-label="Jevwright, go to dashboard"
+            href="/"
+            aria-label="Jevwright home"
             className="flex items-center gap-2 rounded-md font-heading font-semibold"
             onClick={() => onNavigate?.()}
           >

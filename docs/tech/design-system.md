@@ -175,7 +175,7 @@ The app has a Light, a Dark and a System theme. System, the default, follows the
 
 | Layout | Pages | Skeleton |
 | ------ | ----- | -------- |
-| Site | `/` | A sticky header (logo, docs links, theme switch, Log in and Register, or Open workspace), full-width sections with a centered 72rem column that alternate `background` and `card`, a footer (frontend.md 1.14) |
+| Site | `/` | A sticky header (logo to `/`, docs links, theme switch, and one button: Sign in, or Open workspace), full-width sections with a centered 72rem column that alternate `background` and `card`, a footer (frontend.md 1.14) |
 | Auth | `/login`, `/register` | The site header without the auth links, and one centered card |
 | Workspace | `/files`, `/files/:id`, `/runs/:id` | A 320px sidebar on the left (brand, Projects tree, account and theme switch) and the page on the right in a centered column of at most 64rem. Below 768px the sidebar is behind a menu button |
 

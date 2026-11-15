@@ -13,8 +13,8 @@ export const API_URL = "https://yike2.github.io/Jevwright/api/";
 export const REPO_URL = "https://github.com/yike2/Jevwright";
 
 /**
- * The top bar of the landing and auth pages: the logo, the docs links, the theme switch, and Log in / Register, or Open
- * workspace for a visitor who has a token (frontend.md 1.14). With a token the logo also leads to the workspace.
+ * The top bar of the landing and auth pages: the logo (always to /), the docs links, the theme switch, and one button:
+ * Sign in, or Open workspace for a visitor who has a token (frontend.md 1.14).
  */
 export function SiteHeader({ showAuthLinks = true }: { showAuthLinks?: boolean }) {
   // The token lives in localStorage, so the server renders the visitor's links and the browser may swap them.
@@ -25,8 +25,8 @@ export function SiteHeader({ showAuthLinks = true }: { showAuthLinks?: boolean }
     <header className="sticky top-0 z-40 border-b bg-background/90 backdrop-blur supports-backdrop-filter:bg-background/75">
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-4 px-4 sm:px-6">
         <Link
-          href={signedIn ? WORKSPACE_HOME : "/"}
-          aria-label={signedIn ? "Jevwright, go to dashboard" : "Jevwright home"}
+          href="/"
+          aria-label="Jevwright home"
           className="flex items-center gap-2 rounded-md font-heading text-base font-semibold"
         >
           <BrandMark />
@@ -51,14 +51,10 @@ export function SiteHeader({ showAuthLinks = true }: { showAuthLinks?: boolean }
                 Open workspace
               </Link>
             ) : (
-              <>
-                <Link href="/login" className={buttonVariants({ variant: "ghost" })}>
-                  Log in
-                </Link>
-                <Link href="/register" className={buttonVariants()}>
-                  Register
-                </Link>
-              </>
+              // One page for both: /login, where the form switches between Log in and Register.
+              <Link href="/login" className={buttonVariants()}>
+                Sign in
+              </Link>
             ))}
         </div>
       </div>

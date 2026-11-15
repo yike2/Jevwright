@@ -149,17 +149,18 @@ Cases refer to these instead of repeating them.
 Covers PRD 4.2.2. Pre: no token.
 
 1. Open `/`.
-2. Click **Register** at the top right.
+2. Click **Get started** in the hero.
 
-Expected: step 1 shows the heading starting "Web tests as plain YAML steps.", the command `pnpm jevwright run tests/sign-in.yaml` with **Copy command**, the sections How does Jev find an element?, What does it fix?, Which should I write?, What runs where?, Checked before it runs, Light and dark, Quick start, and What it is, and what it is not, a **Docs** link to `https://yike2.github.io/Jevwright/`, and **Log in** and **Register** at the top right, with no **Open workspace**; step 2 opens `/register` with the heading "Register".
+Expected: step 1 shows the heading starting "Web tests as plain YAML steps.", the command `pnpm jevwright run tests/sign-in.yaml` with **Copy command**, the sections How does Jev find an element?, What does it fix?, Which should I write?, What runs where?, Checked before it runs, Light and dark, Quick start, and What it is, and what it is not, a **Docs** link to `https://yike2.github.io/Jevwright/`, and one **Sign in** button at the top right, with no **Log in**, **Register**, or **Open workspace**; step 2 opens `/register`, the auth page in Register mode, with the heading "Register".
 
-#### TC-LAND-02 Log in from the landing page — P1, E2E
+#### TC-LAND-02 Sign in from the landing page — P1, E2E
 
 Covers PRD 4.2.2. Pre: no token.
 
-1. Open `/` and click **Log in** at the top right.
+1. Open `/` and click **Sign in** at the top right.
+2. Click **Register** (the mode button).
 
-Expected: `/login` opens with the heading "Log in".
+Expected: step 1 opens `/login` with the heading "Log in"; step 2 switches the same page to "Register".
 
 #### TC-LAND-03 A signed-in visitor opens the workspace in one click — P1, E2E
 
@@ -168,9 +169,9 @@ Covers PRD 4.2.2. Pre: S1.
 1. Open `/`.
 2. Click **Open workspace** at the top right.
 
-Expected: step 1 shows **Open workspace** instead of **Log in** and **Register**; step 2 opens `/files` with the sidebar.
+Expected: step 1 shows **Open workspace** instead of **Sign in**; step 2 opens `/files` with the sidebar.
 
-#### TC-LAND-04 The logo leads to the dashboard — P1, E2E
+#### TC-LAND-04 The logo leads to the landing page — P1, E2E
 
 Covers PRD 4.2.2. Pre: none.
 
@@ -178,7 +179,7 @@ Covers PRD 4.2.2. Pre: none.
 2. Do S1 with a Test File, open `/`, and look at the logo's link.
 3. Open the Test File and click the logo at the top of the sidebar.
 
-Expected: step 1 links to `/` ("Jevwright home"); step 2 links to `/files` ("Jevwright, go to dashboard"); step 3 opens `/files`.
+Expected: every logo links to `/` ("Jevwright home"), signed in or not; step 3 opens `/`, which shows **Open workspace**.
 
 #### TC-LAND-05 The real Run replay — P1, E2E
 

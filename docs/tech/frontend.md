@@ -109,7 +109,7 @@ This keeps `User`, `Diagnostic`, `Run`, and the login response in sync with the 
 
 The pages behave as follows:
 
-- `/login` and `/register` render the same client-component form (`components/auth/auth-form.tsx`) with two modes, **Log in** and **Register**; `/login` starts in Log in mode and `/register`, the landing page's Register link, in Register mode. The mode buttons switch in place.
+- `/login` and `/register` render the same client-component form (`components/auth/auth-form.tsx`) with two modes, **Log in** and **Register**; `/login`, the header's **Sign in** button, starts in Log in mode; `/register`, the landing page's **Get started** links, opens the same page in Register mode. The mode buttons switch in place.
 - The UI has exactly the PRD 7.1.1 form shape: email, password, submit.
 - Submit calls `apiClient.login(email, password)` in Log in mode and `apiClient.register(email, password)` in Register mode.
 - On successful login/register, the page navigates with `router.replace("/files")`, the workspace's home (`WORKSPACE_HOME` in `lib/routes.ts`).
@@ -137,7 +137,7 @@ The workspace is every authenticated page. A shared layout guards auth, renders 
 
 | Element         | Behavior                                                                                                                     |
 | --------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Logo            | Above the tree, outside the "Projects" navigation: a link to `/files` named "Jevwright, go to dashboard"                     |
+| Logo            | Above the tree, outside the "Projects" navigation: a link to the landing page `/` named "Jevwright home"                     |
 | Header          | "Projects" with a "+" that opens the New Project dialog                                                                      |
 | Tree            | Projects → Modules → Test Files from `GET /tree`, in API order. Projects and Modules toggle open/closed; all open by default |
 | Row "+"         | On a Project: New Module dialog. On a Module: New Test File dialog                                                           |
@@ -179,7 +179,7 @@ E2E tests locate elements by role and accessible name, so these names are part o
 
 | Element               | Role and name                                                                                                                                                                                  |
 | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Logo                  | link "Jevwright, go to dashboard" to `/files`                                                                                                                                                  |
+| Logo                  | link "Jevwright home" to `/`                                                                                                                                                                   |
 | Sidebar               | `navigation` named "Projects"                                                                                                                                                                  |
 | Header "+"            | button "New project"                                                                                                                                                                           |
 | Project row "+"       | button "New module in <project name>"                                                                                                                                                          |
@@ -436,7 +436,7 @@ Lint, format, and type-check coverage include the frontend package:
 
 | Section | Content |
 | ------- | ------- |
-| Header | `SiteHeader` (`components/landing/site-header.tsx`): the logo, links to the docs on GitHub Pages, the API reference and the repository (hidden below 768px), the theme switch, and "Log in" (`/login`) and "Register" (`/register`). A visitor whose browser holds a token sees "Open workspace" (`/files`) instead of Log in and Register, and the logo leads to `/files` instead of `/`; the header checks the token after mount, so the server renders the visitor's links. `/login` and `/register` use the same header without the auth links |
+| Header | `SiteHeader` (`components/landing/site-header.tsx`): the logo, links to the docs on GitHub Pages, the API reference and the repository (hidden below 768px), the theme switch, and one button at the top right: "Sign in" (`/login`, where the form switches between Log in and Register), or "Open workspace" (`/files`) for a visitor whose browser holds a token. The header checks the token after mount, so the server renders the visitor's button. The logo always leads to `/`, signed in or not; the workspace is reached through Open workspace. `/login` and `/register` use the same header without the auth links |
 | Hero | A two-beat heading ("Web tests as plain YAML steps." and a payoff line with one emphasized phrase), two sentences, "Get started" (`/register`), "See a real Run" (to the replay), and the copyable command `COMMAND` (`pnpm jevwright run tests/sign-in.yaml`, cli.md 3.1) |
 | A real Run, not a screenshot | `RunReplay` (`components/landing/run-replay.tsx`): one tab per entry of `REPLAY_RUNS`, real Run reports of the Quick Start files `sign-in-and-see-products.yaml` and `fall-back-from-a-stale-selector.yaml` (the second called Jev and located step 4 with `visual`). Once the replay scrolls into view, its steps tick from pending to their real status with their locate method and duration; a step's button shows its screenshot. "Replay" starts it again and "Show all steps" shows the end state. Below it, the stat strip `STATS` |
 | 01 How does Jev find an element? | Two small diagrams (`Flow`): a selector that matches skips Jev; a target, or a selector that matches nothing, goes to Visual Locate, then DOM Locate if Jev is unsure, then Playwright acts, with the method recorded (locator.md 1.2) |
@@ -467,14 +467,14 @@ The replay is the page's only animation; with `prefers-reduced-motion: reduce` i
 
 | Element | Role and name |
 | ------- | ------------- |
-| Header | `banner` with links "Jevwright home" (or "Jevwright, go to dashboard" with a token), "Docs", "API reference", "GitHub", and "Log in" and "Register", or "Open workspace"; `group` "Theme" |
+| Header | `banner` with links "Jevwright home", "Docs", "API reference", "GitHub", and "Sign in", or "Open workspace" with a token; `group` "Theme" |
 | Hero | `heading` level 1 starting "Web tests as plain YAML steps."; button "Copy command" with a `role="status"` that says "Copied" |
 | Replay | `region` "Run replay"; one `tab` per file name; buttons "Replay" and "Show all steps"; `list` "Replay steps" with one `listitem` per step; `img` "Step <n> screenshot" |
 | Sections | `heading` level 2 per section title; the Quick start section is a `region` "Quick start" with `tab`s "Web" and "CLI" |
 
 #### Tests
 - Unit `landing.test.ts`: `ACTIONS` are 15 distinct Syntax Analyzer actions; `LOCATE_METHODS`; `VALIDATE_RECEIPT` and `RUN_RECEIPT` match the Syntax Analyzer on the seeded Quick Start files; `REPLAY_RUNS` are passed 6 of 6 with shipped screenshots and the expected locate methods; `STATS` come from those; `QUICK_START_MODULES` match the backend.
-- E2E `landing.e2e.ts`: the hero, every section heading, the command and the header links; Register and Log in; Open workspace with a token; the logo leads to `/` without a token and to `/files` with one, also from a Test File page in the workspace; the replay shows six steps, a screenshot per step, and the Jev Run's `visual` or `dom` step; with reduced motion every step shows its result at once; the Quick start tabs.
+- E2E `landing.e2e.ts`: the hero, every section heading, the command and the header links, with one Sign in button and no Log in or Register; Get started opens `/register` in Register mode; Sign in opens `/login`, where the mode switches to Register; Open workspace instead of Sign in with a token; the logo links to `/` with and without a token, also from the workspace sidebar; the replay shows six steps, a screenshot per step, and the Jev Run's `visual` or `dom` step; with reduced motion every step shows its result at once; the Quick start tabs.
 
 ## 2. Internal Flow
 
