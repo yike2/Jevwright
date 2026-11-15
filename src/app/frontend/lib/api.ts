@@ -309,17 +309,28 @@ export function createApiClient(config: ApiClientConfig = {}): {
     return request<CreateProjectResponse>("/projects/quick-start", { method: "POST" });
   };
 
-  const createFolder = async (parent: Parent, name: string): Promise<CreateFolderResponse> => {
-    void parent;
-    void name;
-    return undefined as never;
+  const createFolder = async ({ projectId, folderId }: Parent, name: string): Promise<CreateFolderResponse> => {
+    return request<CreateFolderResponse>(`/projects/${projectId}/folders`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ name, parentId: folderId }),
+    });
   };
 
-  const createTestFile = async (parent: Parent, name: string, source: string): Promise<CreateTestFileResponse> => {
-    void parent;
-    void name;
-    void source;
-    return undefined as never;
+  const createTestFile = async (
+    { projectId, folderId }: Parent,
+    name: string,
+    source: string,
+  ): Promise<CreateTestFileResponse> => {
+    return request<CreateTestFileResponse>(`/projects/${projectId}/test-files`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ name, source, folderId }),
+    });
   };
 
   const getTestFile = async (testFileId: string): Promise<TestFile> => {
@@ -396,21 +407,33 @@ export function createApiClient(config: ApiClientConfig = {}): {
   };
 
   const renameFolder = async (folderId: string, name: string): Promise<UpdateFolderResponse> => {
-    void folderId;
-    void name;
-    return undefined as never;
+    return request<UpdateFolderResponse>(`/folders/${folderId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ name }),
+    });
   };
 
   const moveFolder = async (folderId: string, to: Parent): Promise<UpdateFolderResponse> => {
-    void folderId;
-    void to;
-    return undefined as never;
+    return request<UpdateFolderResponse>(`/folders/${folderId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ projectId: to.projectId, parentId: to.folderId }),
+    });
   };
 
   const moveTestFile = async (testFileId: string, to: Parent): Promise<UpdateTestFileResponse> => {
-    void testFileId;
-    void to;
-    return undefined as never;
+    return request<UpdateTestFileResponse>(`/test-files/${testFileId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ projectId: to.projectId, folderId: to.folderId }),
+    });
   };
 
   const renameTestFile = async (testFileId: string, name: string): Promise<UpdateTestFileResponse> => {
@@ -430,7 +453,9 @@ export function createApiClient(config: ApiClientConfig = {}): {
   };
 
   const deleteFolder = async (folderId: string): Promise<void> => {
-    void folderId;
+    await request<void>(`/folders/${folderId}`, {
+      method: "DELETE",
+    });
   };
 
   const deleteTestFile = async (testFileId: string): Promise<void> => {

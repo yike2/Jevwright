@@ -17,7 +17,7 @@ export function passwordProblem(password: string): string | null {
   return null;
 }
 
-/** What is wrong with a Project or Module name, or null when it is fine. */
+/** What is wrong with a Project or folder name, or null when it is fine. */
 export function nameProblem(name: string): string | null {
   const trimmed = name.trim();
   if (trimmed.length === 0) return "Enter a name.";
@@ -46,11 +46,11 @@ export function variableValueProblem(value: string): string | null {
   return value.length > MAX_VALUE_CHARS ? "A Variable value can be at most 10,000 characters." : null;
 }
 
-/** The longest source the backend saves (backend.md 1.3). */
+/** The longest source the backend saves (backend.md 1.3), and what it says about a longer one. */
 export const MAX_SOURCE_CHARS = 262_144;
+export const SOURCE_TOO_LONG = "The test file is too long: it can be at most 262,144 characters.";
 
 /** What is wrong with a Test File's source, or null when it is fine. */
 export function sourceProblem(source: string): string | null {
-  void source;
-  return null;
+  return source.length > MAX_SOURCE_CHARS ? SOURCE_TOO_LONG : null;
 }

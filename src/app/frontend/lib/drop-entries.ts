@@ -23,6 +23,32 @@ export type DroppedDirectoryEntry = DroppedEntry & {
  * the drop. Inside a dropped folder, node_modules and hidden folders such as .git are skipped, as the CLI does.
  */
 export async function readDroppedEntries(roots: readonly DroppedEntry[]): Promise<ImportEntry[]> {
-  void roots;
-  return [];
+  const entries: ImportEntry[] = [];
+  const read = async (entry: DroppedEntry, path: string, isRoot: boolean): Promise<void> => {
+    if (entry.isFile) {
+      entries.push({ kind: "file", path, file: await fileOf(entry as DroppedFileEntry) });
+      return;
+    }
+    if (!entry.isDirectory || (!isRoot && isSkippedFolder(entry.name))) return;
+    entries.push({ kind: "folder", path });
+    for (const child of await childrenOf(entry as DroppedDirectoryEntry))
+      await read(child, `${path}/${child.name}`, false);
+  };
+  for (const root of roots) await read(root, root.name, true);
+  return entries;
+}
+
+const isSkippedFolder = (name: string) => name === "node_modules" || name.startsWith(".");
+
+const fileOf = (entry: DroppedFileEntry) => new Promise<ImportFile>((resolve, reject) => entry.file(resolve, reject));
+
+// readEntries answers a folder's entries in batches, so it is called until it answers none.
+async function childrenOf(entry: DroppedDirectoryEntry): Promise<DroppedEntry[]> {
+  const reader = entry.createReader();
+  const children: DroppedEntry[] = [];
+  for (;;) {
+    const batch = await new Promise<DroppedEntry[]>((resolve, reject) => reader.readEntries(resolve, reject));
+    if (batch.length === 0) return children;
+    children.push(...batch);
+  }
 }
