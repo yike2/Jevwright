@@ -244,6 +244,8 @@ With `screenshotEveryStep`, Core's passed steps carry a `screenshot` too, in the
 
 ### 3.3 Database
 
+The full ER diagram, with every column, is [`docs/archify/jevwright-database/`](../archify/jevwright-database/index.html) ([online](https://yike2.github.io/Jevwright/archify/jevwright-database/)).
+
 ```mermaid
 erDiagram
   User ||--o{ Project : owns
@@ -254,6 +256,7 @@ erDiagram
   Folder ||--o{ Folder : holds
   Folder |o--o{ TestFile : holds
   TestFile |o--o{ Run : "ran as"
+  Project |o--o{ Run : "ran in"
   User { uuid id PK; string email UK; string passwordHash; datetime createdAt }
   Project { uuid id PK; uuid userId FK; string name; datetime createdAt; datetime updatedAt }
   Variable { uuid id PK; uuid projectId FK; string name; string value }

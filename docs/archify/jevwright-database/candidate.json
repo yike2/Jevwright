@@ -1,0 +1,466 @@
+{
+  "schema_version": 1,
+  "diagram_type": "erd",
+  "meta": {
+    "title": "Jevwright Database Schema",
+    "locale": "en",
+    "output": "docs/archify/jevwright-database/index.html",
+    "quality_profile": "showcase",
+    "visual_preset": "editorial",
+    "repository": {
+      "url": "https://github.com/yike2/Jevwright.git",
+      "provider": "github",
+      "link_mode": "web",
+      "revision": "bde86bb13ca200ab1bb9f686cba5c8530fc3230b"
+    }
+  },
+  "layout": {
+    "mode": "grid",
+    "gapX": 96,
+    "gapY": 56
+  },
+  "entities": [
+    {
+      "id": "variable",
+      "label": "Variable",
+      "sublabel": "unique (projectId, name)",
+      "tag": "project",
+      "row": 0,
+      "col": 0,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "key": "pk"
+        },
+        {
+          "name": "projectId",
+          "type": "uuid",
+          "key": [
+            "fk",
+            "uk"
+          ],
+          "references": "project.id"
+        },
+        {
+          "name": "name",
+          "type": "text",
+          "key": "uk"
+        },
+        {
+          "name": "value",
+          "type": "text"
+        }
+      ],
+      "sources": [
+        {
+          "path": "src/app/backend/prisma/schema.prisma",
+          "line": 36,
+          "end_line": 44,
+          "label": "model Variable"
+        }
+      ]
+    },
+    {
+      "id": "project",
+      "label": "Project",
+      "sublabel": "unique (userId, name)",
+      "tag": "project",
+      "row": 0,
+      "col": 1,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "key": "pk"
+        },
+        {
+          "name": "userId",
+          "type": "uuid",
+          "key": [
+            "fk",
+            "uk"
+          ],
+          "references": "user.id"
+        },
+        {
+          "name": "name",
+          "type": "text",
+          "key": "uk"
+        },
+        {
+          "name": "createdAt",
+          "type": "timestamp(3) default now"
+        },
+        {
+          "name": "updatedAt",
+          "type": "timestamp(3) @updatedAt"
+        }
+      ],
+      "sources": [
+        {
+          "path": "src/app/backend/prisma/schema.prisma",
+          "line": 21,
+          "end_line": 34,
+          "label": "model Project"
+        }
+      ],
+      "width": 300
+    },
+    {
+      "id": "folder",
+      "label": "Folder",
+      "sublabel": "parentId: subfolder of Folder.id, cascade \u00b7 unique (projectId, parentId, name) NULLS NOT DISTINCT",
+      "tag": "files",
+      "row": 0,
+      "col": 2,
+      "width": 300,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "key": "pk"
+        },
+        {
+          "name": "projectId",
+          "type": "uuid",
+          "key": [
+            "fk",
+            "uk"
+          ],
+          "references": "project.id"
+        },
+        {
+          "name": "parentId",
+          "type": "uuid null",
+          "key": [
+            "fk",
+            "uk"
+          ],
+          "references": "folder.id"
+        },
+        {
+          "name": "name",
+          "type": "text",
+          "key": "uk"
+        },
+        {
+          "name": "createdAt",
+          "type": "timestamp(3) default now"
+        },
+        {
+          "name": "updatedAt",
+          "type": "timestamp(3) @updatedAt"
+        }
+      ],
+      "sources": [
+        {
+          "path": "src/app/backend/prisma/schema.prisma",
+          "line": 46,
+          "end_line": 62,
+          "label": "model Folder"
+        },
+        {
+          "path": "src/app/backend/prisma/migrations/20261115120000_folders/migration.sql",
+          "line": 56,
+          "end_line": 57,
+          "label": "unique NULLS NOT DISTINCT"
+        }
+      ]
+    },
+    {
+      "id": "user",
+      "label": "User",
+      "tag": "accounts",
+      "row": 1,
+      "col": 0,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "key": "pk"
+        },
+        {
+          "name": "email",
+          "type": "text",
+          "key": "uk"
+        },
+        {
+          "name": "passwordHash",
+          "type": "text"
+        },
+        {
+          "name": "createdAt",
+          "type": "timestamp(3) default now"
+        }
+      ],
+      "sources": [
+        {
+          "path": "src/app/backend/prisma/schema.prisma",
+          "line": 12,
+          "end_line": 19,
+          "label": "model User"
+        }
+      ],
+      "width": 280
+    },
+    {
+      "id": "run",
+      "label": "Run",
+      "sublabel": "index (testFileId, createdAt), (projectId, createdAt), (status) \u00b7 screenshots and traces in RUNS_DIR/<runId>/, not here",
+      "tag": "runs",
+      "row": 1,
+      "col": 1,
+      "width": 300,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "key": "pk"
+        },
+        {
+          "name": "userId",
+          "type": "uuid",
+          "key": "fk",
+          "references": "user.id"
+        },
+        {
+          "name": "testFileId",
+          "type": "uuid null",
+          "key": "fk",
+          "references": "testfile.id"
+        },
+        {
+          "name": "projectId",
+          "type": "uuid null",
+          "key": "fk",
+          "references": "project.id"
+        },
+        {
+          "name": "fileName",
+          "type": "text"
+        },
+        {
+          "name": "path",
+          "type": "text (path in Project)"
+        },
+        {
+          "name": "name",
+          "type": "text"
+        },
+        {
+          "name": "source",
+          "type": "text (copied YAML)"
+        },
+        {
+          "name": "status",
+          "type": "RunStatus default queued"
+        },
+        {
+          "name": "createdAt",
+          "type": "timestamp(3) default now"
+        },
+        {
+          "name": "startedAt",
+          "type": "timestamp(3) null"
+        },
+        {
+          "name": "finishedAt",
+          "type": "timestamp(3) null"
+        },
+        {
+          "name": "durationMs",
+          "type": "integer null"
+        },
+        {
+          "name": "total",
+          "type": "integer null"
+        },
+        {
+          "name": "passed",
+          "type": "integer null"
+        },
+        {
+          "name": "failed",
+          "type": "integer null"
+        },
+        {
+          "name": "pending",
+          "type": "integer null"
+        },
+        {
+          "name": "errorKind",
+          "type": "text null"
+        },
+        {
+          "name": "errorMessage",
+          "type": "text null"
+        },
+        {
+          "name": "report",
+          "type": "jsonb null"
+        }
+      ],
+      "sources": [
+        {
+          "path": "src/app/backend/prisma/schema.prisma",
+          "line": 81,
+          "end_line": 117,
+          "label": "enum RunStatus, model Run"
+        },
+        {
+          "path": "src/app/backend/src/runs/execute-run.ts",
+          "line": 87,
+          "end_line": 102,
+          "label": "Run Files written to RUNS_DIR"
+        }
+      ]
+    },
+    {
+      "id": "testfile",
+      "label": "TestFile",
+      "sublabel": "unique (projectId, folderId, name) NULLS NOT DISTINCT",
+      "tag": "files",
+      "row": 1,
+      "col": 2,
+      "width": 300,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "key": "pk"
+        },
+        {
+          "name": "projectId",
+          "type": "uuid",
+          "key": [
+            "fk",
+            "uk"
+          ],
+          "references": "project.id"
+        },
+        {
+          "name": "folderId",
+          "type": "uuid null",
+          "key": [
+            "fk",
+            "uk"
+          ],
+          "references": "folder.id"
+        },
+        {
+          "name": "name",
+          "type": "text",
+          "key": "uk"
+        },
+        {
+          "name": "source",
+          "type": "text (YAML)"
+        },
+        {
+          "name": "createdAt",
+          "type": "timestamp(3) default now"
+        },
+        {
+          "name": "updatedAt",
+          "type": "timestamp(3) @updatedAt"
+        }
+      ],
+      "sources": [
+        {
+          "path": "src/app/backend/prisma/schema.prisma",
+          "line": 64,
+          "end_line": 79,
+          "label": "model TestFile"
+        },
+        {
+          "path": "src/app/backend/prisma/migrations/20261115120000_folders/migration.sql",
+          "line": 59,
+          "end_line": 60,
+          "label": "unique NULLS NOT DISTINCT"
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "project_user",
+      "from": "project",
+      "to": "user",
+      "label": "owns \u00b7 cascade",
+      "fromCardinality": "many",
+      "fromOptional": true,
+      "toCardinality": "one"
+    },
+    {
+      "id": "variable_project",
+      "from": "variable",
+      "to": "project",
+      "label": "cascade",
+      "fromCardinality": "many",
+      "fromOptional": true,
+      "toCardinality": "one"
+    },
+    {
+      "id": "folder_project",
+      "from": "folder",
+      "to": "project",
+      "label": "cascade",
+      "fromCardinality": "many",
+      "fromOptional": true,
+      "toCardinality": "one"
+    },
+    {
+      "id": "testfile_project",
+      "from": "testfile",
+      "to": "project",
+      "label": "cascade",
+      "fromCardinality": "many",
+      "fromOptional": true,
+      "toCardinality": "one"
+    },
+    {
+      "id": "testfile_folder",
+      "from": "testfile",
+      "to": "folder",
+      "label": "cascade",
+      "fromCardinality": "many",
+      "fromOptional": true,
+      "toCardinality": "one",
+      "toOptional": true
+    },
+    {
+      "id": "run_user",
+      "from": "run",
+      "to": "user",
+      "label": "triggered by \u00b7 cascade",
+      "fromCardinality": "many",
+      "fromOptional": true,
+      "toCardinality": "one"
+    },
+    {
+      "id": "run_testfile",
+      "from": "run",
+      "to": "testfile",
+      "label": "set null",
+      "fromCardinality": "many",
+      "fromOptional": true,
+      "toCardinality": "one",
+      "toOptional": true,
+      "identifying": false,
+      "variant": "dashed"
+    },
+    {
+      "id": "run_project",
+      "from": "run",
+      "to": "project",
+      "label": "set null",
+      "fromCardinality": "many",
+      "fromOptional": true,
+      "toCardinality": "one",
+      "toOptional": true,
+      "identifying": false,
+      "variant": "dashed"
+    }
+  ]
+}

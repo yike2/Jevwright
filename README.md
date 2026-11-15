@@ -34,7 +34,7 @@ Merging to `main` deploys the app automatically; see [Deployment and CI/CD](#dep
 | --- | --- |
 | Layered architecture | [docs/archify/jevwright-architecture/index.html](docs/archify/jevwright-architecture/index.html) (open in a browser) |
 | Run sequence | [docs/archify/jevwright-sequence/index.html](docs/archify/jevwright-sequence/index.html) |
-| Database schema (ER diagram) | [docs/tech/backend.md](docs/tech/backend.md), section 3.3 |
+| Database schema (ER diagram) | [docs/archify/jevwright-database/index.html](docs/archify/jevwright-database/index.html); tables and keys in [docs/tech/backend.md](docs/tech/backend.md), section 3.3 |
 
 In short: the **Core** (`src/core`) parses a test file, drives Chromium through Playwright, locates elements (selector → Jev Visual Locate → Jev DOM Locate), judges assertions, and writes a report. The **CLI** (`src/cli`) and the **Backend** (`src/app/backend`, Express + PostgreSQL via Prisma) both run tests through the Core. The **Frontend** (`src/app/frontend`, Next.js + Tailwind CSS) talks only to the Backend's REST API and WebSocket.
 
