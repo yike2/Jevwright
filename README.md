@@ -151,12 +151,14 @@ Production runs on one VPS with Docker Compose: PostgreSQL, the backend, a brows
 
 | Document | Contents |
 | --- | --- |
+| [docs/submission.md](docs/submission.md) | Project 2 deliverables and where to find each one |
 | [docs/PRD.md](docs/PRD.md) | Product requirements, user stories, MoSCoW priorities |
 | [docs/api/openapi.json](docs/api/openapi.json) | OpenAPI specification of the REST API |
 | [docs/tech/](docs/tech/) | One design document per module: [syntax-analyzer](docs/tech/syntax-analyzer.md), [jev-harness](docs/tech/jev-harness.md), [locator](docs/tech/locator.md), [asserter](docs/tech/asserter.md), [executor](docs/tech/executor.md), [browser-adapter](docs/tech/browser-adapter.md), [report](docs/tech/report.md), [pipeline](docs/tech/pipeline.md), [cli](docs/tech/cli.md), [backend](docs/tech/backend.md), [frontend](docs/tech/frontend.md), [design-system](docs/tech/design-system.md), [e2e](docs/tech/e2e.md), [benchmark](docs/tech/benchmark.md) |
 | [docs/deploy/](docs/deploy/) | Setup and deployment guides (see above) |
 | [docs/sprints/](docs/sprints/) | Sprint retrospectives |
 | [docs/contributions.md](docs/contributions.md) | Partner contribution log |
+| [docs/reflections/](docs/reflections/) | Individual reflections |
 | [AGENTS.md](AGENTS.md) | Shared rules for the AI coding assistant and for us |
 
 ## AI-assisted development
