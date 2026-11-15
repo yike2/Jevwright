@@ -759,11 +759,11 @@ Covers US-4.3.3. Pre: S1, S2.
 
 Expected: the sidebar's messages say `Imported 2 test files. 1 skipped:` and list `sign in.yaml: Use only letters, digits, -, _ and ., with no spaces.`; `sign-in.yaml` and `checkout.yaml` are in `Demo Shop`; no file opens.
 
-#### TC-ED-10 Headers, cookies, and storage errors — P2, Manual
+#### TC-ED-22 Headers, cookies, and storage errors — P2, Manual
 
 Covers US-4.3.1. Pre: S1, S2, a new Test File. Automated at Core level by the Syntax Analyzer fixtures (`syntax-analyzer.md` 5).
 
-1. Paste this source; click **Validate**:
+1. Paste this source; click **Save**:
 
    ```yaml
    name: "State errors"
