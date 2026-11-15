@@ -6,7 +6,7 @@ Every pull request and every push to `main` runs the CI workflow in `.github/wor
 
 | Stage | Jobs | Runs on | Starts after |
 | ----- | ---- | ------- | ------------ |
-| 1. Checks | Typecheck; Lint (ESLint and Prettier); Unit tests; Locator integration tests; Integration tests; Backend integration tests (with a Postgres service); Security scan (`pnpm audit --audit-level=high`) | Every PR and push to `main` | — |
+| 1. Checks | Typecheck; Lint (ESLint and Prettier); Unit tests; Locator integration tests; Integration tests; Backend integration tests (with a Postgres service); User guide is up to date (`pnpm docs:build`, then fails when `docs/guide/` differs from the build); Security scan (`pnpm audit --audit-level=high`) | Every PR and push to `main` | — |
 | 2. Build | Frontend build (`next build`) | Every PR and push to `main` | Typecheck, Lint, Unit tests |
 | 3. E2E | Playwright E2E suite (`docs/testing/test-cases.md`) against the built frontend (`next start`), the backend, the local Demo App, and a Postgres service | Every PR and push to `main` | Frontend build |
 | 4. Deploy | Deploy preview: the PR's commit to the preview environment (4) | PRs from branches of this repository | Every test job in stages 1–3 |

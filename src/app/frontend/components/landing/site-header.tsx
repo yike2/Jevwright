@@ -8,7 +8,8 @@ import { buttonVariants } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { BrandMark } from "@/components/landing/brand-mark";
 
-export const DOCS_URL = "https://yike2.github.io/Jevwright/";
+// Docs is the user guide (docs/guide-src/), built into GitHub Pages.
+export const DOCS_URL = "https://yike2.github.io/Jevwright/guide/";
 export const API_URL = "https://yike2.github.io/Jevwright/api/";
 export const REPO_URL = "https://github.com/yike2/Jevwright";
 

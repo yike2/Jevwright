@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Eye, RotateCcw } from "lucide-react";
 import { cn } from "cn";
-import type { ReplayRun } from "@/lib/landing";
+import { replayBadge, type ReplayRun } from "@/lib/landing";
 import { formatDuration, stepStatusLabel } from "@/lib/runs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,7 @@ const STEP_MS = 650;
 const prefersReducedMotion = () =>
   typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-/** The real Runs of REPLAY_RUNS, one tab each (frontend.md 1.14). */
+/** The real Runs of REPLAY_RUNS, one tab each, opening on the first (frontend.md 1.14). */
 export function RunReplay({ runs }: { runs: ReplayRun[] }) {
   return (
     <section aria-label="Run replay" className="rounded-xl bg-card p-3 ring-1 ring-foreground/10 sm:p-4">
@@ -113,7 +113,7 @@ function Replay({ run }: { run: ReplayRun }) {
         <ol aria-label="Replay steps" className="divide-y rounded-lg border">
           {steps.map((step, index) => {
             const status = index < done ? step.status : index === done && playing ? "running" : "pending";
-            const method = "locateMethod" in step ? step.locateMethod : undefined;
+            const badge = replayBadge(run, step);
             return (
               <li key={step.index}>
                 <button
@@ -133,7 +133,7 @@ function Replay({ run }: { run: ReplayRun }) {
                   <span className={status === "pending" ? "text-muted-foreground" : undefined}>
                     {stepStatusLabel(status)}
                   </span>
-                  {index < done && method && <Badge variant={method === "selector" ? "muted" : "info"}>{method}</Badge>}
+                  {index < done && badge && <Badge variant="info">{badge}</Badge>}
                   {index < done && "durationMs" in step && (
                     <span className="ml-auto text-xs text-muted-foreground">{formatDuration(step.durationMs)}</span>
                   )}

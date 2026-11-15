@@ -1,0 +1,22 @@
+# No stable selectors: Jev finds the elements from their descriptions and judges statements about the page.
+name: "Search by description"
+description: "Searching shows matching results"
+baseUrl: "https://shop.example.com"
+steps:
+  - open:
+      url: "/"
+  - click:
+      target: "Search icon in the header"
+  - input:
+      target: "Search field that opened in the header"
+      value: "backpack"
+  - press:
+      key: "Enter"
+  - waitFor:
+      condition: "Search results are shown"
+  - assert:
+      statement: "At least one result mentions a backpack"
+  - assert:
+      selector: ".result-count"
+      text: "results"
+      statement: "The page says how many results were found"

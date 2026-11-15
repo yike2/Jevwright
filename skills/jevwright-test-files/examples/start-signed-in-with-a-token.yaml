@@ -1,0 +1,21 @@
+# Skips the sign-in page of a single-page app: an API token in a header and the app's token in localStorage.
+name: "Dashboard, signed in"
+description: "A signed-in user sees the dashboard"
+baseUrl: "https://app.example.com"
+headers:
+  Authorization: "Bearer {{API_TOKEN}}"
+localStorage:
+  authToken: "{{API_TOKEN}}"
+  onboardingDone: "true"
+sessionStorage:
+  tabId: "e2e"
+timeoutMs: 20000
+steps:
+  - open:
+      url: "/dashboard"
+  - waitFor:
+      selector: "#dashboard"
+  - assert:
+      url: "**/dashboard"
+  - assert:
+      statement: "The dashboard shows the signed-in user's name in the header"

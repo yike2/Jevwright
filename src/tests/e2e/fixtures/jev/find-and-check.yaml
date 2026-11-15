@@ -1,0 +1,25 @@
+# Expect: passed, 8/8; Jev locates steps 2-3 ("visual" or "dom", step 3 usually "dom") and judges step 8's statement
+# The Demo App keeps the signed-in user in the session-username cookie, so setting it skips the sign-in page.
+name: "Find and check with Jev"
+description: "Jev finds one button on the screenshot, one by its name in the page, and judges the cart"
+baseUrl: "{{BASE}}"
+cookies:
+  session-username: "standard_user"
+steps:
+  - open:
+      url: "/inventory.html"
+  - click:
+      target: "'Add to cart' button of the Sauce Labs Backpack"
+  - click:
+      target: "'View details' button of the Test.allTheThings() T-Shirt (Red)"
+  - assert:
+      selector: '[data-test="inventory-item-name"]'
+      text: "Test.allTheThings() T-Shirt (Red)"
+  - click:
+      selector: '[data-test="add-to-cart"]'
+  - click:
+      selector: '[data-test="shopping-cart-link"]'
+  - waitFor:
+      url: "**/cart.html"
+  - assert:
+      statement: "The cart lists two items, the Sauce Labs Backpack and the Test.allTheThings() T-Shirt (Red), each with a price"

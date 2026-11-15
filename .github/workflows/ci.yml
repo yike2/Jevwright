@@ -217,6 +217,39 @@ jobs:
       - name: Audit dependencies
         run: pnpm audit --audit-level=high
 
+  guide:
+    name: User guide is up to date
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build the user guide
+        run: pnpm docs:build
+
+      # docs/guide/ is committed so GitHub Pages serves it from main's /docs; it must be the build of docs/guide-src/.
+      - name: Check docs/guide/ matches its sources
+        run: |
+          if [ -n "$(git status --porcelain -- docs/guide)" ]; then
+            git status --short -- docs/guide
+            echo "::error::docs/guide/ is out of date with docs/guide-src/. Run pnpm docs:build and commit docs/guide/."
+            exit 1
+          fi
+
   frontend-build:
     name: Frontend build
     runs-on: ubuntu-latest
@@ -319,6 +352,7 @@ jobs:
       - locator-integration-tests
       - integration-tests
       - backend-integration-tests
+      - guide
       - e2e
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     timeout-minutes: 20
@@ -386,6 +420,7 @@ jobs:
       - locator-integration-tests
       - integration-tests
       - backend-integration-tests
+      - guide
       - e2e
     # Forks get no secrets, so only branches of this repository are previewed.
     if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository

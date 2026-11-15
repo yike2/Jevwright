@@ -2,50 +2,28 @@ import Link from "next/link";
 import { CircleAlert, GitBranch } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BrandMark } from "@/components/landing/brand-mark";
-import { CopyCommand } from "@/components/landing/copy-command";
 import { Flow } from "@/components/landing/flow";
 import { RunReplay } from "@/components/landing/run-replay";
 import { API_URL, DOCS_URL, REPO_URL, SiteHeader } from "@/components/landing/site-header";
+import { StartButton } from "@/components/landing/start-button";
 import { StatusBadge } from "@/components/workspace/status-badge";
-import { COMMAND, QUICK_START_FOLDERS, REPLAY_RUNS, RUN_RECEIPT, STATS, VALIDATE_RECEIPT } from "@/lib/landing";
+import {
+  CHOICES,
+  DEBUG_RECEIPT,
+  DEMO_APP_URL,
+  FIXES,
+  LOCATED_STEP,
+  OUTPUT_RECEIPT,
+  QUICK_START_FILES,
+  QUICK_START_FOLDERS,
+  REPLAY_RUNS,
+  STATS,
+} from "@/lib/landing";
 
 const ARCHITECTURE_URL = "https://yike2.github.io/Jevwright/archify/jevwright-architecture/";
 const SEQUENCE_URL = "https://yike2.github.io/Jevwright/archify/jevwright-sequence/";
-
-const FIXES = [
-  {
-    problem: "A redesign renames classes and ids",
-    before: "Selector-only steps fail until someone edits them.",
-    after:
-      'Steps that also have a target, such as "the green Login button", fall back to it. The report shows which method worked; the file stays as written.',
-  },
-  {
-    problem: "Elements without stable test ids",
-    before: "Third-party widgets and generated markup need long, fragile selectors.",
-    after: "Describe the element in words with target, and Jev finds it on the page.",
-  },
-  {
-    problem: "Checks that are hard to write as a selector",
-    before: '"The cart lists two items with prices" becomes several brittle text checks.',
-    after: "Write it as a statement. Playwright checks the selector first when there is one, and Jev judges the rest.",
-  },
-  {
-    problem: "Tests written by an agent or a newcomer",
-    before: "A typo shows up in the middle of a browser run.",
-    after:
-      "Validation lists every problem with its line before anything runs, and planning keys such as aiAct are refused.",
-  },
-];
-
-const CHOICES = [
-  ["A stable selector exists", "selector", "Fast, free and deterministic; Jev is never called."],
-  ["No reliable selector, or the UI changes often", "target", "Jev finds the element from your words."],
-  ["You want speed and resilience", "selector + target", "The selector goes first; Jev only when it matches nothing."],
-  ["Exact text, URL or visibility", "assert with selector, text or url", "A Playwright check, fast and repeatable."],
-  ["Meaning or layout in words", "assert with statement", "Jev judges the statement from a screenshot."],
-];
+const QUICK_START_GUIDE_URL = `${DOCS_URL}guide/quick-start.html`;
 
 const FAQ = [
   [
@@ -64,10 +42,10 @@ const FAQ = [
     "What does Jev cost?",
     "Each Jev call takes a few seconds and a little money through OpenRouter, and its answers can vary from Run to Run. That is why Playwright always goes first, why a locating answer below 0.7 confidence counts as no answer, and why a statement holds only when Jev rates it 0.8 or higher.",
   ],
-  ["Which browsers does it run?", "Chromium, through Playwright, on the server and with the CLI."],
+  ["Which browsers does it run?", "Chromium, through Playwright, on the Jevwright server."],
   [
-    "Can a Run on the server test a site on my private network?",
-    "No. Runs on the server reach public addresses only; local and private addresses are blocked. Run those tests with the CLI on your own machine.",
+    "Can a Run test a site on my private network?",
+    "No. Runs on the server reach public addresses only; localhost and private addresses are blocked. Put the app, or a preview of it, on a public domain, and start signed in with a cookie or a token when it has a sign-in.",
   ],
 ];
 
@@ -106,6 +84,17 @@ function Section({
   );
 }
 
+function Code({ label, text }: { label: string; text: string }) {
+  return (
+    <pre
+      aria-label={label}
+      className="overflow-x-auto rounded-lg border bg-code p-3 font-mono text-xs leading-relaxed text-code-foreground"
+    >
+      <code>{text}</code>
+    </pre>
+  );
+}
+
 function Receipt({ label, text }: { label: string; text: string }) {
   return (
     <pre
@@ -119,8 +108,6 @@ function Receipt({ label, text }: { label: string; text: string }) {
 
 /** The product page at / (frontend.md 1.14): a server component apart from the header, the replay and the copy button. */
 export default function LandingPage() {
-  const fallbackStep = REPLAY_RUNS[1]?.report.steps[3];
-
   return (
     <div className="flex min-h-screen flex-col">
       <SiteHeader />
@@ -147,16 +134,13 @@ export default function LandingPage() {
                 See a real Run
               </a>
             </div>
-            <div className="max-w-xl">
-              <CopyCommand command={COMMAND} />
-            </div>
           </div>
         </section>
 
         <Section
           id="real-run"
           title="A real Run, not a screenshot"
-          lead="Two Quick Start files ran on the Jevwright server against the Demo App; these are their reports and step screenshots, replayed. The second one called Jev."
+          lead="Three Quick Start files ran on the Jevwright server against the Demo App; these are their reports and step screenshots, replayed. The first two called Jev, and only the steps where Jev did the work are marked: AI locate when Jev found the element, AI assert when Jev judged a statement."
           tinted
         >
           <RunReplay runs={REPLAY_RUNS} />
@@ -215,22 +199,31 @@ export default function LandingPage() {
           </div>
         </Section>
 
-        <Section id="fixes" index="02" title="What does it fix?" tinted>
-          <div className="grid gap-4 md:grid-cols-2">
+        <Section
+          id="fixes"
+          index="02"
+          title="What does it fix?"
+          lead="The same step in Playwright and in Jevwright, side by side."
+          tinted
+        >
+          <div className="space-y-6">
             {FIXES.map((fix) => (
               <Card key={fix.problem}>
                 <CardHeader>
                   <h3 className="font-heading text-base font-semibold">{fix.problem}</h3>
                 </CardHeader>
-                <CardContent className="space-y-2">
-                  <p>
-                    <span className="font-medium text-destructive">Before: </span>
-                    <span className="text-muted-foreground">{fix.before}</span>
-                  </p>
-                  <p>
-                    <span className="font-medium text-success">After: </span>
-                    {fix.after}
-                  </p>
+                <CardContent className="space-y-3">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <figure className="min-w-0 space-y-1">
+                      <figcaption className="text-xs font-medium text-muted-foreground">Playwright</figcaption>
+                      <Code label={`${fix.problem}: Playwright`} text={fix.playwright} />
+                    </figure>
+                    <figure className="min-w-0 space-y-1">
+                      <figcaption className="text-xs font-medium text-muted-foreground">Jevwright</figcaption>
+                      <Code label={`${fix.problem}: Jevwright`} text={fix.jevwright} />
+                    </figure>
+                  </div>
+                  <p className="text-muted-foreground">{fix.note}</p>
                 </CardContent>
               </Card>
             ))}
@@ -243,46 +236,38 @@ export default function LandingPage() {
           title="Which should I write?"
           lead="Jev calls cost a little time and money, and their answers can vary, so use them where a selector cannot do the job."
         >
-          <div className="overflow-x-auto rounded-xl ring-1 ring-foreground/10">
-            <table className="w-full min-w-[36rem] text-left">
-              <thead className="bg-muted text-muted-foreground">
-                <tr>
-                  <th scope="col" className="px-3 py-2 font-medium">
-                    When
-                  </th>
-                  <th scope="col" className="px-3 py-2 font-medium">
-                    Write
-                  </th>
-                  <th scope="col" className="px-3 py-2 font-medium">
-                    Why
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y bg-card">
-                {CHOICES.map(([when, write, why]) => (
-                  <tr key={when}>
-                    <td className="px-3 py-2">{when}</td>
-                    <td className="px-3 py-2 font-mono text-[0.8125rem]">{write}</td>
-                    <td className="px-3 py-2 text-muted-foreground">{why}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ul className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {CHOICES.map((choice) => (
+              <li
+                key={choice.write}
+                className="flex min-w-0 flex-col gap-2 rounded-xl bg-card p-4 ring-1 ring-foreground/10"
+              >
+                <p className="font-medium">{choice.when}</p>
+                <p>
+                  <span className="text-muted-foreground">Write </span>
+                  <span className="font-mono text-[0.8125rem]">{choice.write}</span>
+                </p>
+                <p className="text-muted-foreground">{choice.why}</p>
+                <div className="mt-auto">
+                  <Code label={`Example: ${choice.write}`} text={choice.yaml} />
+                </div>
+              </li>
+            ))}
+          </ul>
         </Section>
 
         <Section
           id="architecture"
           index="04"
           title="What runs where?"
-          lead="One Core runs every test, whether it starts in the web app, the command line or the REST API."
+          lead="One Core runs every test you start in the web workspace, on the Jevwright server."
           tinted
         >
           <figure className="space-y-3">
             <Flow
               label="How the parts fit together"
               nodes={[
-                { title: "Web app, CLI, REST API", detail: "Where a Run starts" },
+                { title: "Web workspace", detail: "Where you write and run tests" },
                 {
                   title: "Core",
                   detail: "Validates the file, runs the steps, locates, asserts, writes the report",
@@ -314,31 +299,34 @@ export default function LandingPage() {
         <Section
           id="checked"
           title="Checked before it runs"
-          lead="Real output of the command line, and the same states in the web app."
+          lead="Real output of the web workspace for three Quick Start files."
         >
-          <ol className="grid gap-6 lg:grid-cols-3">
-            <li className="min-w-0 space-y-3">
+          <ol className="grid gap-x-6 gap-y-3 lg:grid-cols-3 lg:grid-rows-[auto_auto_1fr_auto]">
+            {/* Each step spans the parent's four rows (subgrid), so headings, texts, code and states line up. */}
+            <li className="grid min-w-0 gap-3 lg:row-span-4 lg:grid-rows-subgrid">
               <h3 className="font-heading text-base font-semibold">1. Validate</h3>
               <p className="text-muted-foreground">
-                Every problem at once, each with its line, before a browser starts.
+                Every problem at once, each with its line, in the Debug console as you type and save, before a browser
+                starts.
               </p>
-              <Receipt label="validate output" text={VALIDATE_RECEIPT} />
+              <Receipt label="Debug console" text={DEBUG_RECEIPT} />
               <p className="flex items-center gap-2 font-medium text-destructive">
-                <CircleAlert aria-hidden="true" className="size-4" />7 validation errors
+                <CircleAlert aria-hidden="true" className="size-4" />7 problems
               </p>
             </li>
-            <li className="min-w-0 space-y-3">
+            <li className="grid min-w-0 gap-3 lg:row-span-4 lg:grid-rows-subgrid">
               <h3 className="font-heading text-base font-semibold">2. Run</h3>
-              <p className="text-muted-foreground">Each step with its locate method and duration.</p>
-              <Receipt label="run output" text={RUN_RECEIPT} />
+              <p className="text-muted-foreground">Each step live in the Output console, with its line and status.</p>
+              <Receipt label="Output console" text={OUTPUT_RECEIPT} />
               <StatusBadge status="passed" label="Passed" />
             </li>
-            <li className="min-w-0 space-y-3">
+            <li className="grid min-w-0 gap-3 lg:row-span-4 lg:grid-rows-subgrid">
               <h3 className="font-heading text-base font-semibold">3. Report</h3>
               <p className="text-muted-foreground">
-                report.json, a Playwright trace and a screenshot per step. The step Jev located, from the report above:
+                A downloadable report.json, a Playwright trace and a screenshot per step. The step Jev located, from the
+                report above:
               </p>
-              <Receipt label="report step" text={JSON.stringify(fallbackStep, null, 2)} />
+              <Receipt label="report step" text={JSON.stringify(LOCATED_STEP, null, 2)} />
               <StatusBadge status="passed" label="Passed" />
             </li>
           </ol>
@@ -369,58 +357,58 @@ export default function LandingPage() {
           </div>
         </Section>
 
-        <Section id="start" title="Quick start">
-          <Tabs defaultValue="web">
-            <TabsList>
-              <TabsTrigger value="web">Web</TabsTrigger>
-              <TabsTrigger value="cli">CLI</TabsTrigger>
-            </TabsList>
-            <TabsContent value="web" className="pt-4">
-              <div className="grid gap-6 lg:grid-cols-2">
-                <ol className="space-y-3">
-                  <li>
-                    <span className="font-medium">1. Register.</span> Your account starts with a Quick Start project.
-                  </li>
-                  <li>
-                    <span className="font-medium">2. Open a file</span> in the sidebar and read its first three lines:
-                    what it does, what to expect, what to try.
-                  </li>
-                  <li>
-                    <span className="font-medium">3. Click Run</span> and follow the steps live.
-                  </li>
-                </ol>
-                <ul aria-label="Quick Start folders" className="divide-y rounded-lg border">
-                  {QUICK_START_FOLDERS.map((folder) => (
-                    <li key={folder.name} className="px-3 py-2">
-                      <p className="font-medium">{folder.name}</p>
-                      <p className="text-muted-foreground">{folder.teaches}</p>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </TabsContent>
-            <TabsContent value="cli" className="pt-4">
-              <ol className="space-y-4">
-                <li className="space-y-2">
-                  <p className="font-medium">1. Install, with Node.js 22 and pnpm</p>
-                  <Receipt
-                    label="install commands"
-                    text={
-                      "git clone https://github.com/yike2/Jevwright.git\ncd Jevwright\npnpm install\npnpm exec playwright install --with-deps chromium"
-                    }
-                  />
+        <Section
+          id="start"
+          title="Quick start"
+          lead="Try every feature on the Demo App, a small online shop we host, in the web workspace."
+        >
+          <div className="grid gap-6 lg:grid-cols-2">
+            <div className="space-y-4">
+              <ol className="space-y-3">
+                <li>
+                  <span className="font-medium">1. Register.</span> Your account starts with a Quick Start project,
+                  whose <code className="font-mono text-[0.8125rem]">BASE</code> Variable is already the Demo App,{" "}
+                  <span className="font-mono text-[0.8125rem] break-all">{DEMO_APP_URL}</span>. Its test users, such as{" "}
+                  <code className="font-mono text-[0.8125rem]">standard_user</code>, sign in with the password{" "}
+                  <code className="font-mono text-[0.8125rem]">secret_sauce</code>.
                 </li>
-                <li className="space-y-2">
-                  <p className="font-medium">2. Check a file without a browser</p>
-                  <Receipt label="validate command" text="pnpm jevwright validate tests/login.yaml" />
+                <li>
+                  <span className="font-medium">2. Open a file</span> in the sidebar and read its first three lines:
+                  what it does, what to expect, what to try.
                 </li>
-                <li className="space-y-2">
-                  <p className="font-medium">3. Run it; add --headed to watch the browser</p>
-                  <Receipt label="run command" text="pnpm jevwright run tests/login.yaml" />
+                <li>
+                  <span className="font-medium">3. Click Run</span> and follow the steps live, then open the report.
                 </li>
               </ol>
-            </TabsContent>
-          </Tabs>
+              <StartButton />
+              <p className="text-muted-foreground">
+                To test your own app, it must be on a public domain our server can reach, not localhost or a private
+                network, and a page behind a sign-in needs a cookie, a header or a storage entry with a session.{" "}
+                <a className="text-info underline underline-offset-4" href={QUICK_START_GUIDE_URL}>
+                  Read the Quick start guide
+                </a>
+                .
+              </p>
+            </div>
+            <div className="space-y-4">
+              <ul aria-label="Quick Start files" className="divide-y rounded-lg border">
+                {QUICK_START_FILES.map((file) => (
+                  <li key={file.file} className="px-3 py-2">
+                    <p className="font-medium">{file.feature}</p>
+                    <p className="font-mono text-[0.8125rem] break-all text-muted-foreground">{file.file}</p>
+                  </li>
+                ))}
+              </ul>
+              <ul aria-label="Quick Start folders" className="divide-y rounded-lg border">
+                {QUICK_START_FOLDERS.map((folder) => (
+                  <li key={folder.name} className="px-3 py-2">
+                    <p className="font-medium">{folder.name}</p>
+                    <p className="text-muted-foreground">{folder.teaches}</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
         </Section>
 
         <Section id="limits" title="What it is, and what it is not" tinted>
@@ -439,13 +427,13 @@ export default function LandingPage() {
             <h2 id="cta-heading" className="font-heading text-2xl font-semibold tracking-tight">
               Write the steps. Playwright runs them.
             </h2>
-            <div className="w-full max-w-xl">
-              <CopyCommand command={COMMAND} />
-            </div>
             <div className="flex flex-wrap gap-3">
               <Link href="/register" className={buttonVariants({ size: "lg" })}>
                 Get started
               </Link>
+              <a href={DOCS_URL} className={buttonVariants({ size: "lg", variant: "outline" })}>
+                Read the guide
+              </a>
               <a href={REPO_URL} className={buttonVariants({ size: "lg", variant: "outline" })}>
                 <GitBranch data-icon="inline-start" aria-hidden="true" />
                 GitHub

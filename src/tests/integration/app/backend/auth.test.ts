@@ -51,6 +51,7 @@ describeDb("auth routes", () => {
         "4 Jev - find and check by description",
         [
           "fall-back-from-a-stale-selector.yaml",
+          "find-and-check-with-jev.yaml",
           "find-elements-by-description.yaml",
           "judge-a-false-statement.yaml",
           "judge-a-true-statement.yaml",
