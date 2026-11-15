@@ -1,5 +1,16 @@
 import { expect, test, type Page } from "@playwright/test";
-import { alertsOf, editorOf, PASSWORD, QUICK_START, signUp, sourceOf, uniqueEmail, WORKSPACE } from "./support.js";
+import {
+  alertsOf,
+  createWorkspace,
+  editorOf,
+  PASSWORD,
+  QUICK_START,
+  sidebarOf,
+  signUp,
+  sourceOf,
+  uniqueEmail,
+  WORKSPACE,
+} from "./support.js";
 
 const ADD = "Add the Quick Start project";
 
@@ -16,13 +27,15 @@ test("TC-QS-01 a new account starts with the Quick Start project and runs its pa
 
   const overview = overviewOf(page);
   await expect(overview.getByRole("heading", { level: 2, name: QUICK_START, exact: true })).toBeVisible();
-  for (const module of [
+  // The four numbered folders of backend.md 1.10, in learning order.
+  await expect(overview.getByRole("heading", { level: 3 })).toHaveText([
     "1 Passing tests",
     "2 Failing tests - see why they fail",
     "3 Invalid files - fix the errors",
     "4 Jev - find and check by description",
-  ])
-    await expect(overview.getByRole("heading", { level: 3, name: module, exact: true })).toBeVisible();
+  ]);
+  await expect(overviewOf(page).getByRole("button", { name: ADD })).toHaveCount(0);
+  await expect(sidebarOf(page).getByRole("button", { name: ADD })).toHaveCount(0);
   await expect(overview.getByRole("link", { name: "seven-errors-at-once.yaml", exact: true })).toBeVisible();
   // The Jev examples are listed but never run here: pnpm test:e2e makes no Jev calls (AGENTS.md 5).
   await expect(overview.getByRole("link", { name: "find-elements-by-description.yaml", exact: true })).toBeVisible();
@@ -57,12 +70,36 @@ test("TC-QS-02 an empty workspace offers to add the Quick Start project", async 
 
 test("TC-QS-03 explains why the Quick Start project cannot be added twice", async ({ page }) => {
   const { api } = await signUp(page);
-  await api("POST", "/projects", { name: QUICK_START });
   await page.goto(WORKSPACE);
+  const add = overviewOf(page).getByRole("button", { name: ADD, exact: true });
+  await expect(add).toBeVisible();
+  // Another tab adds a project named Quick Start after this page loaded its tree.
+  await api("POST", "/projects", { name: QUICK_START });
 
-  await overviewOf(page).getByRole("button", { name: ADD, exact: true }).click();
+  await add.click();
 
   await expect(alertsOf(page)).toHaveText(
     "You already have a project named Quick Start. Rename or delete it, then add it again.",
   );
+});
+
+test("TC-QS-05 offers the Quick Start project whenever no project is named Quick Start", async ({ page }) => {
+  const { api } = await signUp(page);
+  await createWorkspace(api);
+  await page.goto(WORKSPACE);
+  const sidebar = sidebarOf(page);
+  await expect(overviewOf(page).getByRole("button", { name: ADD, exact: true })).toBeVisible();
+
+  await sidebar.getByRole("button", { name: ADD, exact: true }).click();
+
+  await expect(sidebar.getByText(QUICK_START, { exact: true })).toBeVisible();
+  await expect(sidebar.getByText("Demo Shop", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: ADD })).toHaveCount(0);
+
+  // Renamed, the project no longer counts as the Quick Start project, so the button is back.
+  const tree = await api<{ items: { id: string; name: string }[] }>("GET", "/tree");
+  const quickStart = tree.items.find((project) => project.name === QUICK_START)!;
+  await api("PATCH", `/projects/${quickStart.id}`, { name: "My examples" });
+  await page.reload();
+  await expect(sidebar.getByRole("button", { name: ADD, exact: true })).toBeVisible();
 });

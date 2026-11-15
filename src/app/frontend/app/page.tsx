@@ -9,7 +9,7 @@ import { Flow } from "@/components/landing/flow";
 import { RunReplay } from "@/components/landing/run-replay";
 import { API_URL, DOCS_URL, REPO_URL, SiteHeader } from "@/components/landing/site-header";
 import { StatusBadge } from "@/components/workspace/status-badge";
-import { COMMAND, QUICK_START_MODULES, REPLAY_RUNS, RUN_RECEIPT, STATS, VALIDATE_RECEIPT } from "@/lib/landing";
+import { COMMAND, QUICK_START_FOLDERS, REPLAY_RUNS, RUN_RECEIPT, STATS, VALIDATE_RECEIPT } from "@/lib/landing";
 
 const ARCHITECTURE_URL = "https://yike2.github.io/Jevwright/archify/jevwright-architecture/";
 const SEQUENCE_URL = "https://yike2.github.io/Jevwright/archify/jevwright-sequence/";
@@ -389,11 +389,11 @@ export default function LandingPage() {
                     <span className="font-medium">3. Click Run</span> and follow the steps live.
                   </li>
                 </ol>
-                <ul aria-label="Quick Start Modules" className="divide-y rounded-lg border">
-                  {QUICK_START_MODULES.map((module) => (
-                    <li key={module.name} className="px-3 py-2">
-                      <p className="font-medium">{module.name}</p>
-                      <p className="text-muted-foreground">{module.teaches}</p>
+                <ul aria-label="Quick Start folders" className="divide-y rounded-lg border">
+                  {QUICK_START_FOLDERS.map((folder) => (
+                    <li key={folder.name} className="px-3 py-2">
+                      <p className="font-medium">{folder.name}</p>
+                      <p className="text-muted-foreground">{folder.teaches}</p>
                     </li>
                   ))}
                 </ul>

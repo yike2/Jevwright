@@ -22,25 +22,37 @@ function normalizeRelative(filePath: string, cwd: string): string {
   return relative(cwd, filePath).split("\\").join("/");
 }
 
+// A directory search never enters these: dependencies, Git's data, and hidden directories such as .github.
+function isSkippedDirectory(name: string): boolean {
+  return name === "node_modules" || name.startsWith(".");
+}
+
 async function collectDirectoryFiles(
   dirPath: string,
   cwd: string,
   arg: string,
 ): Promise<{ ok: true; files: string[] } | { ok: false; error: string }> {
-  const entries = await readdir(dirPath, { recursive: true, withFileTypes: true });
   const files: string[] = [];
+  const pending = [dirPath];
 
-  for (const entry of entries) {
-    if (!entry.isFile() || !entry.name.endsWith(".yaml")) {
-      continue;
+  for (let dir = pending.pop(); dir !== undefined; dir = pending.pop()) {
+    for (const entry of await readdir(dir, { withFileTypes: true })) {
+      if (entry.isDirectory()) {
+        if (!isSkippedDirectory(entry.name)) pending.push(resolve(dir, entry.name));
+        continue;
+      }
+
+      if (!entry.isFile() || !entry.name.endsWith(".yaml")) {
+        continue;
+      }
+
+      const candidate = resolve(dir, entry.name);
+      if (!isInsideWorkingDirectory(candidate, cwd)) {
+        return { ok: false, error: `File is outside the working directory: ${arg}` };
+      }
+
+      files.push(normalizeRelative(candidate, cwd));
     }
-
-    const candidate = resolve(entry.parentPath, entry.name);
-    if (!isInsideWorkingDirectory(candidate, cwd)) {
-      return { ok: false, error: `File is outside the working directory: ${arg}` };
-    }
-
-    files.push(normalizeRelative(candidate, cwd));
   }
 
   return { ok: true, files };

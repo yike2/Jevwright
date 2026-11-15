@@ -1,165 +1,57 @@
 import { describe, expect, it } from "vitest";
 
-import type { TreeResponse } from "@/app/frontend/lib/api.js";
 import { overviewGroups } from "@/app/frontend/lib/overview.js";
+import { file, folder, inProject } from "./tree-builders.js";
 
 describe("overviewGroups", () => {
-  const tree: TreeResponse = {
+  // Shop: smoke.yaml, auth/ (login.yaml, session/ (expire.yaml)), empty/; Blog: nothing; Checkout: cart/ (add.yaml).
+  const tree = {
     items: [
-      {
-        id: "p-1",
-        name: "Shop",
-        createdAt: "2026-11-13T00:00:00.000Z",
-        updatedAt: "2026-11-13T00:00:00.000Z",
-        modules: [
-          {
-            id: "m-1",
-            projectId: "p-1",
-            name: "Auth",
-            createdAt: "2026-11-13T00:00:00.000Z",
-            updatedAt: "2026-11-13T00:00:00.000Z",
-            testFiles: [
-              {
-                id: "tf-1",
-                moduleId: "m-1",
-                name: "login.yaml",
-                createdAt: "2026-11-13T00:00:00.000Z",
-                updatedAt: "2026-11-13T00:00:00.000Z",
-                latestRun: null,
-              },
-            ],
-          },
-          {
-            id: "m-empty",
-            projectId: "p-1",
-            name: "Empty",
-            createdAt: "2026-11-13T00:00:00.000Z",
-            updatedAt: "2026-11-13T00:00:00.000Z",
-            testFiles: [],
-          },
+      inProject("p-1", "Shop", {
+        testFiles: [file("tf-smoke", "smoke.yaml")],
+        folders: [
+          folder("f-auth", "auth", {
+            testFiles: [file("tf-login", "login.yaml")],
+            folders: [folder("f-session", "session", { testFiles: [file("tf-expire", "expire.yaml")] })],
+          }),
+          folder("f-empty", "empty"),
         ],
-      },
-      {
-        id: "p-2",
-        name: "No Modules",
-        createdAt: "2026-11-13T00:00:00.000Z",
-        updatedAt: "2026-11-13T00:00:00.000Z",
-        modules: [],
-      },
-      {
-        id: "p-3",
-        name: "Checkout",
-        createdAt: "2026-11-13T00:00:00.000Z",
-        updatedAt: "2026-11-13T00:00:00.000Z",
-        modules: [
-          {
-            id: "m-3",
-            projectId: "p-3",
-            name: "Cart",
-            createdAt: "2026-11-13T00:00:00.000Z",
-            updatedAt: "2026-11-13T00:00:00.000Z",
-            testFiles: [
-              {
-                id: "tf-3",
-                moduleId: "m-3",
-                name: "cart.yaml",
-                createdAt: "2026-11-13T00:00:00.000Z",
-                updatedAt: "2026-11-13T00:00:00.000Z",
-                latestRun: null,
-              },
-              {
-                id: "tf-4",
-                moduleId: "m-3",
-                name: "checkout.yaml",
-                createdAt: "2026-11-13T00:00:00.000Z",
-                updatedAt: "2026-11-13T00:00:00.000Z",
-                latestRun: null,
-              },
-            ],
-          },
-        ],
-      },
+      }),
+      inProject("p-2", "Blog", { folders: [folder("f-drafts", "drafts")] }),
+      inProject("p-3", "Checkout", {
+        folders: [folder("f-cart", "cart", { testFiles: [file("tf-add", "add.yaml")] })],
+      }),
     ],
   };
 
-  it("keeps only projects/modules that contain test files and preserves API order", () => {
-    const actual = overviewGroups(tree);
+  it("groups each Project's Test Files by the folder they sit in, with the folder's path in the Project", () => {
+    const [shop] = overviewGroups(tree);
 
-    expect(actual).toEqual([
-      {
-        id: "p-1",
-        name: "Shop",
-        createdAt: "2026-11-13T00:00:00.000Z",
-        updatedAt: "2026-11-13T00:00:00.000Z",
-        modules: [
-          {
-            id: "m-1",
-            projectId: "p-1",
-            name: "Auth",
-            createdAt: "2026-11-13T00:00:00.000Z",
-            updatedAt: "2026-11-13T00:00:00.000Z",
-            testFiles: [
-              {
-                id: "tf-1",
-                moduleId: "m-1",
-                name: "login.yaml",
-                createdAt: "2026-11-13T00:00:00.000Z",
-                updatedAt: "2026-11-13T00:00:00.000Z",
-                latestRun: null,
-              },
-            ],
-          },
-        ],
-      },
-      {
-        id: "p-3",
-        name: "Checkout",
-        createdAt: "2026-11-13T00:00:00.000Z",
-        updatedAt: "2026-11-13T00:00:00.000Z",
-        modules: [
-          {
-            id: "m-3",
-            projectId: "p-3",
-            name: "Cart",
-            createdAt: "2026-11-13T00:00:00.000Z",
-            updatedAt: "2026-11-13T00:00:00.000Z",
-            testFiles: [
-              {
-                id: "tf-3",
-                moduleId: "m-3",
-                name: "cart.yaml",
-                createdAt: "2026-11-13T00:00:00.000Z",
-                updatedAt: "2026-11-13T00:00:00.000Z",
-                latestRun: null,
-              },
-              {
-                id: "tf-4",
-                moduleId: "m-3",
-                name: "checkout.yaml",
-                createdAt: "2026-11-13T00:00:00.000Z",
-                updatedAt: "2026-11-13T00:00:00.000Z",
-                latestRun: null,
-              },
-            ],
-          },
-        ],
-      },
+    expect(shop!.groups.map((group) => [group.path, group.testFiles.map((testFile) => testFile.id)])).toEqual([
+      ["", ["tf-smoke"]],
+      ["auth", ["tf-login"]],
+      ["auth/session", ["tf-expire"]],
     ]);
   });
 
-  it("returns no projects for an empty tree", () => {
-    const tree: TreeResponse = {
-      items: [],
-    };
+  it("keeps only folders and Projects that hold Test Files, in API order", () => {
+    const groups = overviewGroups(tree);
 
-    expect(overviewGroups(tree)).toEqual([]);
+    expect(groups.map((project) => project.name)).toEqual(["Shop", "Checkout"]);
+    expect(groups[1]!.groups.map((group) => group.path)).toEqual(["cart"]);
   });
 
-  it("does not mutate the input tree", () => {
-    const before = JSON.parse(JSON.stringify(tree));
+  it("keys each group by its folder, or by the Project for the files directly in it", () => {
+    const [shop] = overviewGroups(tree);
 
-    void overviewGroups(tree);
+    expect(shop!.groups.map((group) => group.id)).toEqual(["p-1", "f-auth", "f-session"]);
+  });
 
-    expect(tree).toEqual(before);
+  it("does not change the tree", () => {
+    const before = JSON.stringify(tree);
+
+    overviewGroups(tree);
+
+    expect(JSON.stringify(tree)).toBe(before);
   });
 });

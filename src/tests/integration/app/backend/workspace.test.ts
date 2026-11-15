@@ -16,6 +16,7 @@ steps:
 const MISSING_ID = "6f1c2a4e-9b3d-4c5e-8f7a-1b2c3d4e5f60";
 
 const timestamps = { createdAt: expect.any(String), updatedAt: expect.any(String) };
+const TOO_DEEP = "Folders can be at most 4 levels deep, counting the project.";
 
 describeDb("workspace routes", () => {
   const db = useTestDb("test_workspace");
@@ -36,30 +37,47 @@ describeDb("workspace routes", () => {
   }
   type Client = Awaited<ReturnType<typeof client>>;
 
+  // A Project "Shop" with a folder "Cart" holding add.yaml.
   async function workspace(as: Client) {
     const project = (await as.post("/projects", { name: "Shop" })).body;
-    const module = (await as.post(`/projects/${project.id}/modules`, { name: "Cart" })).body;
-    const saved = (await as.post(`/modules/${module.id}/test-files`, { name: "add.yaml", source: VALID })).body;
-    const { source: _source, ...testFile } = saved.testFile;
-    return { project, module, testFile };
+    const folder = (await as.post(`/projects/${project.id}/folders`, { name: "Cart" })).body;
+    const testFile = await addFile(as, project.id, folder.id, "add.yaml");
+    return { project, folder, testFile };
   }
 
-  async function addRun(
-    userId: string,
-    ids: { project: { id: string }; module: { id: string }; testFile: { id: string } },
-  ) {
+  // A Test File without its source, as lists and the tree answer it.
+  async function addFile(as: Client, projectId: string, folderId: string | null, name: string) {
+    const saved = (await as.post(`/projects/${projectId}/test-files`, { name, source: VALID, folderId })).body;
+    const { source: _source, ...testFile } = saved.testFile;
+    return testFile;
+  }
+
+  // Folders nested in each other from the Project down, e.g. ["a", "b"] for Project/a/b; answers the last one.
+  async function addFolders(as: Client, projectId: string, names: string[]) {
+    let parentId: string | null = null;
+    let folder = { id: "" };
+    for (const name of names) {
+      folder = (await as.post(`/projects/${projectId}/folders`, { name, parentId })).body;
+      parentId = folder.id;
+    }
+    return folder;
+  }
+
+  async function addRun(userId: string, ids: { project: { id: string }; testFile: { id: string } }) {
     return db().run.create({
       data: {
         userId,
         projectId: ids.project.id,
-        moduleId: ids.module.id,
         testFileId: ids.testFile.id,
         fileName: "add.yaml",
+        path: "Cart/add.yaml",
         name: "Add to cart",
         source: VALID,
       },
     });
   }
+
+  const names = (items: { name: string }[]) => items.map((item) => item.name);
 
   it("creates, lists, renames, and deletes a Project", async () => {
     const as = await client();
@@ -77,55 +95,238 @@ describeDb("workspace routes", () => {
     expect((await as.get("/projects")).body).toEqual({ items: [] });
   });
 
-  it("creates, lists, renames, and deletes a Module", async () => {
+  it("creates and lists a folder directly in a Project", async () => {
     const as = await client();
     const project = (await as.post("/projects", { name: "Shop" })).body;
 
-    const created = await as.post(`/projects/${project.id}/modules`, { name: "Cart" });
+    const created = await as.post(`/projects/${project.id}/folders`, { name: "  Cart  " });
+
     expect(created.status).toBe(201);
-    expect(created.body).toEqual({ id: expect.any(String), projectId: project.id, name: "Cart", ...timestamps });
-
-    const renamed = await as.patch(`/modules/${created.body.id}`, { name: "Basket" });
-    expect(renamed.status).toBe(200);
-    expect(renamed.body).toMatchObject({ id: created.body.id, name: "Basket" });
-
-    expect((await as.get(`/projects/${project.id}/modules`)).body).toEqual({ items: [renamed.body] });
-    expect((await as.delete(`/modules/${created.body.id}`)).status).toBe(204);
-    expect((await as.get(`/projects/${project.id}/modules`)).body).toEqual({ items: [] });
+    expect(created.body).toEqual({
+      id: expect.any(String),
+      projectId: project.id,
+      parentId: null,
+      name: "Cart",
+      ...timestamps,
+    });
+    expect((await as.get(`/projects/${project.id}/folders`)).body).toEqual({ items: [created.body] });
   });
 
-  it("creates, reads, lists without sources, renames, and deletes a Test File", async () => {
+  it("creates a folder inside a folder", async () => {
     const as = await client();
-    const { module } = await workspace(as);
+    const { project, folder } = await workspace(as);
 
-    const created = await as.post(`/modules/${module.id}/test-files`, { name: "remove.yaml", source: VALID });
+    const created = await as.post(`/projects/${project.id}/folders`, { name: "Coupons", parentId: folder.id });
+
     expect(created.status).toBe(201);
-    const testFile = { id: expect.any(String), moduleId: module.id, name: "remove.yaml", ...timestamps };
-    expect(created.body).toEqual({ testFile: { ...testFile, source: VALID }, diagnostics: [] });
+    expect(created.body).toMatchObject({ projectId: project.id, parentId: folder.id, name: "Coupons" });
+  });
+
+  it("lists every folder of a Project, at any level, by name", async () => {
+    const as = await client();
+    const { project } = await workspace(as);
+    await addFolders(as, project.id, ["Account", "Profile", "Avatar"]);
+
+    const listed = await as.get(`/projects/${project.id}/folders`);
+
+    expect(names(listed.body.items)).toEqual(["Account", "Avatar", "Cart", "Profile"]);
+  });
+
+  it("creates a folder at level 4, counting the Project", async () => {
+    const as = await client();
+    const project = (await as.post("/projects", { name: "Shop" })).body;
+
+    const deepest = await addFolders(as, project.id, ["a", "b", "c"]);
+
+    expect(deepest).toMatchObject({ name: "c" });
+  });
+
+  it("answers 400 for a folder below level 4, and adds nothing", async () => {
+    const as = await client();
+    const project = (await as.post("/projects", { name: "Shop" })).body;
+    const deepest = await addFolders(as, project.id, ["a", "b", "c"]);
+
+    const res = await as.post(`/projects/${project.id}/folders`, { name: "d", parentId: deepest.id });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatchObject({ code: "invalid_request", message: TOO_DEEP });
+    expect(await db().folder.count()).toBe(3);
+  });
+
+  it("answers 404 for a parent folder of another Project", async () => {
+    const as = await client();
+    const { folder } = await workspace(as);
+    const other = (await as.post("/projects", { name: "Blog" })).body;
+
+    const res = await as.post(`/projects/${other.id}/folders`, { name: "Posts", parentId: folder.id });
+
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe("not_found");
+  });
+
+  it("renames a folder", async () => {
+    const as = await client();
+    const { folder } = await workspace(as);
+
+    const renamed = await as.patch(`/folders/${folder.id}`, { name: "Basket" });
+
+    expect(renamed.status).toBe(200);
+    expect(renamed.body).toEqual({ ...folder, name: "Basket", updatedAt: expect.any(String) });
+  });
+
+  it("deletes a folder with every folder and Test File inside, and keeps their Runs in the Project", async () => {
+    const as = await client();
+    const ids = await workspace(as);
+    const inner = (await as.post(`/projects/${ids.project.id}/folders`, { name: "Coupons", parentId: ids.folder.id }))
+      .body;
+    const innerFile = await addFile(as, ids.project.id, inner.id, "code.yaml");
+    const run = await addRun(as.user.id, ids);
+
+    expect((await as.delete(`/folders/${ids.folder.id}`)).status).toBe(204);
+
+    expect((await as.get(`/test-files/${ids.testFile.id}`)).status).toBe(404);
+    expect((await as.get(`/test-files/${innerFile.id}`)).status).toBe(404);
+    expect(await db().folder.count()).toBe(0);
+    expect(await db().run.findUniqueOrThrow({ where: { id: run.id } })).toMatchObject({
+      projectId: ids.project.id,
+      testFileId: null,
+      fileName: "add.yaml",
+      path: "Cart/add.yaml",
+    });
+  });
+
+  it("creates, reads, renames, and deletes a Test File in a folder", async () => {
+    const as = await client();
+    const { project, folder } = await workspace(as);
+
+    const created = await as.post(`/projects/${project.id}/test-files`, {
+      name: "remove.yaml",
+      source: VALID,
+      folderId: folder.id,
+    });
+    expect(created.status).toBe(201);
+    const testFile = { id: expect.any(String), projectId: project.id, folderId: folder.id, name: "remove.yaml" };
+    expect(created.body).toEqual({ testFile: { ...testFile, ...timestamps, source: VALID }, diagnostics: [] });
 
     const read = await as.get(`/test-files/${created.body.testFile.id}`);
     expect(read.status).toBe(200);
-    expect(read.body).toEqual({ ...testFile, source: VALID });
+    expect(read.body).toEqual({ ...testFile, ...timestamps, source: VALID });
 
     const renamed = await as.patch(`/test-files/${created.body.testFile.id}`, { name: "drop.yaml" });
     expect(renamed.status).toBe(200);
-    expect(renamed.body).toEqual({ testFile: { ...testFile, name: "drop.yaml", source: VALID }, diagnostics: [] });
-
-    const listed = await as.get(`/modules/${module.id}/test-files`);
-    expect(listed.body.items.map((item: { name: string }) => item.name)).toEqual(["add.yaml", "drop.yaml"]);
-    expect(listed.body.items.every((item: object) => !("source" in item))).toBe(true);
+    expect(renamed.body.testFile).toMatchObject({ ...testFile, name: "drop.yaml", source: VALID });
 
     expect((await as.delete(`/test-files/${created.body.testFile.id}`)).status).toBe(204);
     expect((await as.get(`/test-files/${created.body.testFile.id}`)).status).toBe(404);
   });
 
+  it("creates a Test File directly in a Project", async () => {
+    const as = await client();
+    const project = (await as.post("/projects", { name: "Shop" })).body;
+
+    const created = await as.post(`/projects/${project.id}/test-files`, { name: "smoke.yaml", source: VALID });
+
+    expect(created.status).toBe(201);
+    expect(created.body.testFile).toMatchObject({ projectId: project.id, folderId: null, name: "smoke.yaml" });
+  });
+
+  it("lists every Test File of a Project, at any level, without sources", async () => {
+    const as = await client();
+    const { project } = await workspace(as);
+    await addFile(as, project.id, null, "smoke.yaml");
+
+    const listed = await as.get(`/projects/${project.id}/test-files`);
+
+    expect(names(listed.body.items)).toEqual(["add.yaml", "smoke.yaml"]);
+    expect(listed.body.items.every((item: object) => !("source" in item))).toBe(true);
+  });
+
+  it("answers 409 for a folder name taken by a folder or a Test File in the same parent", async () => {
+    const as = await client();
+    const { project, folder } = await workspace(as);
+    await addFile(as, project.id, null, "smoke.yaml");
+    await addFile(as, project.id, folder.id, "deep.yaml");
+    const spare = (await as.post(`/projects/${project.id}/folders`, { name: "Spare" })).body;
+
+    const conflicts = [
+      await as.post(`/projects/${project.id}/folders`, { name: "Cart" }),
+      await as.post(`/projects/${project.id}/folders`, { name: "smoke.yaml" }),
+      await as.post(`/projects/${project.id}/folders`, { name: "deep.yaml", parentId: folder.id }),
+      await as.patch(`/folders/${spare.id}`, { name: "Cart" }),
+    ];
+
+    expect(conflicts.map((res) => [res.status, res.body.error.message])).toEqual([
+      [409, "A folder or test file with this name already exists in this project."],
+      [409, "A folder or test file with this name already exists in this project."],
+      [409, "A folder or test file with this name already exists in this folder."],
+      [409, "A folder or test file with this name already exists in this project."],
+    ]);
+    expect(await db().folder.count()).toBe(2);
+  });
+
+  it("answers 409 for a Test File name taken by a folder or a Test File in the same parent", async () => {
+    const as = await client();
+    const { project, folder } = await workspace(as);
+    await as.post(`/projects/${project.id}/folders`, { name: "named.yaml" });
+    const renamable = await addFile(as, project.id, folder.id, "b.yaml");
+
+    const conflicts = [
+      await as.post(`/projects/${project.id}/test-files`, { name: "add.yaml", source: VALID, folderId: folder.id }),
+      await as.post(`/projects/${project.id}/test-files`, { name: "named.yaml", source: VALID }),
+      await as.patch(`/test-files/${renamable.id}`, { name: "add.yaml" }),
+    ];
+
+    expect(conflicts.map((res) => [res.status, res.body.error.message])).toEqual([
+      [409, "A folder or test file with this name already exists in this folder."],
+      [409, "A folder or test file with this name already exists in this project."],
+      [409, "A folder or test file with this name already exists in this folder."],
+    ]);
+  });
+
+  it("allows the same name in different parents and in another user's workspace", async () => {
+    const as = await client();
+    const other = await client("bob@example.com");
+    const { project, folder } = await workspace(as);
+
+    const answers = [
+      await as.post(`/projects/${project.id}/folders`, { name: "Cart", parentId: folder.id }),
+      await as.post(`/projects/${project.id}/test-files`, { name: "add.yaml", source: VALID }),
+      await as.post("/projects", { name: "Blog" }),
+      await other.post("/projects", { name: "Shop" }),
+    ];
+
+    expect(answers.map((res) => res.status)).toEqual([201, 201, 201, 201]);
+    const blog = answers[2]!.body;
+    expect((await as.post(`/projects/${blog.id}/folders`, { name: "Cart" })).status).toBe(201);
+  });
+
+  it("answers 409 for a project name taken by the user", async () => {
+    const as = await client();
+    await workspace(as);
+    const spare = (await as.post("/projects", { name: "Spare" })).body;
+
+    const conflicts = [
+      await as.post("/projects", { name: "Shop" }),
+      await as.patch(`/projects/${spare.id}`, { name: "Shop" }),
+    ];
+
+    expect(conflicts.map((res) => [res.status, res.body.error.message])).toEqual([
+      [409, "A project with this name already exists."],
+      [409, "A project with this name already exists."],
+    ]);
+  });
+
   it("saves a source with diagnostics and answers them", async () => {
     const as = await client();
-    const { module, testFile } = await workspace(as);
+    const { project, folder, testFile } = await workspace(as);
     const diagnostics = analyze(INVALID).diagnostics;
     expect(diagnostics.length).toBeGreaterThan(0);
 
-    const created = await as.post(`/modules/${module.id}/test-files`, { name: "plan.yaml", source: INVALID });
+    const created = await as.post(`/projects/${project.id}/test-files`, {
+      name: "plan.yaml",
+      source: INVALID,
+      folderId: folder.id,
+    });
     const changed = await as.patch(`/test-files/${testFile.id}`, { source: INVALID });
 
     expect(created.status).toBe(201);
@@ -147,8 +348,8 @@ describeDb("workspace routes", () => {
 
   it("answers the diagnostics of the saved source when a PATCH leaves it as it is", async () => {
     const as = await client();
-    const { module } = await workspace(as);
-    const created = (await as.post(`/modules/${module.id}/test-files`, { name: "plan.yaml", source: INVALID })).body;
+    const { project } = await workspace(as);
+    const created = (await as.post(`/projects/${project.id}/test-files`, { name: "plan.yaml", source: INVALID })).body;
 
     const renamed = await as.patch(`/test-files/${created.testFile.id}`, { name: "plan-2.yaml" });
 
@@ -167,67 +368,6 @@ describeDb("workspace routes", () => {
     expect(await db().testFile.count()).toBe(0);
   });
 
-  it("moves a Test File to another of the user's Modules", async () => {
-    const as = await client();
-    const { project, testFile } = await workspace(as);
-    const target = (await as.post(`/projects/${project.id}/modules`, { name: "Checkout" })).body;
-
-    const moved = await as.patch(`/test-files/${testFile.id}`, { moduleId: target.id });
-
-    expect(moved.status).toBe(200);
-    expect(moved.body.testFile.moduleId).toBe(target.id);
-    expect((await as.get(`/modules/${target.id}/test-files`)).body.items).toHaveLength(1);
-  });
-
-  it("answers 404 for a move to a missing Module or another user's Module", async () => {
-    const as = await client();
-    const other = await client("bob@example.com");
-    const { testFile } = await workspace(as);
-    const theirs = await workspace(other);
-
-    for (const moduleId of [MISSING_ID, theirs.module.id]) {
-      const res = await as.patch(`/test-files/${testFile.id}`, { moduleId });
-      expect(res.status).toBe(404);
-      expect(res.body.error.code).toBe("not_found");
-    }
-    expect((await as.get(`/test-files/${testFile.id}`)).body.moduleId).not.toBe(theirs.module.id);
-  });
-
-  it("answers 409 for a name taken within the same parent, and allows it elsewhere", async () => {
-    const as = await client();
-    const other = await client("bob@example.com");
-    const { project, module, testFile } = await workspace(as);
-    const second = (await as.post(`/projects/${project.id}/modules`, { name: "Checkout" })).body;
-    await as.post(`/modules/${second.id}/test-files`, { name: "add.yaml", source: VALID });
-    const spare = (await as.post("/projects", { name: "Spare" })).body;
-    const renamable = (await as.post(`/modules/${module.id}/test-files`, { name: "b.yaml", source: VALID })).body;
-
-    const conflicts = [
-      await as.post("/projects", { name: "Shop" }),
-      await as.patch(`/projects/${spare.id}`, { name: "Shop" }),
-      await as.post(`/projects/${project.id}/modules`, { name: "Cart" }),
-      await as.patch(`/modules/${second.id}`, { name: "Cart" }),
-      await as.post(`/modules/${module.id}/test-files`, { name: "add.yaml", source: VALID }),
-      await as.patch(`/test-files/${renamable.testFile.id}`, { name: "add.yaml" }),
-      await as.patch(`/test-files/${testFile.id}`, { moduleId: second.id }),
-    ];
-
-    for (const res of conflicts) {
-      expect(res.status).toBe(409);
-      expect(res.body.error.code).toBe("conflict");
-    }
-    expect(conflicts.map((res) => res.body.error.message)).toEqual([
-      "A project with this name already exists.",
-      "A project with this name already exists.",
-      "A module with this name already exists in this project.",
-      "A module with this name already exists in this project.",
-      "A test file with this name already exists in this module.",
-      "A test file with this name already exists in this module.",
-      "A test file with this name already exists in this module.",
-    ]);
-    expect((await other.post("/projects", { name: "Shop" })).status).toBe(201);
-  });
-
   it("adds the Quick Start project to an account without one", async () => {
     const as = await client();
 
@@ -237,7 +377,7 @@ describeDb("workspace routes", () => {
     expect(res.body).toEqual({ id: expect.any(String), name: "Quick Start", ...timestamps });
     const tree = (await as.get("/tree")).body.items;
     expect(tree.map((project: { name: string }) => project.name)).toEqual(["Quick Start"]);
-    expect(tree[0].modules.map((module: { name: string }) => module.name)).toEqual([
+    expect(names(tree[0].folders)).toEqual([
       "1 Passing tests",
       "2 Failing tests - see why they fail",
       "3 Invalid files - fix the errors",
@@ -260,7 +400,7 @@ describeDb("workspace routes", () => {
     });
     const tree = (await as.get("/tree")).body.items;
     expect(tree).toHaveLength(1);
-    expect(tree[0].modules).toEqual([]);
+    expect(tree[0].folders).toEqual([]);
   });
 
   it("sets, lists with their values, and deletes Project Variables", async () => {
@@ -288,10 +428,169 @@ describeDb("workspace routes", () => {
     expect((await as.delete(`/projects/${project.id}/variables/PASSWORD`)).status).toBe(404);
   });
 
-  it("answers the tree of Projects, Modules, and Test Files with each file's latest Run", async () => {
+  it("moves a Test File into another folder and keeps its Runs", async () => {
     const as = await client();
     const ids = await workspace(as);
-    const empty = (await as.post(`/projects/${ids.project.id}/modules`, { name: "Empty" })).body;
+    const target = (await as.post(`/projects/${ids.project.id}/folders`, { name: "Checkout" })).body;
+    const run = await addRun(as.user.id, ids);
+
+    const moved = await as.patch(`/test-files/${ids.testFile.id}`, { folderId: target.id });
+
+    expect(moved.status).toBe(200);
+    expect(moved.body.testFile).toMatchObject({ id: ids.testFile.id, projectId: ids.project.id, folderId: target.id });
+    expect((await db().run.findUniqueOrThrow({ where: { id: run.id } })).testFileId).toBe(ids.testFile.id);
+  });
+
+  it("moves a Test File directly into its Project", async () => {
+    const as = await client();
+    const { project, testFile } = await workspace(as);
+
+    const moved = await as.patch(`/test-files/${testFile.id}`, { folderId: null });
+
+    expect(moved.status).toBe(200);
+    expect(moved.body.testFile).toMatchObject({ projectId: project.id, folderId: null });
+  });
+
+  it("moves a Test File to another Project, whose Variables its Runs then read", async () => {
+    const as = await client();
+    const ids = await workspace(as);
+    const blog = (await as.post("/projects", { name: "Blog" })).body;
+    const run = await addRun(as.user.id, ids);
+
+    const moved = await as.patch(`/test-files/${ids.testFile.id}`, { projectId: blog.id, folderId: null });
+
+    expect(moved.status).toBe(200);
+    expect(moved.body.testFile).toMatchObject({ projectId: blog.id, folderId: null });
+    expect((await db().run.findUniqueOrThrow({ where: { id: run.id } })).testFileId).toBe(ids.testFile.id);
+  });
+
+  it("moves a Test File into a folder of another Project", async () => {
+    const as = await client();
+    const { testFile } = await workspace(as);
+    const blog = (await as.post("/projects", { name: "Blog" })).body;
+    const posts = (await as.post(`/projects/${blog.id}/folders`, { name: "Posts" })).body;
+
+    const moved = await as.patch(`/test-files/${testFile.id}`, { folderId: posts.id });
+
+    expect(moved.body.testFile).toMatchObject({ projectId: blog.id, folderId: posts.id });
+  });
+
+  it("moves a folder into another folder with everything inside", async () => {
+    const as = await client();
+    const { project, folder, testFile } = await workspace(as);
+    const target = (await as.post(`/projects/${project.id}/folders`, { name: "Shopping" })).body;
+
+    const moved = await as.patch(`/folders/${folder.id}`, { parentId: target.id });
+
+    expect(moved.status).toBe(200);
+    expect(moved.body).toMatchObject({ id: folder.id, parentId: target.id });
+    const tree = (await as.get("/tree")).body.items[0];
+    expect(names(tree.folders)).toEqual(["Shopping"]);
+    expect(tree.folders[0].folders[0].testFiles.map((file: { id: string }) => file.id)).toEqual([testFile.id]);
+  });
+
+  it("moves a folder to another Project with every folder and Test File inside", async () => {
+    const as = await client();
+    const ids = await workspace(as);
+    const inner = (await as.post(`/projects/${ids.project.id}/folders`, { name: "Coupons", parentId: ids.folder.id }))
+      .body;
+    const innerFile = await addFile(as, ids.project.id, inner.id, "code.yaml");
+    const blog = (await as.post("/projects", { name: "Blog" })).body;
+
+    const moved = await as.patch(`/folders/${ids.folder.id}`, { projectId: blog.id, parentId: null });
+
+    expect(moved.status).toBe(200);
+    expect(moved.body).toMatchObject({ projectId: blog.id, parentId: null });
+    expect(await db().folder.findUniqueOrThrow({ where: { id: inner.id } })).toMatchObject({ projectId: blog.id });
+    expect((await as.get(`/test-files/${ids.testFile.id}`)).body.projectId).toBe(blog.id);
+    expect((await as.get(`/test-files/${innerFile.id}`)).body).toMatchObject({
+      projectId: blog.id,
+      folderId: inner.id,
+    });
+  });
+
+  it("answers 400 for moving a folder into itself or one of its own folders, and changes nothing", async () => {
+    const as = await client();
+    const { project, folder } = await workspace(as);
+    const inner = (await as.post(`/projects/${project.id}/folders`, { name: "Coupons", parentId: folder.id })).body;
+
+    const answers = [
+      await as.patch(`/folders/${folder.id}`, { parentId: folder.id }),
+      await as.patch(`/folders/${folder.id}`, { parentId: inner.id }),
+    ];
+
+    for (const res of answers) {
+      expect(res.status).toBe(400);
+      expect(res.body.error).toMatchObject({
+        code: "invalid_request",
+        message: "A folder cannot be moved into itself or into one of its own folders.",
+      });
+    }
+    expect(await db().folder.findUniqueOrThrow({ where: { id: folder.id } })).toMatchObject({ parentId: null });
+  });
+
+  it("answers 400 for moving a folder where it or its folders would be below level 4, and changes nothing", async () => {
+    const as = await client();
+    const project = (await as.post("/projects", { name: "Shop" })).body;
+    const deep = await addFolders(as, project.id, ["a", "b"]);
+    await addFolders(as, project.id, ["x", "y"]);
+    const x = (await db().folder.findFirstOrThrow({ where: { name: "x" } })).id;
+
+    const res = await as.patch(`/folders/${x}`, { parentId: deep.id });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatchObject({ code: "invalid_request", message: TOO_DEEP });
+    expect(await db().folder.findUniqueOrThrow({ where: { id: x } })).toMatchObject({ parentId: null });
+  });
+
+  it("answers 409 for a move to a parent where the name is taken, and changes nothing", async () => {
+    const as = await client();
+    const { project, folder, testFile } = await workspace(as);
+    const target = (await as.post(`/projects/${project.id}/folders`, { name: "Checkout" })).body;
+    await addFile(as, project.id, target.id, "add.yaml");
+    await as.post(`/projects/${project.id}/folders`, { name: "Cart", parentId: target.id });
+
+    const answers = [
+      await as.patch(`/test-files/${testFile.id}`, { folderId: target.id }),
+      await as.patch(`/folders/${folder.id}`, { parentId: target.id }),
+    ];
+
+    expect(answers.map((res) => [res.status, res.body.error.message])).toEqual([
+      [409, "A folder or test file with this name already exists in this folder."],
+      [409, "A folder or test file with this name already exists in this folder."],
+    ]);
+    expect((await as.get(`/test-files/${testFile.id}`)).body.folderId).toBe(folder.id);
+    expect(await db().folder.findUniqueOrThrow({ where: { id: folder.id } })).toMatchObject({ parentId: null });
+  });
+
+  it("answers 404 for a move to a missing or another user's Project or folder", async () => {
+    const as = await client();
+    const other = await client("bob@example.com");
+    const { folder, testFile } = await workspace(as);
+    const theirs = await workspace(other);
+
+    const answers = [
+      await as.patch(`/test-files/${testFile.id}`, { folderId: MISSING_ID }),
+      await as.patch(`/test-files/${testFile.id}`, { folderId: theirs.folder.id }),
+      await as.patch(`/test-files/${testFile.id}`, { projectId: theirs.project.id, folderId: null }),
+      await as.patch(`/folders/${folder.id}`, { parentId: theirs.folder.id }),
+      await as.patch(`/folders/${folder.id}`, { projectId: theirs.project.id, parentId: null }),
+    ];
+
+    for (const res of answers) {
+      expect(res.status).toBe(404);
+      expect(res.body.error.code).toBe("not_found");
+    }
+    expect((await other.get("/tree")).body.items[0].folders).toHaveLength(1);
+  });
+
+  it("answers the nested tree of Projects, folders, and Test Files with each file's latest Run", async () => {
+    const as = await client();
+    const ids = await workspace(as);
+    const smoke = await addFile(as, ids.project.id, null, "smoke.yaml");
+    const inner = (await as.post(`/projects/${ids.project.id}/folders`, { name: "Coupons", parentId: ids.folder.id }))
+      .body;
+    const empty = (await as.post(`/projects/${ids.project.id}/folders`, { name: "Empty" })).body;
     await addRun(as.user.id, ids);
     const latest = await addRun(as.user.id, ids);
 
@@ -302,9 +601,10 @@ describeDb("workspace routes", () => {
       items: [
         {
           ...ids.project,
-          modules: [
+          folders: [
             {
-              ...ids.module,
+              ...ids.folder,
+              folders: [{ ...inner, folders: [], testFiles: [] }],
               testFiles: [
                 {
                   ...ids.testFile,
@@ -312,23 +612,15 @@ describeDb("workspace routes", () => {
                 },
               ],
             },
-            { ...empty, testFiles: [] },
+            { ...empty, folders: [], testFiles: [] },
           ],
+          testFiles: [{ ...smoke, latestRun: null }],
         },
       ],
     });
   });
 
-  it("answers latestRun null for a Test File that never ran", async () => {
-    const as = await client();
-    await workspace(as);
-
-    const res = await as.get("/tree");
-
-    expect(res.body.items[0].modules[0].testFiles[0].latestRun).toBeNull();
-  });
-
-  it("deletes a Project's Modules, Test Files, and Variables, and keeps its Runs", async () => {
+  it("deletes a Project's folders, Test Files, and Variables, and keeps its Runs", async () => {
     const as = await client();
     const ids = await workspace(as);
     await as.put(`/projects/${ids.project.id}/variables/BASE`, { value: "x" });
@@ -336,37 +628,22 @@ describeDb("workspace routes", () => {
 
     expect((await as.delete(`/projects/${ids.project.id}`)).status).toBe(204);
 
-    expect((await as.get(`/modules/${ids.module.id}/test-files`)).status).toBe(404);
+    expect(await db().folder.count()).toBe(0);
     expect((await as.get(`/test-files/${ids.testFile.id}`)).status).toBe(404);
     expect(await db().variable.count()).toBe(0);
     expect(await db().run.findUniqueOrThrow({ where: { id: run.id } })).toMatchObject({
       projectId: null,
-      moduleId: null,
       testFileId: null,
+      path: "Cart/add.yaml",
       source: VALID,
     });
   });
 
-  it("deletes a Module's Test Files and keeps their Runs in the Project", async () => {
-    const as = await client();
-    const ids = await workspace(as);
-    const run = await addRun(as.user.id, ids);
-
-    expect((await as.delete(`/modules/${ids.module.id}`)).status).toBe(204);
-
-    expect((await as.get(`/test-files/${ids.testFile.id}`)).status).toBe(404);
-    expect(await db().run.findUniqueOrThrow({ where: { id: run.id } })).toMatchObject({
-      projectId: ids.project.id,
-      moduleId: null,
-      testFileId: null,
-    });
-  });
-
-  it("answers 404 for every route on another user's Project, Module, or Test File, and changes nothing", async () => {
+  it("answers 404 for every route on another user's Project, folder, or Test File, and changes nothing", async () => {
     const as = await client();
     const other = await client("bob@example.com");
     const theirs = await workspace(other);
-    const { project, module, testFile } = theirs;
+    const { project, folder, testFile } = theirs;
     await other.put(`/projects/${project.id}/variables/BASE`, { value: "x" });
     const mine = await workspace(as);
 
@@ -376,14 +653,21 @@ describeDb("workspace routes", () => {
       await as.get(`/projects/${project.id}/variables`),
       await as.put(`/projects/${project.id}/variables/BASE`, { value: "mine" }),
       await as.delete(`/projects/${project.id}/variables/BASE`),
-      await as.get(`/projects/${project.id}/modules`),
-      await as.post(`/projects/${project.id}/modules`, { name: "Mine" }),
-      await as.patch(`/modules/${module.id}`, { name: "Mine" }),
-      await as.delete(`/modules/${module.id}`),
-      await as.get(`/modules/${module.id}/test-files`),
-      await as.post(`/modules/${module.id}/test-files`, { name: "mine.yaml", source: VALID }),
+      await as.get(`/projects/${project.id}/folders`),
+      await as.post(`/projects/${project.id}/folders`, { name: "Mine" }),
+      await as.post(`/projects/${mine.project.id}/folders`, { name: "Mine", parentId: folder.id }),
+      await as.patch(`/folders/${folder.id}`, { name: "Mine" }),
+      await as.patch(`/folders/${folder.id}`, { parentId: mine.folder.id }),
+      await as.delete(`/folders/${folder.id}`),
+      await as.get(`/projects/${project.id}/test-files`),
+      await as.post(`/projects/${project.id}/test-files`, { name: "mine.yaml", source: VALID }),
+      await as.post(`/projects/${mine.project.id}/test-files`, {
+        name: "mine.yaml",
+        source: VALID,
+        folderId: folder.id,
+      }),
       await as.get(`/test-files/${testFile.id}`),
-      await as.patch(`/test-files/${testFile.id}`, { moduleId: mine.module.id }),
+      await as.patch(`/test-files/${testFile.id}`, { folderId: mine.folder.id }),
       await as.delete(`/test-files/${testFile.id}`),
     ];
 
@@ -391,17 +675,19 @@ describeDb("workspace routes", () => {
       expect(res.status, `answer ${index}`).toBe(404);
       expect(res.body.error.code).toBe("not_found");
     }
-    expect((await other.get("/tree")).body.items[0].modules[0].testFiles).toHaveLength(1);
+    const tree = (await other.get("/tree")).body.items[0];
+    expect(names(tree.folders)).toEqual(["Cart"]);
+    expect(tree.folders[0].testFiles).toHaveLength(1);
     expect(await db().variable.findFirstOrThrow({ where: { projectId: project.id } })).toMatchObject({ value: "x" });
-    expect((await as.get("/projects")).body.items.map((item: { id: string }) => item.id)).toEqual([mine.project.id]);
-    expect((await as.get("/tree")).body.items).toHaveLength(1);
+    expect((await as.get("/tree")).body.items[0].folders[0].folders).toEqual([]);
   });
 
   it("answers 404 for ids that do not exist", async () => {
     const as = await client();
 
     expect((await as.patch(`/projects/${MISSING_ID}`, { name: "x" })).status).toBe(404);
-    expect((await as.patch(`/modules/${MISSING_ID}`, { name: "x" })).status).toBe(404);
+    expect((await as.patch(`/folders/${MISSING_ID}`, { name: "x" })).status).toBe(404);
+    expect((await as.delete(`/folders/${MISSING_ID}`)).status).toBe(404);
     expect((await as.get(`/test-files/${MISSING_ID}`)).status).toBe(404);
   });
 });

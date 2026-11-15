@@ -78,7 +78,7 @@ describe("the backend app", () => {
     "answers 400 for the Test File name %j, saying which characters a name can use",
     async (name) => {
       const res = await request(app)
-        .post(`/api/v1/modules/${PROJECT_ID}/test-files`)
+        .post(`/api/v1/projects/${PROJECT_ID}/test-files`)
         .set("authorization", BEARER)
         .send({ name, source: "" });
 
@@ -102,7 +102,7 @@ describe("the backend app", () => {
   });
 
   it("answers 404 not_found for a path id that is not a uuid, as for an id that does not exist", async () => {
-    const res = await request(app).get("/api/v1/projects/p1/modules").set("authorization", BEARER);
+    const res = await request(app).get("/api/v1/projects/p1/folders").set("authorization", BEARER);
     const run = await request(app).get("/api/v1/runs/not-a-uuid").set("authorization", BEARER);
 
     expect(res.status).toBe(404);
@@ -189,14 +189,14 @@ describe("the backend app", () => {
     const withHandler = createApp({
       ...base,
       handlers: {
-        "post /projects/:projectId/modules": ({ params, body }, res) => {
+        "post /projects/:projectId/folders": ({ params, body }, res) => {
           res.status(201).json({ params, body });
         },
       },
     });
 
     const res = await request(withHandler)
-      .post(`/api/v1/projects/${PROJECT_ID}/modules`)
+      .post(`/api/v1/projects/${PROJECT_ID}/folders`)
       .set("authorization", BEARER)
       .send({ name: "Checkout" });
 

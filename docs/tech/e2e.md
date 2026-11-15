@@ -66,15 +66,18 @@ Shared setup for the tests. Requests go straight to the backend at `API_URL` (`h
 | `uniqueEmail()` | `e2e-<Date.now()>-<6 random characters>@example.com` |
 | `fixture(path)` | The text of `src/tests/e2e/fixtures/<path>` |
 | `signUp(page, { quickStart? })` | Registers a new account through the API and stores its token in the page's `localStorage` (`auth-token`) before any page script runs. It then deletes the account's Quick Start project (`backend.md` 1.10), so the workspace starts empty, unless `quickStart` is `true`. Returns `{ email, token, api }`, where `api` sends `Authorization: Bearer <token>` |
-| `createWorkspace(api)` | Creates Project `Demo Shop` and Module `Shopping`; returns their ids |
+| `createWorkspace(api)` | Creates Project `Demo Shop` and the folder `Shopping` in it; returns `{ projectId, folder }`, where `folder` is a `Parent` |
+| `Parent` | `{ projectId, folderId }`: a folder, or the Project itself with `folderId` `null`, where `addTestFile` and `addFolder` add |
 | `setDemoVariables(api, projectId)` | Sets the Project Variables `BASE` to `DEMO_URL` and `SWAG_PASSWORD` to `SWAG_PASSWORD` |
-| `setUpDemoProject(page)` | Shared steps S1–S3 of `test-cases.md`: `signUp`, `createWorkspace`, and `setDemoVariables`; returns the Account with `projectId` and `moduleId` |
-| `addTestFile(api, moduleId, name, source)` | Creates a Test File; returns its id |
+| `setUpDemoProject(page)` | Shared steps S1–S3 of `test-cases.md`: `signUp`, `createWorkspace`, and `setDemoVariables`; returns the Account with `projectId` and `folder` |
+| `addTestFile(api, parent, name, source)` | Creates a Test File in `parent`; returns its id |
+| `addFolder(api, parent, name)` | Creates a folder in `parent`; returns it as a `Parent`, for folders and files inside it |
 | `startRun(api, testFileId)` | Triggers a Run; returns its id |
 | `runToEnd(api, testFileId)` | `startRun`, then polls `GET /runs/:id` for up to 60 s until the Run is `passed` or `failed`; returns its id |
 | `waitForFinalStatus(page)` | Waits up to 60 s until the Run page shows `Status: Passed` or `Status: Failed`; returns the label |
 | `sidebarOf(page)` | The sidebar's "Projects" navigation |
-| `createInSidebar(page, opener, name)` | Clicks a sidebar "New …" button, types `name` into the new row's "Name" input, and presses Enter; returns the input |
+| `pickNew(page, item, parentName, last?)` | Opens the "+" menu "New in <parentName>" (the last such row with `last`) and picks `item`: "New folder", "New test file", or "Upload files…" |
+| `createInSidebar(page, what, name)` | Clicks "New project", or with `{ item, in, last? }` picks the item with `pickNew`, types `name` into the new row's "Name" input, and presses Enter; returns the input |
 | `editorOf(page)` | The editor page's parts by role and name (frontend.md 1.7): `source`, `state`, `save`, `run`, `debug`, `output`, `statusBar` |
 | `sourceOf(page)` | The editor's whole text. CodeMirror renders only the lines in view, so it reads the document through the view CodeMirror keeps on its content element, as `EditorView.findFromDOM` does |
 | `problemItemsOf(page)` | The Debug console's "Line <n>: <message>" buttons |
@@ -94,11 +97,12 @@ Shared setup for the tests. Requests go straight to the backend at `API_URL` (`h
 | `src/tests/e2e/landing.e2e.ts` | TC-LAND-01 – 07 |
 | `src/tests/e2e/theme.e2e.ts` | TC-THEME-01 – 04 |
 | `src/tests/e2e/auth.e2e.ts` | TC-AUTH-01 – 05, 07 – 10 |
-| `src/tests/e2e/quick-start.e2e.ts` | TC-QS-01 – 03 |
+| `src/tests/e2e/quick-start.e2e.ts` | TC-QS-01 – 03, 05 |
 | `src/tests/e2e/sidebar.e2e.ts` | TC-WS-01 – 03, 08 – 10 |
 | `src/tests/e2e/sidebar-actions.e2e.ts` | TC-WS-04 – 06, 11 |
-| `src/tests/e2e/editor.e2e.ts` | TC-ED-01 – 20 |
-| `src/tests/e2e/variables.e2e.ts` | TC-VAR-01 – 06 |
+| `src/tests/e2e/folders.e2e.ts` | TC-FLD-01 – 06 |
+| `src/tests/e2e/editor.e2e.ts` | TC-ED-01 – 21 |
+| `src/tests/e2e/variables.e2e.ts` | TC-VAR-01 – 07 |
 | `src/tests/e2e/runs.e2e.ts` | TC-RUN-01 – 12, 15 – 19 |
 | `src/tests/e2e/reports.e2e.ts` | TC-RPT-01 – 07 |
 | `src/tests/e2e/overview.e2e.ts` | TC-OV-01 – 02 |
@@ -124,3 +128,5 @@ src/tests/e2e/
 The steps and expected results of every test are those of its case in `docs/testing/test-cases.md` 4. A test asserts every expected result its case lists; where a case needs a server restart, a second browser window, or production, it is Manual and has no test here.
 
 The selectors follow the accessible names of `frontend.md` 1.6–1.11 and 1.14. The mode buttons and the submit button on `/login` can share a label ("Register", "Log in"), so the submit button is always located inside the `form`; the overview and the sidebar share link names, so overview lookups are scoped to the "Test files" region.
+
+Moves by drag and drop use Playwright's mouse, which Chromium turns into native HTML5 drag events; the test hovers the target twice so `dragover` fires, and checks its "Move here" before releasing. A drop from the computer cannot come from a test, so `folders.e2e.ts` dispatches the `dragover` and `drop` events on the row with a `dataTransfer` whose items answer `webkitGetAsEntry()` with entries built in the page, the same methods a real drop gives `readDroppedEntries`.

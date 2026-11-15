@@ -2,8 +2,8 @@ import { z, type ZodType } from "zod";
 import {
   Diagnostic,
   ErrorBody,
+  Folder,
   InvalidTestError,
-  Module,
   Project,
   Run,
   TestFile,
@@ -62,6 +62,18 @@ const credentials = z.object({
 const auth = z.object({ token: z.string().meta({ description: "JWT: send as Authorization: Bearer" }), user: User });
 const saved = z.object({ testFile: TestFile, diagnostics: z.array(Diagnostic) });
 const items = <T extends ZodType>(item: T) => z.object({ items: z.array(item) });
+// Where a folder or Test File sits: a folder of the Project, or null for the Project itself (backend.md 1.3).
+const inFolder = (what: string) =>
+  id
+    .nullable()
+    .optional()
+    .meta({ description: `The folder ${what}; null or absent: directly in the Project` });
+// A move names the new parent: a folder, which brings its Project, or a Project with the folder null.
+const moveTo = {
+  projectId: id
+    .optional()
+    .meta({ description: "Moves it into this Project: directly with the folder null, or into one of its folders" }),
+};
 
 const ok = (description: string, schema?: ZodType) => ({ description, schema });
 const error = (description: string) => ({ description, schema: ErrorBody });
@@ -77,7 +89,7 @@ function route(spec: Route): Route {
 }
 
 const projectParams = z.object({ projectId: id });
-const moduleParams = z.object({ moduleId: id });
+const folderParams = z.object({ folderId: id });
 const testFileParams = z.object({ testFileId: id });
 const runParams = z.object({ runId: id });
 
@@ -123,7 +135,7 @@ export const ROUTES: readonly Route[] = [
   route({
     method: "get",
     path: "/tree",
-    summary: "Every Project with its Modules and Test Files, for the sidebar and the files overview",
+    summary: "Every Project with its folders and Test Files, nested, for the sidebar and the files overview",
     auth: "bearer",
     responses: { 200: ok("Projects, without sources, each Test File with its latest Run", items(TreeProject)) },
   }),
@@ -147,7 +159,7 @@ export const ROUTES: readonly Route[] = [
     path: "/projects/quick-start",
     summary: "Add the Quick Start project",
     description:
-      "Adds the Quick Start project that every new account gets: Modules of passing, failing, and invalid example Test Files, and the Variables BASE and SWAG_PASSWORD.",
+      "Adds the Quick Start project that every new account gets: folders of passing, failing, invalid, and Jev example Test Files, and the Variables BASE and SWAG_PASSWORD.",
     auth: "bearer",
     responses: { 201: ok("Created", Project), 409: error("A project named Quick Start exists") },
   }),
@@ -163,7 +175,7 @@ export const ROUTES: readonly Route[] = [
   route({
     method: "delete",
     path: "/projects/:projectId",
-    summary: "Delete a Project with its Modules, Test Files, and Variables; Runs are kept",
+    summary: "Delete a Project with its folders, Test Files, and Variables; Runs are kept",
     auth: "bearer",
     params: projectParams,
     responses: { 204: ok("Deleted") },
@@ -201,55 +213,72 @@ export const ROUTES: readonly Route[] = [
   }),
   route({
     method: "get",
-    path: "/projects/:projectId/modules",
-    summary: "List a Project's Modules",
+    path: "/projects/:projectId/folders",
+    summary: "List every folder of a Project, at any level",
     auth: "bearer",
     params: projectParams,
-    responses: { 200: ok("Modules", items(Module)) },
+    responses: { 200: ok("Folders, by name", items(Folder)) },
   }),
   route({
     method: "post",
-    path: "/projects/:projectId/modules",
-    summary: "Create a Module",
+    path: "/projects/:projectId/folders",
+    summary: "Create a folder in a Project or in one of its folders, at most 4 levels deep counting the Project",
     auth: "bearer",
     params: projectParams,
-    body: z.object({ name }),
-    responses: { 201: ok("Created", Module), 409: error("The name is taken") },
+    body: z.object({ name, parentId: inFolder("it goes in") }),
+    responses: {
+      201: ok("Created", Folder),
+      400: ok("A field breaks its rule, or the folder would be more than 4 levels deep", ValidationError),
+      404: error("No such Project, or no such parent folder in it, for this user"),
+      409: error("A folder or Test File in the parent has the name"),
+    },
   }),
   route({
     method: "patch",
-    path: "/modules/:moduleId",
-    summary: "Rename a Module",
+    path: "/folders/:folderId",
+    summary: "Rename a folder, or move it with everything inside to another folder or Project",
     auth: "bearer",
-    params: moduleParams,
-    body: z.object({ name }),
-    responses: { 200: ok("Renamed", Module), 409: error("The name is taken") },
+    params: folderParams,
+    body: z.object({ name: name.optional(), ...moveTo, parentId: inFolder("it moves into") }),
+    responses: {
+      200: ok("Saved", Folder),
+      400: ok(
+        "A field breaks its rule, the move goes into the folder itself or one of its folders, or a folder would be more than 4 levels deep",
+        ValidationError,
+      ),
+      404: error("No such folder, or no such target Project or folder, for this user"),
+      409: error("A folder or Test File in the target parent has the name"),
+    },
   }),
   route({
     method: "delete",
-    path: "/modules/:moduleId",
-    summary: "Delete a Module with its Test Files; Runs are kept",
+    path: "/folders/:folderId",
+    summary: "Delete a folder with every folder and Test File inside; Runs are kept",
     auth: "bearer",
-    params: moduleParams,
+    params: folderParams,
     responses: { 204: ok("Deleted") },
   }),
   route({
     method: "get",
-    path: "/modules/:moduleId/test-files",
-    summary: "List a Module's Test Files",
+    path: "/projects/:projectId/test-files",
+    summary: "List every Test File of a Project, at any level",
     auth: "bearer",
-    params: moduleParams,
-    responses: { 200: ok("Test Files, without sources", items(TestFile)) },
+    params: projectParams,
+    responses: { 200: ok("Test Files, without sources, by name", items(TestFile)) },
   }),
   route({
     method: "post",
-    path: "/modules/:moduleId/test-files",
+    path: "/projects/:projectId/test-files",
     summary: "Create a Test File, from the editor or an uploaded .yaml; saved even with diagnostics",
     auth: "bearer",
-    params: moduleParams,
-    body: z.object({ name: fileName, source }),
+    params: projectParams,
+    body: z.object({ name: fileName, source, folderId: inFolder("it goes in") }),
     sizeLimited: ["body.source"],
-    responses: { 201: ok("Created, with the source's diagnostics", saved), 409: error("The name is taken") },
+    responses: {
+      201: ok("Created, with the source's diagnostics", saved),
+      404: error("No such Project, or no such folder in it, for this user"),
+      409: error("A folder or Test File in the parent has the name"),
+    },
   }),
   route({
     method: "post",
@@ -271,15 +300,21 @@ export const ROUTES: readonly Route[] = [
   route({
     method: "patch",
     path: "/test-files/:testFileId",
-    summary: "Rename, move to another Module, or change the source of a Test File; saved even with diagnostics",
+    summary:
+      "Rename, move to another folder or Project, or change the source of a Test File; saved even with diagnostics",
     auth: "bearer",
     params: testFileParams,
-    body: z.object({ name: fileName.optional(), moduleId: id.optional(), source: source.optional() }),
+    body: z.object({
+      name: fileName.optional(),
+      source: source.optional(),
+      ...moveTo,
+      folderId: inFolder("it moves into"),
+    }),
     sizeLimited: ["body.source"],
     responses: {
       200: ok("Saved, with the source's diagnostics", saved),
-      404: error("No such Test File, or no such target Module, for this user"),
-      409: error("The name is taken in the target Module"),
+      404: error("No such Test File, or no such target Project or folder, for this user"),
+      409: error("A folder or Test File in the target parent has the name"),
     },
   }),
   route({

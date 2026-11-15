@@ -65,8 +65,8 @@ test("TC-LAND-04 the logo leads to the landing page everywhere, signed in or not
   await expect(home()).toHaveAttribute("href", "/");
 
   const { api } = await signUp(page);
-  const { moduleId } = await createWorkspace(api);
-  const testFileId = await addTestFile(api, moduleId, "sign-in.yaml", fixture("pass/sign-in.yaml"));
+  const { folder } = await createWorkspace(api);
+  const testFileId = await addTestFile(api, folder, "sign-in.yaml", fixture("pass/sign-in.yaml"));
   await page.goto("/");
   await expect(home()).toHaveAttribute("href", "/");
 

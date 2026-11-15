@@ -21,8 +21,8 @@ async function secondUser(browser: Browser): Promise<{ page: Page; account: Acco
 }
 
 test("TC-SEC-01 hides another user's test file", async ({ page, browser }) => {
-  const { api, moduleId } = await setUpDemoProject(page);
-  const testFileId = await addTestFile(api, moduleId, "sign-in.yaml", fixture("pass/sign-in.yaml"));
+  const { api, folder } = await setUpDemoProject(page);
+  const testFileId = await addTestFile(api, folder, "sign-in.yaml", fixture("pass/sign-in.yaml"));
   const b = await secondUser(browser);
 
   await b.page.goto(`/files/${testFileId}`);
@@ -33,8 +33,8 @@ test("TC-SEC-01 hides another user's test file", async ({ page, browser }) => {
 });
 
 test("TC-SEC-02 hides another user's run and its files", async ({ page, browser }) => {
-  const { api, moduleId } = await setUpDemoProject(page);
-  const testFileId = await addTestFile(api, moduleId, "sign-in.yaml", fixture("pass/sign-in.yaml"));
+  const { api, folder } = await setUpDemoProject(page);
+  const testFileId = await addTestFile(api, folder, "sign-in.yaml", fixture("pass/sign-in.yaml"));
   const runId = await runToEnd(api, testFileId);
   const b = await secondUser(browser);
 
@@ -49,8 +49,8 @@ test("TC-SEC-02 hides another user's run and its files", async ({ page, browser 
 });
 
 test("TC-SEC-03 never shows a secret variable's value", async ({ page }) => {
-  const { api, moduleId } = await setUpDemoProject(page);
-  const testFileId = await addTestFile(api, moduleId, "redaction.yaml", fixture("fail/redaction.yaml"));
+  const { api, folder } = await setUpDemoProject(page);
+  const testFileId = await addTestFile(api, folder, "redaction.yaml", fixture("fail/redaction.yaml"));
   const frames: string[] = [];
   page.on("websocket", (socket) => socket.on("framereceived", ({ payload }) => frames.push(String(payload))));
 
@@ -68,7 +68,7 @@ test("TC-SEC-03 never shows a secret variable's value", async ({ page }) => {
   expect(report).not.toContain(SWAG_PASSWORD);
 });
 
-test("TC-SEC-05 shows HTML in Project and Module names as text", async ({ page }) => {
+test("TC-SEC-05 shows HTML in project and folder names as text", async ({ page }) => {
   const html = "<img src=x onerror=alert(1)>";
   const dialogs: string[] = [];
   page.on("dialog", (dialog) => {
@@ -78,13 +78,13 @@ test("TC-SEC-05 shows HTML in Project and Module names as text", async ({ page }
   await signUp(page);
   await page.goto(WORKSPACE);
 
-  // Test File names allow no < or > at all (TC-WS-09), so only Project and Module names can hold HTML.
-  for (const [opener, name] of [
+  // Test File names allow no < or > at all (TC-WS-09), so only project and folder names can hold HTML.
+  for (const [what, name] of [
     ["New project", html],
-    [`New module in ${html}`, html],
-    [`New test file in ${html}`, "plain"],
+    [{ item: "New folder", in: html }, html],
+    [{ item: "New test file", in: html, last: true }, "plain"],
   ] as const) {
-    const input = await createInSidebar(page, opener, name);
+    const input = await createInSidebar(page, what, name);
     await expect(input).toHaveCount(0);
   }
 
@@ -98,8 +98,8 @@ test("TC-SEC-05 shows HTML in Project and Module names as text", async ({ page }
 });
 
 test("TC-SEC-06 serves no file outside a run's own files", async ({ page }) => {
-  const { api, moduleId, token } = await setUpDemoProject(page);
-  const testFileId = await addTestFile(api, moduleId, "sign-in.yaml", fixture("pass/sign-in.yaml"));
+  const { api, folder, token } = await setUpDemoProject(page);
+  const testFileId = await addTestFile(api, folder, "sign-in.yaml", fixture("pass/sign-in.yaml"));
   const runId = await runToEnd(api, testFileId);
 
   for (const path of ["../../../.env", "..%2F..%2F..%2F.env", "..%2f..%2f..%2f..%2f..%2fetc%2fpasswd"]) {
@@ -110,8 +110,8 @@ test("TC-SEC-06 serves no file outside a run's own files", async ({ page }) => {
 });
 
 test("TC-SEC-07 closes Live Progress for a bad token or another user", async ({ page, browser }) => {
-  const { api, moduleId, token } = await setUpDemoProject(page);
-  const testFileId = await addTestFile(api, moduleId, "sign-in.yaml", fixture("pass/sign-in.yaml"));
+  const { api, folder, token } = await setUpDemoProject(page);
+  const testFileId = await addTestFile(api, folder, "sign-in.yaml", fixture("pass/sign-in.yaml"));
   const runId = await runToEnd(api, testFileId);
   const b = await secondUser(browser);
   await page.goto(WORKSPACE);

@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import type { Prisma } from "../generated/prisma/client.js";
 
@@ -10,9 +11,9 @@ const FIXTURES = new URL("../../../../tests/e2e/fixtures/", import.meta.url);
 /** One Quick Start file: its name, the fixture it is made from, and the three lines that open it. */
 type QuickStartFile = { name: string; fixture: string; does: string; expect: string; tryIt: string };
 
-// The manifest of backend.md 1.10. The number prefix keeps the tree, which lists Modules by name, in learning order.
+// The manifest of backend.md 1.10. The number prefix keeps the tree, which lists folders by name, in learning order.
 // Each header replaces the fixture's own one-line "# Expect:" comment, so every line below it moves down by two.
-const MODULES: { name: string; files: QuickStartFile[] }[] = [
+const FOLDERS: { name: string; files: QuickStartFile[] }[] = [
   {
     name: "1 Passing tests",
     files: [
@@ -129,14 +130,19 @@ function source(file: QuickStartFile): string {
   return [...header, ...body.split("\n").slice(1)].join("\n");
 }
 
-/** The Quick Start project every new account gets (backend.md 1.10), as a nested create of its Project. */
+/**
+ * The Quick Start project every new account gets (backend.md 1.10), as a nested create of its Project. The Project's
+ * id is set here, so the Test Files created inside its folders can name their Project in the same create.
+ */
 export function quickStartProject(demoAppUrl: string): Prisma.ProjectCreateWithoutUserInput {
+  const id = randomUUID();
   return {
+    id,
     name: QUICK_START_NAME,
-    modules: {
-      create: MODULES.map((module) => ({
-        name: module.name,
-        testFiles: { create: module.files.map((file) => ({ name: file.name, source: source(file) })) },
+    folders: {
+      create: FOLDERS.map((folder) => ({
+        name: folder.name,
+        testFiles: { create: folder.files.map((file) => ({ name: file.name, source: source(file), projectId: id })) },
       })),
     },
     variables: {

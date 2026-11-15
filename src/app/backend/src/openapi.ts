@@ -1,6 +1,6 @@
 import { z, type ZodType } from "zod";
 import { ROUTES, type Auth, type Route } from "./api/contract.js";
-import { COMPONENTS } from "./api/schemas.js";
+import { COMPONENTS, REFERENCED } from "./api/schemas.js";
 
 export type OpenApiDocument = {
   openapi: string;
@@ -12,11 +12,31 @@ export type OpenApiDocument = {
 
 type JsonSchema = { properties?: Record<string, unknown>; required?: string[]; [key: string]: unknown };
 
-// OpenAPI 3.1 uses JSON Schema 2020-12, zod's default target; drop the per-schema $schema it adds.
+const COMPONENT = "#/components/schemas/";
+
+// OpenAPI 3.1 uses JSON Schema 2020-12, zod's default target; drop the per-schema $schema it adds. A REFERENCED
+// schema becomes a $ref to its component instead of a $defs entry of each schema that holds it.
 function jsonSchema(schema: ZodType, io: "input" | "output"): JsonSchema {
-  const { $schema, ...rest } = z.toJSONSchema(schema, { io, unrepresentable: "any" }) as JsonSchema;
+  const { $schema, $defs, ...rest } = z.toJSONSchema(schema, {
+    io,
+    unrepresentable: "any",
+    metadata: REFERENCED,
+  }) as JsonSchema;
   void $schema;
-  return rest;
+  void $defs;
+  return JSON.parse(JSON.stringify(rest).replaceAll('"#/$defs/', `"${COMPONENT}`)) as JsonSchema;
+}
+
+// The REFERENCED components themselves, whose $refs to each other and to themselves point at components.
+function referencedSchemas(): Record<string, unknown> {
+  const { schemas } = z.toJSONSchema(REFERENCED, { io: "output", uri: (id) => `${COMPONENT}${id}` });
+  return Object.fromEntries(
+    Object.entries(schemas).map(([name, { $schema, $id, ...rest }]) => {
+      void $schema;
+      void $id;
+      return [name, rest];
+    }),
+  );
 }
 
 function parameters(schema: z.ZodObject | undefined, place: "path" | "query") {
@@ -77,9 +97,10 @@ export function buildOpenApi(): OpenApiDocument {
     servers: [{ url: "/api/v1" }],
     paths,
     components: {
-      schemas: Object.fromEntries(
-        Object.entries(COMPONENTS).map(([name, schema]) => [name, jsonSchema(schema, "output")]),
-      ),
+      schemas: {
+        ...Object.fromEntries(Object.entries(COMPONENTS).map(([name, schema]) => [name, jsonSchema(schema, "output")])),
+        ...referencedSchemas(),
+      },
       securitySchemes: {
         bearer: { type: "http", scheme: "bearer", bearerFormat: "JWT" },
         token: { type: "apiKey", in: "query", name: "token", description: "The same login JWT, as ?token=" },

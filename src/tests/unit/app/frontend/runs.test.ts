@@ -4,6 +4,7 @@ import type { LiveMessage, Run, Step } from "@/app/frontend/lib/api.js";
 import {
   applyLiveMessage,
   formatDuration,
+  isFinalLiveMessage,
   isFinalStatus,
   liveUrl,
   runErrorText,
@@ -17,7 +18,7 @@ const queueRun: Run = {
   id: "run-1",
   testFileId: "tf-1",
   projectId: "p-1",
-  moduleId: "m-1",
+  path: "Auth/flow.yaml",
   fileName: "flow.yaml",
   name: "flow",
   status: "queued",
@@ -177,5 +178,24 @@ describe("isFinalStatus", () => {
 
   it.each(["queued", "running"] as const)("is false for %s", (status) => {
     expect(isFinalStatus(status)).toBe(false);
+  });
+});
+
+describe("isFinalLiveMessage", () => {
+  it.each(["passed", "failed"] as const)("is true for a %s status or snapshot message", (status) => {
+    const run: Run = { ...queueRun, status };
+    expect(isFinalLiveMessage({ type: "status", run })).toBe(true);
+    expect(isFinalLiveMessage({ type: "snapshot", run, steps: [] })).toBe(true);
+  });
+
+  it.each(["queued", "running"] as const)("is false for a %s status or snapshot message", (status) => {
+    const run: Run = { ...queueRun, status };
+    expect(isFinalLiveMessage({ type: "status", run })).toBe(false);
+    expect(isFinalLiveMessage({ type: "snapshot", run, steps: [] })).toBe(false);
+  });
+
+  it("is false for a step message", () => {
+    const passedStep: Step = { ...runningStep, status: "passed", durationMs: 10, dialogs: [] };
+    expect(isFinalLiveMessage({ type: "step", step: passedStep })).toBe(false);
   });
 });

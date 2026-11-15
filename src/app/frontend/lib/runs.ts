@@ -23,6 +23,13 @@ export function isFinalStatus(status: Run["status"]): boolean {
   return status === "passed" || status === "failed";
 }
 
+/** Whether a Live Progress message brings the Run to `passed` or `failed`. */
+export function isFinalLiveMessage(
+  message: LiveMessage,
+): message is Extract<LiveMessage, { type: "snapshot" | "status" }> {
+  return (message.type === "snapshot" || message.type === "status") && isFinalStatus(message.run.status);
+}
+
 export function stepStatusLabel(status: Step["status"]): string {
   switch (status) {
     case "pending":

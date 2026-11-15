@@ -99,7 +99,7 @@ However, existing AI testing tools (such as Midscene) rely on heavy general-purp
 #### 4.2.2 Web UI Flow
 
 1. Open the Web platform's product page and log in or register with email and password; a new account starts with a Quick Start project of example test files.
-2. Select or create a Project and Module in the left sidebar, then create, edit, or upload a test file.
+2. Select or create a Project and its folders in the left sidebar, then create, edit, upload, or drop in test files.
 3. Validate and save the test file in the in-browser editor.
 4. Click the **Run** button; the backend queues and executes the test on the server worker.
 5. Watch live step-by-step progress, status updates, and screenshots in the Dashboard's **Test Process** view.
@@ -122,9 +122,10 @@ However, existing AI testing tools (such as Midscene) rely on heavy general-purp
     - **Given** all locating methods fail, **When** the Step finishes its attempts, **Then** the Step and the Run are marked as `failed` with the failure reason and screenshot recorded.
 
 #### 4.3.3 Test Suite Organization and Authoring
-- **US-4.3.3 (Must)**: *As a Tester, I want to organize test files under Projects and Modules and edit or upload them in the browser, so that I can manage full regression suites cleanly.*
+- **US-4.3.3 (Must)**: *As a Tester, I want to organize test files in Projects and nested folders, the way my repository and the CLI do, and edit, upload, or drop them in the browser, so that I can manage full regression suites cleanly.*
   - **Acceptance Criteria**:
-    - **Given** a logged-in user, **When** they create a Project, Module, and test file in the Web UI, **Then** the hierarchy is persisted and displayed in the left sidebar tree.
+    - **Given** a logged-in user, **When** they create a Project, folders in it, and test files at any level in the Web UI, **Then** the hierarchy is persisted and displayed in the left sidebar tree.
+    - **Given** a test file or folder in the tree, **When** the user drags it onto another folder or Project, or uses Move to…, **Then** it moves there with its run history, unless a rule (a taken name, the folder depth) refuses it with a plain message.
 
 #### 4.3.4 Fast Live Execution
 - **US-4.3.4 (Must)**: *As a Tester or Developer, I want to trigger test runs from the Web UI and watch each step's status update in real time, so that I can verify full workflows quickly without delaying releases.*
@@ -213,7 +214,7 @@ The Core Module is the shared execution engine used by both the local CLI and th
 - **Server-Side Test Execution**: Receive run requests from users, invoke the Core module on the backend, queue concurrent runs, and push live step progress to the frontend.
 
 #### 5.3.2 Data Storage and Management
-- **Test Files (`.yaml files`)**: Store and manage `.yaml` test files organized under `Project -> Module -> Test File`.
+- **Test Files (`.yaml files`)**: Store and manage `.yaml` test files in Projects and nested folders (`Project/folder/.../test.yaml`), with a depth limit.
 - **Run History (`test history`)**: Store historical test run records and status summaries for each test file.
 - **Screenshots and Reports (`test screenshots and reports`)**: Store step screenshots, logs, and generated reports for historical viewing and download.
 
@@ -228,13 +229,13 @@ The Core Module is the shared execution engine used by both the local CLI and th
 ### 5.4 Frontend Module (Web UI)
 
 #### 5.4.1 Workspace Sidebar
-- **Project, Module & File Tree**: Display the `project name -> module name -> test.yaml` hierarchy in the left sidebar for navigating and managing test files, with an `account` entry at the bottom.
+- **Project, Folder & File Tree**: Display each `project name` with its nested folders and `test.yaml` files in the left sidebar for navigating and managing test files, with an `account` entry at the bottom.
 
 #### 5.4.2 YAML File Editor (`edit .yaml file`)
 - **In-Browser Editor**: Allow users to create, edit, upload, and validate `.yaml` test files in the browser and trigger a test run.
 
 #### 5.4.3 Dashboard (`dashboard to show test history and reports`)
-- **Files Overview (`.yaml files`)**: View the list of test files and their latest status in the selected project or module.
+- **Files Overview (`.yaml files`)**: View the list of test files and their latest status, grouped by project and folder.
 - **Live Test Process (`test process`)**: Watch real-time step-by-step execution progress and screenshots while a test is running.
 - **Test History and Reports (`test history`)**: Browse past test runs and inspect detailed step results, screenshots, and reports.
 
@@ -270,12 +271,12 @@ The Core Module is the shared execution engine used by both the local CLI and th
 | Must     | CLI Local Validate & Run                                           | 5.2         | Primary entry point for Developers and External Agents; required by US-4.3.6.                                                                                                                                                                                       |
 | Must     | CLI Persistent JSON Report, Playwright Trace & Error Output        | 5.2         | Enables local debugging and lets External Agents read results to repair tests; required by US-4.3.6.                                                                                                                                                                |
 | Must     | Server-Side Test Execution with Run Queue and Live Progress Push   | 5.3.1       | Powers the Web UI **Run** flow and queued concurrent runs; required by US-4.3.4.                                                                                                                                                                                    |
-| Must     | Test File Storage (`Project -> Module -> Test File`)               | 5.3.2       | Persists the test suite hierarchy; required by US-4.3.3.                                                                                                                                                                                                            |
+| Must     | Test File Storage (Projects and nested folders)                    | 5.3.2       | Persists the test suite hierarchy; required by US-4.3.3.                                                                                                                                                                                                            |
 | Must     | Run History Storage                                                | 5.3.2       | Backs the Test History view; required by US-4.3.5.                                                                                                                                                                                                                  |
 | Must     | Screenshots, Logs, and Reports Storage                             | 5.3.2       | Provides visual evidence for diagnosing failures; required by US-4.3.5.                                                                                                                                                                                             |
 | Must     | User Authentication & Account Isolation                            | 5.3.3       | Protects user data and the shared Jev API key; required by US-4.3.7.                                                                                                                                                                                                |
 | Must     | Public API with OpenAPI/Swagger Documentation                      | 5.3.4       | Enables External Agents and CI scripts to integrate programmatically; required by US-4.3.8.                                                                                                                                                                         |
-| Must     | Workspace Sidebar (Project / Module / File Tree)                   | 5.4.1       | Primary navigation for test management in the Web UI; required by US-4.3.3.                                                                                                                                                                                         |
+| Must     | Workspace Sidebar (Project / Folder / File Tree)                   | 5.4.1       | Primary navigation for test management in the Web UI; required by US-4.3.3.                                                                                                                                                                                         |
 | Must     | In-Browser YAML File Editor                                        | 5.4.2       | Lets Testers create, edit, upload, validate, and run Test Cases; required by US-4.3.3.                                                                                                                                                                              |
 | Must     | Dashboard: Live Test Process                                       | 5.4.3       | Real-time per-Step status streaming over WebSocket; required by US-4.3.4.                                                                                                                                                                                           |
 | Must     | Dashboard: Test History and Reports                                | 5.4.3       | Historical run browsing and step-level inspection; required by US-4.3.5.                                                                                                                                                                                            |
@@ -313,16 +314,16 @@ The Web UI uses a consistent workspace layout illustrated by the wireframes in [
 
 ![YAML File Editor Wireframe](references/workspace.svg)
 
-- **Left Sidebar (`Project / Module / File Tree & Account`)**: Displays collapsible `project name` → `module name` → `.yaml` files (`test1.yaml`, `test3.yaml`, etc.) for quick navigation and file management, with the `account` control anchored at the bottom.
+- **Left Sidebar (`Project / Folder / File Tree & Account`)**: Displays collapsible `project name` → folders → `.yaml` files (`test1.yaml`, `test3.yaml`, etc.) for quick navigation and file management, with the `account` control anchored at the bottom.
 - **Main Pane (`.yaml file editor`)**: Provides an in-browser code editor for authoring and uploading `.yaml` test files, inline validation feedback with line numbers, and a **Run** button to launch the test.
 
 #### 7.1.3 Dashboard: Live Test Process, Run History & Reports (`references/dashboard.svg`)
 
 ![Dashboard Wireframe](references/dashboard.svg)
 
-- **Left Sidebar**: Shares the same persistent `project name` → `module name` → `.yaml` file tree and `account` entry as the editor view.
+- **Left Sidebar**: Shares the same persistent `project name` → folders → `.yaml` file tree and `account` entry as the editor view.
 - **Main Pane (`dashboard to show test history and reports`)**:
-  - **`.yaml files` tab**: Lists test files in the current project/module with their latest status.
+  - **`.yaml files` tab**: Lists test files by project and folder with their latest status.
   - **`test process` (Live Run View)**: Streams real-time step-by-step execution status (`queued`, `running`, `passed`, `failed`), live screenshots, and active locate methods over WebSocket.
   - **`test history` (Run History & Report View)**: Displays historical runs with filtering, step-level timings, locate methods, screenshots, failure reasons, and JSON report download.
 

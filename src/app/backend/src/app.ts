@@ -60,7 +60,7 @@ function cors(origin: string): RequestHandler {
 // The path ids of the contract and what they name, as the handlers' 404 messages say it.
 const ID_PARAMS: Record<string, string> = {
   "params.projectId": "Project",
-  "params.moduleId": "Module",
+  "params.folderId": "folder",
   "params.testFileId": "Test File",
   "params.runId": "Run",
 };

@@ -161,7 +161,7 @@ The workspace is an editor: a tree, a code area, and panels of results. Its colo
 
 ### 2.9 Scrollbars
 
-There is one scrollbar: the `scrollbar-thin` utility in `app/globals.css`, which the base layer applies to every element, so the code editor, the Debug and Output consoles, the Run details sheet, the sidebar tree and every page scroll with the same bar in both themes; no component sets its own. It sets `scrollbar-width: thin` and `scrollbar-color: var(--scrollbar-thumb) transparent`, switching to `--scrollbar-thumb-hover` while the pointer is over it. Safari reads `::-webkit-scrollbar` instead: 8px wide, a transparent track, and a fully rounded thumb that takes the hover color under the pointer. The track is transparent, so the thumb is measured against every surface it can cross; it keeps 3:1 on all of them (2.2), and the hover color is darker in light and brighter in dark.
+There is one scrollbar: the `scrollbar-thin` utility in `app/globals.css`, which the base layer applies to every element, so the code editor, the Debug and Output consoles, the Run details sheet, the sidebar tree, its "+" menus and the Move to… list, and every page scroll with the same bar in both themes; no component sets its own. It sets `scrollbar-width: thin` and `scrollbar-color: var(--scrollbar-thumb) transparent`, switching to `--scrollbar-thumb-hover` while the pointer is over it. Safari reads `::-webkit-scrollbar` instead: 8px wide, a transparent track, and a fully rounded thumb that takes the hover color under the pointer. The track is transparent, so the thumb is measured against every surface it can cross; it keeps 3:1 on all of them (2.2), and the hover color is darker in light and brighter in dark.
 
 ## 3. Themes
 
@@ -253,7 +253,7 @@ These rules apply to every message the frontend shows and every `message` the ba
 | `Too small: expected string to have >=8 characters` | Password must be at least 8 characters. |
 | `Invalid name` | Use only letters, digits, -, _ and ., with no spaces. |
 | `Request failed (500)` | Something went wrong on the server. Try again in a moment. |
-| `Unique constraint failed` | A module with this name already exists in this project. |
+| `Unique constraint failed` | A folder or test file with this name already exists in this folder. |
 
 ## 7. Accessibility
 

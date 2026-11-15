@@ -32,7 +32,7 @@ describe("buildOpenApi", () => {
   });
 
   it("describes a route's path parameters, body, and answers from its zod schemas", () => {
-    const create = operation("/projects/{projectId}/modules", "post");
+    const create = operation("/projects/{projectId}/folders", "post");
 
     expect(create?.parameters).toEqual([expect.objectContaining({ name: "projectId", in: "path", required: true })]);
     expect(create?.requestBody).toMatchObject({
@@ -45,7 +45,7 @@ describe("buildOpenApi", () => {
   it("documents 413 on the routes whose body has a size-limited field", () => {
     const codes = (path: string, method: string) => Object.keys(operation(path, method)?.responses as object);
 
-    expect(codes("/modules/{moduleId}/test-files", "post")).toContain("413");
+    expect(codes("/projects/{projectId}/test-files", "post")).toContain("413");
     expect(codes("/test-files/{testFileId}", "patch")).toContain("413");
     expect(codes("/test-files/validate", "post")).toContain("413");
     expect(codes("/projects/{projectId}/variables/{name}", "put")).toContain("413");
@@ -63,7 +63,7 @@ describe("buildOpenApi", () => {
   });
 
   it("answers every list as { items }, and pages the Run list with limit, cursor, and nextCursor", () => {
-    const lists = ["/tree", "/projects", "/projects/{projectId}/modules", "/modules/{moduleId}/test-files", "/runs"];
+    const lists = ["/tree", "/projects", "/projects/{projectId}/folders", "/projects/{projectId}/test-files", "/runs"];
     const okSchema = (path: string) =>
       (
         operation(path, "get")?.responses as Record<
@@ -96,6 +96,16 @@ describe("buildOpenApi", () => {
     for (const status of ["pending", "running", "passed", "failed"]) expect(steps).toContain(`"${status}"`);
     expect(JSON.stringify(doc.components.schemas.Report)).toContain('"steps"');
     expect(JSON.stringify(doc.components.schemas.LiveSnapshot)).toContain('"steps"');
+  });
+
+  it("describes the tree's folders as nested to any depth, each folder referring to its own component", () => {
+    const folder = doc.components.schemas.TreeFolder as { properties: Record<string, unknown> };
+    const project = doc.components.schemas.TreeProject as { properties: Record<string, unknown> };
+    const ref = { type: "array", items: { $ref: "#/components/schemas/TreeFolder" } };
+
+    expect(folder.properties.folders).toEqual(ref);
+    expect(project.properties.folders).toEqual(ref);
+    expect(JSON.stringify(doc.components.schemas)).not.toContain('"$ref":"#"');
   });
 
   it("documents the Live Progress WebSocket, its ?token=, and each message it sends", () => {

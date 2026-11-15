@@ -1,10 +1,14 @@
 import type { paths } from "./api-schema.js";
+import { allTestFiles, type TreeProject } from "./tree.js";
+
+/** The Quick Start project's name, as the backend creates it (backend.md 1.10). */
+export const QUICK_START = "Quick Start";
 
 export type LatestRun =
-  paths["/tree"]["get"]["responses"][200]["content"]["application/json"]["items"][number]["modules"][number]["testFiles"][number]["latestRun"];
+  paths["/tree"]["get"]["responses"][200]["content"]["application/json"]["items"][number]["testFiles"][number]["latestRun"];
 
 export type RunDot = "none" | "active" | "passed" | "failed";
-export type DeleteTargetKind = "project" | "module" | "testFile";
+export type DeleteTargetKind = "project" | "folder" | "testFile";
 export type DeleteTarget = {
   kind: DeleteTargetKind;
   id: string;
@@ -71,15 +75,30 @@ export function statusTitle(status: ReturnType<typeof statusOf>): string {
 
 export function confirmDeleteText(kind: DeleteTargetKind, name: string): string {
   if (kind === "project") {
-    return `Delete project "${name}" and all its modules, test files and variables? Run history is kept.`;
+    return `Delete project "${name}" and all its folders, test files and variables? Run history is kept.`;
   }
 
-  if (kind === "module") {
-    return `Delete module "${name}" and all its test files? Run history is kept.`;
+  if (kind === "folder") {
+    return `Delete folder "${name}" and every folder and test file in it? Run history is kept.`;
   }
 
   return `Delete test file "${name}"? Run history is kept.`;
 }
+
+type Contents = { id: string; folders: Contents[]; testFiles: { id: string }[] };
+
+// The Project or folder with `id`, searched at any depth.
+function findNode(nodes: readonly Contents[], id: string): Contents | undefined {
+  for (const node of nodes) {
+    const found = node.id === id ? node : findNode(node.folders, id);
+    if (found) return found;
+  }
+  return undefined;
+}
+
+const holds = (node: Contents, testFileId: string): boolean =>
+  node.testFiles.some((testFile) => testFile.id === testFileId) ||
+  node.folders.some((folder) => holds(folder, testFileId));
 
 export function deletesTestFile(
   tree: paths["/tree"]["get"]["responses"][200]["content"]["application/json"],
@@ -94,19 +113,19 @@ export function deletesTestFile(
     return target.id === testFileId;
   }
 
-  if (target.kind === "module") {
-    const moduleItem = tree.items.flatMap((project) => project.modules).find((module) => module.id === target.id);
-    if (!moduleItem) {
-      return false;
-    }
+  const node =
+    target.kind === "project"
+      ? tree.items.find((project) => project.id === target.id)
+      : findNode(tree.items, target.id);
+  return node !== undefined && holds(node, testFileId);
+}
 
-    return moduleItem.testFiles.some((testFile) => testFile.id === testFileId);
-  }
+/** Whether the workspace has a Project named Quick Start, so "Add the Quick Start project" is not offered. */
+export function hasQuickStart(tree: readonly { name: string }[]): boolean {
+  return tree.some((project) => project.name === QUICK_START);
+}
 
-  const projectItem = tree.items.find((project) => project.id === target.id);
-  if (!projectItem) {
-    return false;
-  }
-
-  return projectItem.modules.some((module) => module.testFiles.some((testFile) => testFile.id === testFileId));
+/** Whether any Test File in the tree has a Run that is queued or running, so the tree reloads while it runs. */
+export function hasActiveRun(tree: readonly TreeProject[]): boolean {
+  return allTestFiles(tree).some((testFile) => statusOf(testFile.latestRun) === "active");
 }

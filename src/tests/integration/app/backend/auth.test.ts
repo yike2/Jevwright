@@ -25,7 +25,7 @@ describeDb("auth routes", () => {
     expect(stored.passwordHash).toMatch(/^\$2[aby]\$12\$/);
   });
 
-  it("registers a user with the Quick Start project, its Modules, Test Files, and Variables", async () => {
+  it("registers a user with the Quick Start project, its folders, Test Files, and Variables", async () => {
     const res = await register();
     const auth = { authorization: `Bearer ${res.body.token}` };
 
@@ -33,9 +33,9 @@ describeDb("auth routes", () => {
     expect(tree.body.items.map((project: { name: string }) => project.name)).toEqual(["Quick Start"]);
     const [project] = tree.body.items;
     expect(
-      project.modules.map((module: { name: string; testFiles: { name: string }[] }) => [
-        module.name,
-        module.testFiles.map((testFile) => testFile.name),
+      project.folders.map((folder: { name: string; testFiles: { name: string }[] }) => [
+        folder.name,
+        folder.testFiles.map((testFile) => testFile.name),
       ]),
     ).toEqual([
       [

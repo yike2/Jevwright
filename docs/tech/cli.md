@@ -10,7 +10,7 @@ Each command expands each argument as follows:
 
 - A path that contains `*`, `?`, or `[` is expanded with `fs.glob` from `node:fs/promises`.
 - Entries matched by a glob that are directories are ignored; only files are kept.
-- A directory is searched recursively for files ending in `.yaml`.
+- A directory is searched recursively for files ending in `.yaml`. The search never enters `node_modules`, `.git`, or any other hidden directory (a name starting with `.`), though a hidden directory named as an argument is searched, and hidden `.yaml` files are kept.
 - A file path is used as given, whatever its extension.
 - Results are de-duplicated and sorted.
 - Every file must be inside the current working directory.
@@ -192,7 +192,7 @@ src/cli/
 
 | Type        | Coverage                                                                                                                                                                                                                                                                  | Location                                     |
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
-| Unit        | Path expansion: glob matching, directory recursion for `.yaml`, file pass-through, dedupe and sort, working-directory enforcement, missing paths and empty yields, and invalid files outside the working directory                                                        | `src/tests/unit/cli/path-expansion.test.ts`  |
+| Unit        | Path expansion: glob matching, directory recursion for `.yaml`, `node_modules` and hidden directories skipped while a named hidden directory and hidden files are kept, file pass-through, dedupe and sort, working-directory enforcement, missing paths and empty yields, and invalid files outside the working directory | `src/tests/unit/cli/path-expansion.test.ts`  |
 | Unit        | Configuration: `.env` loading when present, missing `.env` as acceptable, `OPENROUTER_API_KEY` empty/absent handling, and `vars` built from `process.env` excluding the API key                                                                                           | `src/tests/unit/cli/config.test.ts`          |
 | Unit        | Report-store behavior: write `report.json` with 2-space indentation and a trailing newline, create nested bundle directories, write each bundle file at its path, and wrap file-system errors with only the output directory and error code (or `UNKNOWN`) in the message | `src/tests/unit/cli/report-store.test.ts`    |
 | Unit        | Output formatting: validate success/failure formatting and `--json` payload shape; run step output formatting with success/failure lines, final summary, and report `error` prefix                                                                                        | `src/tests/unit/cli/output.test.ts`          |

@@ -8,7 +8,7 @@ import staleSelectorReport from "./landing-runs/fall-back-from-a-stale-selector.
 export type Report = NonNullable<Run["report"]>;
 export type ReplayRun = { file: string; note: string; assets: string; report: Report };
 export type Stat = { value: string; label: string };
-export type QuickStartModule = { name: string; teaches: string };
+export type QuickStartFolder = { name: string; teaches: string };
 
 /** The actions of the test file syntax (syntax-analyzer.md 1.2). */
 export const ACTIONS: string[] = [
@@ -81,8 +81,8 @@ export const STATS: Stat[] = [
   { value: `${(signInReport.durationMs / 1000).toFixed(1)} s`, label: "for the sign-in Run above, 6 steps" },
 ];
 
-/** The Quick Start project's Modules, as the backend creates them, and what each teaches. */
-export const QUICK_START_MODULES: QuickStartModule[] = [
+/** The Quick Start project's folders, as the backend creates them, and what each teaches. */
+export const QUICK_START_FOLDERS: QuickStartFolder[] = [
   { name: "1 Passing tests", teaches: "Steps, selectors, and what a passed Run looks like." },
   { name: "2 Failing tests - see why they fail", teaches: "How a failed step reports its reason and screenshot." },
   { name: "3 Invalid files - fix the errors", teaches: "How validation lists every problem with its line." },

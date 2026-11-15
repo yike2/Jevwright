@@ -7,7 +7,7 @@ import { errorText } from "@/lib/format-error";
 
 type ConfirmDeleteDialogProps = {
   open: boolean;
-  title: "Delete project" | "Delete module" | "Delete test file";
+  title: "Delete project" | "Delete folder" | "Delete test file";
   message: string;
   onOpenChange: (open: boolean) => void;
   onDelete: () => Promise<void>;

@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ApiError, apiClient, type TreeResponse, type User } from "@/lib/api";
 import { formatError } from "@/lib/format-error";
+import { hasActiveRun } from "@/lib/sidebar";
 import { WorkspaceProvider } from "@/lib/workspace-context";
 import { SidebarNav } from "@/components/workspace/sidebar-nav";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useMediaQuery } from "@/lib/use-media-query";
 import { usePanelLayout } from "@/lib/panel-layout";
 
+// While any file in the tree has a queued or running Run, the tree reloads so its status icon updates on any page.
+const ACTIVE_TREE_POLL_MS = 1000;
+
 export default function WorkspaceLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
@@ -20,8 +24,15 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
   const [me, setMe] = useState<User | null>(null);
   const [tree, setTree] = useState<TreeResponse["items"]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const treeRequest = useRef(0);
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const sidebarLayout = usePanelLayout("sidebar");
+
+  const refreshTree = useCallback(async () => {
+    const request = ++treeRequest.current;
+    const nextTree = await apiClient.getTree();
+    if (request === treeRequest.current) setTree(nextTree.items);
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -29,6 +40,7 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
     const loadWorkspace = async () => {
       try {
         const currentUser = await apiClient.getCurrentUser();
+        const request = ++treeRequest.current;
         const nextTree = await apiClient.getTree();
 
         if (!isMounted) {
@@ -36,7 +48,7 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
         }
 
         setMe(currentUser);
-        setTree(nextTree.items);
+        if (request === treeRequest.current) setTree(nextTree.items);
         setIsLoading(false);
       } catch (error) {
         if (!isMounted) {
@@ -59,10 +71,14 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
     };
   }, []);
 
-  const refreshTree = async () => {
-    const nextTree = await apiClient.getTree();
-    setTree(nextTree.items);
-  };
+  const active = hasActiveRun(tree);
+  useEffect(() => {
+    if (!active) return;
+    const timer = window.setInterval(() => {
+      void refreshTree().catch(() => undefined);
+    }, ACTIVE_TREE_POLL_MS);
+    return () => window.clearInterval(timer);
+  }, [active, refreshTree]);
 
   const handleLogout = () => {
     apiClient.clearToken();

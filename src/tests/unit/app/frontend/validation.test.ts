@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   emailProblem,
+  MAX_SOURCE_CHARS,
   nameProblem,
   passwordProblem,
+  sourceProblem,
   testFileNameProblem,
   variableNameProblem,
   variableValueProblem,
@@ -88,5 +90,18 @@ describe("variableValueProblem", () => {
 
   it("rejects more than 10,000 characters", () => {
     expect(variableValueProblem("a".repeat(10_001))).toBe("A Variable value can be at most 10,000 characters.");
+  });
+});
+
+describe("sourceProblem", () => {
+  it("accepts a source of at most 262,144 characters", () => {
+    expect(MAX_SOURCE_CHARS).toBe(262_144);
+    expect(sourceProblem("x".repeat(MAX_SOURCE_CHARS))).toBeNull();
+  });
+
+  it("refuses a longer source with the backend's words", () => {
+    expect(sourceProblem("x".repeat(MAX_SOURCE_CHARS + 1))).toBe(
+      "The test file is too long: it can be at most 262,144 characters.",
+    );
   });
 });

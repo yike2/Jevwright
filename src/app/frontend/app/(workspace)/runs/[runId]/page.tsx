@@ -37,6 +37,9 @@ export default function RunPage() {
               </Link>
             )}
             <h1 className="font-mono text-xl font-semibold">{view.run.fileName}</h1>
+            {view.run.path !== view.run.fileName && (
+              <p className="font-mono text-sm text-muted-foreground">Path when run: {view.run.path}</p>
+            )}
           </header>
           <RunReport run={view.run} steps={view.steps} source={view.source} disconnected={view.disconnected} />
         </>
