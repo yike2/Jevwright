@@ -11,8 +11,8 @@ const SAME_SITE = ["Strict", "Lax", "None"] as const;
 
 const hasVariable = (text: string) => text.includes("{{");
 
-/** True when a cookie `domain` is `host` or a parent of it; a leading dot is ignored. */
-export function cookieDomainMatches(domain: string, host: string): boolean {
+// True when a cookie `domain` is `host` or a parent of it; a leading dot is ignored.
+function cookieDomainMatches(domain: string, host: string): boolean {
   const parent = domain.replace(/^\./, "").toLowerCase();
   const own = host.toLowerCase();
   return own === parent || own.endsWith(`.${parent}`);
