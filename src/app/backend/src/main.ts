@@ -23,6 +23,7 @@ if (!parsed.ok) {
   process.exit(1);
 }
 const { env, runNetwork } = parsed;
+if (!env.DEMO_APP_URL) console.log("DEMO_APP_URL is not set: new Quick Start projects get no BASE Variable");
 if (dev) console.log("Dev mode: Runs can open local and private addresses; the backend listens on this machine only");
 const db = createDb(env.DATABASE_URL);
 
@@ -46,6 +47,7 @@ const app = createApp({
     jwtSecret: env.JWT_SECRET,
     runsDir: env.RUNS_DIR,
     enqueue: (runId) => queue.enqueue(runId),
+    demoAppUrl: env.DEMO_APP_URL,
   }),
   verifyToken: tokenUser,
 });

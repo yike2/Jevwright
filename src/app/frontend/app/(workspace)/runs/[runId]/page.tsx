@@ -15,6 +15,9 @@ import {
 } from "@/lib/runs";
 import { useWorkspace } from "@/lib/workspace-context";
 import { StepList } from "@/components/workspace/step-list";
+import { StatusIcon } from "@/components/workspace/status-badge";
+import { buttonVariants } from "@/components/ui/button";
+import { ArrowLeft, Download } from "lucide-react";
 import { errorText } from "@/lib/format-error";
 
 export default function RunPage() {
@@ -151,23 +154,23 @@ export default function RunPage() {
 
   if (isLoading) {
     return (
-      <section className="rounded-lg border border-border bg-background p-6">
-        <p className="text-foreground">Loading…</p>
+      <section className="mx-auto max-w-5xl">
+        <p className="text-muted-foreground">Loading…</p>
       </section>
     );
   }
 
   if (loadErrorStatus === 404) {
     return (
-      <section className="rounded-lg border border-border bg-background p-6">
-        <p className="text-foreground">Run not found</p>
+      <section className="mx-auto max-w-5xl">
+        <p className="text-muted-foreground">Run not found</p>
       </section>
     );
   }
 
   if (loadErrorMessage !== null) {
     return (
-      <section className="rounded-lg border border-border bg-background p-6">
+      <section className="mx-auto max-w-5xl">
         <p role="alert" className="text-destructive">
           {loadErrorMessage}
         </p>
@@ -178,8 +181,8 @@ export default function RunPage() {
   const run = live.run;
   if (run === null) {
     return (
-      <section className="rounded-lg border border-border bg-background p-6">
-        <p className="text-foreground">Loading…</p>
+      <section className="mx-auto max-w-5xl">
+        <p className="text-muted-foreground">Loading…</p>
       </section>
     );
   }
@@ -190,64 +193,77 @@ export default function RunPage() {
   const steps = run.report?.steps ?? live.steps;
 
   return (
-    <section className="space-y-4 rounded-lg border border-border bg-background p-6">
-      <header className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">{run.fileName}</h1>
-        <p className="text-sm text-muted-foreground">Status: {runStatusLabel(run.status)}</p>
-        <p className="text-sm text-muted-foreground">{new Date(run.createdAt).toLocaleString()}</p>
-        <p className="text-sm text-muted-foreground">{formatDuration(run.durationMs)}</p>
-
-        {run.summary && (
-          <p className="text-sm text-muted-foreground">
-            {run.summary.passed}/{run.summary.total} passed
-          </p>
+    <section className="mx-auto max-w-5xl space-y-4">
+      <header className="space-y-3">
+        {run.testFileId !== null && (
+          <Link
+            className="inline-flex items-center gap-1 rounded-sm text-primary underline-offset-4 hover:underline"
+            href={`/files/${run.testFileId}`}
+          >
+            <ArrowLeft aria-hidden="true" className="size-4" />
+            Back to {run.fileName}
+          </Link>
         )}
-
-        {run.error && <p className="text-sm text-destructive">{runErrorText(run.error)}</p>}
-
-        <div className="flex flex-wrap items-center gap-3 text-sm">
-          {run.testFileId !== null && (
-            <Link className="text-foreground underline underline-offset-4" href={`/files/${run.testFileId}`}>
-              Back to {run.fileName}
-            </Link>
-          )}
-
-          {isFinal && run.report && (
-            <a
-              className="text-foreground underline underline-offset-4"
-              href={runFileUrl(baseUrl, run.id, "report.json", token)}
-            >
-              Download report
-            </a>
-          )}
-
-          {isFinal && run.report?.trace && (
-            <a
-              className="text-foreground underline underline-offset-4"
-              href={runFileUrl(baseUrl, run.id, run.report.trace, token)}
-            >
-              Download trace
-            </a>
+        <h1 className="font-mono text-xl font-semibold">{run.fileName}</h1>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-muted-foreground">
+          <p className="flex items-center gap-1.5 font-medium text-foreground">
+            <StatusIcon status={run.status} />
+            Status: {runStatusLabel(run.status)}
+          </p>
+          <p>{new Date(run.createdAt).toLocaleString()}</p>
+          <p>{formatDuration(run.durationMs)}</p>
+          {run.summary && (
+            <p>
+              {run.summary.passed}/{run.summary.total} passed
+            </p>
           )}
         </div>
+
+        {run.error && <p className="text-destructive">{runErrorText(run.error)}</p>}
+
+        {isFinal && run.report && (
+          <div className="flex flex-wrap items-center gap-2">
+            <a
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+              href={runFileUrl(baseUrl, run.id, "report.json", token)}
+            >
+              <Download data-icon="inline-start" aria-hidden="true" />
+              Download report
+            </a>
+            {run.report.trace && (
+              <a
+                className={buttonVariants({ variant: "outline", size: "sm" })}
+                href={runFileUrl(baseUrl, run.id, run.report.trace, token)}
+              >
+                <Download data-icon="inline-start" aria-hidden="true" />
+                Download trace
+              </a>
+            )}
+          </div>
+        )}
       </header>
 
       {liveDisconnected && (
-        <p role="alert" className="text-sm text-destructive">
+        <p role="alert" className="text-destructive">
           {liveDisconnected}
         </p>
       )}
 
-      {isFinal && steps.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No step results</p>
-      ) : (
-        <StepList runId={run.id} steps={steps} baseUrl={baseUrl} token={token} />
-      )}
+      <div aria-live="polite">
+        {isFinal && steps.length === 0 ? (
+          <p className="text-muted-foreground">No step results</p>
+        ) : (
+          <StepList runId={run.id} steps={steps} baseUrl={baseUrl} token={token} />
+        )}
+      </div>
 
       {source !== null && (
-        <details className="rounded-lg border border-border">
-          <summary className="cursor-pointer px-3 py-2 text-sm text-foreground">Source when it ran</summary>
-          <pre aria-label="Source when it ran" className="overflow-x-auto border-t border-border p-3 font-mono text-sm">
+        <details className="rounded-xl bg-card ring-1 ring-foreground/10">
+          <summary className="cursor-pointer rounded-xl px-3 py-2 font-medium">Source when it ran</summary>
+          <pre
+            aria-label="Source when it ran"
+            className="overflow-x-auto rounded-b-xl border-t bg-code p-3 font-mono text-[0.8125rem] text-code-foreground"
+          >
             {source}
           </pre>
         </details>

@@ -554,6 +554,83 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/projects/quick-start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add the Quick Start project
+         * @description Adds the Quick Start project that every new account gets: Modules of passing, failing, and invalid example Test Files, and the Variables BASE and SWAG_PASSWORD.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            name: string;
+                            /** Format: date-time */
+                            createdAt: string;
+                            /** Format: date-time */
+                            updatedAt: string;
+                        };
+                    };
+                };
+                /** @description No valid token */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
+                                code: string;
+                                message: string;
+                            };
+                        };
+                    };
+                };
+                /** @description A project named Quick Start exists */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
+                                code: string;
+                                message: string;
+                            };
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/projects/{projectId}": {
         parameters: {
             query?: never;

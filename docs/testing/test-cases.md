@@ -40,7 +40,10 @@ Each case has an ID `TC-<AREA>-<nn>`, a title, its priority, execution type, the
 
 | Area | Covers |
 | ---- | ------ |
+| `LAND` | The landing page |
+| `THEME` | Light, Dark, and System themes |
 | `AUTH` | Register, log in, log out, access without a token |
+| `QS` | The Quick Start project |
 | `WS` | Sidebar: Projects, Modules, Test Files, rename, delete |
 | `ED` | Editor: edit, upload, validate, save |
 | `VAR` | Project Variables |
@@ -79,7 +82,7 @@ The deployed frontend and API, with the Demo App at its public `DEMO_DOMAIN` (`d
 | `BASE` | `http://127.0.0.1:8080` | `https://<DEMO_DOMAIN>` |
 | `SWAG_PASSWORD` | `secret_sauce`, the password shown on the Demo App's sign-in page | the same |
 
-**Accounts**: each case registers a new account, `e2e-<timestamp>-<random>@example.com` with password `e2e-password-123`, so cases do not depend on each other. Isolation cases (TC-SEC-01, TC-SEC-02) use two accounts, A and B.
+**Accounts**: each case registers a new account, `e2e-<timestamp>-<random>@example.com` with password `e2e-password-123`, so cases do not depend on each other. A new account starts with the Quick Start project (TC-QS-01); unless a case says otherwise, delete it first (**Delete project Quick Start**), so the workspace starts empty. The E2E helper `signUp` does this through the API. Isolation cases (TC-SEC-01, TC-SEC-02) use two accounts, A and B.
 
 **Workspace**: unless a case says otherwise, Project `Demo Shop`, Module `Shopping`, and the Test File named in the case, with the source of the fixture named in the case.
 
@@ -91,7 +94,7 @@ The test files are in `src/tests/e2e/fixtures/`, grouped by expected outcome. E2
 
 | File | Locates by | Expected outcome | Used by |
 | ---- | ---------- | ---------------- | ------- |
-| `pass/sign-in.yaml` | `selector` | Passed, 6/6 | RUN-01, RPT-01, OV-02, CLI-02 |
+| `pass/sign-in.yaml` | `selector` | Passed, 6/6 | RUN-01, RPT-01, OV-02, CLI-02, QS-01 |
 | `pass/checkout.yaml` | `selector` | Passed, 16/16 | RUN-02 |
 | `pass/locked-out.yaml` | `selector` | Passed: the app's own error is asserted | RUN-03 |
 | `pass/all-actions.yaml` | `selector` | Passed, 35/35: every action and dialog answer | RUN-04 |
@@ -131,13 +134,85 @@ The test files are in `src/tests/e2e/fixtures/`, grouped by expected outcome. E2
 
 Cases refer to these instead of repeating them.
 
-- **S1 Sign up**: open `/login`, click **Register** (the mode button), enter a new email and the password, click **Register** in the form. You are on `/` and the sidebar shows the email.
+- **S1 Sign up**: open `/login`, click **Register** (the mode button), enter a new email and the password, click **Register** in the form. You are on `/files` and the sidebar shows the email. Delete the Quick Start project (2.3).
 - **S2 Create the workspace**: in the sidebar, click **New project**, name it `Demo Shop`, **Create**; on `Demo Shop` click **New module in Demo Shop**, name it `Shopping`, **Create**.
 - **S3 Set the Variables**: click **Variables for Demo Shop**; save `BASE` and `SWAG_PASSWORD` with the values of 2.3; **Close**.
 - **S4 Add a Test File**: on `Shopping` click **New test file in Shopping**, enter the name, **Create**; the editor opens. Load the fixture with **Upload file**, then click **Save**.
 - **S5 Run**: in the editor click **Run**, then **View run**. Wait until the status is final (`Passed` or `Failed`).
 
 ## 4. Test Cases
+
+### 4.0 Landing page and themes (`LAND`, `THEME`)
+
+#### TC-LAND-01 The landing page shows the product — P1, E2E
+
+Covers PRD 4.2.2. Pre: no token.
+
+1. Open `/`.
+2. Click **Register** at the top right.
+
+Expected: step 1 shows the heading "Web tests in plain YAML", the feature headings Plain YAML steps, Jev locating, Live runs, History and reports, and CLI and API, the sample file `sign-in.yaml`, and **Log in** and **Register** at the top right, with no **Open workspace**; step 2 opens `/register` with the heading "Register".
+
+#### TC-LAND-02 Log in from the landing page — P1, E2E
+
+Covers PRD 4.2.2. Pre: no token.
+
+1. Open `/` and click **Log in** at the top right.
+
+Expected: `/login` opens with the heading "Log in".
+
+#### TC-LAND-03 A signed-in visitor opens the workspace in one click — P1, E2E
+
+Covers PRD 4.2.2. Pre: S1.
+
+1. Open `/`.
+2. Click **Open workspace** at the top right.
+
+Expected: step 1 shows **Open workspace** instead of **Log in** and **Register**; step 2 opens `/files` with the sidebar.
+
+#### TC-THEME-01 The theme follows the system by default — P1, E2E
+
+Covers `docs/tech/design-system.md` 3. Pre: no stored theme; the operating system set to dark.
+
+1. Open `/`.
+2. Switch the operating system to light.
+
+Expected: step 1 shows the dark theme and **System** pressed in the Theme switch; after step 2 the page turns light without a reload.
+
+#### TC-THEME-02 A chosen theme persists — P1, E2E
+
+Covers `docs/tech/design-system.md` 3. Pre: the operating system set to light.
+
+1. Open `/`, click **Dark** in the Theme switch, and reload.
+2. Click **System**.
+3. Click **Light**, then switch the operating system to dark.
+
+Expected: after step 1 the page is still dark and **Dark** is pressed; after step 2 it is light; after step 3 it stays light.
+
+#### TC-THEME-03 No flash of the wrong theme — P1, E2E
+
+Covers `docs/tech/design-system.md` 3. Pre: the operating system set to light, **Dark** chosen.
+
+1. Reload `/` with the app's JavaScript blocked.
+
+Expected: the page is dark; the theme is set by the server's HTML before any script of the app runs.
+
+#### TC-THEME-04 The theme switch is on every page — P2, E2E
+
+Covers `docs/tech/design-system.md` 3. Pre: none.
+
+1. Open `/login`.
+2. Do S1 and open `/files`.
+
+Expected: the Theme switch with **Light**, **Dark**, and **System** is in the header of step 1 and in the sidebar's account area of step 2.
+
+#### TC-THEME-05 Both themes are readable — P2, Manual
+
+Covers `docs/tech/design-system.md` 2.2. Pre: S1–S3, a passed and a failed Run.
+
+1. In each theme, look at the landing page, `/login`, the overview, the editor with diagnostics, and both Run pages.
+
+Expected: text, status badges, icons, inputs, and focus rings are clearly readable on every surface; no status is shown by color alone.
 
 ### 4.1 Authentication (`AUTH`)
 
@@ -149,7 +224,7 @@ Covers US-4.3.7. Pre: none.
 2. Click **Log out**.
 3. Click **Log in** (mode), enter the same email and password, click **Log in** in the form.
 
-Expected: after step 1 and step 3 the URL is `/` and the sidebar shows the email; after step 2 the URL is `/login`.
+Expected: after step 1 and step 3 the URL is `/files` and the sidebar shows the email; after step 2 the URL is `/login`.
 
 #### TC-AUTH-02 Register with an email that is taken — P1, E2E
 
@@ -174,22 +249,22 @@ Covers US-4.3.7. Pre: none.
 1. Register with a 7-character password.
 2. Register with an 8-character password.
 
-Expected: step 1 shows `Password must be at least 8 characters.` under the Password field, which is marked invalid, sends no request, and stays on `/login`; step 2 succeeds and opens `/`.
+Expected: step 1 shows `Password must be at least 8 characters.` under the Password field, which is marked invalid, sends no request, and stays on `/login`; step 2 succeeds and opens `/files`.
 
 #### TC-AUTH-05 Open the workspace without a token — P0, E2E
 
 Covers US-4.3.7. Pre: a fresh browser context, or **Log out** first.
 
-1. Open `/`, then `/files/<any id>`, then `/runs/<any id>`.
+1. Open `/files`, then `/files/<any id>`, then `/runs/<any id>`.
 
-Expected: each ends on `/login`; no workspace data is shown.
+Expected: each ends on `/login`; no workspace data is shown. The landing page `/` needs no token (TC-LAND-01).
 
 #### TC-AUTH-06 A stored token that the backend rejects — P2, Manual
 
 Covers US-4.3.7. Pre: signed in.
 
 1. In the browser's developer tools, change the stored token in `localStorage` to `invalid`.
-2. Reload `/`.
+2. Reload `/files`.
 
 Expected: the app clears the token and goes to `/login`.
 
@@ -209,6 +284,43 @@ Covers US-4.3.7. Pre: signed in, with the workspace open in two tabs.
 2. In tab 2, open a Project's **Variables** dialog or reload the page.
 
 Expected: tab 2 goes to `/login` on its next request, since both tabs share the stored token.
+
+### 4.1a Quick Start project (`QS`)
+
+#### TC-QS-01 A new account starts with the Quick Start project — P0, E2E
+
+Covers PRD 4.2.2. Pre: the backend's `DEMO_APP_URL` is the Demo App of 2.1 or 2.2.
+
+1. Open `/register`, enter a new email and the password, and click **Register** in the form.
+2. Click **Variables for Quick Start**.
+3. Open `sign-in.yaml` from the overview and do S5.
+
+Expected: step 1 opens `/files`, where the overview shows the heading `Quick Start` with the Modules `Failing`, `Invalid`, and `Passing` and their files (`docs/tech/backend.md` 1.10); step 2 lists `BASE` and `SWAG_PASSWORD`; in step 3 the editor shows `baseUrl: "{{BASE}}"` and the Run passes.
+
+#### TC-QS-02 Add the Quick Start project to an empty workspace — P1, E2E
+
+Covers PRD 4.2.2. Pre: S1 (Quick Start deleted).
+
+1. Open `/files`.
+2. Click **Add the Quick Start project**.
+
+Expected: step 1 shows "No test files yet" and the button; after step 2 the overview and the sidebar show `Quick Start` with its files, and the button is gone.
+
+#### TC-QS-03 The Quick Start project exists already — P2, E2E
+
+Covers PRD 4.2.2. Pre: S1, then an empty Project named `Quick Start`.
+
+1. Open `/files` and click **Add the Quick Start project**.
+
+Expected: an alert says `You already have a project named Quick Start. Rename or delete it, then add it again.`; nothing is added.
+
+#### TC-QS-04 Every Quick Start file has its expected result — P2, Manual
+
+Covers PRD 4.2.2. Pre: TC-QS-01.
+
+1. Run every file of `Passing` and `Failing`, and validate both files of `Invalid`.
+
+Expected: each result matches the first-line comment of its file (2.4): the `Passing` files pass, the `Failing` files fail at the stated step, and the `Invalid` files show their validation errors and cannot run.
 
 ### 4.2 Workspace sidebar (`WS`)
 
@@ -260,7 +372,7 @@ Covers US-4.3.3. Pre: S1, S2, `login.yaml` open in the editor.
 
 1. Click **Delete test file login.yaml**; the dialog shows `Delete test file "login.yaml"? Run history is kept.`; click **Delete**.
 
-Expected: the app goes to `/`; the file is gone from the tree and the overview.
+Expected: the app goes to `/files`; the file is gone from the tree and the overview.
 
 #### TC-WS-06 Delete a Project with everything in it — P1, E2E
 
@@ -663,8 +775,8 @@ Expected: step 1 shows "Run not found" and step 2 "Test file not found", as for 
 
 Covers PRD 5.4.3. Pre: S1.
 
-1. Open `/`.
-2. Do S2 and add `sign-in.yaml`; open `/` again.
+1. Open `/files`.
+2. Do S2 and add `sign-in.yaml`; open `/files` again.
 3. Click the file link in the "Test files" region.
 
 Expected: step 1 shows "No test files yet"; step 2 shows the heading `Demo Shop`, the heading `Shopping`, and `sign-in.yaml` with "Never run"; step 3 opens `/files/<id>`.
@@ -673,8 +785,8 @@ Expected: step 1 shows "No test files yet"; step 2 shows the heading `Demo Shop`
 
 Covers PRD 5.4.3. Pre: S1–S3, `sign-in.yaml` (`pass/sign-in.yaml`) and `wrong-total.yaml` (`fail/wrong-total.yaml`) in `Shopping`.
 
-1. Run both; wait until both finish; open `/`.
-2. Run `wrong-total.yaml` again; while it runs, open `/`.
+1. Run both; wait until both finish; open `/files`.
+2. Run `wrong-total.yaml` again; while it runs, open `/files`.
 
 Expected: step 1 shows "Passed" and "Failed" with their trigger times; step 2 shows "Running" for `wrong-total.yaml`, and "Failed" again when the page is reloaded after the Run finishes. The overview does not update itself while it is open (`docs/tech/frontend.md` 1.10).
 
@@ -719,7 +831,7 @@ Expected: both Runs fail at step 1 with `net::ERR_FAILED` or `net::ERR_CONNECTIO
 Covers US-4.3.7. Pre: S1.
 
 1. Create a Project and a Module named `<img src=x onerror=alert(1)>`, and in it a Test File named `plain` (Test File names allow no `<` or `>`, TC-WS-09).
-2. Open `/` and the Test File.
+2. Open `/files` and the Test File.
 
 Expected: the names show as the literal text in the sidebar and the overview; no `img` element is added and no dialog opens.
 
@@ -850,6 +962,8 @@ Expected: every status has text or a title, not only a color; step updates are a
 | US-4.3.5 History and reports | RPT-01 – RPT-06, RUN-16 |
 | US-4.3.6 Local CLI | CLI-01, CLI-02 |
 | US-4.3.7 Authentication and isolation | AUTH-01 – AUTH-08, SEC-01 – SEC-03, SEC-05 – SEC-07 |
+| PRD 4.2.2 Landing page and Quick Start | LAND-01 – LAND-03, QS-01 – QS-04 |
+| `docs/tech/design-system.md` Themes and contrast | THEME-01 – THEME-05 |
 | US-4.3.8 Public API | API-01 |
 | PRD 5.4.3 Files overview | OV-01, OV-02 |
 | Private network blocking (`docs/tech/backend.md` 1.6) | SEC-04 |

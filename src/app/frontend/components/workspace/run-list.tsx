@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { apiClient, type Run } from "@/lib/api";
 import { formatDuration, runStatusLabel } from "@/lib/runs";
 import { errorText } from "@/lib/format-error";
+import { StatusIcon } from "@/components/workspace/status-badge";
 
 type RunListProps = {
   testFileId: string;
@@ -46,20 +47,25 @@ export function RunList({ testFileId, reloadKey }: RunListProps) {
   }, [testFileId, reloadKey]);
 
   return (
-    <section aria-label="Runs" className="space-y-2 rounded-lg border border-border bg-background p-4">
+    <section aria-label="Runs" className="space-y-2 rounded-xl bg-card p-3 ring-1 ring-foreground/10">
+      <h2 className="font-heading font-semibold">Runs</h2>
       {errorMessage && (
-        <p role="alert" className="text-sm text-destructive">
+        <p role="alert" className="text-destructive">
           {errorMessage}
         </p>
       )}
 
-      {!errorMessage && runs.length === 0 && <p className="text-sm text-muted-foreground">No runs yet</p>}
+      {!errorMessage && runs.length === 0 && <p className="text-muted-foreground">No runs yet</p>}
 
       {!errorMessage && runs.length > 0 && (
-        <ul className="space-y-2">
+        <ul className="divide-y">
           {runs.map((run) => (
-            <li key={run.id} className="text-sm text-foreground">
-              <Link className="underline underline-offset-4" href={`/runs/${run.id}`}>
+            <li key={run.id} className="py-1.5">
+              <Link
+                className="inline-flex items-center gap-2 rounded-sm underline-offset-4 hover:underline"
+                href={`/runs/${run.id}`}
+              >
+                <StatusIcon status={run.status} />
                 {runStatusLabel(run.status)} · {new Date(run.createdAt).toLocaleString()} ·{" "}
                 {formatDuration(run.durationMs)}
               </Link>

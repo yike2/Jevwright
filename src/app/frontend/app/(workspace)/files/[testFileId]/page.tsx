@@ -8,6 +8,9 @@ import { formatDiagnostic, validationSummary } from "@/lib/editor";
 import { useWorkspace } from "@/lib/workspace-context";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "cn";
+import { CircleAlert, CircleCheck, FileCheck2, Play, Save, Upload } from "lucide-react";
 import { RunList } from "@/components/workspace/run-list";
 import { errorText } from "@/lib/format-error";
 
@@ -220,48 +223,53 @@ export default function TestFilePage() {
 
   if (isLoading) {
     return (
-      <section className="rounded-lg border border-border bg-background p-6">
-        <p className="text-foreground">Loading…</p>
+      <section className="mx-auto max-w-5xl">
+        <p className="text-muted-foreground">Loading…</p>
       </section>
     );
   }
 
   if (loadErrorStatus === 404) {
     return (
-      <section className="rounded-lg border border-border bg-background p-6">
-        <p className="text-foreground">Test file not found</p>
+      <section className="mx-auto max-w-5xl">
+        <p className="text-muted-foreground">Test file not found</p>
       </section>
     );
   }
 
   if (loadErrorMessage !== null) {
     return (
-      <section className="rounded-lg border border-border bg-background p-6">
-        <p role="alert">{loadErrorMessage}</p>
+      <section className="mx-auto max-w-5xl">
+        <p role="alert" className="text-destructive">
+          {loadErrorMessage}
+        </p>
       </section>
     );
   }
 
   return (
-    <section className="space-y-4 rounded-lg border border-border bg-background p-6">
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">{headingName}</h1>
-        {dirty && <p className="text-sm text-muted-foreground">Unsaved changes</p>}
-      </div>
-
-      <div className="flex flex-wrap gap-2">
-        <Button type="button" variant="outline" onClick={handleUploadClick}>
-          Upload file
-        </Button>
-        <Button type="button" variant="outline" onClick={handleValidate} disabled={isValidating}>
-          Validate
-        </Button>
-        <Button type="button" onClick={handleSave} disabled={!dirty || isSaving}>
-          Save
-        </Button>
-        <Button type="button" onClick={handleRun} disabled={isRunning}>
-          Run
-        </Button>
+    <section className="mx-auto max-w-5xl space-y-4">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <h1 className="font-mono text-xl font-semibold">{headingName}</h1>
+        {dirty && <Badge variant="warning">Unsaved changes</Badge>}
+        <div className="ml-auto flex flex-wrap gap-2">
+          <Button type="button" variant="outline" onClick={handleUploadClick}>
+            <Upload data-icon="inline-start" aria-hidden="true" />
+            Upload file
+          </Button>
+          <Button type="button" variant="outline" onClick={handleValidate} disabled={isValidating}>
+            <FileCheck2 data-icon="inline-start" aria-hidden="true" />
+            Validate
+          </Button>
+          <Button type="button" variant="secondary" onClick={handleSave} disabled={!dirty || isSaving}>
+            <Save data-icon="inline-start" aria-hidden="true" />
+            Save
+          </Button>
+          <Button type="button" onClick={handleRun} disabled={isRunning}>
+            <Play data-icon="inline-start" aria-hidden="true" />
+            Run
+          </Button>
+        </div>
       </div>
 
       <input
@@ -275,7 +283,7 @@ export default function TestFilePage() {
       />
 
       {alertMessage && (
-        <p role="alert" className="text-sm text-destructive">
+        <p role="alert" className="text-destructive">
           {alertMessage}
         </p>
       )}
@@ -284,7 +292,7 @@ export default function TestFilePage() {
         <div className="flex flex-wrap items-center gap-3">
           <p role="status">{runMessage}</p>
           {queuedRunId && (
-            <Link className="text-sm text-foreground underline underline-offset-4" href={`/runs/${queuedRunId}`}>
+            <Link className="text-primary underline underline-offset-4" href={`/runs/${queuedRunId}`}>
               View run
             </Link>
           )}
@@ -292,21 +300,40 @@ export default function TestFilePage() {
       )}
 
       <div className="space-y-2">
-        <Label htmlFor="test-file-yaml">Test file YAML</Label>
+        <Label htmlFor="test-file-yaml" className="text-muted-foreground">
+          Test file YAML
+        </Label>
         <textarea
           id="test-file-yaml"
           aria-label="Test file YAML"
+          spellCheck={false}
           value={draft}
           onChange={(event) => handleDraftChange(event.target.value)}
-          className="min-h-80 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="min-h-96 w-full rounded-lg border border-input bg-code px-3 py-2 font-mono text-[0.8125rem] leading-relaxed text-code-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring"
         />
       </div>
 
-      <section aria-label="Validation" className="space-y-2 rounded-lg border border-border bg-background p-4">
+      {/* Empty until Validate, Save or a refused Run fills it; an edit clears it (frontend.md 1.7). */}
+      <section
+        aria-label="Validation"
+        className={cn("space-y-2", diagnostics !== null && "rounded-xl bg-card p-3 ring-1 ring-foreground/10")}
+      >
         {diagnostics !== null && (
           <>
-            <p className="text-sm text-foreground">{validationSummary(diagnostics)}</p>
-            <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+            <p
+              className={cn(
+                "flex items-center gap-2 font-medium",
+                diagnostics.length === 0 ? "text-success" : "text-destructive",
+              )}
+            >
+              {diagnostics.length === 0 ? (
+                <CircleCheck aria-hidden="true" className="size-4" />
+              ) : (
+                <CircleAlert aria-hidden="true" className="size-4" />
+              )}
+              {validationSummary(diagnostics)}
+            </p>
+            <ul className="space-y-1 font-mono text-[0.8125rem]">
               {diagnostics.map((diagnostic, index) => (
                 <li key={`${diagnostic.code}-${diagnostic.line}-${index}`}>{formatDiagnostic(diagnostic)}</li>
               ))}

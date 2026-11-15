@@ -6,17 +6,17 @@ The Frontend is the browser app for Jevwright: an App Router Next.js client that
 
 ### 1.1 Scope
 
-This module covers the frontend package: the Next.js scaffold, generated API types, the auth-aware fetch client, a two-mode login/register page, the workspace layout and sidebar, the files overview, the test file editor, Project Variables, and the Run pages (live progress, history and reports).
+This module covers the frontend package: the Next.js scaffold, generated API types, the auth-aware fetch client, the landing page, a two-mode login/register page, the workspace layout and sidebar, the files overview, the test file editor, Project Variables, and the Run pages (live progress, history and reports). Tokens, themes, layouts, component rules and message wording are in [design-system.md](design-system.md).
 
 | Area    | Scope                                                                                                          |
 | ------- | -------------------------------------------------------------------------------------------------------------- |
 | Package | `@jevwright/frontend` in `src/app/frontend`                                                                    |
 | Runtime | Next.js 15 App Router, TypeScript strict, Node 22, pnpm 9                                                      |
-| Styling | Tailwind v4 with `@tailwindcss/postcss`; no `tailwind.config.ts`; shadcn dark theme (`dark` class on `<html>`) |
+| Styling | Tailwind v4 with `@tailwindcss/postcss`; no `tailwind.config.ts`; the tokens of [design-system.md](design-system.md) as shadcn variables; Light, Dark and System themes with `next-themes` |
 | API     | OpenAPI-generated types from `docs/api/openapi.json`; native fetch wrapper                                     |
 | Auth    | Bearer token from login/register responses; token stored in `localStorage`                                     |
-| Pages   | `/login` two-mode auth form; workspace layout with sidebar; `/` files overview; `/files/[testFileId]` editor; `/runs/[runId]` Run page |
-| Tests   | Vitest for the API client and lib helpers; Playwright E2E for auth, sidebar, editor, Variables, overview and the full flow |
+| Pages   | `/` landing page; `/login` and `/register` two-mode auth form; workspace layout with sidebar; `/files` files overview; `/files/[testFileId]` editor; `/runs/[runId]` Run page |
+| Tests   | Vitest for the API client, lib helpers, landing content and token contrast; Playwright E2E for the landing page, themes, auth, Quick Start, sidebar, editor, Variables, overview and the full flow |
 
 
 
@@ -109,10 +109,10 @@ This keeps `User`, `Diagnostic`, `Run`, and the login response in sync with the 
 
 The pages behave as follows:
 
-- `/login` is a single client-component page with two modes: **Log in** and **Register**.
+- `/login` and `/register` render the same client-component form (`components/auth/auth-form.tsx`) with two modes, **Log in** and **Register**; `/login` starts in Log in mode and `/register`, the landing page's Register link, in Register mode. The mode buttons switch in place.
 - The UI has exactly the PRD 7.1.1 form shape: email, password, submit.
 - Submit calls `apiClient.login(email, password)` in Log in mode and `apiClient.register(email, password)` in Register mode.
-- On successful login/register, the page navigates with `router.replace("/")`.
+- On successful login/register, the page navigates with `router.replace("/files")`, the workspace's home (`WORKSPACE_HOME` in `lib/routes.ts`).
 - While the submit request is in flight, the submit button is disabled.
 - Submit first checks the email with `emailProblem`, and the password with `passwordProblem` in Register mode or as non-empty ("Enter your password.") in Log in mode; a problem shows under its field (1.3) and nothing is sent.
 - Auth errors from the backend show `formatError(error)` (1.3), one line each, in a `role="alert"`.
@@ -121,7 +121,7 @@ The pages behave as follows:
   - when resolved, render the sidebar (with the current user email and a Log out button) and the page;
   - Log out calls `apiClient.clearToken()` and navigates with `router.replace("/login")`;
   - if `getCurrentUser()` fails with anything other than `401`, show the `formatError` lines instead (a `401` is handled by the API client, which redirects to `/login`).
-- `/` is the files overview (1.10).
+- `/files` is the files overview (1.10); `/` is the landing page (1.14), which needs no token.
 
 The root layout remains a server component, while the workspace layout and pages that need auth or data access are client components. This is a deliberate exception to the repo's "Server Components by default" guidance: the auth token is browser state, so auth and data fetching happen on the client.
 
@@ -131,7 +131,7 @@ The workspace is every authenticated page. A shared layout guards auth, renders 
 
 | Route                 | Page                                    |
 | --------------------- | --------------------------------------- |
-| `/`                   | Files overview (1.10)                   |
+| `/files`              | Files overview (1.10)                   |
 | `/files/[testFileId]` | Test file editor (1.7) and its Runs list (1.9) |
 | `/runs/[runId]`       | Run: live progress and report (1.9)     |
 
@@ -142,9 +142,9 @@ The workspace is every authenticated page. A shared layout guards auth, renders 
 | Row "+"         | On a Project: New Module dialog. On a Module: New Test File dialog                                                           |
 | Row "Variables" | On a Project: opens the Variables dialog (1.8)                                                                              |
 | Row actions     | On every Project, Module and Test File: Rename and Delete (1.11)                                                             |
-| Status dot      | From `latestRun.status`: `passed` green, `failed` red, `queued`/`running` amber, no run gray                                 |
+| Status icon     | From `statusOf(latestRun)`, with the icon and role of design-system.md 2.3: `passed` check, `failed` cross, `active` spinner, `none` dashed circle |
 | Selection       | The Test File in the current route is highlighted                                                                            |
-| Account         | Initials, email from `me`, Log out (clears the token, goes to `/login`)                                                      |
+| Account         | Initials, email from `me`, the theme switch (design-system.md 3), Log out (clears the token, goes to `/login`)               |
 | Narrow screens  | Sidebar hidden behind a ☰ button                                                                                             |
 
 Names follow the backend rules (`backend.md` 1.3), and the dialogs check them as the user types: Project and Module names with `nameProblem`, Test File names with `testFileNameProblem` (1.3). A problem shows under the input once the user has typed or submitted, and a submit with a problem sends nothing.
@@ -185,12 +185,12 @@ E2E tests locate elements by role and accessible name, so these names are part o
 | Module row "+"        | button "New test file in <module name>"                                                                                                                                                        |
 | Dialogs               | `dialog` titled "New project", "New module", or "New test file"; text input labelled "Name"; buttons "Create" and "Cancel"; an API error renders in a `role="alert"` element inside the dialog |
 | Test File             | link named by the file name; the current one has `aria-current="page"`                                                                                                                         |
-| Status dot            | inside the Test File link; `data-status` of `none`, `active`, `passed`, or `failed`, with a title: "Never run", "Running", "Passed", "Failed"                                                  |
-| Account               | the user email as text; button "Log out"                                                                                                                                                       |
+| Status icon           | inside the Test File link; `data-status` of `none`, `active`, `passed`, or `failed`, with a title: "Never run", "Running", "Passed", "Failed"                                                  |
+| Account               | the text "Signed in as <email>"; `group` "Theme" with buttons "Light", "Dark", "System"; button "Log out"                                                                                     |
 
 #### Tests
 - Unit: the four helpers above.
-- E2E `sidebar.e2e.ts`: a new user creates a Project, a Module, and a Test File through the dialogs; each appears in the tree; the new file opens at `/files/<id>`, is marked current, and has status `none`; after a reload the tree is unchanged.
+- E2E `sidebar.e2e.ts`: a new user with an empty workspace creates a Project, a Module, and a Test File through the dialogs; each appears in the tree; the new file opens at `/files/<id>`, is marked current, and has status `none`; after a reload the tree is unchanged.
 - E2E: creating a second Project with the same name keeps the dialog open and shows an alert.
 
 ### 1.7 Test file editor
@@ -311,14 +311,15 @@ Out of scope: project or module dashboards, charts, filters, pagination, showing
 
 ### 1.10 Files overview
 
-`/` lists every Test File in the workspace with its latest Run status, so a Tester can check test health at a glance (PRD 5.4.3). It reads the tree from `useWorkspace()`; there is no extra request, and the page updates whenever `refreshTree()` runs.
+`/files` lists every Test File in the workspace with its latest Run status, so a Tester can check test health at a glance (PRD 5.4.3). It reads the tree from `useWorkspace()`; there is no extra request, and the page updates whenever `refreshTree()` runs.
 
 | Element | Behavior |
 | ------- | -------- |
 | Region | A `region` named "Test files" |
 | Groups | `overviewGroups(tree)`: one heading (level 2) per Project and one heading (level 3) per Module, in API order |
-| File | One list item per Test File: a link to `/files/<id>` named by the file name, the status text `statusTitle(statusOf(latestRun))`, and, when `latestRun` exists, its trigger time (`latestRun.createdAt`, `toLocaleString()`) |
-| Empty | When `overviewGroups(tree)` is empty: "No test files yet" |
+| File | One list item per Test File: a link to `/files/<id>` named by the file name, a status badge with the text `statusTitle(statusOf(latestRun))` (design-system.md 2.3), and, when `latestRun` exists, its trigger time (`latestRun.createdAt`, `toLocaleString()`) |
+| Empty | When `overviewGroups(tree)` is empty: "No test files yet" and the button "Add the Quick Start project" |
+| Add the Quick Start project | `POST /projects/quick-start` (`addQuickStart()`, backend.md 1.10), then `refreshTree()`, so the overview and the sidebar show the new Project. Disabled while the request is in flight; an error, such as the `409` for an existing project named Quick Start, shows `errorText(error)` (1.3) in a `role="alert"` |
 
 | Helper | Rule |
 | ------ | ---- |
@@ -333,13 +334,14 @@ Out of scope: project or module dashboards, charts, filters, pagination, showing
 | Project | `heading` level 2 named by the Project name |
 | Module | `heading` level 3 named by the Module name |
 | Test File | `listitem` containing a `link` named by the file name, the status text, and the trigger time |
-| Empty | text "No test files yet" |
+| Empty | text "No test files yet"; button "Add the Quick Start project"; errors in a `role="alert"` |
 
 The sidebar has links with the same names, so E2E tests scope overview lookups to the "Test files" region.
 
 #### Tests
 - Unit: `overviewGroups`, `statusTitle` (5.5).
-- E2E `overview.e2e.ts`: a new user opens `/` and sees "No test files yet"; after creating a Project, a Module and a Test File through the sidebar and opening `/` again, the "Test files" region shows the Project and Module headings and the file link with "Never run"; clicking the link opens `/files/<id>`.
+- E2E `overview.e2e.ts`: a user with an empty workspace opens `/files` and sees "No test files yet"; after creating a Project, a Module and a Test File and opening `/files` again, the "Test files" region shows the Project and Module headings and the file link with "Never run"; clicking the link opens `/files/<id>`.
+- E2E `quick-start.e2e.ts`: an account registered through the form lands on `/files` with the Quick Start project, its Passing, Failing and Invalid Modules and its Variables `BASE` and `SWAG_PASSWORD`, and its `sign-in.yaml` passes; an empty workspace's "Add the Quick Start project" adds it to the overview and the sidebar; with a project named Quick Start already there, the button shows the backend's `409` message.
 
 Out of scope: filters, sorting, charts, pagination, distinguishing `queued` from `running`.
 
@@ -350,7 +352,7 @@ Every Project, Module and Test File row in the sidebar has a Rename and a Delete
 | Action | Behavior |
 | ------ | -------- |
 | Rename | Opens the name dialog titled "Rename project", "Rename module", or "Rename test file", prefilled with the current name; a Test File's name is shown without its fixed `.yaml` (1.6) and normalized with `toTestFileName`. Names are checked as in 1.6. Save is disabled while the normalized name is empty or equal to the current name. Submits `PATCH /projects/:id`, `PATCH /modules/:id`, or `PATCH /test-files/:id` with `{ name }`, then calls `refreshTree()` and closes |
-| Delete | Opens a confirmation dialog titled "Delete project", "Delete module", or "Delete test file" with the text `confirmDeleteText(kind, name)`. Delete submits `DELETE /projects/:id`, `DELETE /modules/:id`, or `DELETE /test-files/:id`. If `deletesTestFile(tree, target, currentTestFileId)` is true, the page navigates with `router.replace("/")`. Then it calls `refreshTree()` and closes |
+| Delete | Opens a confirmation dialog titled "Delete project", "Delete module", or "Delete test file" with the text `confirmDeleteText(kind, name)`. Delete submits `DELETE /projects/:id`, `DELETE /modules/:id`, or `DELETE /test-files/:id`. If `deletesTestFile(tree, target, currentTestFileId)` is true, the page navigates with `router.replace("/files")`. Then it calls `refreshTree()` and closes |
 
 API errors (such as `409 conflict` on rename) show `errorText(error)` (1.3) in a `role="alert"` inside the dialog, and the dialog stays open. Buttons are disabled while the request is in flight. A failing `refreshTree()` after a successful change closes the dialog and is otherwise ignored, as in 1.6.
 
@@ -380,7 +382,7 @@ Row buttons sit next to the Test File link, never inside it. They may be reveale
 - E2E `sidebar-actions.e2e.ts`:
   - a new user creates a Project, a Module and a Test File; renaming the Test File shows the new name in the sidebar and the editor heading;
   - renaming a second Project to the first Project's name keeps the dialog open and shows an alert;
-  - deleting the open Test File returns to `/` and removes its link;
+  - deleting the open Test File returns to `/files` and removes its link;
   - deleting the Project shows the cascade text in the confirmation, then the "Test files" region shows "No test files yet".
 
 ### 1.12 Packages and exact pins
@@ -396,7 +398,7 @@ The frontend package uses these exact versions:
 - `@tailwindcss/postcss@4.3.5`
 - `openapi-typescript@7.13.0`
 
-shadcn tooling and UI primitives are pinned exactly (no `^`). Primitives are added with `shadcn add` only as pages need them (currently `button`, `input`, `label`); every dependency that command adds is pinned to its exact installed version and listed below.
+shadcn tooling and UI primitives are pinned exactly (no `^`). Primitives are added with `shadcn add` only as pages need them (currently `badge`, `button`, `card`, `dialog`, `input`, `label`, `toggle`, `toggle-group`); every dependency that command adds is pinned to its exact installed version and listed below. `next-themes` is the theme provider that shadcn's Next.js dark-mode guide uses (design-system.md 3).
 
 
 
@@ -405,6 +407,8 @@ shadcn tooling and UI primitives are pinned exactly (no `^`). Primitives are add
 - `tw-animate-css@1.4.0`
 - `@base-ui/react@1.9.0`
 - `class-variance-authority@0.7.1`
+- `lucide-react@1.64.0`
+- `next-themes@0.4.6`
 
 The repo does not use `eslint-config-next`; instead the root `eslint.config.js` is extended to include `.tsx` and the frontend package files.
 
@@ -424,13 +428,46 @@ Lint, format, and type-check coverage include the frontend package:
 
 `next.config.ts` maps `.js` imports to `.ts`/`.tsx` (`webpack.resolve.extensionAlias`), because lib files use `.js` relative imports for the root NodeNext typecheck.
 
+### 1.14 Landing page
+
+`/` is the product page, a server component (`app/page.tsx`) that needs no token. Its content (`SAMPLE_TEST`, `FEATURES`) is in `lib/landing.ts`, so a unit test can check it.
+
+| Section | Content |
+| ------- | ------- |
+| Header | `SiteHeader` (`components/landing/site-header.tsx`): the brand linking to `/`, the theme switch, and the links "Log in" (`/login`) and "Register" (`/register`). A visitor whose browser holds a token sees one link "Open workspace" (`/files`) instead; the header checks the token after mount, so the server renders the visitor's links. `/login` and `/register` use the same header without the auth links |
+| Hero | The heading "Web tests in plain YAML", a lead paragraph, the links "Get started" (`/register`) and "See a test file", and the sample test file `SAMPLE_TEST` in a `figure` captioned "sign-in.yaml" |
+| Features | One card per entry of `FEATURES`, in order: Plain YAML steps, Jev locating, Live runs, History and reports, CLI and API |
+| Steps | Write, Validate, Run |
+| Call to action | "Create an account" (`/register`), with a line on the Quick Start project |
+| Footer | Links to the API reference on GitHub Pages and the repository |
+
+A signed-in visitor reaches the workspace in one click with "Open workspace". A stored token that the backend no longer accepts still shows that link; the workspace then redirects to `/login` (1.2).
+
+| Helper | Rule |
+| ------ | ---- |
+| `SAMPLE_TEST` | A Test File of the Demo App's sign-in with `selector` and `target` locating and an `assert` with a `statement`; the Syntax Analyzer finds no diagnostics in it |
+| `FEATURES` | The five features, each `{ title, description }` |
+
+#### Accessible names (landing)
+
+| Element | Role and name |
+| ------- | ------------- |
+| Header | `banner` with links "Log in" and "Register", or "Open workspace"; `group` "Theme" |
+| Hero | `heading` level 1 "Web tests in plain YAML" |
+| Features | `heading` level 3 per feature title |
+| Sample | `figure` named "sign-in.yaml" |
+
+#### Tests
+- Unit `landing.test.ts`: `SAMPLE_TEST` has no diagnostics; `FEATURES` has the five titles in order.
+- E2E `landing.e2e.ts`: a visitor sees the hero, the five feature headings, the sample file, and Log in and Register but no Open workspace; Register opens `/register` in Register mode; Log in opens `/login`; a visitor with a token sees Open workspace instead of Log in, and it opens `/files` with the sidebar.
+
 ## 2. Internal Flow
 
 ```mermaid
 sequenceDiagram
   participant U as User
   participant P as Auth Page (/login)
-  participant H as Home Placeholder (/)
+  participant H as Workspace (/files)
   participant C as Api Client
   participant B as Backend API
   participant L as localStorage
@@ -442,7 +479,7 @@ sequenceDiagram
   B-->>C: { token, user }
   C->>L: store token
   C-->>P: session data
-  P->>H: router.replace("/")
+  P->>H: router.replace("/files")
 
   H->>C: getCurrentUser()
   C->>B: GET /auth/me with Authorization header
@@ -456,8 +493,8 @@ sequenceDiagram
 
 1. The `/login` page submits credentials through `apiClient.login` or `apiClient.register` based on the selected mode.
 2. The API client appends the bearer token to requests when present, otherwise it sends a plain request.
-3. A successful auth response stores the token, and `/login` transitions to `/` with `router.replace("/")`.
-4. The `/` page calls `apiClient.getCurrentUser()` on load and shows `Loading…` while in flight.
+3. A successful auth response stores the token, and `/login` or `/register` transitions to `/files` with `router.replace("/files")`.
+4. The workspace layout calls `apiClient.getCurrentUser()` on load and shows `Loading…` while in flight.
 5. A `401` from a non-login route clears the token and calls the configured `onUnauthorized` callback.
 6. A `401` from login/register throws `ApiError` without mutating the token.
 7. The `openapi-typescript` generator creates the frontend schema types from the published backend OpenAPI document.
@@ -518,6 +555,7 @@ export function createApiClient(config?: ApiClientConfig): {
   getCurrentUser(): Promise<User>;
   getTree(): Promise<TreeResponse>;
   createProject(name: string): Promise<CreateProjectResponse>;
+  addQuickStart(): Promise<CreateProjectResponse>; // POST /projects/quick-start → 201 Project; 409 when one named Quick Start exists
   createModule(projectId: string, name: string): Promise<CreateModuleResponse>;
   createTestFile(moduleId: string, name: string, source: string): Promise<CreateTestFileResponse>; // { testFile, diagnostics }
   getTestFile(testFileId: string): Promise<TestFile>;
@@ -574,9 +612,11 @@ This fallback is implemented in the client itself when the backend response is n
 
 | Module / Class                                | Responsibility                                              |
 | --------------------------------------------- | ----------------------------------------------------------- |
-| `app/login/page.tsx`                          | Two-mode auth form (Log in/Register)                        |
+| `app/layout.tsx`                              | Fonts and the theme provider (design-system.md 3)           |
+| `app/page.tsx`                                | Landing page (1.14)                                         |
+| `app/login/page.tsx`, `app/register/page.tsx` | The auth form in Log in or Register mode                    |
 | `app/(workspace)/layout.tsx`                  | Auth guard, loads `me` and the tree, renders the sidebar    |
-| `app/(workspace)/page.tsx`                    | Files overview (1.10)                                       |
+| `app/(workspace)/files/page.tsx`              | Files overview and Add the Quick Start project (1.10)       |
 | `app/(workspace)/files/[testFileId]/page.tsx` | Test file editor (1.7) and Runs list (1.9)                  |
 | `app/(workspace)/runs/[runId]/page.tsx`       | Run page: live progress and report (1.9)                    |
 | `lib/api.ts`                                  | Fetch wrapper, `ApiError`, `NetworkError`, typed API functions |
@@ -589,6 +629,13 @@ This fallback is implemented in the client itself when the backend response is n
 | `lib/editor.ts`                               | Editor and Variables helpers (1.7, 1.8)                     |
 | `lib/runs.ts`                                 | Run helpers (1.9)                                           |
 | `lib/workspace-context.tsx`                   | `useWorkspace()`: `me`, `tree`, `refreshTree`               |
+| `lib/routes.ts`                               | `WORKSPACE_HOME`, the overview's path `/files`              |
+| `lib/landing.ts`                              | Landing content: `SAMPLE_TEST`, `FEATURES` (1.14)           |
+| `components/auth/auth-form.tsx`               | Two-mode auth form (Log in/Register, 1.5)                   |
+| `components/landing/site-header.tsx`          | Header of the landing and auth pages (1.14)                 |
+| `components/landing/brand-mark.tsx`           | The product mark                                            |
+| `components/theme/`                           | Theme provider and switch (design-system.md 3)              |
+| `components/workspace/status-badge.tsx`       | Status icons and badges (design-system.md 2.3)              |
 | `components/workspace/sidebar-nav.tsx`        | Sidebar tree, dialogs, account                              |
 | `components/workspace/create-name-dialog.tsx` | Shared name dialog for create (1.6) and rename (1.11)       |
 | `components/workspace/confirm-delete-dialog.tsx` | Delete confirmation dialog (1.11)                        |
@@ -604,12 +651,15 @@ src/app/frontend/
 ├── app/
 │   ├── globals.css
 │   ├── layout.tsx
+│   ├── page.tsx
 │   ├── login/
+│   │   └── page.tsx
+│   ├── register/
 │   │   └── page.tsx
 │   └── (workspace)/
 │       ├── layout.tsx
-│       ├── page.tsx
 │       ├── files/
+│       │   ├── page.tsx
 │       │   └── [testFileId]/
 │       │       └── page.tsx
 │       └── runs/
@@ -617,16 +667,29 @@ src/app/frontend/
 │               └── page.tsx
 ├── components.json
 ├── components/
+│   ├── auth/
+│   │   └── auth-form.tsx
+│   ├── landing/
+│   │   ├── brand-mark.tsx
+│   │   └── site-header.tsx
+│   ├── theme/
+│   │   ├── theme-provider.tsx
+│   │   └── theme-toggle.tsx
 │   ├── ui/
+│   │   ├── badge.tsx
 │   │   ├── button.tsx
+│   │   ├── card.tsx
 │   │   ├── dialog.tsx
 │   │   ├── input.tsx
-│   │   └── label.tsx
+│   │   ├── label.tsx
+│   │   ├── toggle-group.tsx
+│   │   └── toggle.tsx
 │   └── workspace/
 │       ├── confirm-delete-dialog.tsx
 │       ├── create-name-dialog.tsx
 │       ├── run-list.tsx
 │       ├── sidebar-nav.tsx
+│       ├── status-badge.tsx
 │       ├── step-list.tsx
 │       └── variables-dialog.tsx
 ├── lib/
@@ -634,7 +697,9 @@ src/app/frontend/
 │   ├── api-schema.ts
 │   ├── editor.ts
 │   ├── format-error.ts
+│   ├── landing.ts
 │   ├── overview.ts
+│   ├── routes.ts
 │   ├── runs.ts
 │   ├── sidebar.ts
 │   ├── utils.ts
@@ -661,6 +726,11 @@ src/app/frontend/
 | Unit | Overview helper (1.10)                                                                                           | `src/tests/unit/app/frontend/overview.test.ts`          |
 | Unit | Editor and Variables helpers (1.7, 1.8)                                                                          | `src/tests/unit/app/frontend/editor.test.ts`            |
 | Unit | Run helpers (1.9)                                                                                                | `src/tests/unit/app/frontend/runs.test.ts`              |
+| Unit | Landing content (1.14)                                                                                           | `src/tests/unit/app/frontend/landing.test.ts`           |
+| Unit | Token contrast in both themes (design-system.md 2.2)                                                             | `src/tests/unit/app/frontend/design-tokens.test.ts`     |
+| E2E  | Landing page: features, sample, Log in, Register, Open workspace (1.14)                                          | `src/tests/e2e/landing.e2e.ts`                          |
+| E2E  | Themes: system default, persisted choice, no flash, switch placement (design-system.md 3)                       | `src/tests/e2e/theme.e2e.ts`                            |
+| E2E  | Quick Start: seeded on register and runnable, added from the empty overview, `409` message (1.10)                | `src/tests/e2e/quick-start.e2e.ts`                      |
 | E2E  | Auth flow                                                                                                        | `src/tests/e2e/auth.e2e.ts`                             |
 | E2E  | Sidebar create flow and duplicate name (1.6)                                                                     | `src/tests/e2e/sidebar.e2e.ts`                          |
 | E2E  | Editor: validate, save, reload, run (1.7)                                                                        | `src/tests/e2e/editor.e2e.ts`                           |
@@ -844,6 +914,14 @@ The tests use `fetchImpl`, `getToken`, `setToken`, and `onUnauthorized` injectio
 25. `it("sends DELETE /modules/m-1 and resolves undefined on 204", async () => { ... })`
 
 26. `it("sends DELETE /test-files/tf-1 and resolves undefined on 204", async () => { ... })`
+
+27. `it("sends POST /projects/quick-start without a body and resolves the Quick Start project", async () => { ... })`
+    - expected request: `POST /projects/quick-start`, no body
+    - expected value: the mocked Project named `Quick Start`
+
+28. `it("rejects addQuickStart with the backend's 409 message when the project exists", async () => { ... })`
+    - mocked response: `409 { error: { code: "conflict", message: "You already have a project named Quick Start. Rename or delete it, then add it again." } }`
+    - expected: `ApiError` with status `409`, code `conflict`, that message
 
 These exact values are the source of truth for the API client tests and are intentionally written by hand rather than read from generated responses.
 

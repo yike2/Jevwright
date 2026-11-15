@@ -4,6 +4,8 @@ import { useState } from "react";
 import type { Step } from "@/lib/api";
 import { formatDuration, runFileUrl, stepStatusLabel } from "@/lib/runs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { StatusIcon } from "@/components/workspace/status-badge";
 
 type StepListProps = {
   runId: string;
@@ -26,28 +28,27 @@ export function StepList({ runId, steps, baseUrl, token }: StepListProps) {
             "screenshot" in step && step.screenshot ? runFileUrl(baseUrl, runId, step.screenshot, token) : null;
 
           return (
-            <li key={step.index} className="space-y-1 rounded-lg border border-border bg-background p-3 text-sm">
-              <p className="text-foreground">Step {stepNumber}</p>
-              <p className="text-muted-foreground">{step.action}</p>
-              <p className="text-muted-foreground">line {step.line}</p>
-              <p className="text-muted-foreground">{stepStatusLabel(step.status)}</p>
-              {"durationMs" in step && <p className="text-muted-foreground">{formatDuration(step.durationMs)}</p>}
-              {"locateMethod" in step && step.locateMethod && (
-                <p className="text-muted-foreground">{step.locateMethod}</p>
-              )}
+            <li key={step.index} className="space-y-2 rounded-xl bg-card p-3 ring-1 ring-foreground/10">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <p className="flex items-center gap-2 font-medium">
+                  <StatusIcon status={step.status} />
+                  Step {stepNumber}
+                </p>
+                <p className="font-mono text-[0.8125rem]">{step.action}</p>
+                <p className="text-muted-foreground">line {step.line}</p>
+                <p className="text-muted-foreground">{stepStatusLabel(step.status)}</p>
+                {"durationMs" in step && <p className="text-muted-foreground">{formatDuration(step.durationMs)}</p>}
+                {"locateMethod" in step && step.locateMethod && <Badge variant="muted">{step.locateMethod}</Badge>}
+              </div>
               {"reason" in step && <p className="text-destructive">{step.reason}</p>}
               {src !== null && (
                 <button
                   type="button"
-                  className="block cursor-zoom-in rounded-md focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+                  className="block cursor-zoom-in rounded-md"
                   aria-label={`Open step ${stepNumber} screenshot full size`}
                   onClick={() => setOpenScreenshot({ stepNumber, src })}
                 >
-                  <img
-                    alt={`Step ${stepNumber} screenshot`}
-                    className="max-h-80 rounded-md border border-border"
-                    src={src}
-                  />
+                  <img alt={`Step ${stepNumber} screenshot`} className="max-h-80 rounded-md border" src={src} />
                 </button>
               )}
             </li>
@@ -63,7 +64,7 @@ export function StepList({ runId, steps, baseUrl, token }: StepListProps) {
           {openScreenshot !== null && (
             <img
               alt={`Step ${openScreenshot.stepNumber} screenshot, full size`}
-              className="max-w-none rounded-md border border-border"
+              className="max-w-none rounded-md border"
               src={openScreenshot.src}
             />
           )}

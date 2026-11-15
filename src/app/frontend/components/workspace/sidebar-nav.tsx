@@ -20,7 +20,12 @@ import { nameProblem, testFileNameProblem } from "@/lib/validation";
 import { CreateNameDialog } from "@/components/workspace/create-name-dialog";
 import { ConfirmDeleteDialog } from "@/components/workspace/confirm-delete-dialog";
 import { VariablesDialog } from "@/components/workspace/variables-dialog";
-import { KeyRound, Pencil, Trash2 } from "lucide-react";
+import { ChevronRight, KeyRound, LogOut, Pencil, Plus, Trash2 } from "lucide-react";
+import { cn } from "cn";
+import { WORKSPACE_HOME } from "@/lib/routes";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { BrandMark } from "@/components/landing/brand-mark";
+import { StatusIcon } from "@/components/workspace/status-badge";
 
 type WorkspaceSidebarProps = {
   email: string;
@@ -29,22 +34,6 @@ type WorkspaceSidebarProps = {
   onLogout: () => void;
   onNavigate?: () => void;
 };
-
-function statusClass(dot: ReturnType<typeof statusOf>): string {
-  if (dot === "none") {
-    return "bg-slate-500";
-  }
-
-  if (dot === "active") {
-    return "bg-amber-400";
-  }
-
-  if (dot === "passed") {
-    return "bg-emerald-400";
-  }
-
-  return "bg-red-400";
-}
 
 type RenameTarget = {
   kind: "project" | "module" | "testFile";
@@ -207,7 +196,7 @@ export function SidebarNav({ email, tree, refreshTree, onLogout, onNavigate }: W
 
     const shouldNavigateToHome = deletesTestFile({ items: tree }, deleteTarget, currentFileId);
     if (shouldNavigateToHome) {
-      router.replace("/");
+      router.replace(WORKSPACE_HOME);
       onNavigate?.();
     }
 
@@ -218,204 +207,252 @@ export function SidebarNav({ email, tree, refreshTree, onLogout, onNavigate }: W
     }
   };
 
+  // Row actions stay in the accessibility tree; with a mouse they show on hover or focus, on touch always.
+  const rowAction =
+    "pointer-fine:opacity-0 pointer-fine:group-hover/row:opacity-100 pointer-fine:group-focus-within/row:opacity-100";
+
   return (
     <>
-      <nav aria-label="Projects" className="flex h-full flex-col gap-4 p-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-medium uppercase tracking-[0.15em] text-slate-300">Projects</h2>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon-sm"
-            aria-label="New project"
-            onClick={() => setIsProjectDialogOpen(true)}
+      <div className="flex h-full flex-col">
+        {/* The brand sits outside the "Projects" navigation, whose links are only the tree's Test Files. */}
+        <div className="flex h-12 shrink-0 items-center gap-2 border-b border-sidebar-border px-3">
+          <Link
+            href={WORKSPACE_HOME}
+            className="flex items-center gap-2 rounded-md font-heading font-semibold"
+            onClick={() => onNavigate?.()}
           >
-            +
-          </Button>
+            <BrandMark />
+            Jevwright
+          </Link>
         </div>
+        <nav aria-label="Projects" className="flex min-h-0 flex-1 flex-col">
+          <div className="flex items-center justify-between px-3 pt-3 pb-1">
+            <h2 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Projects</h2>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              aria-label="New project"
+              title="New project"
+              onClick={() => setIsProjectDialogOpen(true)}
+            >
+              <Plus aria-hidden="true" />
+            </Button>
+          </div>
 
-        <div className="min-h-0 flex-1 space-y-2 overflow-auto pr-1">
-          {tree.map((project) => {
-            const isProjectOpen = expandedProjects.has(project.id);
+          <div className="min-h-0 flex-1 space-y-1 overflow-auto px-2 pb-3">
+            {tree.map((project) => {
+              const isProjectOpen = expandedProjects.has(project.id);
 
-            return (
-              <div key={project.id} className="space-y-2 rounded-lg border border-slate-800/80 bg-slate-900/70 p-2">
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    className="h-auto flex-1 justify-start px-2 py-1.5 text-slate-100"
-                    aria-expanded={isProjectOpen}
-                    onClick={() => toggleProject(project.id)}
-                  >
-                    {project.name}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon-sm"
-                    aria-label={`Rename project ${project.name}`}
-                    onClick={() => setRenameTarget({ kind: "project", id: project.id, name: project.name })}
-                  >
-                    <Pencil />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon-sm"
-                    aria-label={`Delete project ${project.name}`}
-                    onClick={() => setDeleteTarget({ kind: "project", id: project.id, name: project.name })}
-                  >
-                    <Trash2 />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon-sm"
-                    aria-label={`Variables for ${project.name}`}
-                    title={`Variables for ${project.name}`}
-                    onClick={() => setVariablesProject({ id: project.id, name: project.name })}
-                  >
-                    <KeyRound />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon-sm"
-                    aria-label={`New module in ${project.name}`}
-                    onClick={() => setModuleProject({ id: project.id, name: project.name })}
-                  >
-                    +
-                  </Button>
-                </div>
-
-                {isProjectOpen && (
-                  <div className="space-y-2 pl-2">
-                    {project.modules.map((module) => {
-                      const isModuleOpen = expandedModules.has(module.id);
-
-                      return (
-                        <div key={module.id} className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="ghost"
-                              className="h-auto flex-1 justify-start px-2 py-1.5 text-slate-200"
-                              aria-expanded={isModuleOpen}
-                              onClick={() => toggleModule(module.id)}
-                            >
-                              {module.name}
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="icon-sm"
-                              aria-label={`Rename module ${module.name}`}
-                              onClick={() => setRenameTarget({ kind: "module", id: module.id, name: module.name })}
-                            >
-                              <Pencil />
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="icon-sm"
-                              aria-label={`Delete module ${module.name}`}
-                              onClick={() => setDeleteTarget({ kind: "module", id: module.id, name: module.name })}
-                            >
-                              <Trash2 />
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="icon-sm"
-                              aria-label={`New test file in ${module.name}`}
-                              onClick={() => setTestFileModule({ id: module.id, name: module.name })}
-                            >
-                              +
-                            </Button>
-                          </div>
-
-                          {isModuleOpen && (
-                            <div className="space-y-1 pl-2">
-                              {module.testFiles.map((testFile) => {
-                                const dot = statusOf(testFile.latestRun);
-                                const isCurrent = currentFileId === testFile.id;
-
-                                return (
-                                  <div
-                                    key={testFile.id}
-                                    className="group flex items-center gap-2 rounded-md pr-2 hover:bg-muted/60"
-                                  >
-                                    <Link
-                                      href={`/files/${testFile.id}`}
-                                      className="min-w-0 flex-1 rounded-md px-2 py-1.5 text-sm text-foreground"
-                                      aria-current={isCurrent ? "page" : undefined}
-                                      onClick={() => onNavigate?.()}
-                                    >
-                                      <span
-                                        aria-hidden="true"
-                                        data-status={dot}
-                                        title={statusTitle(dot)}
-                                        className={`mr-2 inline-block size-2 rounded-full ${statusClass(dot)}`}
-                                      />
-                                      <span>{testFile.name}</span>
-                                    </Link>
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="icon-sm"
-                                      className="opacity-100 focus-visible:opacity-100 md:opacity-70 md:group-hover:opacity-100"
-                                      aria-label={`Rename test file ${testFile.name}`}
-                                      onClick={() =>
-                                        setRenameTarget({ kind: "testFile", id: testFile.id, name: testFile.name })
-                                      }
-                                    >
-                                      <Pencil />
-                                    </Button>
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="icon-sm"
-                                      className="opacity-100 focus-visible:opacity-100 md:opacity-70 md:group-hover:opacity-100"
-                                      aria-label={`Delete test file ${testFile.name}`}
-                                      onClick={() =>
-                                        setDeleteTarget({ kind: "testFile", id: testFile.id, name: testFile.name })
-                                      }
-                                    >
-                                      <Trash2 />
-                                    </Button>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
+              return (
+                <div key={project.id}>
+                  <div className="group/row flex h-8 items-center gap-0.5 rounded-md hover:bg-accent">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className="min-w-0 flex-1 justify-start gap-1 px-1 font-semibold hover:bg-transparent aria-expanded:bg-transparent"
+                      aria-expanded={isProjectOpen}
+                      onClick={() => toggleProject(project.id)}
+                    >
+                      <ChevronRight
+                        aria-hidden="true"
+                        className={cn(
+                          "transition-transform motion-reduce:transition-none",
+                          isProjectOpen && "rotate-90",
+                        )}
+                      />
+                      <span className="truncate">{project.name}</span>
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-xs"
+                      className={rowAction}
+                      aria-label={`Rename project ${project.name}`}
+                      title="Rename"
+                      onClick={() => setRenameTarget({ kind: "project", id: project.id, name: project.name })}
+                    >
+                      <Pencil />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-xs"
+                      className={rowAction}
+                      aria-label={`Delete project ${project.name}`}
+                      title="Delete"
+                      onClick={() => setDeleteTarget({ kind: "project", id: project.id, name: project.name })}
+                    >
+                      <Trash2 />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-xs"
+                      aria-label={`Variables for ${project.name}`}
+                      title={`Variables for ${project.name}`}
+                      onClick={() => setVariablesProject({ id: project.id, name: project.name })}
+                    >
+                      <KeyRound />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-xs"
+                      aria-label={`New module in ${project.name}`}
+                      title="New module"
+                      onClick={() => setModuleProject({ id: project.id, name: project.name })}
+                    >
+                      <Plus />
+                    </Button>
                   </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
 
-        <div className="rounded-lg border border-slate-800/80 bg-slate-900/70 p-3">
-          <div className="flex items-center gap-3">
-            <div className="flex size-8 items-center justify-center rounded-full bg-slate-700 text-xs font-semibold text-slate-100">
-              {initials(email)}
+                  {isProjectOpen && (
+                    <div className="ml-3 border-l border-sidebar-border pl-1">
+                      {project.modules.map((module) => {
+                        const isModuleOpen = expandedModules.has(module.id);
+
+                        return (
+                          <div key={module.id}>
+                            <div className="group/row flex h-8 items-center gap-0.5 rounded-md hover:bg-accent">
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                className="min-w-0 flex-1 justify-start gap-1 px-1 hover:bg-transparent aria-expanded:bg-transparent"
+                                aria-expanded={isModuleOpen}
+                                onClick={() => toggleModule(module.id)}
+                              >
+                                <ChevronRight
+                                  aria-hidden="true"
+                                  className={cn(
+                                    "transition-transform motion-reduce:transition-none",
+                                    isModuleOpen && "rotate-90",
+                                  )}
+                                />
+                                <span className="truncate">{module.name}</span>
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon-xs"
+                                className={rowAction}
+                                aria-label={`Rename module ${module.name}`}
+                                title="Rename"
+                                onClick={() => setRenameTarget({ kind: "module", id: module.id, name: module.name })}
+                              >
+                                <Pencil />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon-xs"
+                                className={rowAction}
+                                aria-label={`Delete module ${module.name}`}
+                                title="Delete"
+                                onClick={() => setDeleteTarget({ kind: "module", id: module.id, name: module.name })}
+                              >
+                                <Trash2 />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon-xs"
+                                aria-label={`New test file in ${module.name}`}
+                                title="New test file"
+                                onClick={() => setTestFileModule({ id: module.id, name: module.name })}
+                              >
+                                <Plus />
+                              </Button>
+                            </div>
+
+                            {isModuleOpen && (
+                              <div className="ml-3 border-l border-sidebar-border pl-1">
+                                {module.testFiles.map((testFile) => {
+                                  const dot = statusOf(testFile.latestRun);
+                                  const isCurrent = currentFileId === testFile.id;
+
+                                  return (
+                                    <div
+                                      key={testFile.id}
+                                      className={cn(
+                                        "group/row flex h-7 items-center gap-0.5 rounded-md hover:bg-accent",
+                                        isCurrent && "bg-sidebar-accent hover:bg-sidebar-accent",
+                                      )}
+                                    >
+                                      <Link
+                                        href={`/files/${testFile.id}`}
+                                        className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1 font-mono text-[0.8125rem]"
+                                        aria-current={isCurrent ? "page" : undefined}
+                                        onClick={() => onNavigate?.()}
+                                      >
+                                        <span aria-hidden="true" data-status={dot} title={statusTitle(dot)}>
+                                          <StatusIcon status={dot} />
+                                        </span>
+                                        <span className="truncate">{testFile.name}</span>
+                                      </Link>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon-xs"
+                                        className={rowAction}
+                                        aria-label={`Rename test file ${testFile.name}`}
+                                        title="Rename"
+                                        onClick={() =>
+                                          setRenameTarget({ kind: "testFile", id: testFile.id, name: testFile.name })
+                                        }
+                                      >
+                                        <Pencil />
+                                      </Button>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon-xs"
+                                        className={rowAction}
+                                        aria-label={`Delete test file ${testFile.name}`}
+                                        title="Delete"
+                                        onClick={() =>
+                                          setDeleteTarget({ kind: "testFile", id: testFile.id, name: testFile.name })
+                                        }
+                                      >
+                                        <Trash2 />
+                                      </Button>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="space-y-3 border-t border-sidebar-border p-3">
+            <div className="flex items-center gap-3">
+              <div
+                aria-hidden="true"
+                className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground"
+              >
+                {initials(email)}
+              </div>
+              <p className="min-w-0 flex-1 truncate">Signed in as {email}</p>
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs uppercase tracking-[0.15em] text-slate-400">Account</p>
-              <p className="truncate text-sm text-slate-100">Signed in as {email}</p>
+            <div className="flex items-center justify-between gap-2">
+              <ThemeToggle />
+              <Button type="button" variant="outline" size="sm" onClick={onLogout}>
+                <LogOut data-icon="inline-start" aria-hidden="true" />
+                Log out
+              </Button>
             </div>
           </div>
-          <Button type="button" variant="outline" className="mt-3 w-full" onClick={onLogout}>
-            Log out
-          </Button>
-        </div>
-      </nav>
+        </nav>
+      </div>
 
       <CreateNameDialog
         open={isProjectDialogOpen}

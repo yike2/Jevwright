@@ -301,7 +301,7 @@ export function createApiClient(config: ApiClientConfig = {}): {
   };
 
   const addQuickStart = async (): Promise<CreateProjectResponse> => {
-    return {} as CreateProjectResponse;
+    return request<CreateProjectResponse>("/projects/quick-start", { method: "POST" });
   };
 
   const createModule = async (projectId: string, name: string): Promise<CreateModuleResponse> => {

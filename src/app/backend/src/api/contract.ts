@@ -143,6 +143,15 @@ export const ROUTES: readonly Route[] = [
     responses: { 201: ok("Created", Project), 409: error("The name is taken") },
   }),
   route({
+    method: "post",
+    path: "/projects/quick-start",
+    summary: "Add the Quick Start project",
+    description:
+      "Adds the Quick Start project that every new account gets: Modules of passing, failing, and invalid example Test Files, and the Variables BASE and SWAG_PASSWORD.",
+    auth: "bearer",
+    responses: { 201: ok("Created", Project), 409: error("A project named Quick Start exists") },
+  }),
+  route({
     method: "patch",
     path: "/projects/:projectId",
     summary: "Rename a Project",

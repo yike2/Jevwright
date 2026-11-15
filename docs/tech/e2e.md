@@ -37,7 +37,7 @@ flowchart LR
   C --> D[Report and traces]
 ```
 
-1. Playwright starts the backend and waits for `http://127.0.0.1:4000/api/v1/health`.
+1. Playwright starts the backend with `DEMO_APP_URL=http://127.0.0.1:8080`, so the Quick Start project's `BASE` is the local Demo App, and waits for `http://127.0.0.1:4000/api/v1/health`.
 2. It starts the frontend and waits for `http://localhost:3000/login`.
 3. It starts the Demo App and waits for `http://127.0.0.1:8080/`.
 4. It runs every `*.e2e.ts` file in Chromium with `baseURL` `http://localhost:3000`, one worker at a time.
@@ -61,10 +61,11 @@ Shared setup for the tests. Requests go straight to the backend at `API_URL` (`h
 | Export | Does |
 | ------ | ---- |
 | `API_URL`, `DEMO_URL`, `PASSWORD`, `SWAG_PASSWORD` | `http://127.0.0.1:4000/api/v1`, `http://127.0.0.1:8080`, `"e2e-password-123"`, `process.env.SWAG_PASSWORD ?? "secret_sauce"` |
+| `WORKSPACE`, `QUICK_START` | `"/files"`, the files overview; `"Quick Start"`, the seeded Project's name |
 | `alertsOf(page)` | The page's `role="alert"` elements without Next.js's hidden route announcer (`#__next-route-announcer__`), which has the same role |
 | `uniqueEmail()` | `e2e-<Date.now()>-<6 random characters>@example.com` |
 | `fixture(path)` | The text of `src/tests/e2e/fixtures/<path>` |
-| `signUp(page)` | Registers a new account through the API and stores its token in the page's `localStorage` (`auth-token`) before any page script runs. Returns `{ email, token, api }`, where `api` sends `Authorization: Bearer <token>` |
+| `signUp(page, { quickStart? })` | Registers a new account through the API and stores its token in the page's `localStorage` (`auth-token`) before any page script runs. It then deletes the account's Quick Start project (`backend.md` 1.10), so the workspace starts empty, unless `quickStart` is `true`. Returns `{ email, token, api }`, where `api` sends `Authorization: Bearer <token>` |
 | `createWorkspace(api)` | Creates Project `Demo Shop` and Module `Shopping`; returns their ids |
 | `setDemoVariables(api, projectId)` | Sets the Project Variables `BASE` to `DEMO_URL` and `SWAG_PASSWORD` to `SWAG_PASSWORD` |
 | `setUpDemoProject(page)` | Shared steps S1–S3 of `test-cases.md`: `signUp`, `createWorkspace`, and `setDemoVariables`; returns the Account with `projectId` and `moduleId` |
@@ -85,7 +86,10 @@ Shared setup for the tests. Requests go straight to the backend at `API_URL` (`h
 | `playwright.config.ts` | Test location, `baseURL`, Chromium project, `webServer` for backend, frontend, and Demo App, trace on failure |
 | `src/tests/e2e/demo-app.ts` | Serves the Demo App on `127.0.0.1:8080` with `serveDemoApp(8080)` (`benchmark.md` 1.4) until it is stopped |
 | `src/tests/e2e/support.ts` | Setup helpers (3.1) |
+| `src/tests/e2e/landing.e2e.ts` | TC-LAND-01 – 03 |
+| `src/tests/e2e/theme.e2e.ts` | TC-THEME-01 – 04 |
 | `src/tests/e2e/auth.e2e.ts` | TC-AUTH-01 – 05, 07, 08 |
+| `src/tests/e2e/quick-start.e2e.ts` | TC-QS-01 – 03 |
 | `src/tests/e2e/sidebar.e2e.ts` | TC-WS-01 – 03, 08, 09 |
 | `src/tests/e2e/sidebar-actions.e2e.ts` | TC-WS-04 – 06 |
 | `src/tests/e2e/editor.e2e.ts` | TC-ED-01 – 09 |
@@ -114,4 +118,4 @@ src/tests/e2e/
 
 The steps and expected results of every test are those of its case in `docs/testing/test-cases.md` 4. A test asserts every expected result its case lists; where a case needs a server restart, a second browser window, or production, it is Manual and has no test here.
 
-The selectors follow the accessible names of `frontend.md` 1.6–1.11. The mode buttons and the submit button on `/login` can share a label ("Register", "Log in"), so the submit button is always located inside the `form`; the overview and the sidebar share link names, so overview lookups are scoped to the "Test files" region.
+The selectors follow the accessible names of `frontend.md` 1.6–1.11 and 1.14. The mode buttons and the submit button on `/login` can share a label ("Register", "Log in"), so the submit button is always located inside the `form`; the overview and the sidebar share link names, so overview lookups are scoped to the "Test files" region.
