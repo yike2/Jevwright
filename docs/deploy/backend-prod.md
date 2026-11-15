@@ -6,8 +6,9 @@ This guide takes a fresh VPS to a running Jevwright backend for production at `h
 
 | Service | What it does | Reachable from |
 | ------- | ------------ | -------------- |
-| `caddy` | HTTPS for `API_DOMAIN` and `DEMO_DOMAIN`, with automatic certificates; proxies the API to the backend, WebSockets included, and serves the Demo App's static files | The internet, ports 80 and 443 |
+| `caddy` | HTTPS for `API_DOMAIN`, `APP_DOMAIN`, `DEMO_DOMAIN`, and the preview domains, with automatic certificates; proxies the API to the backend, WebSockets included, and the app to the frontend, and serves the Demo App's static files | The internet, ports 80 and 443 |
 | `backend` | REST API, Run Queue, Live Progress; runs database migrations at start | `caddy` only |
+| `frontend` | The Next.js app (`frontend-prod.md`) | `caddy` only |
 | `browser` | The Chromium that Runs drive. Its firewall refuses every connection to a private address, so a user's test cannot reach Postgres, the backend, or the host | `backend` only |
 | `postgres` | The database | `backend` only; no port is published |
 
@@ -18,9 +19,9 @@ Data lives in Docker volumes: `postgres-data` (the database), `runs` (screenshot
 You need:
 
 - A VPS with Ubuntu 24.04, at least 2 CPUs and 4 GB of memory, and root or sudo access.
-- A domain for the API, such as `api.example.com`, one for the Demo App, such as `demo.example.com`, and later one for the frontend, such as `app.example.com`.
+- A domain for the API, such as `api.example.com`, one for the frontend, such as `app.example.com`, one for the Demo App, such as `demo.example.com`, and two for the PR preview environment, such as `preview.example.com` and `preview-api.example.com` (`ci-cd.md` 4). Without domains, sslip.io names work, e.g. `api.<IP>.sslip.io`.
 
-At your DNS provider, add an `A` record for the API domain and one for the Demo App's domain, both pointing to the VPS's public IPv4 address (and `AAAA` records if the VPS has IPv6). Caddy cannot get a certificate for a domain until its record resolves.
+At your DNS provider, add an `A` record for each domain, all pointing to the VPS's public IPv4 address (and `AAAA` records if the VPS has IPv6). Caddy cannot get a certificate for a domain until its record resolves.
 
 Open SSH, HTTP, and HTTPS in the host firewall:
 
@@ -68,7 +69,9 @@ Edit `.env`. compose reads it from this folder; the deploy needs these variables
 | -------- | ----- |
 | `API_DOMAIN` | The API's domain, without `https://`, e.g. `api.example.com` |
 | `DEMO_DOMAIN` | The Demo App's domain, without `https://`, e.g. `demo.example.com` |
-| `CORS_ORIGIN` | The frontend's origin, with `https://`, e.g. `https://app.example.com`. Only this origin may call the API from a browser |
+| `APP_DOMAIN` | The frontend's domain, without `https://`, e.g. `app.example.com` |
+| `PREVIEW_APP_DOMAIN`, `PREVIEW_API_DOMAIN` | The preview environment's two domains (`ci-cd.md` 4.2). compose requires them even while no preview runs; the preview domains then answer `502` |
+| `CORS_ORIGIN` | `https://<APP_DOMAIN>`, with no trailing slash. Only this origin may call the API from a browser |
 | `POSTGRES_PASSWORD` | A new random password: `openssl rand -hex 24` |
 | `JWT_SECRET` | A new random secret of at least 32 characters: `openssl rand -hex 32`. Changing it logs every user out |
 | `OPENROUTER_API_KEY` | The OpenRouter key Runs use for Jev |
@@ -79,6 +82,7 @@ Leave `DATABASE_URL`, `RUNS_DIR`, `PORT`, `HOST`, `BROWSER_ENDPOINT`, and `DEMO_
 ## 4. Start it
 
 ```sh
+docker network create jevwright-edge   # once; Caddy reaches the preview environment through it
 for service in browser backend frontend; do docker compose build "$service"; done   # one image at a time to stay within memory
 docker compose up -d
 docker compose ps

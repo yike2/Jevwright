@@ -1,10 +1,11 @@
-# Production on the VPS (backend.md 1.9): the backend, its browser container, Postgres, and Caddy for HTTPS,
-# which also serves the benchmark Demo App.
-#   cp .env.example .env   # fill in the Deploy section
-#   docker compose up -d --build
-# The frontend and the public Demo App are added by their own services and Caddy sites.
+# Production on the VPS (backend.md 1.9, docs/deploy/backend-prod.md): the backend, its browser container, the
+# frontend, Postgres, and Caddy for HTTPS, which also serves the benchmark Demo App.
+#   docker network create jevwright-edge   # once
+#   cp .env.example .env                   # fill in the Deploy section
+#   for service in browser backend frontend; do docker compose build "$service"; done   # one image at a time
+#   docker compose up -d
 # Caddy also serves the preview environment (compose.preview.yaml, docs/deploy/ci-cd.md 4) through the external
-# network jevwright-edge, created once with: docker network create jevwright-edge
+# network jevwright-edge.
 services:
   postgres:
     image: postgres:17.9-alpine
