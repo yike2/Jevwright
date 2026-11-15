@@ -195,8 +195,7 @@ describe("isFinalLiveMessage", () => {
   });
 
   it("is false for a step message", () => {
-    expect(isFinalLiveMessage({ type: "step", step: { ...pendingStep, status: "passed", durationMs: 10 } })).toBe(
-      false,
-    );
+    const passedStep: Step = { ...runningStep, status: "passed", durationMs: 10, dialogs: [] };
+    expect(isFinalLiveMessage({ type: "step", step: passedStep })).toBe(false);
   });
 });
