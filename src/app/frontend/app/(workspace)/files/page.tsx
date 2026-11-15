@@ -47,8 +47,8 @@ export default function FilesOverviewPage() {
             <div className="space-y-1">
               <p className="font-medium">No test files yet</p>
               <p className="text-muted-foreground">
-                Create a project in the sidebar, or add the Quick Start project: example test files that pass, fail and
-                do not validate, with the Variables they need.
+                Create a project in the sidebar, or add the Quick Start project: example test files that pass, fail, do
+                not validate, or use Jev, with the Variables they need.
               </p>
             </div>
             <Button type="button" onClick={() => void handleAddQuickStart()} disabled={isAdding}>
@@ -78,7 +78,7 @@ export default function FilesOverviewPage() {
                       <li key={testFile.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2">
                         <Link
                           href={`/files/${testFile.id}`}
-                          className="rounded-sm font-mono text-[0.8125rem] text-primary underline-offset-4 hover:underline"
+                          className="rounded-sm font-mono text-[0.8125rem] text-info underline-offset-4 hover:underline"
                         >
                           {testFile.name}
                         </Link>

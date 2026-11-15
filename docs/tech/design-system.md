@@ -8,6 +8,7 @@ The design system is the shared look and wording of the Jevwright frontend: the 
 
 | Principle | Rule |
 | --------- | ---- |
+| Neutral with blue accents | The surfaces and text are true greys; blue is only for the primary fill, links, the selected row and focus (2.1) |
 | Tokens only | Components use semantic tokens through Tailwind utilities (`bg-background`, `text-muted-foreground`, `border-input`). Hex values, `[#...]` classes, Tailwind palette colors (`slate-*`, `red-*`) and inline styles for color are not used in components |
 | Meaning, not look | A token is chosen for what it means: `success` for a passed Run, never because it is green (Atlassian design tokens) |
 | shadcn/ui first | UI is built from the shadcn/ui components in `components/ui/`, added with `shadcn add` and pinned (frontend.md 1.12). A new pattern becomes a component or a variant there, not a one-off set of classes |
@@ -16,7 +17,7 @@ The design system is the shared look and wording of the Jevwright frontend: the 
 
 ### 1.2 Sources
 
-The tokens start from the visual prototype `docs/references/ui-prototype.html`, renamed to shadcn's semantic variables. The rules draw on these references:
+The colors follow VS Code's Light Modern and Dark Modern themes (2.8), and the layout, type and radius follow the visual prototype `docs/references/ui-prototype.html`; both are written as shadcn's semantic variables. The rules draw on these references:
 
 | Topic | Source |
 | ----- | ------ |
@@ -29,6 +30,7 @@ The tokens start from the visual prototype `docs/references/ui-prototype.html`, 
 | Focus | Primer focus management, https://primer.style/accessibility/focus-management; W3C Understanding 2.4.13, https://www.w3.org/WAI/WCAG22/Understanding/focus-appearance.html |
 | Spacing | GitLab Pajamas spacing, https://design.gitlab.com/product-foundations/spacing; Carbon spacing, https://carbondesignsystem.com/elements/spacing/overview/ |
 | Editor layout regions | VS Code UX guidelines, https://code.visualstudio.com/api/ux-guidelines/overview |
+| Palette | VS Code's Light Modern and Dark Modern themes, https://github.com/microsoft/vscode/tree/main/extensions/theme-defaults/themes |
 | Messages | GitLab Pajamas error messages, https://design.gitlab.com/content/error-messages; Microsoft Win32 error messages, https://learn.microsoft.com/en-us/windows/win32/uxguide/mess-error; NN/g error-message guidelines, https://www.nngroup.com/articles/error-message-guidelines/ |
 
 ## 2. Tokens
@@ -39,50 +41,58 @@ The tokens are CSS variables in `app/globals.css`: `:root` holds the light theme
 
 | Token | Light | Dark | Use |
 | ----- | ----- | ---- | --- |
-| `--background` | `#e8ecf0` | `#0e141a` | The page behind panels and cards |
-| `--foreground` | `#16202a` | `#e3e9ef` | Body text |
-| `--card`, `--popover` | `#ffffff` | `#18212a` | Cards, dialogs, menus, the Runs and Validation panels |
-| `--card-foreground`, `--popover-foreground` | `#16202a` | `#e3e9ef` | Text on them |
-| `--sidebar` | `#dde3e9` | `#121a21` | The workspace sidebar |
-| `--sidebar-foreground` | `#16202a` | `#e3e9ef` | Text in it |
-| `--sidebar-accent` | `#2f43c4` at 14% | `#8d9bff` at 14% | The selected tree row |
-| `--sidebar-border` | `#cdd5dd` | `#2a3641` | Sidebar edges and tree guides |
-| `--primary` | `#2f43c4` | `#8d9bff` | The main action of a page, links, the brand mark |
-| `--primary-foreground` | `#ffffff` | `#0e141a` | Text on `primary` |
-| `--secondary`, `--muted` | `#f4f6f8` | `#1d2731` | Secondary buttons, segmented controls, neutral badges |
-| `--muted-foreground` | `#4b5763` | `#94a2af` | Secondary text: times, durations, hints |
-| `--accent` | `--foreground` at 7% | `--foreground` at 7% | Hover fill of rows and ghost controls (shadcn's `accent` is a highlight, not the brand) |
-| `--destructive` | `#b5372f` | `#f0716a` | Failed, errors, Delete |
-| `--success` | `#1b7045` | `#4cc08a` | Passed, a valid file |
-| `--warning` | `#875900` | `#e5b247` | Running, unsaved changes |
-| `--info` | `#2f43c4` | `#8d9bff` | Neutral notices; the same hue as `primary` |
-| `--destructive-foreground`, `--success-foreground`, `--warning-foreground`, `--info-foreground` | `#ffffff` | `#0e141a` | Text on a solid role fill |
-| `--border` | `#cdd5dd` | `#2a3641` | Separators and panel edges, which need no contrast |
-| `--input` | `#717e8b` | `#5e6c79` | Borders of inputs and outline controls, which need 3:1 |
-| `--ring` | `#2f43c4` | `#8d9bff` | The focus ring |
-| `--code`, `--code-foreground` | `#fbfcfd`, `#16202a` | `#141c24`, `#e3e9ef` | The YAML editor and source blocks |
-| `--chart-1` … `--chart-5` | primary, success, destructive, warning, muted-foreground | the same roles | Charts, once a page has one |
+| `--background` | `#f8f8f8` | `#1f1f1f` | The page behind panels and cards |
+| `--foreground` | `#1f1f1f` | `#cccccc` | Body text |
+| `--card` | `#ffffff` | `#1f1f1f` | Cards, the Runs and Validation panels; in dark, cards are set apart by their ring, as VS Code's editor is |
+| `--popover` | `#ffffff` | `#252525` | Dialogs and menus |
+| `--card-foreground`, `--popover-foreground` | `#1f1f1f` | `#cccccc` | Text on them |
+| `--sidebar` | `#f8f8f8` | `#181818` | The workspace sidebar |
+| `--sidebar-foreground` | `#1f1f1f` | `#cccccc` | Text in it |
+| `--sidebar-accent` | `#dce8f6` | `#04395e` | The selected tree row |
+| `--sidebar-border` | `#e0e0e0` | `#2b2b2b` | Sidebar edges and tree guides |
+| `--primary` | `#005fb8` | `#0078d4` | The fill of the main action of a page, pressed toggles, the brand mark. Never text: colored text uses `info` |
+| `--primary-foreground` | `#ffffff` | `#ffffff` | Text on `primary` |
+| `--secondary`, `--muted` | `#f0f0f0` | `#2b2b2b` | Secondary buttons, segmented controls, neutral badges |
+| `--muted-foreground` | `#5f5f5f` | `#a3a3a3` | Secondary text: times, durations, hints; also the queued and never-run status |
+| `--accent` | `--foreground` at 6% | `--foreground` at 8% | Hover fill of rows and ghost controls (shadcn's `accent` is a highlight, not the brand) |
+| `--info` | `#005fb8` | `#4daafc` | Links, colored text, informational badges |
+| `--destructive` | `#c42b1c` | `#fb625a` | Failed, errors, Delete |
+| `--success` | `#187534` | `#3fb950` | Passed, a valid file |
+| `--warning` | `#8a5a00` | `#d29922` | Running, unsaved changes |
+| `--destructive-foreground`, `--success-foreground`, `--warning-foreground`, `--info-foreground` | `#ffffff` | `#1f1f1f` | Text on a solid role fill |
+| `--border` | `#e0e0e0` | `#2b2b2b` | Separators and panel edges, which need no contrast |
+| `--input` | `#858585` | `#7a7a7a` | Borders of inputs and outline controls, which need 3:1 |
+| `--ring` | `#0090f1` | `#0078d4` | The focus ring |
+| `--code`, `--code-foreground` | `#ffffff`, `#1f1f1f` | `#1f1f1f`, `#cccccc` | The YAML editor and source blocks |
+| `--chart-1` … `--chart-5` | info, success, destructive, warning, muted-foreground | the same roles | Charts, once a page has one |
 
-The prototype's `--faint` has no token: it measures 2.5:1 (light) and 3.0:1 (dark), too low for meaningful text. The light `--muted-foreground`, `--success`, `--warning` and `--input` are darker than the prototype's `--muted`, `--pass`, `--run` and `--line`, which fail AA on the sidebar or the page background; hues are kept.
+Most values are VS Code's own. Four differ so that every pair passes 2.2:
+- Light `--success` is `#187534`, not `#1a7f37`, which is 4.5:1 on `muted` but only 4.3:1 on its badge tint.
+- Dark `--destructive` is `#fb625a`, not `#f85149`, which is 4.2:1 on `muted`.
+- Dark `--muted-foreground` is `#a3a3a3`, not `#9d9d9d`, which is 4.4:1 on the selected row.
+- Dark `--input` is `#7a7a7a`, so input borders keep 3:1 on dialogs.
+
+Dark `--primary` `#0078d4` carries white button text at 4.53:1, just above 4.5:1. It stays as it is; the next shade that keeps the hue with margin is `#006cc1`, at 5.4:1.
 
 ### 2.2 Contrast
 
-All ratios are WCAG 2 contrast ratios. Body text needs 4.5:1; input borders, the focus ring and other meaningful non-text parts need 3:1 against what is next to them (SC 1.4.11). Disabled controls are exempt. `design-tokens.test.ts` checks these pairs in both themes; the lowest ratio of each group:
+All ratios are WCAG 2 contrast ratios. Body text needs 4.5:1; input borders, the focus ring and other meaningful non-text parts need 3:1 against what is next to them (SC 1.4.11). Disabled controls are exempt. `design-tokens.test.ts` checks these pairs in both themes, and that the neutrals are true greys. The lowest ratio of each group:
 
 | Pair | Light | Dark |
 | ---- | ----- | ---- |
-| `foreground` on `background`, `card` | 13.9, 16.5 | 15.1, 13.3 |
-| `muted-foreground` on `background`, `card`, `sidebar`, `muted` | ≥ 5.7 | ≥ 5.8 |
-| `primary` on any surface | ≥ 5.9 | ≥ 5.9 |
-| `destructive`, `success`, `warning` text on any surface | ≥ 4.5 | ≥ 5.2 |
-| A role's text on its 12% badge tint over a card | ≥ 4.9 | ≥ 4.7 |
-| `X-foreground` on a solid `X` | ≥ 5.9 | ≥ 6.4 |
-| `muted-foreground` on the selected tree row | 4.6 | 5.3 |
-| `code-foreground` on `code` | 16.1 | 14.1 |
-| `input` border on `background`, `card`, `sidebar` | ≥ 3.2 | ≥ 3.0 |
-| `ring` on `background`, `card`, `sidebar` | ≥ 5.9 | ≥ 6.4 |
+| `foreground` on `background`, `card` | 15.5, 16.5 | 10.3, 10.3 |
+| `muted-foreground` on `background`, `card`, `popover`, `sidebar`, `muted` | ≥ 5.6 | ≥ 5.6 |
+| `info` on any surface | ≥ 5.5 | ≥ 5.7 |
+| `destructive`, `success`, `warning` text on any surface | ≥ 4.9 | ≥ 4.7 |
+| A role's text on its 12% badge tint over a card | ≥ 4.6 | ≥ 4.6 |
+| `primary-foreground` on `primary` | 6.3 | 4.5 |
+| Other `X-foreground` on a solid `X` | ≥ 5.6 | ≥ 4.7 |
+| `foreground`, `muted-foreground` on the selected tree row | 13.3, 5.1 | 7.5, 4.7 |
+| `code-foreground` on `code` | 16.5 | 10.3 |
+| `input` border on `background`, `card`, `popover`, `sidebar` | ≥ 3.4 | ≥ 3.5 |
+| `ring` on `background`, `card`, `popover`, `sidebar` | ≥ 3.1 | ≥ 3.3 |
 
-Tints (`bg-success/12`, the 14% selected row, the 7% hover) are computed in sRGB in the test; the browser mixes `color-mix(in oklch, ...)` slightly differently, so every tinted pair keeps a margin above its threshold.
+Tints (`bg-success/12` and the hover fill) are computed in sRGB in the test; the browser mixes `color-mix(in oklch, ...)` slightly differently, so every tinted pair keeps a margin above its threshold.
 
 ### 2.3 Status
 
@@ -127,7 +137,17 @@ The workspace is compact: tree rows are 28–32px high with 24px icon buttons, c
 
 ### 2.7 Focus
 
-Every interactive element shows a focus indicator on keyboard focus only (`:focus-visible`): a 2px solid `--ring` outline with a 2px offset from the base layer, or, in shadcn components that draw their own, a 2px `ring-ring` at full strength. The ring is the primary color, never a grey, so it passes 3:1 on every surface. An outline is never removed without that replacement.
+Every interactive element shows a focus indicator on keyboard focus only (`:focus-visible`): a 2px solid `--ring` outline with a 2px offset from the base layer, or, in shadcn components that draw their own, a 2px `ring-ring` at full strength. The ring is a bright blue (VS Code's focus border), never a grey, so it passes 3:1 on every surface. An outline is never removed without that replacement.
+
+### 2.8 Why this palette
+
+The workspace is an editor: a tree, a code area, and panels of results. Its colors therefore follow the editor most of its users already know, VS Code's Light Modern and Dark Modern. Grey surfaces keep YAML, diagnostics and screenshots in front. Blue marks only what can be acted on or is selected, and the status colors stay the only other hues on a page. The landing and auth pages use the same tokens, so the product looks the same from the first page to the editor.
+
+| Alternative | Why not |
+| ----------- | ------- |
+| Indigo, the prototype's `#2f43c4` / `#8d9bff` with blue-tinted greys | Reads as purple, and its tinted neutrals give every surface a color cast that competes with the status colors |
+| Graphite or zinc neutrals with a near-black primary | Quiet, but the main action and links lose their color cue, and selection and focus need a separate accent anyway |
+| Teal accent | Distinct, but close to `success` green, so a primary button and a passed status are easy to confuse |
 
 ## 3. Themes
 
@@ -169,6 +189,7 @@ These rules follow the VS Code UX guidelines for the regions of an editor-like a
 | Component | Rule |
 | --------- | ---- |
 | `Button` | `default` for the one main action of a view, `secondary` or `outline` for the others, `ghost` for toolbar and tree icons, `destructive` for Delete. An icon-only button has an `aria-label` and a `title`. Links that look like buttons use `buttonVariants()` on a `Link` |
+| Links | `text-info`, underlined on hover or always in running text; `buttonVariants({ variant: "link" })` uses the same color |
 | `Card` | Panels: overview groups, the Runs list, the Validation result, landing features |
 | `Badge` | Short labels; the `success`, `warning`, `destructive`, `info` and `muted` variants are the status roles (2.3) |
 | `ToggleGroup` | A choice among a few options shown at once, such as the theme |

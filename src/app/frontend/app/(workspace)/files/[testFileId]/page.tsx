@@ -292,7 +292,7 @@ export default function TestFilePage() {
         <div className="flex flex-wrap items-center gap-3">
           <p role="status">{runMessage}</p>
           {queuedRunId && (
-            <Link className="text-primary underline underline-offset-4" href={`/runs/${queuedRunId}`}>
+            <Link className="text-info underline underline-offset-4" href={`/runs/${queuedRunId}`}>
               View run
             </Link>
           )}

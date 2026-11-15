@@ -74,7 +74,7 @@ export default function LandingPage() {
                 return (
                   <Card key={feature.title}>
                     <CardHeader className="gap-3">
-                      <span className="flex size-9 items-center justify-center rounded-md bg-primary/10 text-primary">
+                      <span className="flex size-9 items-center justify-center rounded-md bg-info/12 text-info">
                         <Icon aria-hidden="true" className="size-5" />
                       </span>
                       <h3 className="font-heading text-base font-semibold">{feature.title}</h3>
@@ -118,7 +118,7 @@ export default function LandingPage() {
             <div className="space-y-2">
               <h2 className="font-heading text-2xl font-semibold tracking-tight">Run your first test in a minute</h2>
               <p className="text-base text-muted-foreground">
-                Every new account gets a Quick Start project of passing, failing and invalid examples.
+                Every new account gets a Quick Start project of passing, failing, invalid and Jev examples.
               </p>
             </div>
             <Link href="/register" className={buttonVariants({ size: "lg" })}>

@@ -197,7 +197,7 @@ export default function RunPage() {
       <header className="space-y-3">
         {run.testFileId !== null && (
           <Link
-            className="inline-flex items-center gap-1 rounded-sm text-primary underline-offset-4 hover:underline"
+            className="inline-flex items-center gap-1 rounded-sm text-info underline-offset-4 hover:underline"
             href={`/files/${run.testFileId}`}
           >
             <ArrowLeft aria-hidden="true" className="size-4" />
