@@ -127,6 +127,5 @@ export function hasQuickStart(tree: readonly { name: string }[]): boolean {
 
 /** Whether any Test File in the tree has a Run that is queued or running, so the tree reloads while it runs. */
 export function hasActiveRun(tree: readonly TreeProject[]): boolean {
-  void allTestFiles(tree);
-  return false;
+  return allTestFiles(tree).some((testFile) => statusOf(testFile.latestRun) === "active");
 }

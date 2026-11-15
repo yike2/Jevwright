@@ -18,7 +18,7 @@ import { errorText } from "@/lib/format-error";
 import { useConsoleSplit, useConsolesOpen, usePanelLayout } from "@/lib/panel-layout";
 import { useMediaQuery } from "@/lib/use-media-query";
 import { useRun } from "@/lib/use-run";
-import { formatDuration, runErrorText, runStatusLabel, stepStatusLabel } from "@/lib/runs";
+import { formatDuration, isFinalStatus, runErrorText, runStatusLabel, stepStatusLabel } from "@/lib/runs";
 import { useWorkspace } from "@/lib/workspace-context";
 import { allTestFiles } from "@/lib/tree";
 import { Button } from "@/components/ui/button";
@@ -141,6 +141,12 @@ function Workbench({ testFileId, loadedName, saved, draft, onSaved, onDraftChang
   const dirty = draft !== saved;
   const treeFile = allTestFiles(tree).find((testFile) => testFile.id === testFileId);
   const headingName = treeFile?.name ?? loadedName;
+
+  useEffect(() => {
+    if (runId === null && treeFile?.latestRun && !isFinalStatus(treeFile.latestRun.status)) {
+      setRunId(treeFile.latestRun.id);
+    }
+  }, [runId, treeFile]);
 
   const live = useRun(runId, () => {
     setHistoryKey((previous) => previous + 1);

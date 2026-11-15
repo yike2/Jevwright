@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ApiError, apiClient, type LiveMessage, type Run, type Step } from "./api.js";
 import { errorText } from "./format-error.js";
-import { applyLiveMessage, isFinalStatus, liveUrl, type LiveState } from "./runs.js";
+import { applyLiveMessage, isFinalLiveMessage, isFinalStatus, liveUrl, type LiveState } from "./runs.js";
 
 /** A Run as the pages show it: loading, missing, failed to load, or loaded with its steps. */
 export type RunView =
@@ -18,29 +18,32 @@ export type RunView =
  */
 export function useRun(runId: string | null, onFinal?: (run: Run) => void): RunView {
   const [view, setView] = useState<RunView>({ kind: "loading" });
-  const [connect, setConnect] = useState(false);
+  const [connectId, setConnectId] = useState<string | null>(null);
   const onFinalRef = useRef(onFinal);
   onFinalRef.current = onFinal;
 
   useEffect(() => {
     let cancelled = false;
     setView({ kind: "loading" });
-    setConnect(false);
+    setConnectId(null);
     if (runId === null) return;
 
     const load = async () => {
       try {
         const run = await apiClient.getRun(runId);
         if (cancelled) return;
+        const final = isFinalStatus(run.status);
         // Live Progress messages carry no source, so the source the Run started with is kept from GET /runs/:id.
         setView({
           kind: "ready",
           run,
-          steps: isFinalStatus(run.status) ? (run.report?.steps ?? []) : [],
+          steps: final ? (run.report?.steps ?? []) : [],
           source: run.source ?? null,
           disconnected: false,
         });
-        setConnect(!isFinalStatus(run.status));
+        setConnectId(final ? null : runId);
+        // A fast Run may already be final when its first GET /runs/:id returns, before the socket opens.
+        if (final) onFinalRef.current?.(run);
       } catch (error) {
         if (cancelled) return;
         if (error instanceof ApiError && error.status === 404) {
@@ -58,7 +61,7 @@ export function useRun(runId: string | null, onFinal?: (run: Run) => void): RunV
   }, [runId]);
 
   useEffect(() => {
-    if (!connect || runId === null) return;
+    if (runId === null || connectId !== runId) return;
 
     const ws = new WebSocket(liveUrl(apiClient.getBaseUrl(), runId, apiClient.getToken() ?? ""));
     let final = false;
@@ -80,7 +83,8 @@ export function useRun(runId: string | null, onFinal?: (run: Run) => void): RunV
       }
 
       update((state) => applyLiveMessage(state, message));
-      if (final || message.type !== "status" || !isFinalStatus(message.run.status)) return;
+      // A Run that finished while the socket was opening sends a final snapshot and closes at once.
+      if (final || !isFinalLiveMessage(message)) return;
       final = true;
 
       void (async () => {
@@ -106,7 +110,7 @@ export function useRun(runId: string | null, onFinal?: (run: Run) => void): RunV
       ws.onclose = null;
       ws.close();
     };
-  }, [runId, connect]);
+  }, [runId, connectId]);
 
   return view;
 }

@@ -27,8 +27,7 @@ export function isFinalStatus(status: Run["status"]): boolean {
 export function isFinalLiveMessage(
   message: LiveMessage,
 ): message is Extract<LiveMessage, { type: "snapshot" | "status" }> {
-  void message;
-  return false;
+  return (message.type === "snapshot" || message.type === "status") && isFinalStatus(message.run.status);
 }
 
 export function stepStatusLabel(status: Step["status"]): string {
