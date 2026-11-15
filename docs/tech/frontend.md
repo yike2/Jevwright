@@ -269,7 +269,7 @@ A `region` named "Debug": the file's problems. The header shows `problemsSummary
 | `toggleConsole(open, key)` | Pure. `open` is `{ debug, output }`; flips `key` and leaves the other console as it is |
 | `openConsole(open, key)` | Pure. Sets `key` open and leaves the other as it is; returns `open` itself when it already is |
 | `parseConsolesOpen(stored)` | The stored `{ debug, output }`; both open for nothing stored, text that is not JSON, or another shape |
-| `parseConsoleSplit(stored)` | The stored Debug share in percent; `DEFAULT_CONSOLE_SPLIT` (50) for nothing stored, empty text, text that is not a number, or a share outside 10–90 |
+| `parseConsoleSplit(stored)` | The stored Debug share in percent; `DEFAULT_CONSOLE_SPLIT` (50) for nothing stored, empty text, text that is not a number, or a share outside 0–100 (exclusive); the panels' 64px minimum heights bound a dragged share |
 
 Out of scope: several open files (tabs), an unsaved-changes guard, autocompletion.
 
@@ -1071,7 +1071,7 @@ These exact values are the source of truth for the API client tests and are inte
 7. `toggleConsole`: from each of the four combinations, toggling either console changes only that one; the input is not changed
 8. `openConsole`: opening either console from any combination never closes the other
 9. `parseConsolesOpen`: a stored `{"debug":false,"output":true}` is read; `null`, `{`, `{"problems":50,"run":50}` and a non-boolean value give both open
-10. `parseConsoleSplit`: `"62.5"` → `62.5`; `null`, `"wide"`, `""`, `"5"`, `"95"` and a layout object → `50`
+10. `parseConsoleSplit`: `"62.5"` → `62.5`, `"5"` → `5`, `"92.3"` → `92.3`; `null`, `"wide"`, `""`, `"0"`, `"100"`, `"-1"` and a layout object → `50`
 
 ### 5.4 Exact run helper unit-test cases
 
