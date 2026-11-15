@@ -212,7 +212,8 @@ test("TC-FLD-04 refuses a drop that breaks a rule, says why, and changes nothing
   await dragRow(page, rowOf(page, "x"), rowOf(page, "b"));
   await expect(alertsOf(page)).toHaveText(`x was not moved. ${TOO_DEEP}`);
   const tree = await api<{ items: { folders: { name: string }[] }[] }>("GET", "/tree");
-  expect(tree.items[0]!.folders.map((item) => item.name)).toEqual(["a", "Shopping", "x"]);
+  // Folders are listed by name as Postgres sorts them; only which ones sit directly in the project matters here.
+  expect(tree.items[0]!.folders.map((item) => item.name).sort()).toEqual(["Shopping", "a", "x"]);
 });
 
 test("TC-FLD-05 moves a test file and a folder with the keyboard through Move to…", async ({ page }) => {
