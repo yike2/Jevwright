@@ -1,0 +1,35 @@
+# Dialogs, tabs and the page actions.
+name: "Tasks"
+description: "Deleting a task asks first, and the help opens in a new tab"
+baseUrl: "https://tasks.example.com"
+steps:
+  - open:
+      url: "/board"
+  - hover:
+      target: "The 'Write release notes' task card"
+  - rightClick:
+      target: "The 'Write release notes' task card"
+  - click:
+      target: "Delete button in the 'Write release notes' row"
+      dialog:
+        accept: true
+        message: "Delete this task?"
+  - doubleClick:
+      selector: "#board-title"
+      dialog:
+        accept: true
+        text: "Sprint board"
+  - scroll:
+      direction: "down"
+      distance: 600
+  - sleep:
+      ms: 300
+  - reload: {}
+  - click:
+      selector: "a[target=_blank]"
+  - switchTab:
+      url: "**/help"
+  - back: {}
+  - forward: {}
+  - switchTab:
+      url: "/board"

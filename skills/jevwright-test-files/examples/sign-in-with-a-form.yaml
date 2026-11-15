@@ -1,0 +1,21 @@
+# Signs in through the form with selectors, with a target as the fallback for the button.
+name: "Sign in"
+description: "A test user signs in and sees the product list"
+baseUrl: "{{BASE}}"
+steps:
+  - open:
+      url: "/"
+  - input:
+      selector: '[data-test="username"]'
+      value: "{{TEST_USER}}"
+  - input:
+      selector: '[data-test="password"]'
+      value: "{{TEST_PASSWORD}}"
+  - click:
+      selector: '[data-test="login-button"]'
+      target: "Green 'Login' button below the password field"
+  - waitFor:
+      url: "**/inventory.html"
+  - assert:
+      selector: '[data-test="title"]'
+      text: "Products"

@@ -1,0 +1,32 @@
+# Skips the sign-in page: the app keeps the signed-in user in a cookie, whose value is a Project Variable.
+name: "Checkout, signed in"
+description: "A signed-in user buys the backpack"
+baseUrl: "{{BASE}}"
+cookies:
+  session-username: "{{SESSION_USER}}"
+steps:
+  - open:
+      url: "/inventory.html"
+  - click:
+      selector: '[data-test="add-to-cart-sauce-labs-backpack"]'
+  - click:
+      target: "Shopping cart icon at the top right of the page"
+  - assert:
+      selector: '[data-test="inventory-item-name"]'
+      text: "Sauce Labs Backpack"
+  - click:
+      selector: '[data-test="checkout"]'
+  - input:
+      selector: '[data-test="firstName"]'
+      value: "Ada"
+  - input:
+      selector: '[data-test="lastName"]'
+      value: "Lovelace"
+  - input:
+      selector: '[data-test="postalCode"]'
+      value: "10001"
+  - click:
+      selector: '[data-test="continue"]'
+  - assert:
+      selector: '[data-test="total-label"]'
+      text: "Total: $32.39"
