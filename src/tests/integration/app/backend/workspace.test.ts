@@ -40,7 +40,8 @@ describeDb("workspace routes", () => {
     const project = (await as.post("/projects", { name: "Shop" })).body;
     const module = (await as.post(`/projects/${project.id}/modules`, { name: "Cart" })).body;
     const saved = (await as.post(`/modules/${module.id}/test-files`, { name: "add.yaml", source: VALID })).body;
-    return { project, module, testFile: saved.testFile };
+    const { source: _source, ...testFile } = saved.testFile;
+    return { project, module, testFile };
   }
 
   async function addRun(
@@ -100,7 +101,7 @@ describeDb("workspace routes", () => {
     const created = await as.post(`/modules/${module.id}/test-files`, { name: "remove.yaml", source: VALID });
     expect(created.status).toBe(201);
     const testFile = { id: expect.any(String), moduleId: module.id, name: "remove.yaml", ...timestamps };
-    expect(created.body).toEqual({ testFile, diagnostics: [] });
+    expect(created.body).toEqual({ testFile: { ...testFile, source: VALID }, diagnostics: [] });
 
     const read = await as.get(`/test-files/${created.body.testFile.id}`);
     expect(read.status).toBe(200);
@@ -108,7 +109,7 @@ describeDb("workspace routes", () => {
 
     const renamed = await as.patch(`/test-files/${created.body.testFile.id}`, { name: "drop.yaml" });
     expect(renamed.status).toBe(200);
-    expect(renamed.body).toEqual({ testFile: { ...testFile, name: "drop.yaml" }, diagnostics: [] });
+    expect(renamed.body).toEqual({ testFile: { ...testFile, name: "drop.yaml", source: VALID }, diagnostics: [] });
 
     const listed = await as.get(`/modules/${module.id}/test-files`);
     expect(listed.body.items.map((item: { name: string }) => item.name)).toEqual(["add.yaml", "drop.yaml"]);
@@ -132,6 +133,16 @@ describeDb("workspace routes", () => {
     expect(changed.status).toBe(200);
     expect(changed.body.diagnostics).toEqual(diagnostics);
     expect((await as.get(`/test-files/${testFile.id}`)).body.source).toBe(INVALID);
+  });
+
+  it("answers the saved source with a PATCH, so the editor can show it without reading it again", async () => {
+    const as = await client();
+    const { testFile } = await workspace(as);
+
+    const changed = await as.patch(`/test-files/${testFile.id}`, { source: INVALID });
+
+    expect(changed.status).toBe(200);
+    expect(changed.body.testFile.source).toBe(INVALID);
   });
 
   it("answers the diagnostics of the saved source when a PATCH leaves it as it is", async () => {
@@ -205,6 +216,15 @@ describeDb("workspace routes", () => {
       expect(res.status).toBe(409);
       expect(res.body.error.code).toBe("conflict");
     }
+    expect(conflicts.map((res) => res.body.error.message)).toEqual([
+      "A project with this name already exists.",
+      "A project with this name already exists.",
+      "A module with this name already exists in this project.",
+      "A module with this name already exists in this project.",
+      "A test file with this name already exists in this module.",
+      "A test file with this name already exists in this module.",
+      "A test file with this name already exists in this module.",
+    ]);
     expect((await other.post("/projects", { name: "Shop" })).status).toBe(201);
   });
 

@@ -42,7 +42,9 @@ test("TC-VAR-02 rejects names that are not upper snake case, before any request"
 
   for (const name of ["base", "1BASE"]) {
     await saveVariable(dialog, name, "value");
-    await expect(dialog.getByRole("alert")).toHaveText("Name must match [A-Z_][A-Z0-9_]*");
+    await expect(dialog.getByRole("alert")).toHaveText(
+      "Variable names use capital letters, digits and _, and do not start with a digit, for example BASE_URL.",
+    );
   }
   expect(puts).toEqual([]);
 
@@ -93,7 +95,7 @@ test("TC-VAR-05 needs a name and a value of at most 10,000 characters", async ({
   await expect(dialog.getByRole("listitem").filter({ hasText: "LONG" })).toHaveCount(1);
 
   await saveVariable(dialog, "LONG", "x".repeat(10_001));
-  await expect(dialog.getByRole("alert")).toContainText("body.value is over its size limit");
+  await expect(dialog.getByRole("alert")).toHaveText("A Variable value can be at most 10,000 characters.");
   await expect(dialog).toBeVisible();
 });
 

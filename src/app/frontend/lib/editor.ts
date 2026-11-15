@@ -15,7 +15,3 @@ export function validationSummary(diagnostics: Diagnostic[]): string {
 export function formatDiagnostic(d: Diagnostic): string {
   return `Line ${d.line}: ${d.message}`;
 }
-
-export function isVariableName(name: string): boolean {
-  return /^[A-Z_][A-Z0-9_]*$/.test(name);
-}

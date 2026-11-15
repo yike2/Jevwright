@@ -5,6 +5,7 @@ import {
   applyLiveMessage,
   formatDuration,
   liveUrl,
+  runErrorText,
   runFileUrl,
   runStatusLabel,
   stepStatusLabel,
@@ -142,5 +143,28 @@ describe("run helpers", () => {
     const afterSecondStep = applyLiveMessage(afterStatus, stepForIndexOne);
 
     expect(afterSecondStep.steps).toEqual([runningStep, secondStep]);
+  });
+});
+
+describe("runErrorText", () => {
+  it("names a timeout in plain words and keeps the reason", () => {
+    expect(runErrorText({ kind: "timeout", message: "The run did not finish within runTimeoutMs (10000 ms)" })).toBe(
+      "Timed out: The run did not finish within runTimeoutMs (10000 ms)",
+    );
+  });
+
+  it("names an interrupted Run and a browser failure", () => {
+    expect(runErrorText({ kind: "interrupted", message: "Interrupted by a server restart" })).toBe(
+      "Interrupted: Interrupted by a server restart",
+    );
+    expect(runErrorText({ kind: "infrastructure", message: "The browser is closed or has crashed" })).toBe(
+      "Browser error: The browser is closed or has crashed",
+    );
+  });
+
+  it("hides an internal error's name, which only means something to the server", () => {
+    expect(runErrorText({ kind: "internal", message: "TypeError" })).toBe(
+      "Something went wrong while running the test. Try running it again.",
+    );
   });
 });

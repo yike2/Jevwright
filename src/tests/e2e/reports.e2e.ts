@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { addTestFile, alertsOf, fixture, runFromEditor, runToEnd, setUpDemoProject, signUp } from "./support.js";
+import { addTestFile, fixture, runFromEditor, runToEnd, setUpDemoProject, signUp } from "./support.js";
 
 type Report = {
   status: string;
@@ -67,6 +67,13 @@ test("TC-RPT-02 shows the report of a failed run", async ({ page }) => {
   await expect(screenshot).toBeVisible();
   expect(await screenshot.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
 
+  // The screenshot opens full size, and Escape closes it.
+  await page.getByRole("button", { name: "Open step 14 screenshot full size", exact: true }).click();
+  const viewer = page.getByRole("dialog", { name: "Step 14 screenshot", exact: true });
+  await expect(viewer.getByRole("img", { name: "Step 14 screenshot, full size", exact: true })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(viewer).toBeHidden();
+
   const report = await downloadReport(page);
   expect(report.status).toBe("failed");
   expect(report.steps[13]).toMatchObject({ status: "failed" });
@@ -88,11 +95,16 @@ test("TC-RPT-03 lists every run of a file, newest first, each with its own sourc
   await expect(runs.nth(1)).toContainText(/^Failed · /);
   await expect(runs.nth(2)).toContainText(/^Passed · /);
 
+  const source = page.getByLabel("Source when it ran", { exact: true });
   await runs.nth(2).getByRole("link").click();
   await expect(page.getByRole("list", { name: "Steps" }).getByRole("listitem")).toHaveCount(6);
+  await page.getByText("Source when it ran", { exact: true }).click();
+  await expect(source).toHaveText(fixture("pass/sign-in.yaml"));
   await page.goBack();
   await runs.nth(0).getByRole("link").click();
   await expect(page.getByRole("list", { name: "Steps" }).getByRole("listitem")).toHaveCount(16);
+  await page.getByText("Source when it ran", { exact: true }).click();
+  await expect(source).toHaveText(fixture("fail/wrong-total.yaml"));
 });
 
 test("TC-RPT-04 keeps a run after its file is deleted", async ({ page }) => {
@@ -117,14 +129,14 @@ test("TC-RPT-05 shows a run that does not exist as not found", async ({ page }) 
   await expect(page.getByText("Run not found", { exact: true })).toBeVisible();
 });
 
-test("TC-RPT-06 shows the backend's message for a malformed id", async ({ page }) => {
+test("TC-RPT-06 shows a malformed id as not found", async ({ page }) => {
   await signUp(page);
 
   await page.goto("/runs/not-a-uuid");
-  await expect(alertsOf(page)).toHaveText("The request fails its schema");
+  await expect(page.getByText("Run not found", { exact: true })).toBeVisible();
   await expect(page.getByRole("list", { name: "Steps" })).toHaveCount(0);
 
   await page.goto("/files/not-a-uuid");
-  await expect(alertsOf(page)).toHaveText("The request fails its schema");
+  await expect(page.getByText("Test file not found", { exact: true })).toBeVisible();
   await expect(page.getByRole("textbox", { name: "Test file YAML" })).toHaveCount(0);
 });

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ApiError, apiClient, type TreeResponse, type User } from "@/lib/api";
-import { formatAuthError } from "@/lib/format-auth-error";
+import { formatError } from "@/lib/format-error";
 import { cn } from "cn";
 import { WorkspaceProvider } from "@/lib/workspace-context";
 import { SidebarNav } from "@/components/workspace/sidebar-nav";
@@ -41,7 +41,7 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
           return;
         }
 
-        setMessages(formatAuthError(error));
+        setMessages(formatError(error));
         setIsLoading(false);
       }
     };

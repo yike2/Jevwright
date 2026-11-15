@@ -50,18 +50,68 @@ describe("the backend app", () => {
       "body.email",
       "body.password",
     ]);
-    expect(res.body.error.details[0].message).toEqual(expect.any(String));
     expect(handler).not.toHaveBeenCalled();
   });
 
-  it("answers 400 for a path id that is not a uuid", async () => {
-    const res = await request(app).get("/api/v1/projects/p1/modules").set("authorization", BEARER);
+  it("answers 400 with a message that says how to fix each field, in plain words", async () => {
+    const res = await request(app).post("/api/v1/auth/register").send({ email: "not-an-email", password: "short" });
 
-    expect(res.status).toBe(400);
-    expect(res.body.error.details.map((issue: { path: string }) => issue.path)).toEqual(["params.projectId"]);
+    expect(res.body.error.details).toEqual([
+      { path: "body.email", message: "Enter a valid email address." },
+      { path: "body.password", message: "Password must be at least 8 characters." },
+    ]);
+    expect(res.body.error.message).toBe("Enter a valid email address. Password must be at least 8 characters.");
   });
 
-  it("answers 413 too_large for a source over 256 Ki characters, naming the field, without calling the handler", async () => {
+  it("answers 400 with plain-word messages for names", async () => {
+    const empty = await request(app).post("/api/v1/projects").set("authorization", BEARER).send({ name: "  " });
+    const long = await request(app)
+      .post("/api/v1/projects")
+      .set("authorization", BEARER)
+      .send({ name: "a".repeat(101) });
+
+    expect(empty.body.error.message).toBe("Enter a name.");
+    expect(long.body.error.message).toBe("Names can be at most 100 characters.");
+  });
+
+  it.each(["sign in.yaml", "login.yml", ".yaml", "a/b.yaml", "商店.yaml"])(
+    "answers 400 for the Test File name %j, saying which characters a name can use",
+    async (name) => {
+      const res = await request(app)
+        .post(`/api/v1/modules/${PROJECT_ID}/test-files`)
+        .set("authorization", BEARER)
+        .send({ name, source: "" });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.message).toBe(
+        "Test file names use only letters, digits, -, _ and ., with no spaces, and end in .yaml.",
+      );
+    },
+  );
+
+  it("answers 400 for a Variable name that is not UPPER_SNAKE_CASE, with an example", async () => {
+    const res = await request(app)
+      .put(`/api/v1/projects/${PROJECT_ID}/variables/base`)
+      .set("authorization", BEARER)
+      .send({ value: "x" });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.message).toBe(
+      "Variable names use capital letters, digits and _, and do not start with a digit, for example BASE_URL.",
+    );
+  });
+
+  it("answers 404 not_found for a path id that is not a uuid, as for an id that does not exist", async () => {
+    const res = await request(app).get("/api/v1/projects/p1/modules").set("authorization", BEARER);
+    const run = await request(app).get("/api/v1/runs/not-a-uuid").set("authorization", BEARER);
+
+    expect(res.status).toBe(404);
+    expect(res.body).toEqual({ error: { code: "not_found", message: "No such Project" } });
+    expect(run.status).toBe(404);
+    expect(run.body).toEqual({ error: { code: "not_found", message: "No such Run" } });
+  });
+
+  it("answers 413 too_large for a source over 256 Ki characters, saying the limit, without calling the handler", async () => {
     const handler = vi.fn();
     const sized = createApp({ ...base, handlers: { "post /test-files/validate": handler } });
 
@@ -71,7 +121,9 @@ describe("the backend app", () => {
       .send({ source: "a".repeat(256 * 1024 + 1) });
 
     expect(res.status).toBe(413);
-    expect(res.body).toEqual({ error: { code: "too_large", message: expect.stringContaining("body.source") } });
+    expect(res.body).toEqual({
+      error: { code: "too_large", message: "The test file is too long: it can be at most 262,144 characters." },
+    });
     expect(handler).not.toHaveBeenCalled();
   });
 
@@ -82,7 +134,9 @@ describe("the backend app", () => {
       .send({ value: "a".repeat(10_001) });
 
     expect(res.status).toBe(413);
-    expect(res.body.error.code).toBe("too_large");
+    expect(res.body).toEqual({
+      error: { code: "too_large", message: "A Variable value can be at most 10,000 characters." },
+    });
   });
 
   it("keeps 400 for a field that is too long but not a size limit, like a name", async () => {

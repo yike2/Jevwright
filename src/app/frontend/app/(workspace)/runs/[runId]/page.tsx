@@ -4,9 +4,18 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ApiError, apiClient, type LiveMessage } from "@/lib/api";
-import { applyLiveMessage, formatDuration, liveUrl, runFileUrl, runStatusLabel, type LiveState } from "@/lib/runs";
+import {
+  applyLiveMessage,
+  formatDuration,
+  liveUrl,
+  runFileUrl,
+  runErrorText,
+  runStatusLabel,
+  type LiveState,
+} from "@/lib/runs";
 import { useWorkspace } from "@/lib/workspace-context";
 import { StepList } from "@/components/workspace/step-list";
+import { errorText } from "@/lib/format-error";
 
 export default function RunPage() {
   const params = useParams<{ runId: string }>();
@@ -17,6 +26,8 @@ export default function RunPage() {
   const [loadErrorStatus, setLoadErrorStatus] = useState<number | null>(null);
   const [loadErrorMessage, setLoadErrorMessage] = useState<string | null>(null);
   const [live, setLive] = useState<LiveState>({ run: null, steps: [] });
+  // Live Progress messages carry no source, so the source the Run started with is kept from GET /runs/:id.
+  const [source, setSource] = useState<string | null>(null);
   const [connect, setConnect] = useState(false);
   const [liveDisconnected, setLiveDisconnected] = useState<string | null>(null);
 
@@ -29,6 +40,7 @@ export default function RunPage() {
     setConnect(false);
     setLiveDisconnected(null);
     setLive({ run: null, steps: [] });
+    setSource(null);
 
     const loadRun = async () => {
       try {
@@ -39,6 +51,7 @@ export default function RunPage() {
         }
 
         const isFinal = run.status === "passed" || run.status === "failed";
+        setSource(run.source ?? null);
         setLive({
           run,
           steps: isFinal ? (run.report?.steps ?? []) : [],
@@ -55,11 +68,11 @@ export default function RunPage() {
             return;
           }
 
-          setLoadErrorMessage(error.message);
+          setLoadErrorMessage(errorText(error));
           return;
         }
 
-        setLoadErrorMessage(error instanceof Error ? error.message : "Internal server error");
+        setLoadErrorMessage(errorText(error));
       } finally {
         if (!cancelled) {
           setIsLoading(false);
@@ -190,11 +203,7 @@ export default function RunPage() {
           </p>
         )}
 
-        {run.error && (
-          <p className="text-sm text-destructive">
-            {run.error.kind}: {run.error.message}
-          </p>
-        )}
+        {run.error && <p className="text-sm text-destructive">{runErrorText(run.error)}</p>}
 
         <div className="flex flex-wrap items-center gap-3 text-sm">
           {run.testFileId !== null && (
@@ -233,6 +242,15 @@ export default function RunPage() {
         <p className="text-sm text-muted-foreground">No step results</p>
       ) : (
         <StepList runId={run.id} steps={steps} baseUrl={baseUrl} token={token} />
+      )}
+
+      {source !== null && (
+        <details className="rounded-lg border border-border">
+          <summary className="cursor-pointer px-3 py-2 text-sm text-foreground">Source when it ran</summary>
+          <pre aria-label="Source when it ran" className="overflow-x-auto border-t border-border p-3 font-mono text-sm">
+            {source}
+          </pre>
+        </details>
       )}
     </section>
   );

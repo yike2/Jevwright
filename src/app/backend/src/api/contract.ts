@@ -35,16 +35,30 @@ export type Route = {
 export const MAX_SOURCE_CHARS = 256 * 1024;
 
 const id = z.uuid();
-const name = z.string().trim().min(1).max(100);
-const fileName = z
+// Messages are for people (backend.md 1.7): they name the rule and how to meet it, and the frontend checks forms
+// with the same words before sending.
+const name = z.string().trim().min(1, "Enter a name.").max(100, "Names can be at most 100 characters.");
+const fileName = name.regex(
+  /^[A-Za-z0-9._-]+\.yaml$/,
+  "Test file names use only letters, digits, -, _ and ., with no spaces, and end in .yaml.",
+);
+const source = z
   .string()
-  .trim()
-  .min(1)
-  .max(100)
-  .regex(/\.yaml$/, "Must end in .yaml");
-const source = z.string().max(MAX_SOURCE_CHARS).meta({ description: "The .yaml source, at most 256 Ki characters" });
-const variableName = z.string().regex(/^[A-Z_][A-Z0-9_]*$/, "Must be UPPER_SNAKE_CASE");
-const credentials = z.object({ email: z.email(), password: z.string().min(8).max(200) });
+  .max(MAX_SOURCE_CHARS, "The test file is too long: it can be at most 262,144 characters.")
+  .meta({ description: "The .yaml source, at most 256 Ki characters" });
+const variableName = z
+  .string()
+  .regex(
+    /^[A-Z_][A-Z0-9_]*$/,
+    "Variable names use capital letters, digits and _, and do not start with a digit, for example BASE_URL.",
+  );
+const credentials = z.object({
+  email: z.email("Enter a valid email address."),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters.")
+    .max(200, "Password can be at most 200 characters."),
+});
 const auth = z.object({ token: z.string().meta({ description: "JWT: send as Authorization: Bearer" }), user: User });
 const saved = z.object({ testFile: TestFile, diagnostics: z.array(Diagnostic) });
 const items = <T extends ZodType>(item: T) => z.object({ items: z.array(item) });
@@ -55,9 +69,9 @@ const error = (description: string) => ({ description, schema: ErrorBody });
 /** Adds the error answers every route of its kind can give: 400 for input, 401 for auth, 404 for a path id. */
 function route(spec: Route): Route {
   const common: Route["responses"] = {};
-  if (spec.params || spec.query || spec.body) common[400] = ok("The request fails its schema", ValidationError);
+  if (spec.params || spec.query || spec.body) common[400] = ok("A field breaks its rule", ValidationError);
   if (spec.auth !== "none") common[401] = error("No valid token");
-  if (spec.params) common[404] = error("No such resource for this user");
+  if (spec.params) common[404] = error("No such resource for this user, or an id that is not a uuid");
   if (spec.sizeLimited) common[413] = error(`${spec.sizeLimited.join(" or ")} is over its size limit`);
   return { ...spec, responses: { ...common, ...spec.responses } };
 }
@@ -159,7 +173,12 @@ export const ROUTES: readonly Route[] = [
     summary: "Set a Project Variable",
     auth: "bearer",
     params: z.object({ projectId: id, name: variableName }),
-    body: z.object({ value: z.string().max(10_000).meta({ description: "At most 10,000 characters" }) }),
+    body: z.object({
+      value: z
+        .string()
+        .max(10_000, "A Variable value can be at most 10,000 characters.")
+        .meta({ description: "At most 10,000 characters" }),
+    }),
     sizeLimited: ["body.value"],
     responses: { 204: ok("Set") },
   }),

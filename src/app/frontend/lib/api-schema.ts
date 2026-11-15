@@ -124,7 +124,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The request fails its schema */
+                /** @description A field breaks its rule */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -214,7 +214,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The request fails its schema */
+                /** @description A field breaks its rule */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -496,7 +496,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The request fails its schema */
+                /** @description A field breaks its rule */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -583,7 +583,7 @@ export interface paths {
                     };
                     content?: never;
                 };
-                /** @description The request fails its schema */
+                /** @description A field breaks its rule */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -618,7 +618,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description No such resource for this user */
+                /** @description No such resource for this user, or an id that is not a uuid */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -672,7 +672,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The request fails its schema */
+                /** @description A field breaks its rule */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -707,7 +707,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description No such resource for this user */
+                /** @description No such resource for this user, or an id that is not a uuid */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -771,7 +771,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The request fails its schema */
+                /** @description A field breaks its rule */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -806,7 +806,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description No such resource for this user */
+                /** @description No such resource for this user, or an id that is not a uuid */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -866,7 +866,7 @@ export interface paths {
                     };
                     content?: never;
                 };
-                /** @description The request fails its schema */
+                /** @description A field breaks its rule */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -901,7 +901,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description No such resource for this user */
+                /** @description No such resource for this user, or an id that is not a uuid */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -954,7 +954,7 @@ export interface paths {
                     };
                     content?: never;
                 };
-                /** @description The request fails its schema */
+                /** @description A field breaks its rule */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -989,7 +989,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description No such resource for this user */
+                /** @description No such resource for this user, or an id that is not a uuid */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -1051,7 +1051,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The request fails its schema */
+                /** @description A field breaks its rule */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -1086,7 +1086,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description No such resource for this user */
+                /** @description No such resource for this user, or an id that is not a uuid */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -1141,7 +1141,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The request fails its schema */
+                /** @description A field breaks its rule */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -1176,7 +1176,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description No such resource for this user */
+                /** @description No such resource for this user, or an id that is not a uuid */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -1243,7 +1243,7 @@ export interface paths {
                     };
                     content?: never;
                 };
-                /** @description The request fails its schema */
+                /** @description A field breaks its rule */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -1278,7 +1278,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description No such resource for this user */
+                /** @description No such resource for this user, or an id that is not a uuid */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -1334,7 +1334,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The request fails its schema */
+                /** @description A field breaks its rule */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -1369,7 +1369,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description No such resource for this user */
+                /** @description No such resource for this user, or an id that is not a uuid */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -1435,7 +1435,7 @@ export interface paths {
                                 /** Format: uuid */
                                 moduleId: string;
                                 name: string;
-                                /** @description Only in GET /test-files/{testFileId} */
+                                /** @description In GET /test-files/{testFileId} and in the answer of saving a Test File, not in lists */
                                 source?: string;
                                 /** Format: date-time */
                                 createdAt: string;
@@ -1445,7 +1445,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The request fails its schema */
+                /** @description A field breaks its rule */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -1480,7 +1480,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description No such resource for this user */
+                /** @description No such resource for this user, or an id that is not a uuid */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -1531,7 +1531,7 @@ export interface paths {
                                 /** Format: uuid */
                                 moduleId: string;
                                 name: string;
-                                /** @description Only in GET /test-files/{testFileId} */
+                                /** @description In GET /test-files/{testFileId} and in the answer of saving a Test File, not in lists */
                                 source?: string;
                                 /** Format: date-time */
                                 createdAt: string;
@@ -1548,7 +1548,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The request fails its schema */
+                /** @description A field breaks its rule */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -1583,7 +1583,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description No such resource for this user */
+                /** @description No such resource for this user, or an id that is not a uuid */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -1679,7 +1679,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The request fails its schema */
+                /** @description A field breaks its rule */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -1768,7 +1768,7 @@ export interface paths {
                             /** Format: uuid */
                             moduleId: string;
                             name: string;
-                            /** @description Only in GET /test-files/{testFileId} */
+                            /** @description In GET /test-files/{testFileId} and in the answer of saving a Test File, not in lists */
                             source?: string;
                             /** Format: date-time */
                             createdAt: string;
@@ -1777,7 +1777,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The request fails its schema */
+                /** @description A field breaks its rule */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -1812,7 +1812,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description No such resource for this user */
+                /** @description No such resource for this user, or an id that is not a uuid */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -1850,7 +1850,7 @@ export interface paths {
                     };
                     content?: never;
                 };
-                /** @description The request fails its schema */
+                /** @description A field breaks its rule */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -1885,7 +1885,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description No such resource for this user */
+                /** @description No such resource for this user, or an id that is not a uuid */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -1939,7 +1939,7 @@ export interface paths {
                                 /** Format: uuid */
                                 moduleId: string;
                                 name: string;
-                                /** @description Only in GET /test-files/{testFileId} */
+                                /** @description In GET /test-files/{testFileId} and in the answer of saving a Test File, not in lists */
                                 source?: string;
                                 /** Format: date-time */
                                 createdAt: string;
@@ -1956,7 +1956,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The request fails its schema */
+                /** @description A field breaks its rule */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -2200,7 +2200,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The request fails its schema */
+                /** @description A field breaks its rule */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -2235,7 +2235,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description No such resource for this user */
+                /** @description No such resource for this user, or an id that is not a uuid */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -2448,7 +2448,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The request fails its schema */
+                /** @description A field breaks its rule */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -2651,7 +2651,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The request fails its schema */
+                /** @description A field breaks its rule */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -2686,7 +2686,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description No such resource for this user */
+                /** @description No such resource for this user, or an id that is not a uuid */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -2741,7 +2741,7 @@ export interface paths {
                     };
                     content?: never;
                 };
-                /** @description The request fails its schema */
+                /** @description A field breaks its rule */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -2776,7 +2776,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description No such resource for this user */
+                /** @description No such resource for this user, or an id that is not a uuid */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -2830,7 +2830,7 @@ export interface paths {
                     };
                     content?: never;
                 };
-                /** @description The request fails its schema */
+                /** @description A field breaks its rule */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -2865,7 +2865,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description No such resource for this user */
+                /** @description No such resource for this user, or an id that is not a uuid */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -2928,7 +2928,7 @@ export interface components {
             /** Format: uuid */
             moduleId: string;
             name: string;
-            /** @description Only in GET /test-files/{testFileId} */
+            /** @description In GET /test-files/{testFileId} and in the answer of saving a Test File, not in lists */
             source?: string;
             /** Format: date-time */
             createdAt: string;

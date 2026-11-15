@@ -157,7 +157,7 @@ Covers US-4.3.7. Pre: an account exists for the email.
 
 1. Register again with the same email, once in upper case (`E2E-…@EXAMPLE.COM`).
 
-Expected: the page stays on `/login` and shows the backend's conflict message in an alert; no second account is created.
+Expected: the page stays on `/login` and the alert says `An account with this email already exists. Log in instead.`; no second account is created.
 
 #### TC-AUTH-03 Log in with a wrong password — P1, E2E
 
@@ -174,7 +174,7 @@ Covers US-4.3.7. Pre: none.
 1. Register with a 7-character password.
 2. Register with an 8-character password.
 
-Expected: step 1 shows the `400` message and its details in the alert and stays on `/login`; step 2 succeeds and opens `/`.
+Expected: step 1 shows `Password must be at least 8 characters.` under the Password field, which is marked invalid, sends no request, and stays on `/login`; step 2 succeeds and opens `/`.
 
 #### TC-AUTH-05 Open the workspace without a token — P0, E2E
 
@@ -252,7 +252,7 @@ Covers US-4.3.3. Pre: S1, S2, `login.yaml` open in the editor.
 3. **Rename project Demo Shop** → `Swag Labs`, **Save**.
 4. Open **Rename test file sign-in.yaml** and leave the name unchanged.
 
-Expected: steps 1–3 update the tree at once; after step 1 the editor heading is `sign-in.yaml`; in step 4 **Save** is disabled.
+Expected: steps 1–3 update the tree at once; the Test File's Rename input shows the name without `.yaml`, which is shown after it; after step 1 the editor heading is `sign-in.yaml`; in step 4 the input shows `sign-in` and **Save** is disabled.
 
 #### TC-WS-05 Delete the open Test File — P1, E2E
 
@@ -289,14 +289,15 @@ Covers US-4.3.3. Pre: S1.
 
 Expected: step 1 shows the name unchanged, also after a reload; step 2 is saved as `Padded`; step 3 keeps the dialog open with an alert and adds nothing.
 
-#### TC-WS-09 Test File names must end in `.yaml` — P1, E2E
+#### TC-WS-09 Test File names use letters, digits, `-`, `_` and `.`, before a fixed `.yaml` — P1, E2E
 
 Covers US-4.3.3. Pre: S1, S2.
 
-1. Create Test Files named `login.yml`, `notes.txt`, and `v1.2`, one at a time.
-2. Create a Test File named `  spaced  `.
+1. Open **New test file in Shopping**: `.yaml` is shown after the Name input.
+2. Create Test Files named `sign in`, `商店`, and `a/b`, one at a time.
+3. Create Test Files named `  spaced  `, `v1.2`, and `pasted.yaml`.
 
-Expected: each name of step 1 keeps the dialog open with an alert and adds nothing (a name with a `.` gets no `.yaml` added); step 2 creates `spaced.yaml`.
+Expected: each name of step 2 keeps the dialog open with `Use only letters, digits, -, _ and ., with no spaces.` under the input, marked invalid, and adds nothing; step 3 creates `spaced.yaml`, `v1.2.yaml`, and `pasted.yaml` (a typed `.yaml` is not doubled).
 
 ### 4.3 Editor (`ED`)
 
@@ -310,14 +311,14 @@ Covers US-4.3.3. Pre: S1, S2, a new Test File `editor.yaml`.
 
 Expected: step 1 shows `name: "editor"` with one `open` step; step 2 shows "Unsaved changes" and enables **Save**; step 3 hides "Unsaved changes" and disables **Save**.
 
-#### TC-ED-02 Save and reload — P0, E2E
+#### TC-ED-02 Save, keep showing, and reload — P0, E2E
 
 Covers US-4.3.3. Pre: TC-ED-01.
 
 1. Replace the source with `pass/sign-in.yaml`, click **Save**.
 2. Reload the page.
 
-Expected: after step 1 "Unsaved changes" disappears and the result bar shows "Valid. Ready to run."; after step 2 the textarea shows the saved source.
+Expected: after step 1 "Unsaved changes" disappears, the textarea still shows the saved source, and the result bar shows "Valid. Ready to run."; after step 2 the textarea shows the saved source.
 
 #### TC-ED-03 Upload a file — P1, E2E
 
@@ -361,7 +362,7 @@ Covers US-4.3.3. Pre: S1, S2, a new Test File.
 1. Save a valid source padded with a YAML comment to exactly 262,144 characters.
 2. Save it with one more character.
 
-Expected: step 1 saves; step 2 shows the `413` message naming `body.source` in an alert, and keeps the draft.
+Expected: step 1 saves; step 2 shows `The test file is too long: it can be at most 262,144 characters.` in an alert, and keeps the draft.
 
 #### TC-ED-08 A file with no steps at all — P2, E2E
 
@@ -401,7 +402,7 @@ Covers US-4.3.3. Pre: S1, S2, the Variables dialog open.
 2. Save `1BASE`.
 3. Save `_BASE_1`.
 
-Expected: steps 1–2 show "Name must match [A-Z_][A-Z0-9_]*" without a request; step 3 is saved.
+Expected: steps 1–2 show `Variable names use capital letters, digits and _, and do not start with a digit, for example BASE_URL.` without a request; step 3 is saved.
 
 #### TC-VAR-03 Run with a Variable that is not set — P1, E2E
 
@@ -427,7 +428,7 @@ Covers US-4.3.3. Pre: S1, S2, the Variables dialog open.
 2. Save `LONG` with a value of 10,000 characters.
 3. Save `LONG` with a value of 10,001 characters.
 
-Expected: step 1 keeps **Save** disabled; step 2 lists `LONG`; step 3 shows `body.value is over its size limit` in the dialog's alert, which stays open.
+Expected: step 1 keeps **Save** disabled; step 2 lists `LONG`; step 3 shows `A Variable value can be at most 10,000 characters.` in the dialog's alert without a request, and the dialog stays open.
 
 #### TC-VAR-06 A value with special characters — P1, E2E
 
@@ -491,7 +492,7 @@ Covers US-4.3.2. Pre: S1–S3.
 
 1. S4 with `fail/missing-element.yaml`; S5.
 
-Expected: `Failed` within about 5 s; step 2 Failed with locate method `selector` and a timeout reason; step 3 Pending. With a `selector` and no `target`, Jev is never called.
+Expected: `Failed` within about 5 s; step 2 Failed with locate method `selector` and the reason `No element matches "[data-test="no-such-button"]" within 3000ms`; step 3 Pending. With a `selector` and no `target`, Jev is never called.
 
 #### TC-RUN-07 A second Run waits in the queue — P0, E2E
 
@@ -524,7 +525,7 @@ Covers US-4.3.4. Pre: S1–S3.
 
 1. S4 with `fail/run-timeout.yaml`; S5.
 
-Expected: `Failed` after about 10 s; the header shows `timeout: The run did not finish within runTimeoutMs (10000 ms)`; step 2 Failed with the same reason; step 3 Pending.
+Expected: `Failed` after about 10 s; the header shows `Timed out: The run did not finish within runTimeoutMs (10000 ms)`; step 2 Failed with the same reason; step 3 Pending.
 
 #### TC-RUN-11 Run an invalid file — P0, E2E
 
@@ -557,7 +558,7 @@ Covers US-4.3.4. Pre: TC-RUN-13.
 
 1. Start the backend again; open the Run page.
 
-Expected: `Failed` with `interrupted: Interrupted by a server restart`; "No step results".
+Expected: `Failed` with `Interrupted: Interrupted by a server restart`; "No step results".
 
 #### TC-RUN-15 A double click on Run — P1, E2E
 
@@ -618,9 +619,10 @@ Expected:
 
 Covers US-4.3.5. Pre: TC-RUN-05.
 
-1. Look at step 14, then download the report.
+1. Look at step 14; click its screenshot, then press Escape.
+2. Download the report.
 
-Expected: the screenshot shows the checkout overview with `Total: $32.39`; `report.json` has `status: "failed"` and step 14's `reason`.
+Expected: the screenshot shows the checkout overview with `Total: $32.39`; clicking it opens the image full size in a dialog named "Step 14 screenshot", which Escape closes; `report.json` has `status: "failed"` and step 14's `reason`.
 
 #### TC-RPT-03 Run history lists every Run — P1, E2E
 
@@ -628,7 +630,7 @@ Covers US-4.3.5. Pre: S1–S3, S4 with `pass/sign-in.yaml`.
 
 1. Run it three times; between Runs, replace the source with `fail/wrong-total.yaml` once and save.
 
-Expected: the Runs list shows three Runs, newest first, each with status, trigger time, and duration; each link opens its Run, which shows the source as it was when it ran.
+Expected: the Runs list shows three Runs, newest first, each with status, trigger time, and duration; each link opens its Run, whose "Source when it ran" section shows the source as it was when it ran.
 
 #### TC-RPT-04 Runs are kept after their file is deleted — P2, E2E
 
@@ -653,7 +655,7 @@ Covers US-4.3.5. Pre: S1.
 1. Open `/runs/not-a-uuid`.
 2. Open `/files/not-a-uuid`.
 
-Expected: each page shows the backend's message `The request fails its schema` in an alert, and nothing else of the page; the app does not crash.
+Expected: step 1 shows "Run not found" and step 2 "Test file not found", as for ids that do not exist; the app does not crash.
 
 ### 4.7 Files overview (`OV`)
 
@@ -712,14 +714,14 @@ Covers PRD 4.3.10 (blocking private networks is in scope). Pre: production; S1, 
 
 Expected: both Runs fail at step 1 with `net::ERR_FAILED` or `net::ERR_CONNECTION_REFUSED`; no page content from those addresses appears in the screenshot.
 
-#### TC-SEC-05 HTML in names is shown as text — P1, E2E
+#### TC-SEC-05 HTML in Project and Module names is shown as text — P1, E2E
 
 Covers US-4.3.7. Pre: S1.
 
-1. Create a Project, a Module, and a Test File named `<img src=x onerror=alert(1)>` (the Test File gets `.yaml`).
+1. Create a Project and a Module named `<img src=x onerror=alert(1)>`, and in it a Test File named `plain` (Test File names allow no `<` or `>`, TC-WS-09).
 2. Open `/` and the Test File.
 
-Expected: the names show as the literal text in the sidebar, the overview, and the editor heading; no `img` element is added and no dialog opens.
+Expected: the names show as the literal text in the sidebar and the overview; no `img` element is added and no dialog opens.
 
 #### TC-SEC-06 Run Files cannot leave their Run — P1, E2E
 

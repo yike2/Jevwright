@@ -107,20 +107,26 @@ test("TC-WS-08 keeps Unicode names and trims surrounding spaces", async ({ page 
   await expect(sidebar.getByRole("button", { name: /^Rename project / })).toHaveCount(2);
 });
 
-test("TC-WS-09 accepts only test file names that end in .yaml", async ({ page }) => {
+test("TC-WS-09 names test files with letters, digits, -, _ and ., before a fixed .yaml", async ({ page }) => {
   const { api } = await signUp(page);
   await createWorkspace(api);
   await page.goto("/");
   const sidebar = sidebarOf(page);
 
-  for (const name of ["login.yml", "notes.txt", "v1.2"]) {
+  for (const name of ["sign in", "商店", "a/b"]) {
     const dialog = await create(page, "New test file in Shopping", "New test file", name);
     await expect(dialog).toBeVisible();
-    await expect(dialog.getByRole("alert")).toBeVisible();
+    await expect(dialog.getByRole("alert")).toHaveText("Use only letters, digits, -, _ and ., with no spaces.");
+    await expect(dialog.getByLabel("Name")).toHaveAttribute("aria-invalid", "true");
     await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
   }
   await expect(sidebar.getByRole("link")).toHaveCount(0);
 
   await expect(await create(page, "New test file in Shopping", "New test file", "  spaced  ")).toBeHidden();
   await expect(sidebar.getByRole("link", { name: "spaced.yaml", exact: true })).toBeVisible();
+  await expect(await create(page, "New test file in Shopping", "New test file", "v1.2")).toBeHidden();
+  await expect(sidebar.getByRole("link", { name: "v1.2.yaml", exact: true })).toBeVisible();
+  // A pasted file name does not get a second .yaml.
+  await expect(await create(page, "New test file in Shopping", "New test file", "pasted.yaml")).toBeHidden();
+  await expect(sidebar.getByRole("link", { name: "pasted.yaml", exact: true })).toBeVisible();
 });

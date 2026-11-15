@@ -17,19 +17,26 @@ type ModuleParams = { moduleId: string };
 type TestFileParams = { testFileId: string };
 type TestFileChange = { name?: string; moduleId?: string; source?: string };
 
-/** Runs a write, answering a unique-name failure as 409. */
-async function unique<T>(write: Promise<T>, what: string): Promise<T> {
+const TAKEN = {
+  project: "A project with this name already exists.",
+  module: "A module with this name already exists in this project.",
+  testFile: "A test file with this name already exists in this module.",
+} as const;
+
+/** Runs a write, answering a unique-name failure as 409 with what is taken where. */
+async function unique<T>(write: Promise<T>, what: keyof typeof TAKEN): Promise<T> {
   try {
     return await write;
   } catch (error) {
-    if (isUniqueViolation(error)) throw new ApiError("conflict", `The ${what} is taken`);
+    if (isUniqueViolation(error)) throw new ApiError("conflict", TAKEN[what]);
     throw error;
   }
 }
 
-// A saved Test File answers its source's diagnostics, so the editor can mark them (backend.md 1.3).
+// A saved Test File answers its source and the source's diagnostics, so the editor shows and marks what was
+// saved without reading it again (backend.md 1.3).
 const saved = (testFile: TestFile) => ({
-  testFile: toTestFile(testFile),
+  testFile: { ...toTestFile(testFile), source: testFile.source },
   diagnostics: analyze(testFile.source).diagnostics,
 });
 
@@ -79,14 +86,14 @@ export function workspaceHandlers({ db }: WorkspaceDeps): Handlers {
     },
     "post /projects": async (input, res) => {
       const { name } = input.body as Name;
-      const project = await unique(db.project.create({ data: { userId: requireUserId(input), name } }), "name");
+      const project = await unique(db.project.create({ data: { userId: requireUserId(input), name } }), "project");
       res.status(201).json(toProject(project));
     },
     "patch /projects/:projectId": async (input, res) => {
       const { projectId } = input.params as ProjectParams;
       const { name } = input.body as Name;
       await ownedProject(db, requireUserId(input), projectId);
-      const project = await unique(db.project.update({ where: { id: projectId }, data: { name } }), "name");
+      const project = await unique(db.project.update({ where: { id: projectId }, data: { name } }), "project");
       res.json(toProject(project));
     },
     "delete /projects/:projectId": async (input, res) => {
@@ -136,14 +143,14 @@ export function workspaceHandlers({ db }: WorkspaceDeps): Handlers {
       const { projectId } = input.params as ProjectParams;
       const { name } = input.body as Name;
       await ownedProject(db, requireUserId(input), projectId);
-      const module = await unique(db.module.create({ data: { projectId, name } }), "name");
+      const module = await unique(db.module.create({ data: { projectId, name } }), "module");
       res.status(201).json(toModule(module));
     },
     "patch /modules/:moduleId": async (input, res) => {
       const { moduleId } = input.params as ModuleParams;
       const { name } = input.body as Name;
       await ownedModule(db, requireUserId(input), moduleId);
-      const module = await unique(db.module.update({ where: { id: moduleId }, data: { name } }), "name");
+      const module = await unique(db.module.update({ where: { id: moduleId }, data: { name } }), "module");
       res.json(toModule(module));
     },
     "delete /modules/:moduleId": async (input, res) => {
@@ -167,7 +174,7 @@ export function workspaceHandlers({ db }: WorkspaceDeps): Handlers {
       const { moduleId } = input.params as ModuleParams;
       const { name, source } = input.body as { name: string; source: string };
       await ownedModule(db, requireUserId(input), moduleId);
-      const testFile = await unique(db.testFile.create({ data: { moduleId, name, source } }), "name");
+      const testFile = await unique(db.testFile.create({ data: { moduleId, name, source } }), "testFile");
       res.status(201).json(saved(testFile));
     },
     "post /test-files/validate": async (input, res) => {
@@ -185,7 +192,7 @@ export function workspaceHandlers({ db }: WorkspaceDeps): Handlers {
       const userId = requireUserId(input);
       await ownedTestFile(db, userId, testFileId);
       if (change.moduleId !== undefined) await ownedModule(db, userId, change.moduleId);
-      const testFile = await unique(db.testFile.update({ where: { id: testFileId }, data: change }), "name");
+      const testFile = await unique(db.testFile.update({ where: { id: testFileId }, data: change }), "testFile");
       res.json(saved(testFile));
     },
     "delete /test-files/:testFileId": async (input, res) => {

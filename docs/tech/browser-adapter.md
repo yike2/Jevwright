@@ -157,9 +157,21 @@ Every method except `close()` goes through the same handling. `ready()`, `perfor
 | Situation | Result |
 | --------- | ------ |
 | The current tab was closed (except for `switchTab`) | `{ ok: false, reason: "The current tab was closed" }`, without calling Playwright |
-| `TimeoutError` | `{ ok: false, reason }`, naming what was awaited and the timeout; `isVisible` returns `{ ok: true, data: false }` instead |
-| Any other error while the browser is still connected (invalid selector, unknown key, navigation error) | `{ ok: false, reason }` with Playwright's first message line |
+| `TimeoutError` | `{ ok: false, reason }`, naming what was awaited and the timeout (below); `isVisible` returns `{ ok: true, data: false }` instead |
+| Any other error while the browser is still connected (invalid selector, unknown key, navigation error) | `{ ok: false, reason }` with Playwright's first message line, without its method name (`page.goto: net::ERR_FAILED` becomes `net::ERR_FAILED`) |
 | Any error after the browser disconnected or crashed, and any call made after that | Thrown; the Executor closes the browser and rethrows it as an infrastructure failure |
+
+A timeout reason says what the test author can act on, since Playwright's `Timeout 3000ms exceeded.` does not say whether anything matched. After the timeout the adapter counts the matches:
+
+| Timed out | Reason |
+| --------- | ------ |
+| An element action, and no element matches | `No element matches "<selector>" within <ms>ms` |
+| An element action, and an element matches | `"<selector>" was found but could not be <clicked \| double-clicked \| right-clicked \| hovered \| filled> within <ms>ms: it stayed hidden, disabled, or covered by another element` |
+| An element action on a Jev-located element | `The element Jev located is no longer on the page`, or `The element Jev located could not be <...> within <ms>ms: ...` as above |
+| `open`, `back`, `forward`, `reload` | `The page did not finish loading within <ms>ms` |
+| `visible` check | `No element matches ...` as above, or `"<selector>" did not become visible within <ms>ms` |
+| `text` check before any read | `No element matches ...` as above |
+| `url` check | `The URL did not match "<url>" within <ms>ms; it was "<current URL>"` |
 
 `close()` throws on any error, because the Run is over and only the trace is left to save. When stopping the trace fails and closing the browser fails after it, both are thrown together as an `AggregateError` whose message is the first error, so the real cause is not hidden.
 

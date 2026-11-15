@@ -57,6 +57,14 @@ function cors(origin: string): RequestHandler {
 }
 
 // Parses params, query, and body with the route's schemas, keeping the parsed values for the handler.
+// The path ids of the contract and what they name, as the handlers' 404 messages say it.
+const ID_PARAMS: Record<string, string> = {
+  "params.projectId": "Project",
+  "params.moduleId": "Module",
+  "params.testFileId": "Test File",
+  "params.runId": "Run",
+};
+
 function validate(route: Route): RequestHandler {
   return (req, res, next) => {
     // Express 5 gives a *wildcard as an array of segments; the contract treats it as one path.
@@ -88,15 +96,17 @@ function validate(route: Route): RequestHandler {
           })),
         );
     }
+    // A path id that is not a uuid names nothing, so it answers like an id that does not exist.
+    const badId = issues.find((issue) => issue.path in ID_PARAMS);
+    if (badId) return next(new ApiError("not_found", `No such ${ID_PARAMS[badId.path]}`));
     // Content over a size limit is 413 like a body over 1 MB; it wins over other issues, as that check does.
     const tooLarge = issues.find((issue) => issue.tooBig && route.sizeLimited?.includes(issue.path));
-    if (tooLarge)
-      return next(new ApiError("too_large", `${tooLarge.path} is over its size limit: ${tooLarge.message}`));
+    if (tooLarge) return next(new ApiError("too_large", tooLarge.message));
     if (issues.length > 0)
       return next(
         new ApiError(
           "invalid_request",
-          "The request fails its schema",
+          [...new Set(issues.map((issue) => issue.message))].join(" "),
           issues.map(({ path, message }) => ({ path, message })),
         ),
       );

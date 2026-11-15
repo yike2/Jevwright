@@ -3,10 +3,22 @@ import { describe, expect, it } from "vitest";
 import { failureReason, withCleanup } from "@/core/browser/errors.js";
 
 describe("failureReason", () => {
-  it("uses the first line of a timeout message", () => {
+  it("uses the first line of a timeout message, without Playwright's method name", () => {
     const error = new errors.TimeoutError("locator.click: Timeout 15000ms exceeded.\nCall log:\n  - waiting for #save");
 
-    expect(failureReason(error, true)).toBe("locator.click: Timeout 15000ms exceeded.");
+    expect(failureReason(error, true)).toBe("Timeout 15000ms exceeded.");
+  });
+
+  it("drops the method name of any Playwright error, which means nothing to a test author", () => {
+    const error = new Error("page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:1/");
+
+    expect(failureReason(error, true)).toBe("net::ERR_CONNECTION_REFUSED at http://127.0.0.1:1/");
+  });
+
+  it("keeps a message that has no method name", () => {
+    expect(failureReason(new Error('Unexpected alert dialog: "Saved: done"'), true)).toBe(
+      'Unexpected alert dialog: "Saved: done"',
+    );
   });
 });
 

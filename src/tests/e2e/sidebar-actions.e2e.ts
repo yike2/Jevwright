@@ -33,7 +33,7 @@ test("TC-WS-04 renames a project, a module, and the open test file", async ({ pa
 
   await page.getByRole("button", { name: "Rename test file sign-in.yaml", exact: true }).click();
   const unchanged = page.getByRole("dialog", { name: "Rename test file", exact: true });
-  await expect(unchanged.getByLabel("Name")).toHaveValue("sign-in.yaml");
+  await expect(unchanged.getByLabel("Name")).toHaveValue("sign-in");
   await expect(unchanged.getByRole("button", { name: "Save", exact: true })).toBeDisabled();
 });
 

@@ -48,7 +48,7 @@ test("TC-ED-01 shows the starter source and tracks unsaved changes", async ({ pa
   await expect(save).toBeDisabled();
 });
 
-test("TC-ED-02 saves a source and shows it after a reload", async ({ page }) => {
+test("TC-ED-02 saves a source, keeps showing it, and shows it after a reload", async ({ page }) => {
   const { textarea, validation, save, unsaved } = await openNewFile(page, fixture("pass/locked-out.yaml"));
   const source = fixture("pass/sign-in.yaml");
 
@@ -56,6 +56,8 @@ test("TC-ED-02 saves a source and shows it after a reload", async ({ page }) => 
   await save.click();
 
   await expect(unsaved).toBeHidden();
+  // The saved source stays in the editor without a reload.
+  await expect(textarea).toHaveValue(source);
   await expect(validation).toContainText("Valid. Ready to run.");
   await page.reload();
   await expect(textarea).toHaveValue(source);
@@ -144,7 +146,7 @@ test("TC-ED-07 saves a source of up to 262,144 characters", async ({ page }) => 
 
   await textarea.fill(`${largest}x`);
   await save.click();
-  await expect(alertsOf(page)).toContainText("body.source is over its size limit");
+  await expect(alertsOf(page)).toHaveText("The test file is too long: it can be at most 262,144 characters.");
   await expect(unsaved).toBeVisible();
   await expect(textarea).toHaveValue(`${largest}x`);
 });

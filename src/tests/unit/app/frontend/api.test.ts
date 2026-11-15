@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  NetworkError,
   createApiClient,
   type CreateModuleResponse,
   type CreateProjectResponse,
@@ -87,6 +88,18 @@ describe("api client", () => {
     await expect(client.login("test@example.com", "password")).resolves.toEqual({ token: "jwt-token", user });
     expect(setToken).toHaveBeenCalledTimes(1);
     expect(setToken).toHaveBeenCalledWith("jwt-token");
+  });
+
+  it("throws a NetworkError, not fetch's TypeError, when the server cannot be reached", async () => {
+    const fetchImpl = vi.fn(async () => {
+      throw new TypeError("Failed to fetch");
+    });
+    const client = createApiClient({ baseUrl: "http://localhost:4000/api/v1", getToken: () => null, fetchImpl });
+
+    const failure = client.getCurrentUser();
+
+    await expect(failure).rejects.toBeInstanceOf(NetworkError);
+    await expect(failure).rejects.toThrow("Cannot reach the server. Check your connection and try again.");
   });
 
   it("handles a 401 on GET /auth/me by clearing the token and calling onUnauthorized", async () => {
