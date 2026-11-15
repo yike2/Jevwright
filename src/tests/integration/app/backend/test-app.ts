@@ -44,7 +44,7 @@ export function createTestBackend(db: Db, options: TestBackendOptions = {}) {
       jwtSecret: JWT_SECRET,
       runsDir,
       enqueue: (runId) => queue.enqueue(runId),
-      demoAppUrl: "demoAppUrl" in options ? options.demoAppUrl : DEMO_APP_URL,
+      demoAppUrl: options.demoAppUrl ?? DEMO_APP_URL,
     }),
     verifyToken: (token) => verifyToken(token, JWT_SECRET),
   });

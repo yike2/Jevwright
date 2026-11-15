@@ -16,9 +16,11 @@ test("TC-QS-01 a new account starts with the Quick Start project and runs its pa
 
   const overview = overviewOf(page);
   await expect(overview.getByRole("heading", { level: 2, name: QUICK_START, exact: true })).toBeVisible();
-  for (const module of ["Passing", "Failing", "Invalid"])
+  for (const module of ["1 Passing", "2 Failing", "3 Invalid", "4 Jev"])
     await expect(overview.getByRole("heading", { level: 3, name: module, exact: true })).toBeVisible();
   await expect(overview.getByRole("link", { name: "multiple-errors.yaml", exact: true })).toBeVisible();
+  // The Jev examples are listed but never run here: pnpm test:e2e makes no Jev calls (AGENTS.md 5).
+  await expect(overview.getByRole("link", { name: "target-sign-in.yaml", exact: true })).toBeVisible();
 
   await page.getByRole("button", { name: `Variables for ${QUICK_START}`, exact: true }).click();
   const variables = page.getByRole("dialog", { name: "Variables" });

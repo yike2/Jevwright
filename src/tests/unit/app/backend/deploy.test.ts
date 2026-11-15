@@ -59,9 +59,12 @@ describe("deploy files", () => {
     expect(compose).toMatch(/DEMO_DOMAIN: \$\{DEMO_DOMAIN:\?/);
   });
 
-  it("gives the backend the public Demo App on DEMO_DOMAIN as the Quick Start project's BASE", () => {
+  it("gives every deployed backend a public Demo App as the Quick Start project's BASE", () => {
     expect(read("compose.yaml")).toMatch(/^\s+DEMO_APP_URL: https:\/\/\$\{DEMO_DOMAIN\}$/m);
-    expect(read("compose.preview.yaml")).toMatch(/^\s+DEMO_APP_URL: \$\{DEMO_APP_URL:-\}$/m);
+    // The preview has no Demo App of its own; it uses production's public one unless its .env names another.
+    expect(read("compose.preview.yaml")).toMatch(
+      /^\s+DEMO_APP_URL: \$\{DEMO_APP_URL:-https:\/\/demo\.94\.72\.126\.118\.sslip\.io\}$/m,
+    );
   });
 
   it("keeps the e2e fixtures in the backend image, since the Quick Start project reads them", () => {
