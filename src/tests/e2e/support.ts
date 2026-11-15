@@ -7,6 +7,9 @@ export const API_URL = "http://127.0.0.1:4000/api/v1";
 export const DEMO_URL = "http://127.0.0.1:8080";
 export const PASSWORD = "e2e-password-123";
 export const SWAG_PASSWORD = process.env.SWAG_PASSWORD ?? "secret_sauce";
+// The files overview, the workspace's home; the landing page is at / (frontend.md 1.6).
+export const WORKSPACE = "/files";
+export const QUICK_START = "Quick Start";
 
 const FIXTURES = new URL("./fixtures/", import.meta.url);
 const FINAL_STATUS_TIMEOUT_MS = 60_000;
@@ -31,7 +34,11 @@ export function fixture(path: string): string {
   return readFileSync(new URL(path, FIXTURES), "utf8");
 }
 
-export async function signUp(page: Page): Promise<Account> {
+/**
+ * Registers a new account through the API and stores its token in the app. Every account starts with the Quick Start
+ * project (backend.md 1.10); it is deleted unless `quickStart` is set, so a case starts from an empty workspace.
+ */
+export async function signUp(page: Page, options: { quickStart?: boolean } = {}): Promise<Account> {
   const email = uniqueEmail();
   const response = await page.request.post(`${API_URL}/auth/register`, { data: { email, password: PASSWORD } });
   expect(response.status(), await response.text()).toBe(201);
@@ -50,6 +57,12 @@ export async function signUp(page: Page): Promise<Account> {
     expect(reply.status(), `${method} ${path}: ${await reply.text()}`).toBe(status);
     return (reply.status() === 204 ? undefined : await reply.json()) as T;
   };
+  if (!options.quickStart) {
+    const tree = await api<{ items: { id: string; name: string }[] }>("GET", "/tree");
+    const quickStart = tree.items.find((project) => project.name === QUICK_START);
+    expect(quickStart, "a new account has the Quick Start project").toBeDefined();
+    await api("DELETE", `/projects/${quickStart!.id}`);
+  }
   return { email, token, api };
 }
 

@@ -12,6 +12,7 @@ const ENV = z.object({
   // Only this machine by default, so a local backend is not open to its network; the image sets 0.0.0.0.
   HOST: z.string().min(1).default("127.0.0.1"),
   BROWSER_ENDPOINT: z.url({ protocol: /^wss?$/ }).optional(),
+  DEMO_APP_URL: z.string().optional(),
 });
 
 export type Env = z.infer<typeof ENV>;

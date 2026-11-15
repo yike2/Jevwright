@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { addTestFile, fixture, setUpDemoProject, signUp, runToEnd, startRun } from "./support.js";
+import { addTestFile, fixture, runToEnd, setUpDemoProject, signUp, startRun, WORKSPACE } from "./support.js";
 
 const TRIGGER_TIME = /\d{1,2}:\d{2}/;
 
@@ -10,14 +10,14 @@ function fileItem(page: Page, name: string) {
 
 test("TC-OV-01 shows an empty overview, then files grouped by project and module", async ({ page }) => {
   const { api } = await signUp(page);
-  await page.goto("/");
+  await page.goto(WORKSPACE);
   const overview = page.getByRole("region", { name: "Test files", exact: true });
   await expect(overview.getByText("No test files yet", { exact: true })).toBeVisible();
 
   const project = await api<{ id: string }>("POST", "/projects", { name: "Demo Shop" });
   const module = await api<{ id: string }>("POST", `/projects/${project.id}/modules`, { name: "Shopping" });
   const testFileId = await addTestFile(api, module.id, "sign-in.yaml", fixture("pass/sign-in.yaml"));
-  await page.goto("/");
+  await page.goto(WORKSPACE);
 
   await expect(overview.getByRole("heading", { level: 2, name: "Demo Shop", exact: true })).toBeVisible();
   await expect(overview.getByRole("heading", { level: 3, name: "Shopping", exact: true })).toBeVisible();
@@ -34,14 +34,14 @@ test("TC-OV-02 shows the latest status of each file", async ({ page }) => {
   await runToEnd(api, passing);
   await runToEnd(api, failing);
 
-  await page.goto("/");
+  await page.goto(WORKSPACE);
   await expect(fileItem(page, "sign-in.yaml")).toContainText("Passed");
   await expect(fileItem(page, "sign-in.yaml")).toContainText(TRIGGER_TIME);
   await expect(fileItem(page, "wrong-total.yaml")).toContainText("Failed");
   await expect(fileItem(page, "wrong-total.yaml")).toContainText(TRIGGER_TIME);
 
   const runId = await startRun(api, failing);
-  await page.goto("/");
+  await page.goto(WORKSPACE);
   await expect(fileItem(page, "wrong-total.yaml")).toContainText("Running");
 
   await expect

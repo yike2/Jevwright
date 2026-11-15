@@ -12,12 +12,18 @@ import { throwingJev } from "../../../unit/core/executor/fake-adapter.js";
 
 export const JWT_SECRET = "test-secret-".padEnd(32, "x");
 export const CORS_ORIGIN = "http://localhost:3000";
+export const DEMO_APP_URL = "https://demo.example.com";
 
-export type TestBackendOptions = Partial<Omit<RunDeps, "db">> & { jev?: JevClient; concurrency?: number };
+export type TestBackendOptions = Partial<Omit<RunDeps, "db">> & {
+  jev?: JevClient;
+  concurrency?: number;
+  demoAppUrl?: string;
+};
 
 /**
  * The app, Run Queue, and Run Files folder as main.ts builds them, over the test database. Runs use
  * `network: "any"` unless set, since the HTML fixtures are served on 127.0.0.1, and a Jev that throws if called.
+ * The Quick Start project's BASE is DEMO_APP_URL unless set.
  */
 export function createTestBackend(db: Db, options: TestBackendOptions = {}) {
   const runsDir = options.runsDir ?? mkdtempSync(join(tmpdir(), "jevwright-runs-"));
@@ -33,7 +39,13 @@ export function createTestBackend(db: Db, options: TestBackendOptions = {}) {
   const queue = new RunQueue((runId) => executeRun(runId, deps), options.concurrency ?? 1);
   const app = createApp({
     corsOrigin: CORS_ORIGIN,
-    handlers: createHandlers({ db, jwtSecret: JWT_SECRET, runsDir, enqueue: (runId) => queue.enqueue(runId) }),
+    handlers: createHandlers({
+      db,
+      jwtSecret: JWT_SECRET,
+      runsDir,
+      enqueue: (runId) => queue.enqueue(runId),
+      demoAppUrl: "demoAppUrl" in options ? options.demoAppUrl : DEMO_APP_URL,
+    }),
     verifyToken: (token) => verifyToken(token, JWT_SECRET),
   });
   return { app, queue, runsDir };

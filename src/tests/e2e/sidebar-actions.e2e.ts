@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { addTestFile, createWorkspace, fixture, setDemoVariables, signUp } from "./support.js";
+import { addTestFile, createWorkspace, fixture, setDemoVariables, signUp, WORKSPACE } from "./support.js";
 
 async function openWorkspaceFile(page: Page): Promise<void> {
   const { api } = await signUp(page);
@@ -45,7 +45,7 @@ test("TC-WS-05 deletes the open test file and returns to the overview", async ({
   await expect(dialog.getByText('Delete test file "login.yaml"? Run history is kept.', { exact: true })).toBeVisible();
   await dialog.getByRole("button", { name: "Delete", exact: true }).click();
 
-  await expect(page).toHaveURL("/");
+  await expect(page).toHaveURL(WORKSPACE);
   await expect(page.getByRole("link", { name: "login.yaml", exact: true })).toHaveCount(0);
 });
 
@@ -54,7 +54,7 @@ test("TC-WS-06 deletes a project with its modules, test files, and variables", a
   const { projectId, moduleId } = await createWorkspace(api);
   await setDemoVariables(api, projectId);
   await addTestFile(api, moduleId, "login.yaml", fixture("pass/sign-in.yaml"));
-  await page.goto("/");
+  await page.goto(WORKSPACE);
 
   await page.getByRole("button", { name: "Delete project Demo Shop", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "Delete project", exact: true });

@@ -2,7 +2,7 @@ import request from "supertest";
 import { expect, it } from "vitest";
 import { ROUTES } from "@/app/backend/src/api/contract.js";
 import { signToken } from "@/app/backend/src/auth/token.js";
-import { createTestApp, createUser } from "./test-app.js";
+import { createTestApp, createTestBackend, createUser, DEMO_APP_URL } from "./test-app.js";
 import { describeDb, useTestDb } from "./test-db.js";
 
 const ANY_ID = "6f1c2a4e-9b3d-4c5e-8f7a-1b2c3d4e5f60";
@@ -23,6 +23,48 @@ describeDb("auth routes", () => {
     });
     const stored = await db().user.findUniqueOrThrow({ where: { id: res.body.user.id } });
     expect(stored.passwordHash).toMatch(/^\$2[aby]\$12\$/);
+  });
+
+  it("registers a user with the Quick Start project, its Modules, Test Files, and Variables", async () => {
+    const res = await register();
+    const auth = { authorization: `Bearer ${res.body.token}` };
+
+    const tree = await request(app()).get("/api/v1/tree").set(auth);
+    expect(tree.body.items.map((project: { name: string }) => project.name)).toEqual(["Quick Start"]);
+    const [project] = tree.body.items;
+    expect(
+      project.modules.map((module: { name: string; testFiles: { name: string }[] }) => [
+        module.name,
+        module.testFiles.map((testFile) => testFile.name),
+      ]),
+    ).toEqual([
+      ["Failing", ["missing-element.yaml", "unexpected-dialog.yaml", "wrong-total.yaml"]],
+      ["Invalid", ["multiple-errors.yaml", "yaml-syntax.yaml"]],
+      ["Passing", ["checkout.yaml", "locked-out.yaml", "sign-in.yaml"]],
+    ]);
+    const variables = await db().variable.findMany({ where: { projectId: project.id }, orderBy: { name: "asc" } });
+    expect(variables.map(({ name, value }) => ({ name, value }))).toEqual([
+      { name: "BASE", value: DEMO_APP_URL },
+      { name: "SWAG_PASSWORD", value: "secret_sauce" },
+    ]);
+  });
+
+  it("registers a Quick Start project without BASE when no Demo App URL is configured", async () => {
+    const { app: noDemo } = createTestBackend(db(), { demoAppUrl: undefined });
+
+    await request(noDemo).post("/api/v1/auth/register").send(credentials);
+
+    const variables = await db().variable.findMany({ orderBy: { name: "asc" } });
+    expect(variables.map((variable) => variable.name)).toEqual(["SWAG_PASSWORD"]);
+  });
+
+  it("creates no user and no Quick Start project when the email is taken", async () => {
+    await register();
+
+    await register({ ...credentials, email: "ADA@example.com" });
+
+    expect(await db().user.count()).toBe(1);
+    expect(await db().project.count()).toBe(1);
   });
 
   it("answers 409 for an email that is taken, in any case", async () => {

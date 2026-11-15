@@ -228,6 +228,35 @@ describeDb("workspace routes", () => {
     expect((await other.post("/projects", { name: "Shop" })).status).toBe(201);
   });
 
+  it("adds the Quick Start project to an account without one", async () => {
+    const as = await client();
+
+    const res = await as.post("/projects/quick-start");
+
+    expect(res.status).toBe(201);
+    expect(res.body).toEqual({ id: expect.any(String), name: "Quick Start", ...timestamps });
+    const tree = (await as.get("/tree")).body.items;
+    expect(tree.map((project: { name: string }) => project.name)).toEqual(["Quick Start"]);
+    expect(tree[0].modules.map((module: { name: string }) => module.name)).toEqual(["Failing", "Invalid", "Passing"]);
+    expect((await as.get(`/projects/${res.body.id}/variables`)).body.items).toEqual(["BASE", "SWAG_PASSWORD"]);
+  });
+
+  it("answers 409 when the account already has a project named Quick Start, and adds nothing", async () => {
+    const as = await client();
+    await as.post("/projects", { name: "Quick Start" });
+
+    const res = await as.post("/projects/quick-start");
+
+    expect(res.status).toBe(409);
+    expect(res.body.error).toEqual({
+      code: "conflict",
+      message: "You already have a project named Quick Start. Rename or delete it, then add it again.",
+    });
+    const tree = (await as.get("/tree")).body.items;
+    expect(tree).toHaveLength(1);
+    expect(tree[0].modules).toEqual([]);
+  });
+
   it("sets, lists by name only, and deletes Project Variables", async () => {
     const as = await client();
     const { project } = await workspace(as);

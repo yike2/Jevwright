@@ -1,5 +1,6 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import {
+  type Account,
   addTestFile,
   API_URL,
   fixture,
@@ -8,7 +9,7 @@ import {
   setUpDemoProject,
   signUp,
   SWAG_PASSWORD,
-  type Account,
+  WORKSPACE,
 } from "./support.js";
 
 // User B gets a browser context of its own, so no token or storage is shared with user A.
@@ -74,7 +75,7 @@ test("TC-SEC-05 shows HTML in Project and Module names as text", async ({ page }
     void dialog.dismiss();
   });
   await signUp(page);
-  await page.goto("/");
+  await page.goto(WORKSPACE);
   const sidebar = page.getByRole("navigation", { name: "Projects", exact: true });
 
   // Test File names allow no < or > at all (TC-WS-09), so only Project and Module names can hold HTML.
@@ -91,7 +92,7 @@ test("TC-SEC-05 shows HTML in Project and Module names as text", async ({ page }
   }
 
   await expect(page.getByRole("heading", { name: "plain.yaml", exact: true })).toBeVisible();
-  await page.goto("/");
+  await page.goto(WORKSPACE);
   const overview = page.getByRole("region", { name: "Test files", exact: true });
   await expect(overview.getByRole("heading", { level: 2, name: html, exact: true })).toBeVisible();
   await expect(overview.getByRole("link", { name: "plain.yaml", exact: true })).toBeVisible();
@@ -116,7 +117,7 @@ test("TC-SEC-07 closes Live Progress for a bad token or another user", async ({ 
   const testFileId = await addTestFile(api, moduleId, "sign-in.yaml", fixture("pass/sign-in.yaml"));
   const runId = await runToEnd(api, testFileId);
   const b = await secondUser(browser);
-  await page.goto("/");
+  await page.goto(WORKSPACE);
 
   // Opened from the app's page, so the socket carries the frontend's Origin like the Run page's own.
   const open = (value: string) =>

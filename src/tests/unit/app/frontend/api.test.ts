@@ -376,6 +376,48 @@ describe("api client", () => {
     await expect(client.createTestFile("m1", "login.yaml", "name: x\n")).resolves.toEqual(testFile);
   });
 
+  it("sends POST /projects/quick-start without a body and resolves the Quick Start project", async () => {
+    const project: CreateProjectResponse = {
+      id: "p-qs",
+      name: "Quick Start",
+      createdAt: "2026-11-15T00:00:00.000Z",
+      updatedAt: "2026-11-15T00:00:00.000Z",
+    };
+
+    const fetchImpl = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+      expect(url).toBe("http://localhost:4000/api/v1/projects/quick-start");
+      expect(init?.method).toBe("POST");
+      const headers = new Headers(init?.headers ?? {});
+      expect(headers.get("Authorization")).toBe("Bearer jwt-token");
+      expect(init?.body).toBeUndefined();
+      return makeResponse(project, 201);
+    });
+
+    const client = createApiClient({
+      baseUrl: "http://localhost:4000/api/v1",
+      getToken: () => "jwt-token",
+      setToken: () => undefined,
+      fetchImpl,
+    });
+
+    await expect(client.addQuickStart()).resolves.toEqual(project);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects addQuickStart with the backend's 409 message when the project exists", async () => {
+    const message = "You already have a project named Quick Start. Rename or delete it, then add it again.";
+    const fetchImpl = vi.fn(async () => makeResponse({ error: { code: "conflict", message } }, 409));
+
+    const client = createApiClient({
+      baseUrl: "http://localhost:4000/api/v1",
+      getToken: () => "jwt-token",
+      setToken: () => undefined,
+      fetchImpl,
+    });
+
+    await expect(client.addQuickStart()).rejects.toMatchObject({ status: 409, code: "conflict", message });
+  });
+
   it("rejects createProject with ApiError status 409 code conflict and backend message", async () => {
     const fetchImpl = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
       expect(url).toBe("http://localhost:4000/api/v1/projects");

@@ -47,6 +47,24 @@ describe("parseEnv", () => {
     expect(!invalid.ok && invalid.problems.map((problem) => problem.split(":")[0])).toEqual(["BROWSER_ENDPOINT"]);
   });
 
+  it("takes an optional http(s) DEMO_APP_URL for the Quick Start project's BASE, treating an empty one as unset", () => {
+    const unset = parseEnv(required);
+    expect(unset.ok && unset.env.DEMO_APP_URL).toBeUndefined();
+    const empty = parseEnv({ ...required, DEMO_APP_URL: "" });
+    expect(empty.ok && empty.env.DEMO_APP_URL).toBeUndefined();
+    expect(parseEnv({ ...required, DEMO_APP_URL: "https://demo.example.com" })).toMatchObject({
+      ok: true,
+      env: { DEMO_APP_URL: "https://demo.example.com" },
+    });
+  });
+
+  it("refuses a DEMO_APP_URL that is not an http(s) URL", () => {
+    for (const value of ["demo.example.com", "ftp://demo.example.com"]) {
+      const invalid = parseEnv({ ...required, DEMO_APP_URL: value });
+      expect(!invalid.ok && invalid.problems.map((problem) => problem.split(":")[0])).toEqual(["DEMO_APP_URL"]);
+    }
+  });
+
   it("lets dev mode's Runs reach any address, local pages included", () => {
     expect(parseEnv(required, { dev: true })).toMatchObject({ ok: true, runNetwork: "any" });
   });

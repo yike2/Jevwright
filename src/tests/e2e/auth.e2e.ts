@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { alertsOf, API_URL, PASSWORD, uniqueEmail } from "./support.js";
+import { alertsOf, API_URL, PASSWORD, uniqueEmail, WORKSPACE } from "./support.js";
 
 async function submit(page: Page, mode: "Log in" | "Register", email: string, password: string): Promise<void> {
   await page.goto("/login");
@@ -14,14 +14,14 @@ test("TC-AUTH-01 registers, logs out, and logs back in", async ({ page }) => {
   const email = uniqueEmail();
 
   await submit(page, "Register", email, PASSWORD);
-  await expect(page).toHaveURL("/");
+  await expect(page).toHaveURL(WORKSPACE);
   await expect(page.getByText(`Signed in as ${email}`)).toBeVisible();
 
   await page.getByRole("button", { name: "Log out" }).click();
   await expect(page).toHaveURL("/login");
 
   await submit(page, "Log in", email, PASSWORD);
-  await expect(page).toHaveURL("/");
+  await expect(page).toHaveURL(WORKSPACE);
   await expect(page.getByText(`Signed in as ${email}`)).toBeVisible();
 });
 
@@ -60,13 +60,13 @@ test("TC-AUTH-04 needs a password of at least 8 characters", async ({ page }) =>
   await expect(page).toHaveURL("/login");
 
   await submit(page, "Register", uniqueEmail(), "12345678");
-  await expect(page).toHaveURL("/");
+  await expect(page).toHaveURL(WORKSPACE);
 });
 
 test("TC-AUTH-05 sends a visitor without a token to the login page", async ({ page }) => {
   const id = "00000000-0000-4000-8000-000000000000";
 
-  for (const path of ["/", `/files/${id}`, `/runs/${id}`]) {
+  for (const path of [WORKSPACE, `/files/${id}`, `/runs/${id}`]) {
     await page.goto(path);
     await expect(page).toHaveURL("/login");
     await expect(page.getByRole("navigation", { name: "Projects" })).toHaveCount(0);
@@ -79,15 +79,15 @@ test("TC-AUTH-07 compares emails in lower case", async ({ page }) => {
 
   await submit(page, "Log in", email.toUpperCase(), PASSWORD);
 
-  await expect(page).toHaveURL("/");
+  await expect(page).toHaveURL(WORKSPACE);
   await expect(page.getByText(`Signed in as ${email}`)).toBeVisible();
 });
 
 test("TC-AUTH-08 sends another tab to the login page after logging out", async ({ page }) => {
   await submit(page, "Register", uniqueEmail(), PASSWORD);
-  await expect(page).toHaveURL("/");
+  await expect(page).toHaveURL(WORKSPACE);
   const other = await page.context().newPage();
-  await other.goto("/");
+  await other.goto(WORKSPACE);
   await expect(other.getByRole("button", { name: "Log out" })).toBeVisible();
 
   await page.getByRole("button", { name: "Log out" }).click();
