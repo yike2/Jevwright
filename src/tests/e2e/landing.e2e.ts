@@ -13,7 +13,7 @@ const QUESTIONS = [
   "What it is, and what it is not",
 ];
 
-test("TC-LAND-01 shows the product page with its sections, the command, Log in and Register", async ({ page }) => {
+test("TC-LAND-01 shows the product page with its sections, the command, and one Sign in button", async ({ page }) => {
   await page.goto("/");
 
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Web tests as plain YAML steps");
@@ -25,28 +25,33 @@ test("TC-LAND-01 shows the product page with its sections, the command, Log in a
     "href",
     "https://yike2.github.io/Jevwright/",
   );
-  await expect(header.getByRole("link", { name: "Log in", exact: true })).toBeVisible();
+  await expect(header.getByRole("link", { name: "Sign in", exact: true })).toBeVisible();
+  await expect(header.getByRole("link", { name: "Register", exact: true })).toHaveCount(0);
+  await expect(header.getByRole("link", { name: "Log in", exact: true })).toHaveCount(0);
   await expect(header.getByRole("link", { name: "Open workspace" })).toHaveCount(0);
 
-  await header.getByRole("link", { name: "Register", exact: true }).click();
+  // The hero's Get started opens the same auth page in Register mode.
+  await page.getByRole("main").getByRole("link", { name: "Get started" }).first().click();
   await expect(page).toHaveURL("/register");
   await expect(page.getByRole("heading", { level: 1, name: "Register" })).toBeVisible();
 });
 
-test("TC-LAND-02 opens the login page from the product page", async ({ page }) => {
+test("TC-LAND-02 opens the one auth page from Sign in, where Log in and Register switch", async ({ page }) => {
   await page.goto("/");
 
-  await page.getByRole("banner").getByRole("link", { name: "Log in", exact: true }).click();
+  await page.getByRole("banner").getByRole("link", { name: "Sign in", exact: true }).click();
 
   await expect(page).toHaveURL("/login");
   await expect(page.getByRole("heading", { level: 1, name: "Log in" })).toBeVisible();
+  await page.getByRole("button", { name: "Register" }).first().click();
+  await expect(page.getByRole("heading", { level: 1, name: "Register" })).toBeVisible();
 });
 
 test("TC-LAND-03 takes a signed-in visitor from the product page to the workspace in one click", async ({ page }) => {
   await signUp(page);
   await page.goto("/");
   const header = page.getByRole("banner");
-  await expect(header.getByRole("link", { name: "Log in", exact: true })).toHaveCount(0);
+  await expect(header.getByRole("link", { name: "Sign in", exact: true })).toHaveCount(0);
 
   await header.getByRole("link", { name: "Open workspace" }).click();
 
@@ -54,22 +59,21 @@ test("TC-LAND-03 takes a signed-in visitor from the product page to the workspac
   await expect(page.getByRole("navigation", { name: "Projects" })).toBeVisible();
 });
 
-test("TC-LAND-04 the logo leads home for a visitor and to the dashboard when signed in", async ({ page }) => {
+test("TC-LAND-04 the logo leads to the landing page everywhere, signed in or not", async ({ page }) => {
+  const home = () => page.getByRole("link", { name: "Jevwright home", exact: true });
   await page.goto("/login");
-  await expect(page.getByRole("link", { name: "Jevwright home", exact: true })).toHaveAttribute("href", "/");
+  await expect(home()).toHaveAttribute("href", "/");
 
   const { api } = await signUp(page);
   const { moduleId } = await createWorkspace(api);
   const testFileId = await addTestFile(api, moduleId, "sign-in.yaml", fixture("pass/sign-in.yaml"));
   await page.goto("/");
-  await expect(page.getByRole("link", { name: "Jevwright, go to dashboard", exact: true })).toHaveAttribute(
-    "href",
-    WORKSPACE,
-  );
+  await expect(home()).toHaveAttribute("href", "/");
 
   await page.goto(`/files/${testFileId}`);
-  await page.getByRole("link", { name: "Jevwright, go to dashboard", exact: true }).click();
-  await expect(page).toHaveURL(WORKSPACE);
+  await home().click();
+  await expect(page).toHaveURL("/");
+  await expect(page.getByRole("banner").getByRole("link", { name: "Open workspace" })).toBeVisible();
 });
 
 test("TC-LAND-05 replays a real Run step by step, with each step's screenshot", async ({ page }) => {
