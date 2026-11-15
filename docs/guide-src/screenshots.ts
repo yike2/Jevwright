@@ -1,29 +1,37 @@
-// Takes the user guide's annotated screenshots into docs/guide-src/public/screenshots/. It drives a running local
-// workspace (docs/deploy/backend-local.md with `pnpm frontend` and the Demo App on port 8080) like a new user: it
-// registers, opens the Quick Start files and runs them, so every picture shows a real state. Before each picture it
-// draws numbered markers, arrows and boxes over the page from the controls' bounding boxes, so they line up exactly.
-// Run it by hand with `pnpm docs:screenshots`; it never runs in tests or CI. The Jev file needs OPENROUTER_API_KEY.
+// Takes the user guide's annotated screenshots into docs/guide-src/public/screenshots/. It drives the web workspace
+// like a new user: it registers a throwaway account, opens the Quick Start files and runs three of them, so every
+// picture shows a real state. Each picture gets numbered markers, arrows and outlines drawn from the controls' bounding
+// boxes, so they line up exactly; a margin around the picture can hold the markers so they cover nothing.
+// Run it by hand with `pnpm docs:screenshots`; it never runs in tests or CI. GUIDE_APP_URL picks the workspace, by
+// default the public one, whose Quick Start project tests the public Demo App.
+import { randomBytes } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { chromium, type Browser, type Locator, type Page } from "playwright";
 
-const APP_URL = process.env.GUIDE_APP_URL ?? "http://localhost:3000";
+const APP_URL = process.env.GUIDE_APP_URL ?? "https://app.94.72.126.118.sslip.io";
 const OUT_DIR = new URL("./public/screenshots/", import.meta.url);
 const VIEWPORT = { width: 1440, height: 900 };
+const SCALE = 2;
 const SIDEBAR_WIDTH = 320;
-// The email shows in the sidebar; set GUIDE_EMAIL when the local database already has this account.
-const EMAIL = process.env.GUIDE_EMAIL ?? "you@example.com";
-const PASSWORD = "guide-password-123";
+// A fresh throwaway account each time; the email shows in the sidebar, the password is never shown or kept.
+const EMAIL = `guide-${Date.now()}@example.com`;
+const PASSWORD = randomBytes(18).toString("base64url");
 const RUN_TIMEOUT_MS = 180_000;
 // One annotation color: orange-700, apart from the app's blue accent and its green and red statuses; white text on it
 // passes 4.5:1.
 const MARK = "#c2410c";
 const WEBP_QUALITY = 0.9;
+// Room for markers outside the picture.
+const MARGIN = 64;
 
 // Where the numbered marker sits: outside the box on one side with an arrow to it, or inside a large box at a
 // fraction of its width and height.
 type Side = "left" | "right" | "top" | "bottom" | { inside: [number, number] };
 type Mark = { target: Locator; n: number; side: Side };
 type Rect = { x: number; y: number; width: number; height: number };
+type Margin = { top: number; right: number; bottom: number; left: number };
+type Frame = { clip?: Rect; margin?: Partial<Margin> };
+type Drawing = { shapes: { n: number; side: Side; box: Rect }[]; clip: Rect; margin: Margin; background: string };
 
 /** The box around every element the locator matches, so one mark can frame several rows. */
 async function rectOf(locator: Locator): Promise<Rect> {
@@ -38,36 +46,66 @@ async function rectOf(locator: Locator): Promise<Rect> {
   return { x, y, width: right - x, height: bottom - y };
 }
 
-/** Draws every mark over the page in one fixed SVG layer, with the id "guide-annotations". */
-async function annotate(page: Page, marks: Mark[]): Promise<void> {
+/** Screenshots the clip (or the viewport), draws the marks on it and its margin, and saves it as WebP. */
+async function shoot(page: Page, name: string, marks: Mark[], frame: Frame = {}): Promise<void> {
   const shapes = await Promise.all(marks.map(async ({ target, n, side }) => ({ n, side, box: await rectOf(target) })));
-  await page.evaluate(
-    ({ shapes, color }) => {
+  const clip = frame.clip ?? { x: 0, y: 0, ...VIEWPORT };
+  const margin: Margin = { top: 0, right: 0, bottom: 0, left: 0, ...frame.margin };
+  const background = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  const png = await page.screenshot({ clip, animations: "disabled", caret: "hide" });
+  const webp = await draw(page.context().browser()!, png, { shapes, clip, margin, background });
+  writeFileSync(new URL(`${name}.webp`, OUT_DIR), webp);
+  console.log(`${name}.webp  ${Math.round(webp.length / 1024)} KB`);
+}
+
+// Chromium draws the marks and encodes the WebP on a canvas, so no image package is needed.
+async function draw(browser: Browser, png: Buffer, drawing: Drawing): Promise<Buffer> {
+  const page = await browser.newPage();
+  // tsx names inner functions with a __name helper, which the function below needs in the page too.
+  await page.evaluate("globalThis.__name = (fn) => fn");
+  const dataUrl = await page.evaluate(
+    async ({ source, drawing: { shapes, clip, margin, background }, color, scale, quality }) => {
       const PAD = 3;
       const GAP = 46; // from the box's edge to the marker's center
       const R = 13;
-      const ns = "http://www.w3.org/2000/svg";
-      const svg = document.createElementNS(ns, "svg");
-      svg.id = "guide-annotations";
-      svg.setAttribute("width", String(window.innerWidth));
-      svg.setAttribute("height", String(window.innerHeight));
-      svg.style.cssText = "position:fixed;inset:0;z-index:2147483647;pointer-events:none;overflow:visible";
-      svg.innerHTML = `<defs><marker id="guide-head" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5"
-        markerHeight="5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="${color}"/></marker></defs>`;
-      const add = (tag: string, attributes: Record<string, string | number>) => {
-        const element = document.createElementNS(ns, tag);
-        for (const [key, value] of Object.entries(attributes)) element.setAttribute(key, String(value));
-        svg.appendChild(element);
-        return element;
+      const image = new Image();
+      image.src = source;
+      await image.decode();
+      const canvas = document.createElement("canvas");
+      canvas.width = (clip.width + margin.left + margin.right) * scale;
+      canvas.height = (clip.height + margin.top + margin.bottom) * scale;
+      const context = canvas.getContext("2d")!;
+      context.scale(scale, scale);
+      context.fillStyle = background;
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(image, margin.left, margin.top, clip.width, clip.height);
+      // From here on, coordinates are the page's.
+      context.translate(margin.left - clip.x, margin.top - clip.y);
+      context.lineCap = "round";
+      const stroke = (path: () => void, width: number, style: string) => {
+        path();
+        context.lineWidth = width;
+        context.strokeStyle = style;
+        context.stroke();
+      };
+      const disc = (cx: number, cy: number, r: number, style: string) => {
+        context.beginPath();
+        context.arc(cx, cy, r, 0, 2 * Math.PI);
+        context.fillStyle = style;
+        context.fill();
       };
       for (const { box, n, side } of shapes) {
         const x = box.x - PAD;
         const y = box.y - PAD;
         const w = box.width + 2 * PAD;
         const h = box.height + 2 * PAD;
+        const outline = () => {
+          context.beginPath();
+          context.roundRect(x, y, w, h, 6);
+        };
         // A white halo under the colored outline keeps it visible on any surface.
-        add("rect", { x, y, width: w, height: h, rx: 6, fill: "none", stroke: "#fff", "stroke-width": 6 });
-        add("rect", { x, y, width: w, height: h, rx: 6, fill: `${color}14`, stroke: color, "stroke-width": 3 });
+        stroke(outline, 6, "#fff");
+        stroke(outline, 3, color);
         let cx: number;
         let cy: number;
         if (typeof side === "object") {
@@ -75,58 +113,43 @@ async function annotate(page: Page, marks: Mark[]): Promise<void> {
         } else {
           cx = { left: x - GAP, right: x + w + GAP, top: x + w / 2, bottom: x + w / 2 }[side];
           cy = { left: y + h / 2, right: y + h / 2, top: y - GAP, bottom: y + h + GAP }[side];
-          // The arrow runs from the marker's edge to just short of the box's edge.
+          // The arrow runs from the marker's edge to just short of the box's edge, and ends in a filled head.
           const [ex, ey] = { left: [x, cy], right: [x + w, cy], top: [cx, y], bottom: [cx, y + h] }[side];
           const length = Math.hypot(ex - cx, ey - cy);
           const [ux, uy] = [(ex - cx) / length, (ey - cy) / length];
-          const line = { x1: cx + ux * (R + 2), y1: cy + uy * (R + 2), x2: ex - ux * 4, y2: ey - uy * 4 };
-          add("line", { ...line, stroke: "#fff", "stroke-width": 6, "stroke-linecap": "round" });
-          add("line", { ...line, stroke: color, "stroke-width": 3, "marker-end": "url(#guide-head)" });
+          const [tipX, tipY] = [ex - ux * 3, ey - uy * 3];
+          const shaft = () => {
+            context.beginPath();
+            context.moveTo(cx + ux * (R + 2), cy + uy * (R + 2));
+            context.lineTo(tipX - ux * 6, tipY - uy * 6);
+          };
+          stroke(shaft, 6, "#fff");
+          stroke(shaft, 3, color);
+          context.beginPath();
+          context.moveTo(tipX, tipY);
+          context.lineTo(tipX - ux * 10 - uy * 6, tipY - uy * 10 + ux * 6);
+          context.lineTo(tipX - ux * 10 + uy * 6, tipY - uy * 10 - ux * 6);
+          context.closePath();
+          context.fillStyle = color;
+          context.fill();
         }
-        add("circle", { cx, cy, r: R + 2, fill: "#fff" });
-        add("circle", { cx, cy, r: R, fill: color });
-        const label = add("text", {
-          x: cx,
-          y: cy + 5,
-          "text-anchor": "middle",
-          fill: "#fff",
-          "font-family": "system-ui, sans-serif",
-          "font-size": 15,
-          "font-weight": 700,
-        });
-        label.textContent = String(n);
+        disc(cx, cy, R + 2, "#fff");
+        disc(cx, cy, R, color);
+        context.fillStyle = "#fff";
+        context.font = "700 15px system-ui, sans-serif";
+        context.textAlign = "center";
+        context.textBaseline = "middle";
+        context.fillText(String(n), cx, cy + 1);
       }
-      document.body.appendChild(svg);
-    },
-    { shapes, color: MARK },
-  );
-}
-
-/** Annotates, screenshots the clip (or the viewport), saves it as WebP, and removes the annotations. */
-async function shoot(page: Page, name: string, marks: Mark[], clip?: Rect): Promise<void> {
-  await annotate(page, marks);
-  const png = await page.screenshot({ clip, animations: "disabled", caret: "hide" });
-  await page.evaluate(() => document.getElementById("guide-annotations")?.remove());
-  const webp = await toWebp(page.context().browser()!, png);
-  writeFileSync(new URL(`${name}.webp`, OUT_DIR), webp);
-  console.log(`${name}.webp  ${Math.round(webp.length / 1024)} KB`);
-}
-
-// Chromium encodes WebP through a canvas, so no image package is needed.
-async function toWebp(browser: Browser, png: Buffer): Promise<Buffer> {
-  const page = await browser.newPage();
-  const dataUrl = await page.evaluate(
-    async ({ source, quality }) => {
-      const image = new Image();
-      image.src = source;
-      await image.decode();
-      const canvas = document.createElement("canvas");
-      canvas.width = image.naturalWidth;
-      canvas.height = image.naturalHeight;
-      canvas.getContext("2d")!.drawImage(image, 0, 0);
       return canvas.toDataURL("image/webp", quality);
     },
-    { source: `data:image/png;base64,${png.toString("base64")}`, quality: WEBP_QUALITY },
+    {
+      source: `data:image/png;base64,${png.toString("base64")}`,
+      drawing,
+      color: MARK,
+      scale: SCALE,
+      quality: WEBP_QUALITY,
+    },
   );
   await page.close();
   return Buffer.from(dataUrl.slice(dataUrl.indexOf(",") + 1), "base64");
@@ -226,7 +249,7 @@ async function register(page: Page): Promise<void> {
       { target: page.getByLabel("Password"), n: 3, side: "left" },
       { target: submit, n: 4, side: "left" },
     ],
-    { x: card.x - 120, y: top, width: card.width + 240, height: card.y + card.height + 40 - top },
+    { clip: { x: card.x - 120, y: top, width: card.width + 240, height: card.y + card.height + 40 - top } },
   );
   await submit.click();
   await page.waitForURL("**/files");
@@ -243,7 +266,7 @@ async function quickStartProject(page: Page): Promise<void> {
       { target: sidebar.getByRole("button", { name: "1 Passing tests", exact: true }), n: 2, side: "right" },
       { target: fileLinkOf(page, "sign-in-and-see-products.yaml"), n: 3, side: "right" },
     ],
-    { x: 0, y: 0, width: 720, height: 640 },
+    { clip: { x: 0, y: 0, width: 720, height: 640 } },
   );
 }
 
@@ -254,11 +277,11 @@ async function passingRun(page: Page): Promise<void> {
     page,
     "run-passed",
     [
-      { target: runButtonOf(page), n: 1, side: "bottom" },
+      { target: runButtonOf(page), n: 1, side: "top" },
       { target: progressOf(page), n: 2, side: "left" },
       { target: outputOf(page).getByRole("button", { name: "Open run details", exact: true }), n: 3, side: "left" },
     ],
-    rightOf(SIDEBAR_WIDTH),
+    { clip: rightOf(SIDEBAR_WIDTH), margin: { top: MARGIN } },
   );
 }
 
@@ -272,7 +295,9 @@ async function workspaceLayout(page: Page): Promise<void> {
     { target: page.getByRole("region", { name: "Status bar", exact: true }), n: 6, side: "top" },
   ]);
 
-  const name = await rectOf(page.getByRole("heading", { name: "sign-in-and-see-products.yaml", exact: true }));
+  const heading = page.getByRole("heading", { name: "sign-in-and-see-products.yaml", exact: true });
+  const name = await rectOf(heading);
+  const header = await rectOf(page.locator("header").filter({ has: heading }));
   await shoot(
     page,
     "editor-header",
@@ -282,7 +307,7 @@ async function workspaceLayout(page: Page): Promise<void> {
       { target: runButtonOf(page), n: 3, side: "bottom" },
       { target: page.getByRole("button", { name: "Toggle consoles", exact: true }).first(), n: 4, side: "bottom" },
     ],
-    rightOf(name.x - 12, 0, 110),
+    { clip: rightOf(name.x - 12, 0, header.y + header.height), margin: { bottom: MARGIN } },
   );
 }
 
@@ -318,7 +343,10 @@ async function failingRun(page: Page): Promise<void> {
       { target: progressOf(page).filter({ hasText: "Pending" }), n: 3, side: "left" },
       { target: runs.getByRole("listitem").first(), n: 4, side: "left" },
     ],
-    rightOf(column.x - 70, column.y, Math.min(history.y + history.height + 16, statusBar.y)),
+    {
+      clip: rightOf(column.x, column.y, Math.min(history.y + history.height + 16, statusBar.y)),
+      margin: { left: MARGIN },
+    },
   );
   await debugToggle.click();
 }
@@ -334,7 +362,7 @@ async function diagnostics(page: Page): Promise<void> {
       { target: page.locator(".cm-lintRange-error").first(), n: 1, side: "right" },
       { target: problems.first(), n: 2, side: "top" },
     ],
-    rightOf(SIDEBAR_WIDTH, 0, 460),
+    { clip: rightOf(SIDEBAR_WIDTH, 0, 460) },
   );
 }
 
@@ -356,7 +384,7 @@ async function jevRun(page: Page): Promise<void> {
       { target: progressOf(page).filter({ hasText: "Running" }), n: 3, side: "left" },
       { target: progressOf(page).filter({ hasText: "Pending" }), n: 4, side: "left" },
     ],
-    rightOf(column.x - 70, column.y, history.y + history.height + 16),
+    { clip: rightOf(column.x, column.y, history.y + history.height + 16), margin: { left: MARGIN } },
   );
   live.release();
   await fileStateOf(page)
@@ -388,7 +416,7 @@ async function sidebarMenu(page: Page): Promise<void> {
       { target: fileLinkOf(page, "sign-in-and-see-products.yaml"), n: 3, side: "right" },
       { target: fileLinkOf(page, "wrong-total-fails-at-the-total.yaml"), n: 4, side: "right" },
     ],
-    { x: 0, y: 0, width: 720, height: 640 },
+    { clip: { x: 0, y: 0, width: 720, height: 640 } },
   );
   await page.keyboard.press("Escape");
 }
@@ -409,10 +437,12 @@ async function variables(page: Page): Promise<void> {
       { target: page.getByRole("button", { name: "Save", exact: true }), n: 5, side: "right" },
     ],
     {
-      x: SIDEBAR_WIDTH,
-      y: 0,
-      width: region.x + region.width + 80 - SIDEBAR_WIDTH,
-      height: region.y + region.height + 30,
+      clip: {
+        x: SIDEBAR_WIDTH,
+        y: 0,
+        width: region.x + region.width + 80 - SIDEBAR_WIDTH,
+        height: region.y + region.height + 30,
+      },
     },
   );
 }
@@ -422,8 +452,6 @@ const browser = await chromium.launch();
 const context = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: 2, colorScheme: "light" });
 // next-themes keeps the theme switch's choice under "theme".
 await context.addInitScript(() => window.localStorage.setItem("theme", "light"));
-// tsx names inner functions with a __name helper, which the functions sent to page.evaluate need in the page too.
-await context.addInitScript("globalThis.__name = (fn) => fn");
 const page = await context.newPage();
 try {
   await register(page);

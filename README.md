@@ -173,7 +173,7 @@ To change the guide:
 2. Preview it with `pnpm docs:dev`, which serves the guide with live reload at the URL it prints, or build it and serve the build with `pnpm docs:build` and `pnpm docs:preview`.
 3. Run `pnpm docs:build` and commit the sources together with `docs/guide/`.
 
-The annotated screenshots in `docs/guide-src/public/screenshots/` come from `docs/guide-src/screenshots.ts`: with the backend, `pnpm frontend` and the Demo App running locally ([docs/deploy/backend-local.md](docs/deploy/backend-local.md)) and a database without `you@example.com`, run `pnpm docs:screenshots` to retake them all, then `pnpm docs:build`. The Jev file it runs needs a real `OPENROUTER_API_KEY`.
+The annotated screenshots in `docs/guide-src/public/screenshots/` come from `docs/guide-src/screenshots.ts`: `pnpm docs:screenshots` registers a throwaway account on the public workspace, runs three Quick Start files and retakes them all (set `GUIDE_APP_URL`, e.g. `http://localhost:3000`, to use another workspace); then run `pnpm docs:build`.
 
 Every YAML example in the guide is checked by the Syntax Analyzer in `src/tests/unit/docs/guide.test.ts`: a block passes unless the line before it is `<!-- invalid: E005 -->` with the codes it must fail with, followed by a `text` block with the Debug console's lines. CI fails when `docs/guide/` differs from a fresh build; run `pnpm docs:build` to fix it.
 
