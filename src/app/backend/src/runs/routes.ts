@@ -24,8 +24,8 @@ function decodeCursor(cursor: string): Cursor {
   const [time = "", id = "", ...rest] = Buffer.from(cursor, "base64url").toString().split(" ");
   const createdAt = new Date(time);
   if (rest.length > 0 || Number.isNaN(createdAt.getTime()) || !UUID.test(id))
-    throw new ApiError("invalid_request", "The request fails its schema", [
-      { path: "query.cursor", message: "Not a nextCursor from a previous page" },
+    throw new ApiError("invalid_request", "The cursor is not a nextCursor from an earlier page.", [
+      { path: "query.cursor", message: "The cursor is not a nextCursor from an earlier page." },
     ]);
   return { createdAt, id };
 }

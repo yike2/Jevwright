@@ -39,7 +39,7 @@ describe("isVisible when nothing visible matches", () => {
 
       expect(await browser.isVisible("#[", 300)).toEqual({
         ok: false,
-        reason: expect.stringMatching(/^locator\.waitFor: /),
+        reason: expect.stringMatching(/^Unexpected token "#" while parsing css selector/),
       });
     }));
 });

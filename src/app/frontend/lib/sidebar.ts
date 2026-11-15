@@ -26,22 +26,15 @@ export function statusOf(latestRun: LatestRun): RunDot {
   return "failed";
 }
 
+/** The Test File name for what was typed before the fixed `.yaml`; a pasted `x.yaml` does not get a second one. */
 export function toTestFileName(input: string): string {
-  const trimmed = input.trim();
-  if (trimmed.length === 0) {
-    return "";
-  }
-
-  if (trimmed.includes(".")) {
-    return trimmed;
-  }
-
-  return `${trimmed}.yaml`;
+  const baseName = testFileBaseName(input.trim());
+  return baseName.length === 0 ? "" : `${baseName}.yaml`;
 }
 
 /** The name a Test File's Rename input shows, before the fixed `.yaml`. */
 export function testFileBaseName(name: string): string {
-  return name;
+  return name.endsWith(".yaml") ? name.slice(0, -".yaml".length) : name;
 }
 
 export function initials(email: string): string {

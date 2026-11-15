@@ -9,6 +9,7 @@ import { useWorkspace } from "@/lib/workspace-context";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { RunList } from "@/components/workspace/run-list";
+import { errorText } from "@/lib/format-error";
 
 export default function TestFilePage() {
   const params = useParams<{ testFileId: string }>();
@@ -77,11 +78,11 @@ export default function TestFilePage() {
             return;
           }
 
-          setLoadErrorMessage(error.message);
+          setLoadErrorMessage(errorText(error));
           return;
         }
 
-        setLoadErrorMessage(error instanceof Error ? error.message : "Internal server error");
+        setLoadErrorMessage(errorText(error));
       } finally {
         if (!cancelled) {
           setIsLoading(false);
@@ -134,7 +135,7 @@ export default function TestFilePage() {
       const response = await apiClient.validateSource(draft);
       setDiagnostics(response.diagnostics);
     } catch (error) {
-      setAlertMessage(error instanceof Error ? error.message : "Internal server error");
+      setAlertMessage(errorText(error));
     } finally {
       setIsValidating(false);
     }
@@ -145,20 +146,22 @@ export default function TestFilePage() {
 
     try {
       const response = await apiClient.updateTestFile(testFileId, draft);
+      // The answer carries the saved source (backend.md 1.3); the draft is what was sent, if it ever does not.
+      const savedSource = response.testFile.source ?? draft;
       setFileName(response.testFile.name);
-      setSaved(response.testFile.source ?? "");
-      setDraft(response.testFile.source ?? "");
+      setSaved(savedSource);
+      setDraft(savedSource);
       setDiagnostics(response.diagnostics);
 
       try {
         await refreshTree();
       } catch (error) {
-        setAlertMessage(error instanceof Error ? error.message : "Internal server error");
+        setAlertMessage(errorText(error));
       }
 
       return true;
     } catch (error) {
-      setAlertMessage(error instanceof Error ? error.message : "Internal server error");
+      setAlertMessage(errorText(error));
       return false;
     } finally {
       setIsSaving(false);
@@ -201,7 +204,7 @@ export default function TestFilePage() {
       try {
         await refreshTree();
       } catch (error) {
-        setAlertMessage(error instanceof Error ? error.message : "Internal server error");
+        setAlertMessage(errorText(error));
       }
     } catch (error) {
       if (error instanceof ApiError && error.status === 422 && Array.isArray(error.details)) {
@@ -209,7 +212,7 @@ export default function TestFilePage() {
         return;
       }
 
-      setAlertMessage(error instanceof Error ? error.message : "Internal server error");
+      setAlertMessage(errorText(error));
     } finally {
       setIsRunning(false);
     }

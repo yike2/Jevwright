@@ -157,7 +157,7 @@ describe("an unexpected dialog", () => {
 
       expect(await click(browser, "#missing")).toEqual({
         ok: false,
-        reason: expect.stringContaining("Timeout 2000ms"),
+        reason: 'No element matches "#missing" within 2000ms',
         dialogs: [{ type: "alert", message: "Heads up", answer: "dismissed", expected: false }],
       });
       expect(await browser.ready()).toEqual(passed);

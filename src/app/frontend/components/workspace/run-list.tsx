@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { apiClient, type Run } from "@/lib/api";
 import { formatDuration, runStatusLabel } from "@/lib/runs";
+import { errorText } from "@/lib/format-error";
 
 type RunListProps = {
   testFileId: string;
@@ -33,7 +34,7 @@ export function RunList({ testFileId, reloadKey }: RunListProps) {
           return;
         }
 
-        setErrorMessage(error instanceof Error ? error.message : "Internal server error");
+        setErrorMessage(errorText(error));
       }
     };
 

@@ -1,5 +1,6 @@
 import { setTimeout as sleep } from "node:timers/promises";
 import { errors, type Page } from "playwright";
+import { missingReason } from "./actions.js";
 import { TEXT_POLL_MS } from "./constants.js";
 import type { BrowserCheck } from "./types.js";
 import { matchesUrl } from "./url-match.js";
@@ -12,14 +13,21 @@ export async function runCheck(
   baseUrl?: string,
 ): Promise<string | undefined> {
   switch (check.check) {
-    case "visible":
-      await page.locator(check.selector).first().waitFor({ state: "visible", timeout: timeoutMs });
+    case "visible": {
+      const target = page.locator(check.selector).first();
+      if (await timedOut(target.waitFor({ state: "visible", timeout: timeoutMs }))) {
+        return (await target.count()) > 0
+          ? `"${check.selector}" did not become visible within ${timeoutMs}ms`
+          : missingReason(check.selector, timeoutMs);
+      }
       break;
+    }
     case "text":
       return waitForText(page, check.selector, check.text, timeoutMs);
     case "url":
       // switchTab's matcher, so a pattern matches the same URLs in both.
-      await page.waitForURL((url) => matchesUrl(url.href, check.url, baseUrl), { timeout: timeoutMs });
+      if (await timedOut(page.waitForURL((url) => matchesUrl(url.href, check.url, baseUrl), { timeout: timeoutMs })))
+        return `The URL did not match "${check.url}" within ${timeoutMs}ms; it was "${page.url()}"`;
       break;
     default: {
       const unknown: never = check;
@@ -27,6 +35,17 @@ export async function runCheck(
     }
   }
   return undefined;
+}
+
+// Whether `wait` hit its timeout; any other error is Playwright's and is thrown.
+async function timedOut(wait: Promise<unknown>): Promise<boolean> {
+  try {
+    await wait;
+    return false;
+  } catch (error) {
+    if (error instanceof errors.TimeoutError) return true;
+    throw error;
+  }
 }
 
 const collapse = (text: string) => text.replace(/\s+/g, " ").trim();
@@ -43,8 +62,9 @@ async function waitForText(page: Page, selector: string, text: string, timeoutMs
       const read = await locator.textContent({ timeout: Math.max(1, deadline - Date.now()) });
       content = collapse(read ?? "");
     } catch (error) {
-      // Before the first read Playwright's timeout is the reason; after it, the text that was there is.
-      if (content === undefined || !(error instanceof errors.TimeoutError)) throw error;
+      // Before the first read nothing matched; after it, the text that was there is the reason.
+      if (!(error instanceof errors.TimeoutError)) throw error;
+      if (content === undefined) return missingReason(selector, timeoutMs);
     }
     if (content.includes(expected)) return undefined;
     // Stop before a poll that would start after the deadline, so the last read is never cut short.

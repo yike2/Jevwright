@@ -66,7 +66,7 @@ test("TC-SEC-03 never shows a secret variable's value", async ({ page }) => {
   expect(report).not.toContain(SWAG_PASSWORD);
 });
 
-test("TC-SEC-05 shows HTML in names as text", async ({ page }) => {
+test("TC-SEC-05 shows HTML in Project and Module names as text", async ({ page }) => {
   const html = "<img src=x onerror=alert(1)>";
   const dialogs: string[] = [];
   page.on("dialog", (dialog) => {
@@ -77,23 +77,24 @@ test("TC-SEC-05 shows HTML in names as text", async ({ page }) => {
   await page.goto("/");
   const sidebar = page.getByRole("navigation", { name: "Projects", exact: true });
 
-  for (const [opener, dialogName] of [
-    ["New project", "New project"],
-    [`New module in ${html}`, "New module"],
-    [`New test file in ${html}`, "New test file"],
+  // Test File names allow no < or > at all (TC-WS-09), so only Project and Module names can hold HTML.
+  for (const [opener, dialogName, name] of [
+    ["New project", "New project", html],
+    [`New module in ${html}`, "New module", html],
+    [`New test file in ${html}`, "New test file", "plain"],
   ] as const) {
     await sidebar.getByRole("button", { name: opener, exact: true }).click();
     const dialog = page.getByRole("dialog", { name: dialogName, exact: true });
-    await dialog.getByLabel("Name").fill(html);
+    await dialog.getByLabel("Name").fill(name);
     await dialog.getByRole("button", { name: "Create", exact: true }).click();
     await expect(dialog).toBeHidden();
   }
 
-  await expect(page.getByRole("heading", { name: `${html}.yaml`, exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "plain.yaml", exact: true })).toBeVisible();
   await page.goto("/");
   const overview = page.getByRole("region", { name: "Test files", exact: true });
   await expect(overview.getByRole("heading", { level: 2, name: html, exact: true })).toBeVisible();
-  await expect(overview.getByRole("link", { name: `${html}.yaml`, exact: true })).toBeVisible();
+  await expect(overview.getByRole("link", { name: "plain.yaml", exact: true })).toBeVisible();
   await expect(page.locator('img[src="x"]')).toHaveCount(0);
   expect(dialogs).toEqual([]);
 });

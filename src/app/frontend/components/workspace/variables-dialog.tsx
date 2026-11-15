@@ -2,7 +2,8 @@
 
 import { useEffect, useId, useState, type FormEvent } from "react";
 import { apiClient } from "@/lib/api";
-import { isVariableName } from "@/lib/editor";
+import { errorText } from "@/lib/format-error";
+import { variableNameProblem, variableValueProblem } from "@/lib/validation";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -48,7 +49,7 @@ export function VariablesDialog({ open, projectId, onOpenChange }: VariablesDial
         }
       } catch (error) {
         if (!cancelled) {
-          setErrorMessage(error instanceof Error ? error.message : "Internal server error");
+          setErrorMessage(errorText(error));
         }
       } finally {
         if (!cancelled) {
@@ -86,8 +87,9 @@ export function VariablesDialog({ open, projectId, onOpenChange }: VariablesDial
 
     const variableName = name.trim();
 
-    if (!isVariableName(variableName)) {
-      setErrorMessage("Name must match [A-Z_][A-Z0-9_]*");
+    const problem = variableNameProblem(variableName) ?? variableValueProblem(value);
+    if (problem !== null) {
+      setErrorMessage(problem);
       return;
     }
 
@@ -99,7 +101,7 @@ export function VariablesDialog({ open, projectId, onOpenChange }: VariablesDial
       setName("");
       setValue("");
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Internal server error");
+      setErrorMessage(errorText(error));
     } finally {
       setIsSaving(false);
     }
@@ -117,7 +119,7 @@ export function VariablesDialog({ open, projectId, onOpenChange }: VariablesDial
       await apiClient.deleteVariable(projectId, variableName);
       await reloadNames();
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Internal server error");
+      setErrorMessage(errorText(error));
     } finally {
       setDeletingName(null);
     }

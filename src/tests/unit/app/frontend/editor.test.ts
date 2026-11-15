@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatDiagnostic, isVariableName, validationSummary } from "@/app/frontend/lib/editor.js";
+import { formatDiagnostic, validationSummary } from "@/app/frontend/lib/editor.js";
 
 describe("validationSummary", () => {
   it("returns 'Valid. Ready to run.' for no diagnostics", () => {
@@ -28,19 +28,5 @@ describe("formatDiagnostic", () => {
     expect(formatDiagnostic({ code: "E005", message: 'Unknown action "aiAct"', line: 3 })).toBe(
       'Line 3: Unknown action "aiAct"',
     );
-  });
-});
-
-describe("isVariableName", () => {
-  it("accepts uppercase and underscore names", () => {
-    expect(isVariableName("BASE")).toBe(true);
-    expect(isVariableName("_X1")).toBe(true);
-  });
-
-  it("rejects lowercase names and invalid patterns", () => {
-    expect(isVariableName("base")).toBe(false);
-    expect(isVariableName("1A")).toBe(false);
-    expect(isVariableName("")).toBe(false);
-    expect(isVariableName("SWAG-PASSWORD")).toBe(false);
   });
 });

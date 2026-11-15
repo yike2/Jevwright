@@ -107,7 +107,7 @@ class PlaywrightAdapter implements BrowserAdapter {
         const actionFailure =
           action.action === "switchTab"
             ? await this.tabs.switchTo(action.url, this.options.baseUrl, this.timeoutMs)
-            : await runAction(this.page, action);
+            : await runAction(this.page, action, this.timeoutMs);
         const missing = answered && actionFailure === undefined ? await this.waitForDialog(answered) : undefined;
         return actionFailure ?? missing;
       } finally {

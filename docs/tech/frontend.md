@@ -58,6 +58,30 @@ Rules:
 - Unknown backend error codes are normalized to `"internal"`, while the HTTP status is preserved.
 - A 401 from a route other than login/register clears the token and calls the configured `onUnauthorized` callback.
 - The frontend must not invent a message from the OpenAPI `description`; the message must match the mocked backend response body in unit tests.
+- When `fetch` itself rejects (offline, DNS, CORS, the server is down), the client throws `NetworkError`, whose message is "Cannot reach the server. Check your connection and try again."
+
+Every page shows errors through `formatError(error)` (lines) or `errorText(error)` (one line), never `Error.message` directly, so no user sees a server's internal wording:
+
+| Error | Shown |
+| ----- | ----- |
+| `ApiError` with status ≥ 500 or code `internal` | "Something went wrong on the server. Try again in a moment." |
+| `ApiError` `400` with `details` | Each detail's `message`, once; the backend's `message` joins the same sentences |
+| Other `ApiError` | `ApiError.message`, a plain sentence from the backend (`backend.md` 1.7) |
+| `NetworkError` or another `Error` | Its `message` |
+| Anything else | "Something went wrong. Try again." |
+
+Forms check the backend's rules first, with the backend's words, and send nothing while a field is wrong (`lib/validation.ts`). A field's problem shows under it in a `role="alert"`, and the field gets `aria-invalid` and `aria-describedby` pointing at it:
+
+| Helper | Problem |
+| ------ | ------- |
+| `emailProblem(email)` | Not `x@y.z`: "Enter a valid email address." |
+| `passwordProblem(password)` | Under 8 characters: "Password must be at least 8 characters."; over 200: "Password can be at most 200 characters." |
+| `nameProblem(name)` | Blank after trimming: "Enter a name."; over 100 characters: "Names can be at most 100 characters." |
+| `testFileNameProblem(name)` | The name before `.yaml`. Blank: "Enter a name."; anything but letters, digits, `-`, `_`, `.`: "Use only letters, digits, -, _ and ., with no spaces."; over 100 characters with `.yaml`: "Names can be at most 100 characters." |
+| `variableNameProblem(name)` | Not `^[A-Z_][A-Z0-9_]*$`: "Variable names use capital letters, digits and _, and do not start with a digit, for example BASE_URL." |
+| `variableValueProblem(value)` | Over 10,000 characters: "A Variable value can be at most 10,000 characters." |
+
+Each helper returns `null` when the input is fine.
 
 ### 1.4 Generated types and API contract
 
@@ -90,14 +114,13 @@ The pages behave as follows:
 - Submit calls `apiClient.login(email, password)` in Log in mode and `apiClient.register(email, password)` in Register mode.
 - On successful login/register, the page navigates with `router.replace("/")`.
 - While the submit request is in flight, the submit button is disabled.
-- Auth errors render backend-provided text only:
-  - always show `ApiError.message`;
-  - for `ApiError.status === 400`, also render each string message from `ApiError.details`.
+- Submit first checks the email with `emailProblem`, and the password with `passwordProblem` in Register mode or as non-empty ("Enter your password.") in Log in mode; a problem shows under its field (1.3) and nothing is sent.
+- Auth errors from the backend show `formatError(error)` (1.3), one line each, in a `role="alert"`.
 - Every authenticated page shares the workspace layout (see 1.6), a client component that calls `apiClient.getCurrentUser()` on load:
   - while pending, render minimal text `Loading…`;
   - when resolved, render the sidebar (with the current user email and a Log out button) and the page;
   - Log out calls `apiClient.clearToken()` and navigates with `router.replace("/login")`;
-  - if `getCurrentUser()` fails with anything other than `401`, show the `formatAuthError` messages instead (a `401` is handled by the API client, which redirects to `/login`).
+  - if `getCurrentUser()` fails with anything other than `401`, show the `formatError` lines instead (a `401` is handled by the API client, which redirects to `/login`).
 - `/` is the files overview (1.10).
 
 The root layout remains a server component, while the workspace layout and pages that need auth or data access are client components. This is a deliberate exception to the repo's "Server Components by default" guidance: the auth token is browser state, so auth and data fetching happen on the client.
@@ -124,16 +147,19 @@ The workspace is every authenticated page. A shared layout guards auth, renders 
 | Account         | Initials, email from `me`, Log out (clears the token, goes to `/login`)                                                      |
 | Narrow screens  | Sidebar hidden behind a ☰ button                                                                                             |
 
-Names follow the backend rules: Project and Module names are 1–100 characters, a Test File name ends in `.yaml`, and names are unique within their parent. The New Test File dialog normalizes the input with `toTestFileName`, and the new file is created with `starterSource(name)`. After creation the page navigates to the new file.
+Names follow the backend rules (`backend.md` 1.3), and the dialogs check them as the user types: Project and Module names with `nameProblem`, Test File names with `testFileNameProblem` (1.3). A problem shows under the input once the user has typed or submitted, and a submit with a problem sends nothing.
 
-Create dialogs submit `POST /projects`, `POST /projects/:id/modules`, or `POST /modules/:id/test-files`, then reload the tree. API errors (such as `409 conflict`) show inside the dialog via `ApiError.message`, and the dialog stays open.
+A Test File's name is typed before a fixed `.yaml`, shown after the input like a file manager's extension; the Rename input shows the name without it (`testFileBaseName`). `toTestFileName` adds the suffix, and the new file is created with `starterSource(name)`. After creation the page navigates to the new file.
+
+Create dialogs submit `POST /projects`, `POST /projects/:id/modules`, or `POST /modules/:id/test-files`, then reload the tree. API errors (such as `409 conflict`) show inside the dialog via `errorText` (1.3), and the dialog stays open.
 
 The tree is loaded once in the layout and exposed through a `refreshTree()` context, so later pages (editor save, finished run) can update the status dots.
 
 | Helper                  | Rule                                                                                                                                                            |
 | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `statusOf(latestRun)`   | `null` → `none`; `queued`/`running` → `active`; `passed` → `passed`; `failed` → `failed`                                                                        |
-| `toTestFileName(input)` | Trims; appends `.yaml` when the trimmed name is non-empty and contains no `.`; otherwise returns the trimmed name unchanged (the backend rejects invalid names) |
+| `toTestFileName(input)` | Trims and adds `.yaml`; a trailing `.yaml` already typed is not doubled; empty input stays `""` |
+| `testFileBaseName(name)` | The name without a trailing `.yaml`, for the Rename input |
 | `starterSource(name)`   | A valid Test Case: `name` is the file name without `.yaml`, one `open` step with `url: "https://example.com"`                                                   |
 | `initials(email)`       | First two characters of the part before `@`, upper-cased                                                                                                        |
 
@@ -175,14 +201,14 @@ E2E tests locate elements by role and accessible name, so these names are part o
 | ----------- | ----------------------------------------------------------------------------------- |
 | Pending     | `Loading…`                                                                          |
 | `404`       | "Test file not found"                                                               |
-| Other error | `ApiError.message` in a `role="alert"`                                              |
+| Other error | `errorText(error)` (1.3) in a `role="alert"`                                        |
 | Loaded      | File name heading, toolbar (Upload file, Validate, Save, Run), textarea, result bar, Runs list (1.9) |
 
 | Action      | Behavior                                                                                                                                                                                                                                                                           |
 | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Edit        | Updates `draft`; shows "Unsaved changes" while dirty; clears the result bar                                                                                                                                                                                                        |
 | Validate    | `POST /test-files/validate { source: draft }`; shows the diagnostics in the result bar                                                                                                                                                                                             |
-| Save        | Enabled only when dirty. `PATCH /test-files/:id { source: draft }`; on success `saved` becomes the returned `testFile.source`, the returned diagnostics are shown, and `refreshTree()` is called. On failure the draft is kept and `ApiError.message` is shown in a `role="alert"` |
+| Save        | Enabled only when dirty. `PATCH /test-files/:id { source: draft }`; on success `saved` and `draft` become the returned `testFile.source`, so the editor keeps showing what was saved, the returned diagnostics are shown, and `refreshTree()` is called. On failure the draft is kept and `errorText(error)` is shown in a `role="alert"` |
 | Upload file | Opens a file picker accepting `.yaml` and `.yml`; the chosen file's text replaces `draft` (not saved until Save)                                                                                                                                                                   |
 | Run         | Saves first when dirty (stops if the save fails), then `POST /test-files/:id/runs`. `202`: shows "Run queued." in a `role="status"` with a "View run" link to `/runs/<id>` next to it (outside the status element), reloads the Runs list (1.9), and calls `refreshTree()`. `422`: shows `ApiError.details` (Diagnostic[]) in the result bar. Other errors: `role="alert"`                      |
 
@@ -204,14 +230,10 @@ The "Variables for <project>" button opens the Variables dialog. It lists the Pr
 | Action | Behavior                                                                                                                                                                                                                                                                                 |
 | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Open   | Loads the names; an empty list shows "No variables yet"                                                                                                                                                                                                                                  |
-| Save   | Enabled when Name and Value are non-empty. Rejects a name that fails `isVariableName` with "Name must match [A-Z_][A-Z0-9_]*" without calling the API; otherwise `PUT /projects/:id/variables/:name { value }`, then reloads the names and clears the form. An existing name is replaced |
+| Save   | Enabled when Name and Value are non-empty. Shows the problem of `variableNameProblem`, then `variableValueProblem` (1.3), without calling the API; otherwise `PUT /projects/:id/variables/:name { value }`, then reloads the names and clears the form. An existing name is replaced |
 | Delete | `DELETE /projects/:id/variables/:name`, then reloads the names                                                                                                                                                                                                                           |
 
-API errors show `ApiError.message` in a `role="alert"` inside the dialog, and the dialog stays open.
-
-| Helper                 | Rule                                                                 |
-| ---------------------- | -------------------------------------------------------------------- |
-| `isVariableName(name)` | `true` when `name` matches `^[A-Z_][A-Z0-9_]*$` (the backend's rule) |
+API errors show `errorText(error)` (1.3) in a `role="alert"` inside the dialog, and the dialog stays open.
 
 #### Accessible names (editor and Variables)
 
@@ -226,7 +248,7 @@ API errors show `ApiError.message` in a `role="alert"` inside the dialog, and th
 | Variables dialog | `dialog` titled "Variables"; one `listitem` per name with button "Delete <NAME>"; inputs labelled "Name" and "Value" (password); buttons "Save" and "Close"; errors in a `role="alert"` |
 
 #### Tests
-- Unit: `validationSummary`, `formatDiagnostic`, `isVariableName`, and the new API client functions (5.1).
+- Unit: `validationSummary`, `formatDiagnostic`, the validation helpers (5.6), and the new API client functions (5.1).
 - E2E `editor.e2e.ts`: a new user creates a Test File; the textarea shows the starter source; an invalid edit shows "Unsaved changes" and Validate shows "1 validation error" with a "Line …" item; restoring a valid source and saving hides "Unsaved changes"; after a reload the saved source is shown; Run shows "Run queued.".
 - E2E `variables.e2e.ts`: a new user adds Variable `BASE`; it is listed and its value is not shown; an invalid name shows the alert; Delete removes it.
 
@@ -236,21 +258,25 @@ A Run has one page, `/runs/[runId]`, used both while it runs (live progress) and
 
 #### Runs list (editor page)
 
-Below the result bar, a `region` named "Runs" loads `GET /runs?testFileId=<id>&limit=20` with the page and again after a successful Run. Each Run is one list item with a link to `/runs/<id>` whose text is `runStatusLabel(status)`, the trigger time (`createdAt`, `toLocaleString()`), and `formatDuration(durationMs)`. An empty list shows "No runs yet". There is no pagination. A failed load shows `ApiError.message` in a `role="alert"` inside the region.
+Below the result bar, a `region` named "Runs" loads `GET /runs?testFileId=<id>&limit=20` with the page and again after a successful Run. Each Run is one list item with a link to `/runs/<id>` whose text is `runStatusLabel(status)`, the trigger time (`createdAt`, `toLocaleString()`), and `formatDuration(durationMs)`. An empty list shows "No runs yet". There is no pagination. A failed load shows `errorText(error)` (1.3) in a `role="alert"` inside the region.
 
 #### Run page
 
 | Step | Behavior |
 | ---- | -------- |
-| Load | `GET /runs/:id`. Pending: `Loading…`; `404`: "Run not found"; other errors: `ApiError.message` in a `role="alert"` and nothing else |
+| Load | `GET /runs/:id`. Pending: `Loading…`; `404`, also for a malformed id (`backend.md` 1.7): "Run not found"; other errors: `errorText(error)` (1.3) in a `role="alert"` and nothing else |
 | Finished Run (`passed`/`failed`) | Steps come from `run.report.steps`. A Run without a Report (`interrupted`/`internal` error) shows no steps and "No step results" |
 | Active Run (`queued`/`running`) | Opens the WebSocket at `liveUrl(baseUrl, runId, token)` and folds every message into `{ run, steps }` with `applyLiveMessage`. When a `status` message makes the Run final, the page reloads `GET /runs/:id` (for the Report and trace) and calls `refreshTree()` |
 | Socket closes early | If the socket closes before the Run is final, the page keeps the last state and shows "Live progress disconnected" in a `role="alert"` |
 | Leave the page | The socket is closed |
 
-The header shows the file name as the heading, "Status: <runStatusLabel>", the trigger time, `formatDuration(durationMs)`, the summary as "<passed>/<total> passed" once it exists, and the Run error as "<kind>: <message>" when there is one. A "Back to <fileName>" link goes to `/files/<testFileId>` (hidden when `testFileId` is `null`). After the Run is final, a "Download report" link points to `runFileUrl(baseUrl, runId, "report.json", token)`, and a "Download trace" link to `runFileUrl(…, report.trace, token)` when `report.trace` exists.
+The header shows the file name as the heading, "Status: <runStatusLabel>", the trigger time, `formatDuration(durationMs)`, the summary as "<passed>/<total> passed" once it exists, and the Run error as `runErrorText(error)` when there is one. A "Back to <fileName>" link goes to `/files/<testFileId>` (hidden when `testFileId` is `null`). After the Run is final, a "Download report" link points to `runFileUrl(baseUrl, runId, "report.json", token)`, and a "Download trace" link to `runFileUrl(…, report.trace, token)` when `report.trace` exists.
 
 `StepList` renders an ordered list named "Steps". Each step is one list item with "Step <index + 1>", the action, "line <line>", `runStatusLabel`-style status text (Pending, Running, Passed, Failed), and, when present, `formatDuration(durationMs)`, the locate method, the failure `reason`, and the screenshot as an `img` with alt "Step <index + 1> screenshot" from `runFileUrl(baseUrl, runId, step.screenshot, token)`. Dialog records are not shown.
+
+The screenshot is a button named "Open step <n> screenshot full size". It opens a dialog named "Step <n> screenshot" with the image at full size (alt "Step <n> screenshot, full size"), scrolling when it is larger than the window; Escape or a click outside closes it.
+
+Below the steps, a collapsed "Source when it ran" section shows the Run's `source` from `GET /runs/:id` in a `pre` with the same name, so a Run of an earlier version of the file shows that version. Live Progress messages carry no source, so the page keeps the one it loaded.
 
 | Helper | Rule |
 | ------ | ---- |
@@ -259,6 +285,7 @@ The header shows the file name as the heading, "Status: <runStatusLabel>", the t
 | `formatDuration(ms)` | `null` or `undefined` → "—"; under 1000 → "<ms> ms"; otherwise seconds with one decimal, "<s> s" |
 | `liveUrl(baseUrl, runId, token)` | `baseUrl` with `http` → `ws` and `https` → `wss`, then `/runs/<runId>/live?token=<encodeURIComponent(token)>` |
 | `runFileUrl(baseUrl, runId, path, token)` | `<baseUrl>/runs/<runId>/files/<path>?token=<encodeURIComponent(token)>` |
+| `runErrorText(error)` | `timeout` → "Timed out: <message>"; `interrupted` → "Interrupted: <message>"; `infrastructure` → "Browser error: <message>"; `internal` → "Something went wrong while running the test. Try running it again.", since its message is the server's error name |
 | `applyLiveMessage(state, message)` | Pure. `snapshot` → `{ run, steps }` from the message; `step` → the step with the same `index` is replaced (inserted in `index` order if absent); `status` → `run` replaced, steps kept. Never mutates `state` |
 
 `state` is `{ run: Run | null; steps: Step[] }`; messages are the generated `LiveMessage` type.
@@ -322,10 +349,10 @@ Every Project, Module and Test File row in the sidebar has a Rename and a Delete
 
 | Action | Behavior |
 | ------ | -------- |
-| Rename | Opens the name dialog titled "Rename project", "Rename module", or "Rename test file", prefilled with the current name. Test File input is normalized with `toTestFileName`. Save is disabled while the normalized name is empty or equal to the current name. Submits `PATCH /projects/:id`, `PATCH /modules/:id`, or `PATCH /test-files/:id` with `{ name }`, then calls `refreshTree()` and closes |
+| Rename | Opens the name dialog titled "Rename project", "Rename module", or "Rename test file", prefilled with the current name; a Test File's name is shown without its fixed `.yaml` (1.6) and normalized with `toTestFileName`. Names are checked as in 1.6. Save is disabled while the normalized name is empty or equal to the current name. Submits `PATCH /projects/:id`, `PATCH /modules/:id`, or `PATCH /test-files/:id` with `{ name }`, then calls `refreshTree()` and closes |
 | Delete | Opens a confirmation dialog titled "Delete project", "Delete module", or "Delete test file" with the text `confirmDeleteText(kind, name)`. Delete submits `DELETE /projects/:id`, `DELETE /modules/:id`, or `DELETE /test-files/:id`. If `deletesTestFile(tree, target, currentTestFileId)` is true, the page navigates with `router.replace("/")`. Then it calls `refreshTree()` and closes |
 
-API errors (such as `409 conflict` on rename) show `ApiError.message` in a `role="alert"` inside the dialog, and the dialog stays open. Buttons are disabled while the request is in flight. A failing `refreshTree()` after a successful change closes the dialog and is otherwise ignored, as in 1.6.
+API errors (such as `409 conflict` on rename) show `errorText(error)` (1.3) in a `role="alert"` inside the dialog, and the dialog stays open. Buttons are disabled while the request is in flight. A failing `refreshTree()` after a successful change closes the dialog and is otherwise ignored, as in 1.6.
 
 The editor heading (1.7) shows the Test File's name from the tree when the file is in it, falling back to the loaded `testFile.name`, so renaming the open file updates the heading at once.
 
@@ -552,9 +579,10 @@ This fallback is implemented in the client itself when the backend response is n
 | `app/(workspace)/page.tsx`                    | Files overview (1.10)                                       |
 | `app/(workspace)/files/[testFileId]/page.tsx` | Test file editor (1.7) and Runs list (1.9)                  |
 | `app/(workspace)/runs/[runId]/page.tsx`       | Run page: live progress and report (1.9)                    |
-| `lib/api.ts`                                  | Fetch wrapper, `ApiError`, typed API functions              |
+| `lib/api.ts`                                  | Fetch wrapper, `ApiError`, `NetworkError`, typed API functions |
 | `lib/api-schema.ts`                           | Generated OpenAPI types from `docs/api/openapi.json`        |
-| `lib/format-auth-error.ts`                    | Unknown auth error → UI-safe strings                        |
+| `lib/format-error.ts`                         | Any error → the lines a user sees (`formatError`, `errorText`, 1.3) |
+| `lib/validation.ts`                           | Form checks with the backend's rules and words (1.3)        |
 | `lib/utils.ts`                                | Re-exports `cn` from the `cn` package for shadcn components |
 | `lib/sidebar.ts`                              | Sidebar helpers (1.6, 1.10 `statusTitle`, 1.11)             |
 | `lib/overview.ts`                             | Overview helper `overviewGroups` (1.10)                     |
@@ -605,11 +633,12 @@ src/app/frontend/
 │   ├── api.ts
 │   ├── api-schema.ts
 │   ├── editor.ts
-│   ├── format-auth-error.ts
+│   ├── format-error.ts
 │   ├── overview.ts
 │   ├── runs.ts
 │   ├── sidebar.ts
 │   ├── utils.ts
+│   ├── validation.ts
 │   └── workspace-context.tsx
 ├── .env.example
 ├── .gitignore
@@ -626,7 +655,8 @@ src/app/frontend/
 | Type | Coverage                                                                                                         | Location                                                |
 | ---- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
 | Unit | API client: error parsing, 401 behavior, auth header, 204 success, HTML fallback, workspace and editor functions | `src/tests/unit/app/frontend/api.test.ts`               |
-| Unit | `formatAuthError` for login/register and backend `400 details`                                                   | `src/tests/unit/app/frontend/format-auth-error.test.ts` |
+| Unit | `formatError` for every kind of error (1.3)                                                                      | `src/tests/unit/app/frontend/format-error.test.ts`      |
+| Unit | Form checks (1.3)                                                                                                | `src/tests/unit/app/frontend/validation.test.ts`        |
 | Unit | Sidebar helpers (1.6, 1.10, 1.11)                                                                                | `src/tests/unit/app/frontend/sidebar.test.ts`           |
 | Unit | Overview helper (1.10)                                                                                           | `src/tests/unit/app/frontend/overview.test.ts`          |
 | Unit | Editor and Variables helpers (1.7, 1.8)                                                                          | `src/tests/unit/app/frontend/editor.test.ts`            |
@@ -641,7 +671,7 @@ src/app/frontend/
 
 The tests use `fetchImpl`, `getToken`, `setToken`, and `onUnauthorized` injection where applicable; no DOM environment is required. The expected values are written by hand from mocked payloads and backend contract behavior, never generated from implementation output.
 
-`format-auth-error.test.ts` imports its lib module via the `@/` alias with a `.js` extension (`@/app/frontend/lib/format-auth-error.js`), matching the repo's test convention; lib files import each other with relative `./xxx.js` paths.
+`format-error.test.ts` imports its lib module via the `@/` alias with a `.js` extension (`@/app/frontend/lib/format-error.js`), matching the repo's test convention; lib files import each other with relative `./xxx.js` paths.
 
 ### 5.1 Exact unit-test cases
 
@@ -817,65 +847,15 @@ The tests use `fetchImpl`, `getToken`, `setToken`, and `onUnauthorized` injectio
 
 These exact values are the source of truth for the API client tests and are intentionally written by hand rather than read from generated responses.
 
-### 5.2 Exact `formatAuthError` unit-test cases
+### 5.2 Exact `formatError` unit-test cases
 
-1. `it("returns ApiError.message for a non-400 ApiError", () => { ... })`
-   - input:
-     ```ts
-     new ApiError(401, "unauthorized", "Wrong email or password")
-     ```
-   - expected output:
-     ```ts
-     ["Wrong email or password"]
-     ```
-
-2. `it("returns message and detail messages for 400 invalid_request", () => { ... })`
-   - input:
-     ```ts
-     new ApiError(400, "invalid_request", "Invalid request", [
-       { path: "body.password", message: "password shorter than 8 characters" },
-       { path: "body.email", message: "Invalid email address" },
-     ])
-     ```
-   - expected output:
-     ```ts
-     ["Invalid request", "password shorter than 8 characters", "Invalid email address"]
-     ```
-
-3. `it("ignores 400 details entries without a string message", () => { ... })`
-   - input:
-     ```ts
-     new ApiError(400, "invalid_request", "Invalid request", [
-       { path: "body.password", message: "password shorter than 8 characters" },
-       { path: "body.email" },
-       "not-an-object",
-       { path: "body.other", message: 123 },
-     ])
-     ```
-   - expected output:
-     ```ts
-     ["Invalid request", "password shorter than 8 characters"]
-     ```
-
-4. `it("returns Error.message for non-ApiError errors", () => { ... })`
-   - input:
-     ```ts
-     new Error("Network request failed")
-     ```
-   - expected output:
-     ```ts
-     ["Network request failed"]
-     ```
-
-5. `it("returns Internal server error for unknown throw values", () => { ... })`
-   - input:
-     ```ts
-     null
-     ```
-   - expected output:
-     ```ts
-     ["Internal server error"]
-     ```
+1. `new ApiError(401, "unauthorized", "Wrong email or password")` → `["Wrong email or password"]`
+2. `new ApiError(400, "invalid_request", "<both sentences>", [{ path: "body.email", message: "Enter a valid email address." }, { path: "body.password", message: "Password must be at least 8 characters." }])` → `["Enter a valid email address.", "Password must be at least 8 characters."]`
+3. `new ApiError(400, "invalid_request", "Summary", [{ path: "body.email" }, "not-an-object", { message: 123 }])` → `["Summary"]`
+4. `new ApiError(500, "internal", "Internal server error")` and the same with status `502` → `["Something went wrong on the server. Try again in a moment."]`
+5. `new NetworkError()` → `["Cannot reach the server. Check your connection and try again."]`
+6. `new Error("Could not read the file")` → `["Could not read the file"]`
+7. `null` → `["Something went wrong. Try again."]`
 
 ### 5.3 Exact editor helper unit-test cases
 
@@ -888,9 +868,6 @@ These exact values are the source of truth for the API client tests and are inte
 
 2. `formatDiagnostic({ code: "E005", message: "Unknown action \"aiAct\"", line: 3 })` → `Line 3: Unknown action "aiAct"`
 
-3. `isVariableName`
-   - `"BASE"` → `true`; `"_X1"` → `true`
-   - `"base"` → `false`; `"1A"` → `false`; `""` → `false`; `"SWAG-PASSWORD"` → `false`
 
 ### 5.4 Exact run helper unit-test cases
 
@@ -909,6 +886,7 @@ These exact values are the source of truth for the API client tests and are inte
    - then a `status` message with the Run `running` → `run.status` is `"running"` and the step is unchanged
    - a `step` message for index 1 when only index 0 exists → two steps in index order
    - the input state object is not mutated (compare with a deep copy)
+7. `runErrorText`: each `kind` gives the line of 1.9, and an `internal` error's message is not shown
 
 ### 5.5 Exact sidebar and overview helper unit-test cases
 
@@ -934,3 +912,16 @@ These exact values are the source of truth for the API client tests and are inte
    - a tree of Project `p-1` (Module `m-1` with Test File `tf-1`, Module `m-empty` with none), Project `p-2` (no Modules), and Project `p-3` (Module `m-3` with Test Files `tf-3`, `tf-4`) → Project `p-1` with only Module `m-1`, then Project `p-3` with Module `m-3` and both Test Files in order
    - an empty tree → no Projects
    - the input tree is not mutated (compare with a deep copy)
+
+### 5.6 Exact validation helper unit-test cases
+
+`validation.test.ts` imports `@/app/frontend/lib/validation.js`. Each helper returns `null` for a good input and the sentence of 1.3 for a bad one.
+
+1. `emailProblem`: `"ada@example.com"` → `null`; `""`, `"ada"`, `"ada@"`, `"@example.com"`, `"ada @example.com"` → the email sentence
+2. `passwordProblem`: 8 and 200 characters → `null`; 7 → the "at least 8" sentence; 201 → the "at most 200" sentence
+3. `nameProblem`: `"Démo 商店 🛒"` and 100 characters inside spaces → `null`; `""` and `"   "` → "Enter a name."; 101 characters → the length sentence
+4. `testFileNameProblem`: `"sign-in"`, `"sign_in"`, `"v1.2"`, `"Checkout2"` → `null`; `"  "` → "Enter a name."; `"sign in"`, `"商店"`, `"a/b"`, `"<img>"` → the characters sentence; 96 characters → the length sentence, 95 → `null`
+5. `variableNameProblem`: `"BASE"`, `"_BASE_1"`, `"API_KEY2"` → `null`; `"base"`, `"1BASE"`, `"MY-VAR"`, `"MY VAR"`, `""` → the sentence with the example
+6. `variableValueProblem`: 10,000 characters → `null`; 10,001 → the value sentence
+
+`sidebar.test.ts` also covers `toTestFileName` (`"login"`, `"login.yaml"`, and `"  login  "` → `"login.yaml"`; `"v1.2"` → `"v1.2.yaml"`; `""` and `"   "` → `""`) and `testFileBaseName` (`"sign-in.yaml"` → `"sign-in"`; `"notes"` → `"notes"`).

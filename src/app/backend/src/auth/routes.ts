@@ -29,7 +29,8 @@ export function authHandlers({ db, jwtSecret }: AuthDeps): Handlers {
         });
         await answer(res, 201, user);
       } catch (error) {
-        if (isUniqueViolation(error)) throw new ApiError("conflict", "The email is taken");
+        if (isUniqueViolation(error))
+          throw new ApiError("conflict", "An account with this email already exists. Log in instead.");
         throw error;
       }
     },

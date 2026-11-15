@@ -2,7 +2,8 @@
 export function failureReason(error: unknown, connected: boolean): string {
   // After a crash or disconnect nothing else in the Run can work, so it is an infrastructure failure.
   if (!connected || !(error instanceof Error)) throw error;
-  return firstLine(error);
+  // "locator.click: " names a Playwright method, which means nothing to a test author.
+  return firstLine(error).replace(/^[a-z][A-Za-z]*\.[a-z][A-Za-z]*: /, "");
 }
 
 /** The first line of an error's message; Playwright puts its call log on the lines after it. */

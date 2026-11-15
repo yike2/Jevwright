@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { apiClient } from "@/lib/api";
 import { formatError } from "@/lib/format-error";
+import { emailProblem, passwordProblem } from "@/lib/validation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,11 +17,16 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [messages, setMessages] = useState<string[]>([]);
+  const [fieldProblems, setFieldProblems] = useState<{ email: string | null; password: string | null }>({
+    email: null,
+    password: null,
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleModeChange = (nextMode: Mode) => {
     setMode(nextMode);
     setMessages([]);
+    setFieldProblems({ email: null, password: null });
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -32,13 +38,23 @@ export default function LoginPage() {
       return;
     }
 
+    // Logging in only needs a password; the length rule is for choosing one.
+    const problems = {
+      email: emailProblem(email.trim()),
+      password: mode === "register" ? passwordProblem(password) : password === "" ? "Enter your password." : null,
+    };
+    setFieldProblems(problems);
+    if (problems.email !== null || problems.password !== null) {
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
       if (mode === "login") {
-        await apiClient.login(email, password);
+        await apiClient.login(email.trim(), password);
       } else {
-        await apiClient.register(email, password);
+        await apiClient.register(email.trim(), password);
       }
 
       router.replace("/");
@@ -80,7 +96,14 @@ export default function LoginPage() {
               onChange={(event) => setEmail(event.target.value)}
               placeholder="you@example.com"
               className="w-full"
+              aria-invalid={fieldProblems.email !== null}
+              aria-describedby={fieldProblems.email !== null ? "email-problem" : undefined}
             />
+            {fieldProblems.email !== null && (
+              <p id="email-problem" role="alert" className="text-sm text-destructive">
+                {fieldProblems.email}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -90,9 +113,16 @@ export default function LoginPage() {
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              placeholder="••••••••"
+              placeholder={mode === "register" ? "At least 8 characters" : "••••••••"}
               className="w-full"
+              aria-invalid={fieldProblems.password !== null}
+              aria-describedby={fieldProblems.password !== null ? "password-problem" : undefined}
             />
+            {fieldProblems.password !== null && (
+              <p id="password-problem" role="alert" className="text-sm text-destructive">
+                {fieldProblems.password}
+              </p>
+            )}
           </div>
 
           <Button type="submit" disabled={isSubmitting} className="w-full">

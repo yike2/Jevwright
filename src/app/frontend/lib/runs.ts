@@ -33,8 +33,21 @@ export function stepStatusLabel(status: Step["status"]): string {
 
 /** The line the Run page shows for a Run that ended with an error. */
 export function runErrorText(error: NonNullable<Run["error"]>): string {
-  void error;
-  return "";
+  switch (error.kind) {
+    case "timeout":
+      return `Timed out: ${error.message}`;
+    case "interrupted":
+      return `Interrupted: ${error.message}`;
+    case "infrastructure":
+      return `Browser error: ${error.message}`;
+    case "internal":
+      // The message is the server's error name (backend.md 1.4), which only means something to the server.
+      return "Something went wrong while running the test. Try running it again.";
+    default: {
+      const unknown: never = error.kind;
+      throw new Error(`Unknown run error kind ${String(unknown)}`);
+    }
+  }
 }
 
 export function formatDuration(ms: number | null | undefined): string {

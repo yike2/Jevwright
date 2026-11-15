@@ -27,9 +27,9 @@ The Backend is one Express service that stores users' test files, runs them with
 
 | Rule | |
 | ---- | - |
-| Names | Project and Module names are 1–100 characters and unique within their parent. A Test File name ends in `.yaml` and is unique within its Module |
+| Names | Project and Module names are 1–100 characters after trimming and unique within their parent. A Test File name is 1–100 characters of letters, digits, `-`, `_`, and `.`, with no spaces, ends in `.yaml`, and is unique within its Module |
 | Size limits | A source is at most `MAX_SOURCE_CHARS` (262,144 characters) and a Variable value at most 10,000 characters; a longer one answers `413`, like a request body over 1 MB |
-| Saving | A Test File is saved even when its source has diagnostics. Saving answers the Syntax Analyzer's `diagnostics`, so the editor can mark the lines |
+| Saving | A Test File is saved even when its source has diagnostics. Saving (`POST` and `PATCH`) answers the saved Test File with its `source` and the Syntax Analyzer's `diagnostics`, so the editor shows and marks what was saved without reading it again |
 | Validating | `POST /test-files/validate` analyzes a source without saving it |
 | Moving | `PATCH /test-files/:id` with a `moduleId` moves the Test File to another of the user's Modules |
 | Deleting | Deleting a Project deletes its Modules, Test Files, and Variables; deleting a Module deletes its Test Files. Runs are kept: their `testFileId`, `moduleId`, or `projectId` becomes `null`, and they keep their source, file name, and test name. `GET /runs?projectId=` still lists a deleted file's Runs while the Project exists |
@@ -76,15 +76,17 @@ The Benchmark Demo App therefore runs at a public address in production, for exa
 
 ### 1.7 Errors
 
-Every error answers JSON `{ "error": { "code": string, "message": string, "details"?: ... } }`. The status follows HTTP's meaning; `code` is the Backend's own name for the failure, which clients branch on, and `message` is for people. Only `400` and `422` carry `details`. Clients should treat an unknown `code` like `internal`, since codes may be added:
+Every error answers JSON `{ "error": { "code": string, "message": string, "details"?: ... } }`. The status follows HTTP's meaning; `code` is the Backend's own name for the failure, which clients branch on, and `message` is for people. Only `400` and `422` carry `details`. Clients should treat an unknown `code` like `internal`, since codes may be added.
+
+Messages are plain sentences that name the rule and how to meet it, never zod's wording or a field path: "Password must be at least 8 characters.", not `Too small: expected string to have >=8 characters`. Each schema rule in `api/contract.ts` carries its own message, and the frontend checks forms with the same words before sending (`frontend.md` 1.3):
 
 | Status | Code | When |
 | ------ | ---- | ---- |
-| `400` | `invalid_request` | A body, query, or path parameter fails its zod schema, including a path id that is not a uuid; `details` is `{ path, message }[]`, with `path` like `body.email` |
+| `400` | `invalid_request` | A body, query, or path parameter other than an id fails its zod schema; `details` is `{ path, message }[]`, with `path` like `body.email`, and `message` joins the details' messages |
 | `401` | `unauthorized` | No token, a bad token, or a wrong email or password at login |
-| `404` | `not_found` | No such resource for this user |
-| `409` | `conflict` | A duplicate email or name |
-| `413` | `too_large` | A request body over 1 MB, or a field over its size limit (1.3); the message names the field, e.g. `body.source`. A route lists its size-limited fields in the contract (`sizeLimited`), and a size limit wins over other schema failures |
+| `404` | `not_found` | No such resource for this user, or a path id that is not a uuid, which names nothing (`No such Project`, `No such Run`, ...) |
+| `409` | `conflict` | A duplicate email (`An account with this email already exists. Log in instead.`) or name (`A module with this name already exists in this project.`) |
+| `413` | `too_large` | A request body over 1 MB, or a field over its size limit (1.3); the message says the limit, e.g. `The test file is too long: it can be at most 262,144 characters.` A route lists its size-limited fields in the contract (`sizeLimited`), and a size limit wins over other schema failures |
 | `422` | `invalid_test` | A Run of a Test File with diagnostics; `details` is `Diagnostic[]` |
 | `500` | `internal` | Anything else; the message is generic and the error is logged without request bodies |
 | `501` | `not_implemented` | A route of the contract (3.1) whose handler is not built yet |
@@ -182,9 +184,9 @@ Conventions every route follows:
 | `PUT` / `DELETE` | `/projects/:projectId/variables/:name` | `{ value }` | `204` / `204` |
 | `GET` / `POST` | `/projects/:projectId/modules` | `{ name }` | `200 { items: Module[] }` / `201 Module` |
 | `PATCH` / `DELETE` | `/modules/:moduleId` | `{ name }` | `200 Module` / `204` |
-| `GET` / `POST` | `/modules/:moduleId/test-files` | `{ name, source }` | `200 { items: TestFile[] }` (no sources) / `201 { testFile, diagnostics }` |
+| `GET` / `POST` | `/modules/:moduleId/test-files` | `{ name, source }` | `200 { items: TestFile[] }` (no sources) / `201 { testFile, diagnostics }`, the Test File with `source` |
 | `GET` | `/test-files/:testFileId` | – | `200 TestFile` with `source` |
-| `PATCH` / `DELETE` | `/test-files/:testFileId` | `{ name?, moduleId?, source? }` | `200 { testFile, diagnostics }` / `204` |
+| `PATCH` / `DELETE` | `/test-files/:testFileId` | `{ name?, moduleId?, source? }` | `200 { testFile, diagnostics }`, the Test File with `source` / `204` |
 | `POST` | `/test-files/validate` | `{ source }` | `200 { diagnostics }` |
 | `POST` | `/test-files/:testFileId/runs` | – | `202 Run`, or `422` |
 | `GET` | `/runs` | `?testFileId=&projectId=&limit=&cursor=` | `200 { items: Run[], nextCursor }`, newest first, without `source` and `report` |
@@ -298,10 +300,10 @@ Integration tests need PostgreSQL: CI runs a `postgres` service container, and l
 | Unit | Deploy files: the Playwright image of the pinned `playwright`, Node of `.nvmrc`, `--dev` only in the development scripts, migrate before start, Caddy to `backend:4000`, one Postgres version in compose, `compose.dev.yaml`, and CI; the Demo App served on `DEMO_DOMAIN` like `serveDemoApp()`; the browser container's `run-server` version, a firewall rule for every range of `NON_PUBLIC_RANGES`, root and capabilities dropped, memory, CPU, and process limits, `NET_ADMIN` and its own network | `src/tests/unit/app/backend/deploy.test.ts` |
 | Integration | Database: unique names per parent, cascade deletes, Runs kept with `null` ids | `src/tests/integration/app/backend/db.test.ts` |
 | Integration | Auth: register, duplicate email, login, wrong password, `401` without or with a bad token | `src/tests/integration/app/backend/auth.test.ts` |
-| Integration | Workspace: CRUD of every level, unique names, moving a Test File, cascade deletes, `404` for another user's data, saving a source with diagnostics, variables return names only | `src/tests/integration/app/backend/workspace.test.ts` |
+| Integration | Workspace: CRUD of every level, unique names, moving a Test File, cascade deletes, `404` for another user's data, saving a source with diagnostics, saving answers the source, conflict messages per level, variables return names only | `src/tests/integration/app/backend/workspace.test.ts` |
 | Integration | Runs: `422` for an invalid file, `202` and `queued`, a second Run stays `queued` while one runs, the final row and Report, Run errors, files served with Bearer or `?token=` and traversal rejected, a Run on a `run-server` at `BROWSER_ENDPOINT`, a Run capped at the longest run time, `GET /runs` filters, order, and cursor paging, restart recovery | `src/tests/integration/app/backend/runs.test.ts` |
 | Integration | Live Progress over a real WebSocket: snapshot with every step `pending`, `running` and finished steps with screenshots, final status, a finished Run's snapshot, `4401` and `4404` | `src/tests/integration/app/backend/live.test.ts` |
 | Integration | Core with `network: "public"`: a page on `127.0.0.1` is blocked | `src/tests/integration/core/browser/` |
 | Unit | OpenAPI: `info`, every route of `ROUTES` with `{name}` parameters, parameters and bodies from the schemas, Bearer and `?token=` security per route, `{ items }` lists and Run paging, typed error details, one `Step` shape for the Report and Live Progress, the Live Progress messages as components, `docs/api/openapi.json` up to date | `src/tests/unit/app/backend/openapi.test.ts` |
-| Integration | App: health, OpenAPI and Swagger UI, `501` without a handler, `400` with `{ path, message }` details before the handler, a non-uuid id, bad JSON, `413` over 1 MB and for an over-long source or Variable value while a long name stays `400`, `404` for an unknown route, CORS only for the frontend's origin, a generic `500`, a handler gets the parsed input and the whole files wildcard | `src/tests/integration/app/backend/app.test.ts` |
+| Integration | App: health, OpenAPI and Swagger UI, `501` without a handler, `400` with `{ path, message }` details before the handler, plain-word messages for credentials, names, Test File names, and Variable names, `404` for a non-uuid id, bad JSON, `413` over 1 MB and for an over-long source or Variable value while a long name stays `400`, `404` for an unknown route, CORS only for the frontend's origin, a generic `500`, a handler gets the parsed input and the whole files wildcard | `src/tests/integration/app/backend/app.test.ts` |
 | E2E | Login → edit → validate → run → history through the frontend (Epic 6) | `src/tests/e2e/` |

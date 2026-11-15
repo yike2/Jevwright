@@ -40,7 +40,8 @@ describeDb("workspace routes", () => {
     const project = (await as.post("/projects", { name: "Shop" })).body;
     const module = (await as.post(`/projects/${project.id}/modules`, { name: "Cart" })).body;
     const saved = (await as.post(`/modules/${module.id}/test-files`, { name: "add.yaml", source: VALID })).body;
-    return { project, module, testFile: saved.testFile };
+    const { source: _source, ...testFile } = saved.testFile;
+    return { project, module, testFile };
   }
 
   async function addRun(

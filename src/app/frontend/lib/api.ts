@@ -114,7 +114,7 @@ export function parseApiError(payload: unknown): {
 /** The server could not be reached: fetch itself failed, so there is no HTTP status. */
 export class NetworkError extends Error {
   constructor() {
-    super("");
+    super("Cannot reach the server. Check your connection and try again.");
     this.name = "NetworkError";
     Object.setPrototypeOf(this, NetworkError.prototype);
   }
@@ -202,10 +202,16 @@ export function createApiClient(config: ApiClientConfig = {}): {
       headers.set("Authorization", `Bearer ${currentToken}`);
     }
 
-    const response = await fetchImpl(url, {
-      ...init,
-      headers,
-    });
+    let response: Response;
+    try {
+      response = await fetchImpl(url, {
+        ...init,
+        headers,
+      });
+    } catch {
+      // fetch rejects only when no response arrived: offline, DNS, CORS, or the server is down.
+      throw new NetworkError();
+    }
 
     const text = await response.text();
     let payload: unknown = undefined;

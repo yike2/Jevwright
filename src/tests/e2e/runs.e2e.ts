@@ -133,7 +133,7 @@ test("TC-RUN-06 fails a selector that matches nothing at its timeout", async ({ 
   const steps = stepsOf(page);
   await expect(steps.nth(1)).toContainText("Failed");
   await expect(steps.nth(1)).toContainText("selector");
-  await expect(steps.nth(1)).toContainText("Timeout 3000ms exceeded");
+  await expect(steps.nth(1)).toContainText('No element matches "[data-test="no-such-button"]" within 3000ms');
   await expect(steps.nth(2)).toContainText("Pending");
 });
 
@@ -194,7 +194,7 @@ test("TC-RUN-10 ends a run at its runTimeoutMs", async ({ page }) => {
   expect(await runFixture(page, "fail/run-timeout.yaml", "run-timeout.yaml")).toBe("Failed");
 
   const reason = "The run did not finish within runTimeoutMs (10000 ms)";
-  await expect(page.getByText(`timeout: ${reason}`, { exact: true })).toBeVisible();
+  await expect(page.getByText(`Timed out: ${reason}`, { exact: true })).toBeVisible();
   const steps = stepsOf(page);
   await expect(steps.nth(1)).toContainText("Failed");
   await expect(steps.nth(1)).toContainText(reason);

@@ -227,19 +227,16 @@ describe("an element action on a covered element", () => {
 });
 
 describe("an element action on a selector that matches nothing", () => {
-  it.each([
-    ["click", "clicked"],
-    ["doubleClick", "double-clicked"],
-    ["rightClick", "right-clicked"],
-    ["hover", "hovered"],
-  ] as const)("%s fails after the step timeout, saying no element matches", (action) =>
-    run(async (browser) => {
-      await browser.perform({ action: "open", url: "/actions.html" });
+  it.each(["click", "doubleClick", "rightClick", "hover"] as const)(
+    "%s fails after the step timeout, saying no element matches",
+    (action) =>
+      run(async (browser) => {
+        await browser.perform({ action: "open", url: "/actions.html" });
 
-      const result = await browser.perform({ action, element: { selector: "#nope" } });
+        const result = await browser.perform({ action, element: { selector: "#nope" } });
 
-      expect(result).toEqual({ ok: false, reason: 'No element matches "#nope" within 2000ms', dialogs: [] });
-    }),
+        expect(result).toEqual({ ok: false, reason: 'No element matches "#nope" within 2000ms', dialogs: [] });
+      }),
   );
 
   it("input fails the same way", () =>

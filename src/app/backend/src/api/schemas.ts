@@ -15,7 +15,10 @@ export const TestFile = z.object({
   id,
   moduleId: id,
   name: z.string(),
-  source: z.string().optional().meta({ description: "Only in GET /test-files/{testFileId}" }),
+  source: z
+    .string()
+    .optional()
+    .meta({ description: "In GET /test-files/{testFileId} and in the answer of saving a Test File, not in lists" }),
   createdAt: timestamp,
   updatedAt: timestamp,
 });

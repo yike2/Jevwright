@@ -11,10 +11,12 @@ import {
   starterSource,
   statusOf,
   statusTitle,
+  testFileBaseName,
   toTestFileName,
   type DeleteTarget,
 } from "@/lib/sidebar";
 import { Button } from "@/components/ui/button";
+import { nameProblem, testFileNameProblem } from "@/lib/validation";
 import { CreateNameDialog } from "@/components/workspace/create-name-dialog";
 import { ConfirmDeleteDialog } from "@/components/workspace/confirm-delete-dialog";
 import { VariablesDialog } from "@/components/workspace/variables-dialog";
@@ -420,6 +422,7 @@ export function SidebarNav({ email, tree, refreshTree, onLogout, onNavigate }: W
         title="New project"
         onOpenChange={setIsProjectDialogOpen}
         onCreate={handleCreateProject}
+        validate={nameProblem}
       />
 
       <CreateNameDialog
@@ -431,6 +434,7 @@ export function SidebarNav({ email, tree, refreshTree, onLogout, onNavigate }: W
           }
         }}
         onCreate={handleCreateModule}
+        validate={nameProblem}
       />
 
       <CreateNameDialog
@@ -442,6 +446,8 @@ export function SidebarNav({ email, tree, refreshTree, onLogout, onNavigate }: W
           }
         }}
         onCreate={handleCreateTestFile}
+        validate={testFileNameProblem}
+        suffix=".yaml"
       />
 
       <CreateNameDialog
@@ -455,8 +461,12 @@ export function SidebarNav({ email, tree, refreshTree, onLogout, onNavigate }: W
               : "Rename test file"
         }
         submitLabel="Save"
-        initialName={renameTarget?.name ?? ""}
+        initialName={
+          renameTarget?.kind === "testFile" ? testFileBaseName(renameTarget.name) : (renameTarget?.name ?? "")
+        }
         normalizeName={renameTarget?.kind === "testFile" ? toTestFileName : undefined}
+        validate={renameTarget?.kind === "testFile" ? testFileNameProblem : nameProblem}
+        suffix={renameTarget?.kind === "testFile" ? ".yaml" : undefined}
         disableUnchangedSubmit
         onOpenChange={(open) => {
           if (!open) {

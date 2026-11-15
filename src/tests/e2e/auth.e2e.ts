@@ -32,7 +32,7 @@ test("TC-AUTH-02 refuses an email that is taken, in any case", async ({ page }) 
 
   await submit(page, "Register", email.toUpperCase(), PASSWORD);
 
-  await expect(alertsOf(page)).toHaveText("The email is taken");
+  await expect(alertsOf(page)).toHaveText("An account with this email already exists. Log in instead.");
   await expect(page).toHaveURL("/login");
 });
 
@@ -48,10 +48,15 @@ test("TC-AUTH-03 shows an error for a wrong password", async ({ page }) => {
 });
 
 test("TC-AUTH-04 needs a password of at least 8 characters", async ({ page }) => {
+  const registers: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().endsWith("/auth/register")) registers.push(request.url());
+  });
   await submit(page, "Register", uniqueEmail(), "1234567");
-  // The 400 message, then one line per detail.
-  await expect(alertsOf(page).locator("p")).not.toHaveCount(0);
-  expect(await alertsOf(page).locator("p").count()).toBeGreaterThanOrEqual(2);
+  // The form checks the rule itself, with the backend's words, and sends nothing.
+  await expect(alertsOf(page)).toHaveText("Password must be at least 8 characters.");
+  await expect(page.getByLabel("Password")).toHaveAttribute("aria-invalid", "true");
+  expect(registers).toEqual([]);
   await expect(page).toHaveURL("/login");
 
   await submit(page, "Register", uniqueEmail(), "12345678");

@@ -44,7 +44,8 @@ function toApiError(error: unknown): ApiError {
   if (error instanceof ApiError) return error;
   // body-parser marks its failures with a `type`; their messages may quote the body, so use our own.
   const type = typeof error === "object" && error !== null && "type" in error ? error.type : undefined;
-  if (type === "entity.parse.failed") return new ApiError("invalid_request", "The body is not valid JSON");
-  if (type === "entity.too.large") return new ApiError("too_large", "The body is too large");
+  if (type === "entity.parse.failed") return new ApiError("invalid_request", "The request body is not valid JSON.");
+  if (type === "entity.too.large")
+    return new ApiError("too_large", "The request is too large: it can be at most 1 MB.");
   return new ApiError("internal", "Internal server error");
 }
