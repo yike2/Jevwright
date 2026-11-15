@@ -443,7 +443,7 @@ The sidebar has links with the same names, so E2E tests scope overview lookups t
 #### Tests
 - Unit: `overviewGroups`, `statusTitle` (5.5).
 - E2E `overview.e2e.ts`: a user with an empty workspace opens `/files` and sees "No test files yet"; after creating a Project with a file in it, a folder, and a folder inside that, each with a file, and opening `/files` again, the "Test files" region shows the Project heading, the folder paths `Shopping` and `Shopping/Cart`, and the file link with "Never run"; clicking the link opens `/files/<id>`.
-- E2E `quick-start.e2e.ts`: an account registered through the form lands on `/files` with the Quick Start project, its four numbered folders (`backend.md` 1.10) and its Variables `BASE` and `SWAG_PASSWORD`, no "Add the Quick Start project", and its `sign-in-and-see-products.yaml` opens with its three-line header and passes; an empty workspace's "Add the Quick Start project" adds it to the overview and the sidebar; a workspace with other Projects offers it in both, and again once it is renamed; a project named Quick Start added by another tab meanwhile makes the button show the backend's `409` message.
+- E2E `quick-start.e2e.ts`: an account registered through the form lands on `/files` with the Quick Start project, its four numbered folders (`backend.md` 1.10) and its Variables `BASE` and `SWAG_PASSWORD`, no "Add the Quick Start project", and its `sign-in-and-see-products.yaml` opens with its three-line header and passes; `buy-a-backpack.yaml` starts signed in with the session cookie and passes 12/12; an empty workspace's "Add the Quick Start project" adds it to the overview and the sidebar; a workspace with other Projects offers it in both, and again once it is renamed; a project named Quick Start added by another tab meanwhile makes the button show the backend's `409` message.
 
 Out of scope: filters, sorting, charts, pagination, distinguishing `queued` from `running`.
 
@@ -908,7 +908,7 @@ src/app/frontend/
 | Unit | Token contrast in both themes (design-system.md 2.2)                                                             | `src/tests/unit/app/frontend/design-tokens.test.ts`     |
 | E2E  | Landing page: sections, command, Log in, Register, Open workspace, logo, Run replay, Quick start tabs (1.14)    | `src/tests/e2e/landing.e2e.ts`                          |
 | E2E  | Themes: system default, persisted choice, no flash, switch placement (design-system.md 3)                       | `src/tests/e2e/theme.e2e.ts`                            |
-| E2E  | Quick Start: seeded on register and runnable, offered whenever no Project is named Quick Start, `409` message (1.10) | `src/tests/e2e/quick-start.e2e.ts`                  |
+| E2E  | Quick Start: seeded on register and runnable, a file that starts signed in with the session cookie, offered whenever no Project is named Quick Start, `409` message (1.10) | `src/tests/e2e/quick-start.e2e.ts`                  |
 | E2E  | Auth flow                                                                                                        | `src/tests/e2e/auth.e2e.ts`                             |
 | E2E  | Sidebar: create in place, duplicate names, name rules, width and full names (1.6)                                | `src/tests/e2e/sidebar.e2e.ts`                          |
 | E2E  | Folders: nesting to level 4, rename and delete, drag and drop and Move to…, refused moves, drop import (1.6)     | `src/tests/e2e/folders.e2e.ts`                          |
