@@ -178,6 +178,14 @@ describe("parseConsoleSplit", () => {
     expect(parseConsoleSplit("62.5")).toBe(62.5);
   });
 
+  // A console dragged to its minimum height in a short column has a small share; it must come back after a reload.
+  it.each([
+    ["5", 5],
+    ["92.3", 92.3],
+  ])("reads a small or large share such as %s", (stored, share) => {
+    expect(parseConsoleSplit(stored)).toBe(share);
+  });
+
   it("splits evenly by default", () => {
     expect(DEFAULT_CONSOLE_SPLIT).toBe(50);
   });
@@ -186,8 +194,9 @@ describe("parseConsoleSplit", () => {
     ["nothing", null],
     ["text that is not a number", "wide"],
     ["an empty text", ""],
-    ["a share below 10", "5"],
-    ["a share above 90", "95"],
+    ["no share", "0"],
+    ["the whole column", "100"],
+    ["a negative share", "-1"],
     ["a layout object", '{"debug":60,"output":40}'],
   ])("splits evenly for %s", (_name, stored) => {
     expect(parseConsoleSplit(stored)).toBe(50);
