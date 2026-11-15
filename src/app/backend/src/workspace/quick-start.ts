@@ -89,6 +89,14 @@ const FOLDERS: { name: string; files: QuickStartFile[] }[] = [
     name: "4 Jev - find and check by description",
     files: [
       {
+        name: "find-and-check-with-jev.yaml",
+        fixture: "jev/find-and-check.yaml",
+        does: "Adds two products to the cart; Jev finds one button on the screenshot, one by its name, and checks the cart.",
+        expect:
+          'passed, 8 of 8 steps; Jev finds step 2 on the screenshot ("visual") and step 3, a button with no visible label, usually by its name in the page ("dom"), and judges step 8.',
+        tryIt: 'change the statement to "The cart is empty" and run it again to see Jev fail it.',
+      },
+      {
         name: "find-elements-by-description.yaml",
         fixture: "jev/target-add-to-cart.yaml",
         does: "Adds the backpack to the cart with plain-language descriptions instead of selectors.",

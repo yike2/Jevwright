@@ -13,6 +13,7 @@ import {
   DEBUG_RECEIPT,
   DEMO_APP_URL,
   FIXES,
+  LOCATED_STEP,
   OUTPUT_RECEIPT,
   QUICK_START_FILES,
   QUICK_START_FOLDERS,
@@ -107,8 +108,6 @@ function Receipt({ label, text }: { label: string; text: string }) {
 
 /** The product page at / (frontend.md 1.14): a server component apart from the header, the replay and the copy button. */
 export default function LandingPage() {
-  const fallbackStep = REPLAY_RUNS[0]?.report.steps[3];
-
   return (
     <div className="flex min-h-screen flex-col">
       <SiteHeader />
@@ -141,7 +140,7 @@ export default function LandingPage() {
         <Section
           id="real-run"
           title="A real Run, not a screenshot"
-          lead="Two Quick Start files ran on the Jevwright server against the Demo App; these are their reports and step screenshots, replayed. The first one called Jev, and only the steps where Jev did the work are marked: AI locate when Jev found the element, AI assert when Jev judged a statement."
+          lead="Three Quick Start files ran on the Jevwright server against the Demo App; these are their reports and step screenshots, replayed. The first two called Jev, and only the steps where Jev did the work are marked: AI locate when Jev found the element, AI assert when Jev judged a statement."
           tinted
         >
           <RunReplay runs={REPLAY_RUNS} />
@@ -300,7 +299,7 @@ export default function LandingPage() {
         <Section
           id="checked"
           title="Checked before it runs"
-          lead="Real output of the web workspace for two Quick Start files."
+          lead="Real output of the web workspace for three Quick Start files."
         >
           <ol className="grid gap-x-6 gap-y-3 lg:grid-cols-3 lg:grid-rows-[auto_auto_1fr_auto]">
             {/* Each step spans the parent's four rows (subgrid), so headings, texts, code and states line up. */}
@@ -327,7 +326,7 @@ export default function LandingPage() {
                 A downloadable report.json, a Playwright trace and a screenshot per step. The step Jev located, from the
                 report above:
               </p>
-              <Receipt label="report step" text={JSON.stringify(fallbackStep, null, 2)} />
+              <Receipt label="report step" text={JSON.stringify(LOCATED_STEP, null, 2)} />
               <StatusBadge status="passed" label="Passed" />
             </li>
           </ol>

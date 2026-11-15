@@ -1,4 +1,5 @@
 import type { Run } from "./api.js";
+import jevReport from "./landing-runs/find-and-check-with-jev.json";
 import signInReport from "./landing-runs/sign-in-and-see-products.json";
 import staleSelectorReport from "./landing-runs/fall-back-from-a-stale-selector.json";
 
@@ -51,10 +52,18 @@ Line 17: Needs at least one of "selector" and "target"  E008
 Line 20: Unknown field "colour"  E004`;
 
 /**
- * Real Run reports of two Quick Start files on the server, replayed on the page with their screenshots, the one that
- * called Jev first. `judged` lists the steps whose statement or condition Jev judged, which a report does not record.
+ * Real Run reports of three Quick Start files on the server, replayed on the page with their screenshots, the one that
+ * uses Jev in all three ways first. `judged` lists the steps whose statement or condition Jev judged, which a report
+ * does not record.
  */
 export const REPLAY_RUNS: ReplayRun[] = [
+  {
+    file: "find-and-check-with-jev.yaml",
+    note: "Jev finds the backpack's Add to cart button on the screenshot. The red T-shirt's View details button has no visible label, so Jev finds it by its name in the page instead. At the end Jev judges the cart from a screenshot; the other steps are plain Playwright.",
+    assets: "/landing/runs/find-and-check-with-jev",
+    report: jevReport as Report,
+    judged: [7],
+  },
   {
     file: "fall-back-from-a-stale-selector.yaml",
     note: "The Login button's selector is out of date. The step also describes the button, so Jev finds it; every other step is plain Playwright.",
@@ -70,6 +79,11 @@ export const REPLAY_RUNS: ReplayRun[] = [
     judged: [],
   },
 ];
+
+/** The step shown under Report: the first step Jev located in the first replayed Run. */
+export const LOCATED_STEP: ReplayStep | undefined = REPLAY_RUNS[0]?.report.steps.find(
+  (step) => "locateMethod" in step && (step.locateMethod === "visual" || step.locateMethod === "dom"),
+);
 
 /** The stat strip below the replay; every number is backed by the code or the shipped Run. */
 export const STATS: Stat[] = [
@@ -181,6 +195,11 @@ await expect(items.nth(1).locator(".price")).toBeVisible();`,
 export const QUICK_START_FILES: QuickStartFile[] = [
   { feature: "Selectors only", file: "sign-in-and-see-products.yaml", folder: "1 Passing tests" },
   { feature: "Skipping the sign-in with a cookie", file: "buy-a-backpack.yaml", folder: "1 Passing tests" },
+  {
+    feature: "Jev finding one element on the screenshot, one in the DOM, and judging a statement",
+    file: "find-and-check-with-jev.yaml",
+    folder: "4 Jev - find and check by description",
+  },
   {
     feature: "Jev finding elements from descriptions",
     file: "find-elements-by-description.yaml",

@@ -1,0 +1,104 @@
+{
+  "file": "find-and-check-with-jev.yaml",
+  "name": "Find and check with Jev",
+  "status": "passed",
+  "startedAt": "2026-11-15T17:01:07.825Z",
+  "durationMs": 2990,
+  "summary": {
+    "total": 8,
+    "passed": 8,
+    "failed": 0,
+    "pending": 0
+  },
+  "steps": [
+    {
+      "index": 0,
+      "line": 11,
+      "action": "open",
+      "startedAt": "2026-11-15T17:01:08.003Z",
+      "durationMs": 303,
+      "dialogs": [],
+      "status": "passed",
+      "screenshot": "screenshots/step-0.png"
+    },
+    {
+      "index": 1,
+      "line": 13,
+      "action": "click",
+      "startedAt": "2026-11-15T17:01:08.428Z",
+      "durationMs": 679,
+      "locateMethod": "visual",
+      "dialogs": [],
+      "status": "passed",
+      "screenshot": "screenshots/step-1.png"
+    },
+    {
+      "index": 2,
+      "line": 15,
+      "action": "click",
+      "startedAt": "2026-11-15T17:01:09.221Z",
+      "durationMs": 588,
+      "locateMethod": "dom",
+      "dialogs": [],
+      "status": "passed",
+      "screenshot": "screenshots/step-2.png"
+    },
+    {
+      "index": 3,
+      "line": 17,
+      "action": "assert",
+      "startedAt": "2026-11-15T17:01:09.898Z",
+      "durationMs": 15,
+      "dialogs": [],
+      "status": "passed",
+      "screenshot": "screenshots/step-3.png"
+    },
+    {
+      "index": 4,
+      "line": 20,
+      "action": "click",
+      "startedAt": "2026-11-15T17:01:10.003Z",
+      "durationMs": 49,
+      "locateMethod": "selector",
+      "dialogs": [],
+      "status": "passed",
+      "screenshot": "screenshots/step-4.png"
+    },
+    {
+      "index": 5,
+      "line": 22,
+      "action": "click",
+      "startedAt": "2026-11-15T17:01:10.144Z",
+      "durationMs": 45,
+      "locateMethod": "selector",
+      "dialogs": [],
+      "status": "passed",
+      "screenshot": "screenshots/step-5.png"
+    },
+    {
+      "index": 6,
+      "line": 24,
+      "action": "waitFor",
+      "startedAt": "2026-11-15T17:01:10.254Z",
+      "durationMs": 2,
+      "dialogs": [],
+      "status": "passed",
+      "screenshot": "screenshots/step-6.png"
+    },
+    {
+      "index": 7,
+      "line": 26,
+      "action": "assert",
+      "startedAt": "2026-11-15T17:01:10.323Z",
+      "durationMs": 262,
+      "dialogs": [],
+      "status": "passed",
+      "screenshot": "screenshots/step-7.png"
+    }
+  ],
+  "browserState": {
+    "cookies": [
+      "session-username"
+    ]
+  }
+}
