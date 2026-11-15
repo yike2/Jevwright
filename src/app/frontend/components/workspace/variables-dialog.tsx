@@ -158,7 +158,7 @@ export function VariablesDialog({ open, projectId, onOpenChange }: VariablesDial
 
             {variableNames.map((variableName) => (
               <li key={variableName} className="flex items-center justify-between gap-2 text-sm text-foreground">
-                <span>{variableName}</span>
+                <span className="font-mono text-[0.8125rem]">{variableName}</span>
                 <Button
                   type="button"
                   variant="destructive"

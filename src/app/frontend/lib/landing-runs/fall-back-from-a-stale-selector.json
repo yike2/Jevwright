@@ -1,0 +1,78 @@
+{
+  "file": "fall-back-from-a-stale-selector.yaml",
+  "name": "Stale selector",
+  "status": "passed",
+  "startedAt": "2026-11-15T01:50:25.632Z",
+  "durationMs": 3501,
+  "summary": {
+    "total": 6,
+    "passed": 6,
+    "failed": 0,
+    "pending": 0
+  },
+  "steps": [
+    {
+      "index": 0,
+      "line": 8,
+      "action": "open",
+      "startedAt": "2026-11-15T01:50:25.766Z",
+      "durationMs": 157,
+      "dialogs": [],
+      "status": "passed",
+      "screenshot": "screenshots/step-0.png"
+    },
+    {
+      "index": 1,
+      "line": 10,
+      "action": "input",
+      "startedAt": "2026-11-15T01:50:25.984Z",
+      "durationMs": 51,
+      "locateMethod": "selector",
+      "dialogs": [],
+      "status": "passed",
+      "screenshot": "screenshots/step-1.png"
+    },
+    {
+      "index": 2,
+      "line": 13,
+      "action": "input",
+      "startedAt": "2026-11-15T01:50:26.092Z",
+      "durationMs": 42,
+      "locateMethod": "selector",
+      "dialogs": [],
+      "status": "passed",
+      "screenshot": "screenshots/step-2.png"
+    },
+    {
+      "index": 3,
+      "line": 16,
+      "action": "click",
+      "startedAt": "2026-11-15T01:50:26.184Z",
+      "durationMs": 2489,
+      "locateMethod": "visual",
+      "dialogs": [],
+      "status": "passed",
+      "screenshot": "screenshots/step-3.png"
+    },
+    {
+      "index": 4,
+      "line": 19,
+      "action": "waitFor",
+      "startedAt": "2026-11-15T01:50:28.800Z",
+      "durationMs": 2,
+      "dialogs": [],
+      "status": "passed",
+      "screenshot": "screenshots/step-4.png"
+    },
+    {
+      "index": 5,
+      "line": 21,
+      "action": "assert",
+      "startedAt": "2026-11-15T01:50:28.887Z",
+      "durationMs": 18,
+      "dialogs": [],
+      "status": "passed",
+      "screenshot": "screenshots/step-5.png"
+    }
+  ]
+}

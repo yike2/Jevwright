@@ -35,6 +35,7 @@ Copy `.env.example` to `.env` in the repository root if you have not, and set:
 | `JWT_SECRET` | Any 32 characters or more, e.g. from `openssl rand -hex 32` |
 | `CORS_ORIGIN` | `http://localhost:3000`, the frontend dev server's origin |
 | `OPENROUTER_API_KEY` | A real key for `target` and `statement` steps, which call Jev; any non-empty value when tests use selectors only |
+| `DEMO_APP_URL` | `http://127.0.0.1:8080`, the local Demo App of 7, which every new account's Quick Start project takes as its `BASE` (`docs/tech/backend.md` 1.10). `pnpm backend` uses this value when it is missing; the files of the Quick Start project's `4 Jev` Module call Jev, so they need a real `OPENROUTER_API_KEY` |
 
 Leave `BROWSER_ENDPOINT` unset and `HOST` at `127.0.0.1`; dev mode refuses to start on an address other machines can reach. The backend reads this `.env` from whichever directory it starts in.
 
@@ -98,7 +99,7 @@ docker run --rm -p 127.0.0.1:8080:8080 -e DEMO_DOMAIN=:8080 \
   caddy:2.11.2-alpine
 ```
 
-In the Project that tests it, set the Project Variables `BASE=http://127.0.0.1:8080` and `SWAG_PASSWORD=secret_sauce`. The files in `src/tests/benchmark/suite/selector/` then run unchanged as Test Files, without calling Jev; the same Flows in `suite/target/` locate elements from plain words with Jev.
+A new account's Quick Start project already has `BASE` (from `DEMO_APP_URL`) and `SWAG_PASSWORD`, so its files run against this Demo App at once. In any other Project that tests it, set the Project Variables `BASE=http://127.0.0.1:8080` and `SWAG_PASSWORD=secret_sauce`. The files in `src/tests/benchmark/suite/selector/` then run unchanged as Test Files, without calling Jev; the same Flows in `suite/target/` locate elements from plain words with Jev.
 
 ## 8. Reset
 

@@ -70,7 +70,7 @@ Test files reach the Demo App through two Project Variables, set in the frontend
 | `BASE` | `https://demo.example.com` |
 | `SWAG_PASSWORD` | The password on the Demo App's sign-in page |
 
-Every file in `src/tests/benchmark/suite/` uses exactly these, so it runs unchanged as an uploaded Test File. `selector/` locates with CSS selectors only; `target/` describes the same elements in plain words for Jev to find, which shows what Jevwright adds. A Run whose first step fails with `net::ERR_FAILED` has a `BASE` on a private address such as `localhost`.
+The Quick Start project of every new account has both already, with `BASE` from the backend's `DEMO_APP_URL` (`docs/tech/backend.md` 1.10); point `DEMO_APP_URL` at this Demo App. The team's public Demo App is `https://demo.94.72.126.118.sslip.io`. Every file in `src/tests/benchmark/suite/` uses exactly these, so it runs unchanged as an uploaded Test File. `selector/` locates with CSS selectors only; `target/` describes the same elements in plain words for Jev to find, which shows what Jevwright adds. A Run whose first step fails with `net::ERR_FAILED` has a `BASE` on a private address such as `localhost`.
 
 ## 5. Update, stop, or move
 

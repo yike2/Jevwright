@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
-import { createWorkspace, signUp } from "./support.js";
+import { createWorkspace, signUp, WORKSPACE } from "./support.js";
 
 function sidebarOf(page: Page): Locator {
   return page.getByRole("navigation", { name: "Projects", exact: true });
@@ -15,7 +15,7 @@ async function create(page: Page, opener: string, dialogName: string, name: stri
 
 test("TC-WS-01 creates a project, module, and test file from the sidebar", async ({ page }) => {
   await signUp(page);
-  await page.goto("/");
+  await page.goto(WORKSPACE);
   const sidebar = sidebarOf(page);
 
   await expect(await create(page, "New project", "New project", "Demo Shop")).toBeHidden();
@@ -38,7 +38,7 @@ test("TC-WS-01 creates a project, module, and test file from the sidebar", async
 
 test("TC-WS-02 keeps names unique within their parent only", async ({ page }) => {
   await signUp(page);
-  await page.goto("/");
+  await page.goto(WORKSPACE);
   const sidebar = sidebarOf(page);
   await create(page, "New project", "New project", "Demo Shop");
   await create(page, "New module in Demo Shop", "New module", "Shopping");
@@ -71,7 +71,7 @@ test("TC-WS-02 keeps names unique within their parent only", async ({ page }) =>
 
 test("TC-WS-03 accepts project names of 1 to 100 characters", async ({ page }) => {
   await signUp(page);
-  await page.goto("/");
+  await page.goto(WORKSPACE);
   const sidebar = sidebarOf(page);
 
   const empty = await create(page, "New project", "New project", "");
@@ -91,7 +91,7 @@ test("TC-WS-03 accepts project names of 1 to 100 characters", async ({ page }) =
 
 test("TC-WS-08 keeps Unicode names and trims surrounding spaces", async ({ page }) => {
   await signUp(page);
-  await page.goto("/");
+  await page.goto(WORKSPACE);
   const sidebar = sidebarOf(page);
 
   await expect(await create(page, "New project", "New project", "Démo 商店 🛒")).toBeHidden();
@@ -110,7 +110,7 @@ test("TC-WS-08 keeps Unicode names and trims surrounding spaces", async ({ page 
 test("TC-WS-09 names test files with letters, digits, -, _ and ., before a fixed .yaml", async ({ page }) => {
   const { api } = await signUp(page);
   await createWorkspace(api);
-  await page.goto("/");
+  await page.goto(WORKSPACE);
   const sidebar = sidebarOf(page);
 
   for (const name of ["sign in", "商店", "a/b"]) {

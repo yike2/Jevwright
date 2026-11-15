@@ -146,6 +146,7 @@ export function createApiClient(config: ApiClientConfig = {}): {
   getCurrentUser(): Promise<User>;
   getTree(): Promise<TreeResponse>;
   createProject(name: string): Promise<CreateProjectResponse>;
+  addQuickStart(): Promise<CreateProjectResponse>;
   createModule(projectId: string, name: string): Promise<CreateModuleResponse>;
   createTestFile(moduleId: string, name: string, source: string): Promise<CreateTestFileResponse>;
   getTestFile(testFileId: string): Promise<TestFile>;
@@ -299,6 +300,10 @@ export function createApiClient(config: ApiClientConfig = {}): {
     });
   };
 
+  const addQuickStart = async (): Promise<CreateProjectResponse> => {
+    return request<CreateProjectResponse>("/projects/quick-start", { method: "POST" });
+  };
+
   const createModule = async (projectId: string, name: string): Promise<CreateModuleResponse> => {
     return request<CreateModuleResponse>(`/projects/${projectId}/modules`, {
       method: "POST",
@@ -441,6 +446,7 @@ export function createApiClient(config: ApiClientConfig = {}): {
     getCurrentUser,
     getTree,
     createProject,
+    addQuickStart,
     createModule,
     createTestFile,
     getTestFile,

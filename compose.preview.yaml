@@ -36,6 +36,9 @@ services:
       JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:?set OPENROUTER_API_KEY in .env}
       CORS_ORIGIN: ${CORS_ORIGIN:?set CORS_ORIGIN in .env}
+      # The Quick Start project's BASE: the preview has no Demo App of its own, so production's public one, unless the
+      # preview's .env names another (backend.md 1.10).
+      DEMO_APP_URL: ${DEMO_APP_URL:-https://demo.94.72.126.118.sslip.io}
       RUN_CONCURRENCY: 1
       RUNS_DIR: /data/runs
       PORT: 4000

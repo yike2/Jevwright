@@ -46,6 +46,7 @@ const app = createApp({
     jwtSecret: env.JWT_SECRET,
     runsDir: env.RUNS_DIR,
     enqueue: (runId) => queue.enqueue(runId),
+    demoAppUrl: env.DEMO_APP_URL,
   }),
   verifyToken: tokenUser,
 });

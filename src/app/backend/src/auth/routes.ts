@@ -6,9 +6,10 @@ import { ApiError } from "../http/errors.js";
 import { isUniqueViolation } from "../http/prisma-errors.js";
 import { requireUserId } from "../http/auth.js";
 import { hashPassword, verifyPassword } from "./password.js";
+import { quickStartProject } from "../workspace/quick-start.js";
 import { signToken } from "./token.js";
 
-export type AuthDeps = { db: Db; jwtSecret: string };
+export type AuthDeps = { db: Db; jwtSecret: string; demoAppUrl: string };
 
 type Credentials = { email: string; password: string };
 
@@ -16,7 +17,7 @@ type Credentials = { email: string; password: string };
 export const toUser = (user: User) => ({ id: user.id, email: user.email, createdAt: user.createdAt });
 
 /** Register, login, and the logged-in user (backend.md 1.2). */
-export function authHandlers({ db, jwtSecret }: AuthDeps): Handlers {
+export function authHandlers({ db, jwtSecret, demoAppUrl }: AuthDeps): Handlers {
   const answer = async (res: Response, status: number, user: User) =>
     void res.status(status).json({ token: await signToken(user.id, jwtSecret), user: toUser(user) });
 
@@ -24,8 +25,13 @@ export function authHandlers({ db, jwtSecret }: AuthDeps): Handlers {
     "post /auth/register": async ({ body }: HandlerInput, res) => {
       const { email, password } = body as Credentials;
       try {
+        // The user and its Quick Start project are one nested create, so one transaction (backend.md 1.10).
         const user = await db.user.create({
-          data: { email: email.toLowerCase(), passwordHash: await hashPassword(password) },
+          data: {
+            email: email.toLowerCase(),
+            passwordHash: await hashPassword(password),
+            projects: { create: quickStartProject(demoAppUrl) },
+          },
         });
         await answer(res, 201, user);
       } catch (error) {

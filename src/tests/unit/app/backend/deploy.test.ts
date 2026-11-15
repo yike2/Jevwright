@@ -59,6 +59,25 @@ describe("deploy files", () => {
     expect(compose).toMatch(/DEMO_DOMAIN: \$\{DEMO_DOMAIN:\?/);
   });
 
+  it("gives every deployed backend a public Demo App as the Quick Start project's BASE", () => {
+    expect(read("compose.yaml")).toMatch(/^\s+DEMO_APP_URL: https:\/\/\$\{DEMO_DOMAIN\}$/m);
+    // The preview has no Demo App of its own; it uses production's public one unless its .env names another.
+    expect(read("compose.preview.yaml")).toMatch(
+      /^\s+DEMO_APP_URL: \$\{DEMO_APP_URL:-https:\/\/demo\.94\.72\.126\.118\.sslip\.io\}$/m,
+    );
+  });
+
+  it("keeps the e2e fixtures in the backend image, since the Quick Start project reads them", () => {
+    const ignored = read(".dockerignore")
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line !== "" && !line.startsWith("#"));
+
+    for (const pattern of ignored) expect("src/tests/e2e/fixtures/pass/sign-in.yaml".startsWith(pattern)).toBe(false);
+    expect(ignored).not.toContain("src/tests");
+    expect(ignored).not.toContain("src");
+  });
+
   it("keeps the Demo App's site in one file, which the full Caddyfile imports and compose mounts beside it", () => {
     expect(read("Caddyfile")).toMatch(/^import \/etc\/caddy\/demo-app\.Caddyfile$/m);
     expect(read("Caddyfile")).not.toContain("{$DEMO_DOMAIN}");

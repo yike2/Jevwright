@@ -133,6 +133,8 @@ On the server:
    chmod 600 .env
    ```
 
+The preview's Quick Start projects get production's public Demo App as `BASE` from `compose.preview.yaml` (`docs/tech/backend.md` 1.10); add `DEMO_APP_URL` to this `.env` only to point them at another one.
+
 Then create the `preview` environment in GitHub (4.1).
 
 ## 5. Deploying by hand

@@ -7,6 +7,7 @@ const required = {
   JWT_SECRET: "x".repeat(32),
   OPENROUTER_API_KEY: "sk-or-test",
   CORS_ORIGIN: "http://localhost:3000",
+  DEMO_APP_URL: "https://demo.example.com",
 };
 
 describe("parseEnv", () => {
@@ -45,6 +46,36 @@ describe("parseEnv", () => {
     });
     const invalid = parseEnv({ ...required, BROWSER_ENDPOINT: "http://browser:3000/" });
     expect(!invalid.ok && invalid.problems.map((problem) => problem.split(":")[0])).toEqual(["BROWSER_ENDPOINT"]);
+  });
+
+  it("requires DEMO_APP_URL, the Quick Start project's BASE, outside dev mode, also when it is empty", () => {
+    for (const value of [undefined, ""]) {
+      const result = parseEnv({ ...required, DEMO_APP_URL: value });
+      expect(!result.ok && result.problems.map((problem) => problem.split(":")[0])).toEqual(["DEMO_APP_URL"]);
+    }
+  });
+
+  it("uses the local Demo App as DEMO_APP_URL in dev mode when it is unset or empty", () => {
+    for (const value of [undefined, ""]) {
+      expect(parseEnv({ ...required, DEMO_APP_URL: value }, { dev: true })).toMatchObject({
+        ok: true,
+        env: { DEMO_APP_URL: "http://127.0.0.1:8080" },
+      });
+    }
+  });
+
+  it("keeps a DEMO_APP_URL that is set, in dev mode too", () => {
+    expect(parseEnv({ ...required, DEMO_APP_URL: "https://demo.example.com" }, { dev: true })).toMatchObject({
+      ok: true,
+      env: { DEMO_APP_URL: "https://demo.example.com" },
+    });
+  });
+
+  it("refuses a DEMO_APP_URL that is not an http(s) URL", () => {
+    for (const value of ["demo.example.com", "ftp://demo.example.com"]) {
+      const invalid = parseEnv({ ...required, DEMO_APP_URL: value });
+      expect(!invalid.ok && invalid.problems.map((problem) => problem.split(":")[0])).toEqual(["DEMO_APP_URL"]);
+    }
   });
 
   it("lets dev mode's Runs reach any address, local pages included", () => {

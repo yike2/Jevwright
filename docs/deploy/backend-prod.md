@@ -74,7 +74,7 @@ Edit `.env`. compose reads it from this folder; the deploy needs these variables
 | `OPENROUTER_API_KEY` | The OpenRouter key Runs use for Jev |
 | `RUN_CONCURRENCY` | Runs at a time, 1–8; keep `1` unless `docker stats` shows memory to spare. The `browser` service is limited to 2 GB of memory and 1.5 CPUs in `compose.yaml`; raise `mem_limit` and `cpus` there with it, about 1 GB per extra Run |
 
-Leave `DATABASE_URL`, `RUNS_DIR`, `PORT`, `HOST`, and `BROWSER_ENDPOINT` unset; compose and the image set them. compose refuses to start when a required variable is missing.
+Leave `DATABASE_URL`, `RUNS_DIR`, `PORT`, `HOST`, `BROWSER_ENDPOINT`, and `DEMO_APP_URL` unset; compose and the image set them, `DEMO_APP_URL` to `https://<DEMO_DOMAIN>`. compose refuses to start when a required variable is missing.
 
 ## 4. Start it
 
@@ -116,7 +116,7 @@ for (const url of ["http://backend:4000/api/v1/health", "https://example.com/"])
 
 The Demo App is the benchmark's static Swag Labs site (`docs/tech/benchmark.md` 1.2); `docs/deploy/demo-app.md` deploys it on its own, without the rest of the platform. Here Caddy serves it at `DEMO_DOMAIN` straight from the checkout, with the site in `demo-app.Caddyfile`, `src/tests/benchmark/demo-app/site/` with our extra pages from `extras/` under `/extras/`, the same way `pnpm benchmark` serves it locally; there is no separate service or build step.
 
-Runs refuse private addresses, so tests must reach the Demo App at its public URL, never at `localhost` or a container name. In each Project that tests it, set two Project Variables (in the frontend, or with `PUT /api/v1/projects/<projectId>/variables/<name>`):
+Runs refuse private addresses, so tests must reach the Demo App at its public URL, never at `localhost` or a container name. The team's server serves it at `https://demo.94.72.126.118.sslip.io`. Every new account's Quick Start project gets `BASE=https://<DEMO_DOMAIN>` from `DEMO_APP_URL` and `SWAG_PASSWORD` (`docs/tech/backend.md` 1.10); an account without one adds it from the empty files overview. In each other Project that tests it, set two Project Variables (in the frontend, or with `PUT /api/v1/projects/<projectId>/variables/<name>`):
 
 | Variable | Value |
 | -------- | ----- |

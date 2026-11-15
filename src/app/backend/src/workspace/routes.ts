@@ -5,9 +5,10 @@ import type { TestFile } from "../generated/prisma/client.js";
 import { requireUserId } from "../http/auth.js";
 import { ApiError } from "../http/errors.js";
 import { isUniqueViolation } from "../http/prisma-errors.js";
+import { quickStartProject } from "./quick-start.js";
 import { ownedModule, ownedProject, ownedTestFile, toModule, toProject, toTestFile } from "./owned.js";
 
-export type WorkspaceDeps = { db: Db };
+export type WorkspaceDeps = { db: Db; demoAppUrl: string };
 
 // The validated inputs of the routes, as api/contract.ts parses them.
 type Name = { name: string };
@@ -21,6 +22,7 @@ const TAKEN = {
   project: "A project with this name already exists.",
   module: "A module with this name already exists in this project.",
   testFile: "A test file with this name already exists in this module.",
+  quickStart: "You already have a project named Quick Start. Rename or delete it, then add it again.",
 } as const;
 
 /** Runs a write, answering a unique-name failure as 409 with what is taken where. */
@@ -41,7 +43,7 @@ const saved = (testFile: TestFile) => ({
 });
 
 /** Projects, Modules, Test Files, Project Variables, and the tree (backend.md 1.3). */
-export function workspaceHandlers({ db }: WorkspaceDeps): Handlers {
+export function workspaceHandlers({ db, demoAppUrl }: WorkspaceDeps): Handlers {
   return {
     "get /tree": async (input, res) => {
       const projects = await db.project.findMany({
@@ -87,6 +89,12 @@ export function workspaceHandlers({ db }: WorkspaceDeps): Handlers {
     "post /projects": async (input, res) => {
       const { name } = input.body as Name;
       const project = await unique(db.project.create({ data: { userId: requireUserId(input), name } }), "project");
+      res.status(201).json(toProject(project));
+    },
+    "post /projects/quick-start": async (input, res) => {
+      const data = { userId: requireUserId(input), ...quickStartProject(demoAppUrl) };
+      // One nested create, so a taken name leaves nothing half added.
+      const project = await unique(db.project.create({ data }), "quickStart");
       res.status(201).json(toProject(project));
     },
     "patch /projects/:projectId": async (input, res) => {

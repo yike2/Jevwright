@@ -106,6 +106,7 @@ Environment variables are validated with zod at start-up; a missing or invalid o
 | `HOST` | `127.0.0.1` | Interface to listen on. The default keeps a local backend off the machine's network, since anyone who reaches it can register and run tests on the developer's OpenRouter key; the Docker image sets `0.0.0.0` for Caddy |
 | `CORS_ORIGIN` | – | The frontend's origin, allowed by CORS |
 | `BROWSER_ENDPOINT` | – | `ws://` URL of the browser container's run-server (1.6); without it, Runs launch Chromium locally |
+| `DEMO_APP_URL` | – (dev mode: `http://127.0.0.1:8080`) | The `http(s)://` Demo App that new Quick Start projects take as their Variable `BASE` (1.10). Required, and an empty value counts as missing; dev mode, which runs next to the local Demo App, uses `http://127.0.0.1:8080` when it is missing. compose sets it: `https://<DEMO_DOMAIN>` in production, production's public Demo App in the preview |
 
 ### 1.9 Deployment
 
@@ -118,9 +119,33 @@ The Backend runs on the team's VPS with docker compose. `compose.yaml` and `Cadd
 | `browser` | Built from `src/app/backend/browser.Dockerfile` | The Playwright image with `iptables` and the same `playwright` version's `run-server`; `cap_add: [NET_ADMIN]` for its firewall only (1.6); on the `browser` network only; `shm_size: 1gb` for Chromium; limited to 2 GB of memory, 1.5 CPUs, and 1024 processes and threads, so one page cannot exhaust the server (a Run peaks near 500 MB and 80 threads). A browser over its memory limit is killed and restarted, and its Run fails with an `infrastructure` error |
 | `caddy` | `caddy:2.11.2-alpine` | HTTPS for `API_DOMAIN`, proxied to `backend:4000`, WebSocket upgrades included; no access log, since URLs may carry `?token=`. It also serves the benchmark Demo App at `DEMO_DOMAIN` from the checkout's `demo-app/site/` and `extras/`, read-only, with the site in `demo-app.Caddyfile`, which `Caddyfile` imports and `docs/deploy/demo-app.md` also serves alone, the way `serveDemoApp()` does, so tests reach it at a public address as the Project Variable `BASE` |
 
-The Dockerfile builds from the repository root on `mcr.microsoft.com/playwright:v<playwright version>-noble`, whose Chromium matches the pinned `playwright` package. That image ships a newer Node, so Node 22 and corepack are copied from `node:22.x-bookworm-slim`, matching `.nvmrc`. It installs every dependency, since the Backend runs from source with `tsx` and `prisma` is a dev dependency, generates the Prisma Client, and runs as `pwuser`. At start it runs `prisma migrate deploy`, then `pnpm start`. compose reads `POSTGRES_PASSWORD`, `API_DOMAIN`, `DEMO_DOMAIN`, `JWT_SECRET`, `OPENROUTER_API_KEY`, `CORS_ORIGIN`, and `RUN_CONCURRENCY` from `.env` (`.env.example`, Deploy section) and fails before starting when a required one is missing. The same Postgres version runs in `compose.dev.yaml` and CI.
+The Dockerfile builds from the repository root on `mcr.microsoft.com/playwright:v<playwright version>-noble`, whose Chromium matches the pinned `playwright` package. That image ships a newer Node, so Node 22 and corepack are copied from `node:22.x-bookworm-slim`, matching `.nvmrc`. It installs every dependency, since the Backend runs from source with `tsx` and `prisma` is a dev dependency, generates the Prisma Client, and runs as `pwuser`. At start it runs `prisma migrate deploy`, then `pnpm start`. compose reads `POSTGRES_PASSWORD`, `API_DOMAIN`, `DEMO_DOMAIN`, `JWT_SECRET`, `OPENROUTER_API_KEY`, `CORS_ORIGIN`, and `RUN_CONCURRENCY` from `.env` (`.env.example`, Deploy section) and fails before starting when a required one is missing; it sets the backend's `DEMO_APP_URL` to `https://${DEMO_DOMAIN}`, and `compose.preview.yaml`, whose environment has no Demo App of its own, to `${DEMO_APP_URL:-https://demo.94.72.126.118.sslip.io}`, production's public one. The image keeps `src/tests/e2e/fixtures/`, which the Quick Start project reads (1.10). The same Postgres version runs in `compose.dev.yaml` and CI.
 
 Project Variable values are stored in plain text, and Run Files are never deleted; both are deliberate simplifications. Postgres needs off-box backups of the `postgres-data` volume. `docs/deploy/backend-prod.md` is the step-by-step guide from a fresh VPS, including backups.
+
+### 1.10 Quick Start Project
+
+Every new account gets a Project named `Quick Start`, so a new user can run a test within a minute. Register creates the user and the Project with its Modules, Test Files and Variables in one nested Prisma create, which is one transaction: a failed register, such as a taken email, leaves neither.
+
+The Project's Modules, files and headers are a manifest in `workspace/quick-start.ts`. Each Module name starts with a number and says what it teaches, so the tree, which lists Modules by name (1.3), shows them in learning order. Each file name says what the test does:
+
+| Module | Test File | Made from fixture |
+| ------ | --------- | ----------------- |
+| `1 Passing tests` | `sign-in-and-see-products.yaml`, `buy-a-backpack.yaml`, `locked-out-user-sees-an-error.yaml` | `pass/sign-in.yaml`, `pass/checkout.yaml`, `pass/locked-out.yaml` |
+| `2 Failing tests - see why they fail` | `wrong-total-fails-at-the-total.yaml`, `missing-button-fails.yaml`, `unexpected-alert-fails.yaml` | `fail/wrong-total.yaml`, `fail/missing-element.yaml`, `fail/unexpected-dialog.yaml` |
+| `3 Invalid files - fix the errors` | `seven-errors-at-once.yaml`, `yaml-syntax-error.yaml` | `invalid/multiple-errors.yaml`, `invalid/yaml-syntax.yaml` |
+| `4 Jev - find and check by description` | `find-elements-by-description.yaml` (`target` locating), `fall-back-from-a-stale-selector.yaml` (a stale `selector` falls back to its `target`), `judge-a-true-statement.yaml`, `judge-a-false-statement.yaml` (`statement` judging) | `jev/target-sign-in.yaml`, `jev/stale-selector.yaml`, `jev/statement-holds.yaml`, `jev/statement-fails.yaml` |
+
+| Variable | Value |
+| -------- | ----- |
+| `BASE` | `DEMO_APP_URL` (1.8), which is always set |
+| `SWAG_PASSWORD` | `secret_sauce`, the password the Demo App shows on its own sign-in page |
+
+Each seeded file opens with a three-line header from the manifest, in plain words: what the test does, what result to expect and why (`# Expect: failed at step 14 because the total is $32.39, not $99.99; ...`), and one thing to try (`# Try: change $99.99 to $32.39 and run it again.`). The rest of the file is its fixture from `src/tests/e2e/fixtures/` (`docs/testing/test-cases.md` 2.4) without the fixture's first-line `# Expect:` comment, read from disk when the Project is created, so the fixtures stay the single source of the test bodies and keep the line numbers the E2E tests rely on. The header replaces one line with three, so every line of a seeded file is two lines below its line in the fixture; `seven-errors-at-once.yaml` reports its seven diagnostics at lines 5, 8, 9, 10, 15, 17 and 20.
+
+The files use only `{{BASE}}` and `{{SWAG_PASSWORD}}` and finish within seconds. The files of the first three Modules locate by `selector` only, so their Runs never call Jev; the Runs of the `4 Jev` Module call Jev through the server's `OPENROUTER_API_KEY` (1.8), and `pnpm test:e2e` never runs them. Fixtures that need another Variable (`pass/variable-value.yaml`, `fail/missing-variable.yaml`) or long waits (`pass/slow.yaml`, `fail/run-timeout.yaml`) are left out, as are `pass/all-actions.yaml`, whose 35 steps make a poor first example, and the fixtures that repeat a case above.
+
+`POST /projects/quick-start` adds the same Project to an account that has none, for accounts made before it existed or after deleting it. An account that already has a Project named `Quick Start` gets `409` with `You already have a project named Quick Start. Rename or delete it, then add it again.`, and nothing is added. `workspace/quick-start.ts` builds the nested create for both.
 
 ## 2. Internal Flow
 
@@ -179,6 +204,7 @@ Conventions every route follows:
 | `GET` | `/auth/me` | – | `200 User` |
 | `GET` | `/tree` | – | `200 { items: TreeProject[] }`: Modules and Test Files without sources, each Test File with its `latestRun` (`id`, `status`, `createdAt`) |
 | `GET` / `POST` | `/projects` | `{ name }` | `200 { items: Project[] }` / `201 Project` |
+| `POST` | `/projects/quick-start` | – | `201 Project`, the Quick Start project (1.10); `409` when one exists |
 | `PATCH` / `DELETE` | `/projects/:projectId` | `{ name }` | `200 Project` / `204` |
 | `GET` | `/projects/:projectId/variables` | – | `200 { items: string[] }`, names only |
 | `PUT` / `DELETE` | `/projects/:projectId/variables/:name` | `{ value }` | `204` / `204` |
@@ -244,7 +270,7 @@ Unique: `User.email`; `(Project.userId, name)`; `(Module.projectId, name)`; `(Te
 | `handlers.ts` | `createHandlers(deps)`: every implemented handler, keyed `"<method> <path>"` like `ROUTES` |
 | `http/` | `errors.ts` (the `ApiError` type and handler of 1.7), `auth.ts` (the token middleware: Bearer, `?token=`, or both, per the route's `auth`), `prisma-errors.ts` (unique violations become `409`) |
 | `auth/` | `password.ts` (bcrypt), `token.ts` (sign and verify with `jose`), `routes.ts` |
-| `workspace/` | `routes.ts`: routes for projects, modules, test files, variables, and the tree; `owned.ts`: lookups scoped to the user (`404` otherwise) and the rows' API shapes |
+| `workspace/` | `routes.ts`: routes for projects, modules, test files, variables, and the tree; `owned.ts`: lookups scoped to the user (`404` otherwise) and the rows' API shapes; `quick-start.ts`: the Quick Start project of 1.10 |
 | `runs/queue.ts` | `RunQueue`: FIFO with a concurrency limit, `enqueue(runId)`, and `idle()` for tests; a Run that throws is logged and the queue goes on |
 | `runs/execute-run.ts` | `executeRun()`: runs one queued Run with Core, writes Run Files, updates the row, and publishes its progress to a `RunProgress` (the `LiveHub`); `recoverInterruptedRuns()` of 1.4 step 6, called by `main.ts` before the queue starts |
 | `runs/browser.ts` | `browserLauncher(endpoint)`: the launch every Run uses, connecting to `BROWSER_ENDPOINT` when set |
@@ -291,16 +317,17 @@ Integration tests need PostgreSQL: CI runs a `postgres` service container, and l
 
 | Type | Coverage | Location |
 | ---- | -------- | -------- |
-| Unit | `env`: missing and invalid variables stop start-up; dev mode picks `network: "any"` only on a loopback `HOST` | `src/tests/unit/app/backend/env.test.ts` |
+| Unit | `env`: missing and invalid variables stop start-up; dev mode picks `network: "any"` only on a loopback `HOST`; `DEMO_APP_URL` required outside dev mode, also when empty, `http(s)` only, and the local Demo App in dev mode when missing | `src/tests/unit/app/backend/env.test.ts` |
+| Unit | Quick Start project: its name, Modules and files, names by the naming rules, Modules in learning order by name, the three-line header of every file, the fixture body after it unchanged, valid and invalid files, the invalid files' diagnostics two lines down, `BASE` from `DEMO_APP_URL` | `src/tests/unit/app/backend/workspace/quick-start.test.ts` |
 | Unit | `password`, `token`: hash and verify, wrong password, no expiry, tampered tokens and other secrets | `src/tests/unit/app/backend/auth/` |
 | Unit | `RunQueue`: FIFO order, the concurrency limit, a failing Run does not stop the queue | `src/tests/unit/app/backend/runs/queue.test.ts` |
 | Unit | `run-files`: paths outside the Run's folder rejected | `src/tests/unit/app/backend/runs/run-files.test.ts` |
 | Unit | `LiveHub`: snapshot for a late subscriber, step and status messages, close after the final status | `src/tests/unit/app/backend/runs/live.test.ts` |
 | Unit | Core: `screenshotEveryStep`, `network: "public"` address checks | `src/tests/unit/core/...` |
-| Unit | Deploy files: the Playwright image of the pinned `playwright`, Node of `.nvmrc`, `--dev` only in the development scripts, migrate before start, Caddy to `backend:4000`, one Postgres version in compose, `compose.dev.yaml`, and CI; the Demo App served on `DEMO_DOMAIN` like `serveDemoApp()`; the browser container's `run-server` version, a firewall rule for every range of `NON_PUBLIC_RANGES`, root and capabilities dropped, memory, CPU, and process limits, `NET_ADMIN` and its own network | `src/tests/unit/app/backend/deploy.test.ts` |
+| Unit | Deploy files: the Playwright image of the pinned `playwright`, Node of `.nvmrc`, `--dev` only in the development scripts, migrate before start, Caddy to `backend:4000`, one Postgres version in compose, `compose.dev.yaml`, and CI; the Demo App served on `DEMO_DOMAIN` like `serveDemoApp()`; `DEMO_APP_URL` from `DEMO_DOMAIN` in compose and production's public Demo App by default in the preview, the fixtures kept in the image, the browser container's `run-server` version, a firewall rule for every range of `NON_PUBLIC_RANGES`, root and capabilities dropped, memory, CPU, and process limits, `NET_ADMIN` and its own network | `src/tests/unit/app/backend/deploy.test.ts` |
 | Integration | Database: unique names per parent, cascade deletes, Runs kept with `null` ids | `src/tests/integration/app/backend/db.test.ts` |
-| Integration | Auth: register, duplicate email, login, wrong password, `401` without or with a bad token | `src/tests/integration/app/backend/auth.test.ts` |
-| Integration | Workspace: CRUD of every level, unique names, moving a Test File, cascade deletes, `404` for another user's data, saving a source with diagnostics, saving answers the source, conflict messages per level, variables return names only | `src/tests/integration/app/backend/workspace.test.ts` |
+| Integration | Auth: register, the Quick Start project on register, nothing created for a duplicate email, login, wrong password, `401` without or with a bad token | `src/tests/integration/app/backend/auth.test.ts` |
+| Integration | Workspace: CRUD of every level, unique names, moving a Test File, cascade deletes, `404` for another user's data, saving a source with diagnostics, saving answers the source, conflict messages per level, variables return names only, adding the Quick Start project and its `409` | `src/tests/integration/app/backend/workspace.test.ts` |
 | Integration | Runs: `422` for an invalid file, `202` and `queued`, a second Run stays `queued` while one runs, the final row and Report, Run errors, files served with Bearer or `?token=` and traversal rejected, a Run on a `run-server` at `BROWSER_ENDPOINT`, a Run capped at the longest run time, `GET /runs` filters, order, and cursor paging, restart recovery | `src/tests/integration/app/backend/runs.test.ts` |
 | Integration | Live Progress over a real WebSocket: snapshot with every step `pending`, `running` and finished steps with screenshots, final status, a finished Run's snapshot, `4401` and `4404` | `src/tests/integration/app/backend/live.test.ts` |
 | Integration | Core with `network: "public"`: a page on `127.0.0.1` is blocked | `src/tests/integration/core/browser/` |

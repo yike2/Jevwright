@@ -1,10 +1,19 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
-import { addTestFile, createWorkspace, DEMO_URL, fixture, runFromEditor, setUpDemoProject, signUp } from "./support.js";
+import {
+  addTestFile,
+  createWorkspace,
+  DEMO_URL,
+  fixture,
+  runFromEditor,
+  setUpDemoProject,
+  signUp,
+  WORKSPACE,
+} from "./support.js";
 
 async function openVariables(page: Page): Promise<Locator> {
   const { api } = await signUp(page);
   await createWorkspace(api);
-  await page.goto("/");
+  await page.goto(WORKSPACE);
   await page.getByRole("button", { name: "Variables for Demo Shop", exact: true }).click();
   return page.getByRole("dialog", { name: "Variables", exact: true });
 }

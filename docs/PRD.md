@@ -98,7 +98,7 @@ However, existing AI testing tools (such as Midscene) rely on heavy general-purp
 
 #### 4.2.2 Web UI Flow
 
-1. Open the Web platform and log in with email and password.
+1. Open the Web platform's product page and log in or register with email and password; a new account starts with a Quick Start project of example test files.
 2. Select or create a Project and Module in the left sidebar, then create, edit, or upload a test file.
 3. Validate and save the test file in the in-browser editor.
 4. Click the **Run** button; the backend queues and executes the test on the server worker.

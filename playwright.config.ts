@@ -20,6 +20,8 @@ export default defineConfig({
   webServer: [
     {
       command: "pnpm backend",
+      // The Quick Start project's BASE (backend.md 1.10) is the local Demo App below.
+      env: { DEMO_APP_URL: "http://127.0.0.1:8080" },
       url: "http://127.0.0.1:4000/api/v1/health",
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,

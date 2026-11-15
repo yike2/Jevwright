@@ -1,6 +1,6 @@
 import { fileURLToPath } from "node:url";
 import { expect, test, type Locator, type Page } from "@playwright/test";
-import { addTestFile, alertsOf, createWorkspace, fixture, signUp } from "./support.js";
+import { addTestFile, alertsOf, createWorkspace, fixture, signUp, WORKSPACE } from "./support.js";
 
 const MAX_SOURCE_CHARS = 262_144;
 
@@ -28,7 +28,7 @@ async function openNewFile(page: Page, source = fixture("pass/sign-in.yaml")): P
 test("TC-ED-01 shows the starter source and tracks unsaved changes", async ({ page }) => {
   const { api } = await signUp(page);
   await createWorkspace(api);
-  await page.goto("/");
+  await page.goto(WORKSPACE);
   await page.getByRole("button", { name: "New test file in Shopping", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "New test file", exact: true });
   await dialog.getByLabel("Name").fill("editor");

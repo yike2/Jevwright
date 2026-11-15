@@ -38,6 +38,8 @@ services:
       JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:?set OPENROUTER_API_KEY in .env}
       CORS_ORIGIN: ${CORS_ORIGIN:?set CORS_ORIGIN in .env}
+      # The Quick Start project's BASE: the public Demo App that Caddy serves below (backend.md 1.10).
+      DEMO_APP_URL: https://${DEMO_DOMAIN}
       RUN_CONCURRENCY: ${RUN_CONCURRENCY:-1}
       RUNS_DIR: /data/runs
       PORT: 4000
