@@ -309,7 +309,7 @@ Out of scope: several open files (tabs), an unsaved-changes guard, autocompletio
 
 ### 1.8 Project Variables
 
-A Project row's "Variables for <project>" link opens `/projects/[projectId]/variables`, a page in the editor area. It lists the Project's Variables from `GET /projects/:id/variables` by name, each value shown as `****` (the same mask whatever its length) with a show/hide toggle; the API answers the values (`backend.md` 1.3). Only Projects have Variables: every Test File in the Project, in any folder at any level, runs with them, and folders have no Variables page. The CLI reads a `.env` per directory instead (`cli.md` 1.2); the web keeps one set per Project on purpose.
+A Project row's "Variables for <project>" link opens `/projects/[projectId]/variables`, a page in the editor area. It lists the Project's Variables from `GET /projects/:id/variables` by name, each value shown as `****` (the same mask whatever its length) with a show/hide toggle; the API answers the values (`backend.md` 1.3). Only Projects have Variables: every Test File in the Project, in any folder at any level, runs with them, and folders have no Variables page.
 
 | Action | Behavior                                                                                                                                                                                                                                                                                 |
 | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
