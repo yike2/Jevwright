@@ -28,7 +28,7 @@
   "pnpm": {
     "overrides": {
       "next>postcss": "8.5.32",
-      "vitepress>vite": "6.4.4"
+      "vitepress>vite": "6.4.5"
     }
   },
   "keywords": [],
