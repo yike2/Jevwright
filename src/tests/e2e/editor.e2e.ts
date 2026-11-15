@@ -109,7 +109,7 @@ test("TC-ED-03 uploads a file into a new test file from a folder's + menu", asyn
   await expect.poll(() => sourceOf(page)).toBe(fixture("pass/checkout.yaml"));
 });
 
-test("TC-ED-18 uploads several files at once and lists the ones it skips", async ({ page }) => {
+test("TC-ED-21 uploads several files at once and lists the ones it skips", async ({ page }) => {
   const { api } = await signUp(page);
   await createWorkspace(api);
   await page.goto(WORKSPACE);
