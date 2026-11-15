@@ -134,11 +134,11 @@ The test files are in `src/tests/e2e/fixtures/`, grouped by expected outcome. E2
 
 Cases refer to these instead of repeating them.
 
-- **S1 Sign up**: open `/login`, click **Register** (the mode button), enter a new email and the password, click **Register** in the form. You are on `/files` and the sidebar shows the email. Delete the Quick Start project (2.3).
+- **S1 Sign up**: open `/login`, click **Register** (the mode button), enter a new email and the password, click **Register** in the form. You are on `/files` and the sidebar's account area shows the email alone, with no "Signed in as" prefix. Delete the Quick Start project (2.3).
 - **S2 Create the workspace**: in the sidebar, click **New project**, type `Demo Shop` into the new row and press Enter; on `Demo Shop` click **New module in Demo Shop**, type `Shopping`, Enter.
 - **S3 Set the Variables**: click **Variables for Demo Shop**; on the Variables page save `BASE` and `SWAG_PASSWORD` with the values of 2.3.
 - **S4 Add a Test File**: on `Shopping` click **Upload file to Shopping** and choose the fixture; a Test File named after it is created and opens. For another name, click **New test file in Shopping**, type the name, Enter, and paste the fixture, then **Save**.
-- **S5 Run**: in the editor click **Run**; the Run console follows it. Click **Open run details**, then **Open full page**, and wait until the status is final (`Passed` or `Failed`).
+- **S5 Run**: in the editor click **Run**; the Output console follows it. Click **Open run details**, then **Open full page**, and wait until the status is final (`Passed` or `Failed`).
 
 ## 4. Test Cases
 
@@ -511,7 +511,7 @@ Covers US-4.3.3. Pre: TC-ED-01.
 1. Replace the source with `pass/sign-in.yaml`, click **Save**.
 2. Reload the page.
 
-Expected: after step 1 the file state is "Saved", the editor still shows the saved source, and the Problems console shows "No problems" ("Valid. Ready to run." is not shown); after step 2 the editor shows the saved source.
+Expected: after step 1 the file state is "Saved", the editor still shows the saved source, and the Debug console shows "No problems" ("Valid. Ready to run." is not shown); after step 2 the editor shows the saved source.
 
 #### TC-ED-03 Upload a file — P1, E2E
 
@@ -529,7 +529,7 @@ Covers US-4.3.1. Pre: S1, S2, a new Test File.
 1. Paste `invalid/multiple-errors.yaml` and wait a moment.
 2. Click **Save**.
 
-Expected: without any button, the Problems console shows "7 problems" and one item per row of the table in 2.4, as `Line <line>: <message>` with its code, in line order; each of the 7 lines has a wavy underline and a marker in the gutter, and hovering it shows the message; no browser is started. Save still saves the file and shows the same diagnostics.
+Expected: without any button, the Debug console shows "7 problems" and one item per row of the table in 2.4, as `Line <line>: <message>` with its code, in line order; each of the 7 lines has a wavy underline and a marker in the gutter, and hovering it shows the message; no browser is started. Save still saves the file and shows the same diagnostics.
 
 #### TC-ED-05 A YAML syntax error — P1, E2E
 
@@ -580,13 +580,13 @@ Covers US-4.3.3, US-4.3.4. Pre: S1, S2, a Test File open.
 1. Change the source, press `Ctrl+S` (`Cmd+S` on macOS).
 2. Press `Ctrl+Enter` (`Cmd+Enter`).
 
-Expected: step 1 saves (the state leaves "Unsaved"); step 2 starts a Run, listed in the Run console's history, and inserts no line into the source.
+Expected: step 1 saves (the state leaves "Unsaved"); step 2 starts a Run, listed in the Output console's history, and inserts no line into the source.
 
 #### TC-ED-11 Go to a problem — P1, E2E
 
 Covers US-4.3.1. Pre: TC-ED-04.
 
-1. Click `Line 7: Unknown action "aiAct"` in the Problems console.
+1. Click `Line 7: Unknown action "aiAct"` in the Debug console.
 
 Expected: the editor has the focus with the cursor at the start of line 7's text; the status bar shows "Ln 7, Col 3".
 
@@ -596,13 +596,13 @@ Covers US-4.3.3. Pre: S1, S2, a Test File open, a 1366×768 window (also check 1
 
 1. Look at the page.
 
-Expected: the sidebar, the editor and the console column sit edge to edge, separated only by 1px lines, with no centered column or margin; the editor's width is the window's minus the sidebar's and the console column's (within 3px), about 60 / 40 with the consoles; Problems is above Run and both are as high; the page itself does not scroll.
+Expected: the sidebar, the editor and the console column sit edge to edge, separated only by 1px lines, with no centered column or margin; the editor's width is the window's minus the sidebar's and the console column's (within 3px), about 60 / 40 with the consoles; the Debug console is above the Output console and both are as high, with no handle between them; the page itself does not scroll.
 
 #### TC-ED-13 Collapsed consoles stay collapsed — P1, E2E
 
 Covers US-4.3.1. Pre: S1, S2, a valid Test File open.
 
-1. Click **Problems console** to collapse it; reload the page.
+1. Click **Debug console** to collapse it; reload the page.
 2. Type valid YAML.
 3. Type an error.
 
@@ -617,13 +617,13 @@ Covers US-4.3.3. Pre: S1, S2, a Test File open.
 
 Expected: step 1 hides the console column and the editor takes the full width; step 2 shows it again.
 
-#### TC-ED-15 Run opens the Run console — P1, E2E
+#### TC-ED-15 Run opens the Output console — P1, E2E
 
-Covers US-4.3.4. Pre: S1, S2, a Test File open, the Run console collapsed.
+Covers US-4.3.4. Pre: S1, S2, a Test File open, the Output console collapsed.
 
 1. Click **Run**.
 
-Expected: the Run console opens and shows the new Run with **Open run details**.
+Expected: the Output console opens and shows the new Run with **Open run details**.
 
 #### TC-ED-16 The editor on a phone — P2, E2E
 
@@ -633,6 +633,16 @@ Covers US-4.3.3. Pre: S1, S2, a Test File open, a 390px wide window.
 
 Expected: the consoles are under the editor; nothing scrolls sideways.
 
+#### TC-ED-18 Each console opens and collapses on its own — P1, E2E
+
+Covers US-4.3.3. Pre: S1, S2, a Test File open, both consoles open.
+
+1. Collapse Debug; collapse Output; open Debug; open Output; collapse Output.
+2. Hide the column with **Toggle consoles**, then show it again.
+3. Collapse Debug, so both are collapsed; click **Run**; then paste `invalid/yaml-syntax.yaml`.
+
+Expected: every click changes only its own console, so every combination occurs: both open share the column evenly, a collapsed one keeps only its header while the open one takes the rest, and both collapsed show two headers. Step 2 brings the column back with Debug open and Output collapsed, as before. In step 3 Run opens Output and leaves Debug collapsed, and the new problem opens Debug and leaves Output open.
+
 #### TC-ED-17 Saving refreshes the problems — P1, E2E
 
 Covers US-4.3.1. Pre: S1, S2, a Test File open; the check while typing unavailable (E2E: `/test-files/validate` blocked).
@@ -640,7 +650,7 @@ Covers US-4.3.1. Pre: S1, S2, a Test File open; the check while typing unavailab
 1. Paste `invalid/yaml-syntax.yaml`; click **Save**.
 2. Paste `invalid/timeout-bounds.yaml`; press `Ctrl+S`.
 
-Expected: each save lists the diagnostics it answers in the Problems console: step 1 `Line 7: …`, step 2 the two `"ms"` lines.
+Expected: each save lists the diagnostics it answers in the Debug console: step 1 `Line 7: …`, step 2 the two `"ms"` lines.
 
 ### 4.4 Project Variables (`VAR`)
 
@@ -707,11 +717,11 @@ Expected: `Passed`, "3/3 passed": the value is typed into the prompt and read ba
 Covers US-4.3.4. Pre: S1–S3.
 
 1. S4 with `pass/sign-in.yaml`.
-2. Click **Run** and watch the Run console without reloading.
+2. Click **Run** and watch the Output console without reloading.
 3. Click **Open run details**.
 
 Expected:
-- Step 2 shows no banner: the Run console gains the Run in its history and follows it, without a navigation, from `Queued` or `Running` to `Passed`; its "Progress" list has 6 items that move from Pending to Running to Passed, in order; at the end it shows "6/6 passed" and a duration, the file state is "Passed", and the sidebar dot is green with the title "Passed".
+- Step 2 shows no banner: the Output console gains the Run in its history and follows it, without a navigation, from `Queued` or `Running` to `Passed`; its "Progress" list has 6 items that move from Pending to Running to Passed, in order; at the end it shows "6/6 passed" and a duration, the file state is "Passed", and the sidebar dot is green with the title "Passed".
 - Step 3 opens the sheet named `sign-in.yaml` with "Status: Passed" and 6 steps; every element step shows `selector`.
 
 #### TC-RUN-02 Run a longer flow — P1, E2E
@@ -767,7 +777,7 @@ Expected: the second Run shows `Queued` while `slow.yaml` runs, then `Running`, 
 
 Covers US-4.3.4. Pre: S1–S3.
 
-1. S4 with `pass/slow.yaml`, click **Run**, wait 3 s, then open the Run's page from the Run console's history with a middle click or its URL.
+1. S4 with `pass/slow.yaml`, click **Run**, wait 3 s, then open the Run's page from the Output console's history with a middle click or its URL.
 
 Expected: steps already done show as Passed at once (the snapshot); the rest follow live; the Run ends `Passed`.
 
@@ -791,9 +801,9 @@ Expected: `Failed` after about 10 s; the header shows `Timed out: The run did no
 
 Covers US-4.3.1. Pre: S1–S3.
 
-1. S4 with `invalid/multiple-errors.yaml`; collapse the Problems console; click **Run**.
+1. S4 with `invalid/multiple-errors.yaml`; collapse the Debug console; click **Run**.
 
-Expected: no Run is queued: the Run console shows the refusal in an alert, the Problems console opens with the 7 diagnostics, and the history still shows "No runs yet".
+Expected: no Run is queued: the Output console shows the refusal in an alert, the Debug console opens with the 7 diagnostics, and the history still shows "No runs yet".
 
 #### TC-RUN-12 Run with unsaved changes — P1, E2E
 
@@ -826,7 +836,7 @@ Covers US-4.3.4. Pre: S1–S3, S4 with `pass/sign-in.yaml`.
 
 1. Double-click **Run**.
 
-Expected: one Run in the Run console; after a reload the history shows exactly one Run, since **Run** is disabled while its request is in flight.
+Expected: one Run in the Output console; after a reload the history shows exactly one Run, since **Run** is disabled while its request is in flight.
 
 #### TC-RUN-16 The file is deleted while its Run waits — P1, E2E
 
@@ -873,7 +883,7 @@ Covers US-4.3.5. Pre: TC-RUN-01.
 Expected:
 - Each step shows "Step n", its action, "line n", "Passed", a duration, and a screenshot with alt "Step n screenshot"; element steps also show `selector`.
 - `report.json` has `status: "passed"`, `summary` `{ total: 6, passed: 6, failed: 0, pending: 0 }`, and one entry per step; `trace.zip` opens in `pnpm exec playwright show-trace`.
-- Step 3 returns to the editor, where the Run console's history shows the Run as "Passed" with its trigger time and duration.
+- Step 3 returns to the editor, where the Output console's history shows the Run as "Passed" with its trigger time and duration.
 
 #### TC-RPT-02 Report of a failed Run — P1, E2E
 
@@ -889,7 +899,7 @@ Expected: the screenshot shows the checkout overview with `Total: $32.39`; click
 Covers US-4.3.5. Pre: S1–S3, S4 with `pass/sign-in.yaml`.
 
 1. Run it three times; between Runs, replace the source with `fail/wrong-total.yaml` once and save.
-2. Click each Run in the Run console's history, and close the sheet with Escape.
+2. Click each Run in the Output console's history, and close the sheet with Escape.
 
 Expected: the history shows three Runs, newest first, each with status, trigger time, and duration; each opens its Run in the sheet, whose "Source when it ran" section shows the source as it was when it ran.
 
@@ -1116,7 +1126,7 @@ Expected: every status has text or a title, not only a color; step updates are a
 | ----------- | ----- |
 | US-4.3.1 Validation | ED-04 – ED-06, ED-08, ED-09, ED-11, ED-13, ED-17, RUN-11, CLI-01 |
 | US-4.3.2 Locating | RUN-05, RUN-06, JEV-01 – JEV-05 |
-| US-4.3.3 Organization and authoring | WS-01 – WS-11, ED-01 – ED-03, ED-07, ED-10, ED-12, ED-14, ED-16, VAR-01, VAR-02, VAR-04, VAR-05 |
+| US-4.3.3 Organization and authoring | WS-01 – WS-11, ED-01 – ED-03, ED-07, ED-10, ED-12, ED-14, ED-16, ED-18, VAR-01, VAR-02, VAR-04, VAR-05 |
 | US-4.3.4 Live execution | RUN-01 – RUN-19, ED-10, ED-15, VAR-03, VAR-06 |
 | US-4.3.5 History and reports | RPT-01 – RPT-07, RUN-16 |
 | US-4.3.6 Local CLI | CLI-01, CLI-02 |

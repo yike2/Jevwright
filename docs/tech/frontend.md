@@ -155,7 +155,7 @@ The workspace is every authenticated page. A shared layout guards auth and fills
 | Long names      | A name cut off with an ellipsis shows in full in a tooltip on hover and on keyboard focus (shadcn `tooltip`); the row's accessible name is always the full name |
 | Status icon     | From `statusOf(latestRun)`, with the icon and role of design-system.md 2.3: `passed` check, `failed` cross, `active` spinner, `none` dashed circle |
 | Selection       | The Test File in the current route is highlighted                                                                            |
-| Account         | Initials, email from `me`, the theme switch (design-system.md 3), Log out (clears the token, goes to `/login`)               |
+| Account         | Initials and the email from `me`, which is the account's name, with no "Signed in as" prefix on screen (the region's label says it); the theme switch (design-system.md 3), Log out (clears the token, goes to `/login`) |
 | Narrow screens  | Below 768px the sidebar is hidden behind a ☰ button and takes the screen when open                                           |
 
 #### Naming in place
@@ -209,7 +209,7 @@ E2E tests locate elements by role and accessible name, so these names are part o
 | Test File             | link named by the file name; the current one has `aria-current="page"`                                                                                                                         |
 | Status icon           | inside the Test File link; `data-status` of `none`, `active`, `passed`, or `failed`, with a title: "Never run", "Running", "Passed", "Failed"                                                  |
 | Full name             | the tooltip (`data-slot="tooltip-content"`) with the full name                                                                                                                                 |
-| Account               | the text "Signed in as <email>"; `group` "Theme" with buttons "Light", "Dark", "System"; button "Log out"                                                                                     |
+| Account               | `region` named "Signed in as <email>" showing the email alone, cut off with an ellipsis and in full in a tooltip on hover and focus; `group` "Theme" with buttons "Light", "Dark", "System"; button "Log out"                                                                                     |
 
 #### Tests
 - Unit: the helpers above.
@@ -217,7 +217,7 @@ E2E tests locate elements by role and accessible name, so these names are part o
 
 ### 1.7 Test file editor
 
-`/files/[testFileId]` loads the Test File with `GET /test-files/:id` and edits it in a code editor laid out like VS Code: the editor on the left, a console column on the right with **Problems** on top and **Run** below it, and a status bar along the bottom. The page fills the space next to the sidebar and never scrolls; the editor and each console scroll on their own. The page keeps two strings: `saved` (the last source from the API) and `draft` (the editor). The file is dirty when `draft !== saved`.
+`/files/[testFileId]` loads the Test File with `GET /test-files/:id` and edits it in a code editor laid out like VS Code: the editor on the left, a console column on the right with the **Debug** console (the problems) on top and the **Output** console (the Run) below it, and a status bar along the bottom. The page fills the space next to the sidebar and never scrolls; the editor and each console scroll on their own. The page keeps two strings: `saved` (the last source from the API) and `draft` (the editor). The file is dirty when `draft !== saved`.
 
 | State       | Render                                                                              |
 | ----------- | ----------------------------------------------------------------------------------- |
@@ -230,9 +230,9 @@ E2E tests locate elements by role and accessible name, so these names are part o
 
 | Part | Behavior |
 | ---- | -------- |
-| Splits | Two draggable splits (shadcn `resizable`, react-resizable-panels): editor \| consoles, 60% / 40% by default, and Problems / Run, 50% / 50%. Each is kept per browser in `localStorage` (`jevwright:editor`, `jevwright:consoles`; `jevwright:editor-narrow` below 768px). The handles are `separator`s that also move with the arrow keys |
-| Consoles | Each console's header ("Problems console", "Run console") collapses it to its header and reopens it. The console column collapses completely (the editor takes the full width) with the toggle in the header or the one in the status bar; a collapsed column is `inert` |
-| Opening by itself | A collapsed console opens when it has something to report: Problems when new diagnostics arrive (`hasNewDiagnostics`), also from a refused Run; Run when the user clicks **Run** (and it stays open while the Run is live and after it ends). Nothing else reopens it, so a collapsed Problems console stays collapsed while the user types valid YAML |
+| Split | One draggable split (shadcn `resizable`, react-resizable-panels): editor \| consoles, 60% / 40% by default, kept per browser in `localStorage` (`jevwright:editor`; `jevwright:editor-narrow` below 768px). Its handle is a `separator` that also moves with the arrow keys. The two consoles have no handle between them: with both open they share the column evenly; a collapsed one keeps only its header and the open one takes the rest; with both collapsed the column shows the two headers |
+| Consoles | Each console's header ("Debug console", "Output console") collapses it to its header and opens it, on its own: any combination works, both open, either collapsed, or both collapsed (`toggleConsole`). Which are open is kept per browser under `jevwright:consoles-open` (`parseConsolesOpen`). The console column collapses completely (the editor takes the full width) with the toggle in the header or the one in the status bar, independently of the two consoles, which keep their state; a collapsed column is `inert` |
+| Opening by itself | A collapsed console opens when it has something to report, showing the column too: Debug when new diagnostics arrive (`hasNewDiagnostics`), also from a refused Run; Output when the user clicks **Run** (and it stays open while the Run is live and after it ends). Opening one never closes the other (`openConsole`). Nothing else opens them, so a collapsed Debug console stays collapsed while the user types valid YAML |
 | Narrow screens | Below 768px the consoles stack under the editor in a vertical split |
 | Edges | The editor, the console column and the sidebar sit edge to edge, separated only by their 1px handles, with the code a few px from the gutter |
 
@@ -240,13 +240,13 @@ E2E tests locate elements by role and accessible name, so these names are part o
 
 `components/workspace/code-editor.tsx` wraps CodeMirror 6 without a React wrapper package: YAML highlighting (`@codemirror/lang-yaml` with a `HighlightStyle` on the `--syntax-*` tokens, design-system.md 2.1), line numbers, the active line, history, bracket matching, and Tab to indent (Escape then Tab moves the focus on). The theme is `EditorView.theme` on the design tokens, reconfigured with `dark` when next-themes' `resolvedTheme` changes. Its content is a `textbox` labelled "Test file YAML".
 
-There is no Validate button and no Upload button on the page: the file is checked automatically, while the user types and on every save. While the user types, the page waits 400 ms after the last change, then sends `POST /test-files/validate { source: draft }`. The newest answer for the source in the editor wins; the diagnostics are shown on their line with `@codemirror/lint` (a wavy underline from the line's first non-blank character to its end, a marker in the gutter, the message on hover; `diagnosticRanges`), and listed in the Problems console. A failed check shows `errorText(error)` in the Problems console's `role="alert"`.
+There is no Validate button and no Upload button on the page: the file is checked automatically, while the user types and on every save. While the user types, the page waits 400 ms after the last change, then sends `POST /test-files/validate { source: draft }`. The newest answer for the source in the editor wins; the diagnostics are shown on their line with `@codemirror/lint` (a wavy underline from the line's first non-blank character to its end, a marker in the gutter, the message on hover; `diagnosticRanges`), and listed in the Debug console. A failed check shows `errorText(error)` in the Debug console's `role="alert"`.
 
 | Action      | Behavior |
 | ----------- | -------- |
 | Edit        | Updates `draft`; the file state becomes Unsaved while dirty |
 | Save, `Ctrl/Cmd+S` | Enabled only when dirty. `PATCH /test-files/:id { source: draft }`; on success `saved` and `draft` become the returned `testFile.source`, the returned diagnostics are shown, and `refreshTree()` is called. On failure the draft is kept and `errorText(error)` is shown in a `role="alert"` under the header |
-| Run, `Ctrl/Cmd+Enter` | Opens the Run console, saves first when dirty (stops if the save fails), then `POST /test-files/:id/runs`. `202`: the Run console follows the new Run (1.9), its history reloads, and `refreshTree()` is called. `422`: `ApiError.details` (Diagnostic[]) become the Problems, the Problems console opens, and the Run console shows `errorText(error)` in a `role="alert"`. Other errors: the Run console's `role="alert"` |
+| Run, `Ctrl/Cmd+Enter` | Opens the Output console, saves first when dirty (stops if the save fails), then `POST /test-files/:id/runs`. `202`: the Output console follows the new Run (1.9), its history reloads, and `refreshTree()` is called. `422`: `ApiError.details` (Diagnostic[]) become the problems, the Debug console opens, and the Output console shows `errorText(error)` in a `role="alert"`. Other errors: the Output console's `role="alert"` |
 
 The shortcuts work wherever the focus is on the page; they are handled before the editor's own keys, so `Ctrl+Enter` does not insert a line. Buttons are disabled while their request is in flight. A failing `refreshTree()` shows its message in the page's `role="alert"`; the save or run itself still counts as done. Upload is in the sidebar (1.6).
 
@@ -254,9 +254,9 @@ The shortcuts work wherever the focus is on the page; they are handled before th
 
 The file state shows as a badge next to the file name and at the left of the status bar, in place of banners. It is `fileState({ dirty, runStatus, savedSinceRun })`, where `runStatus` is the followed Run's status or else the tree's `latestRun`, and `savedSinceRun` is set by a save and cleared by a Run. The status bar also shows `problemsSummary` (a button that opens Problems), the latest Run's status, the cursor as "Ln <line>, Col <column>", and the consoles toggle.
 
-#### Problems console
+#### Debug console
 
-A `region` named "Problems". The header shows `problemsSummary(diagnostics)`. Each diagnostic is a list item with a button "Line <line>: <message>" (`formatDiagnostic`) and its code after it; the button moves the cursor to the start of the line's text, scrolls it into view and focuses the editor. With none it shows "No problems".
+A `region` named "Debug": the file's problems. The header shows `problemsSummary(diagnostics)`. Each diagnostic is a list item with a button "Line <line>: <message>" (`formatDiagnostic`) and its code after it; the button moves the cursor to the start of the line's text, scrolls it into view and focuses the editor. With none it shows "No problems".
 
 | Helper                  | Rule                                                                               |
 | ----------------------- | ---------------------------------------------------------------------------------- |
@@ -266,6 +266,9 @@ A `region` named "Problems". The header shows `problemsSummary(diagnostics)`. Ea
 | `hasNewDiagnostics(previous, next)` | True when `next` has a diagnostic (by line, code and message) that `previous` does not |
 | `fileState({ dirty, runStatus, savedSinceRun })` | `unsaved` when dirty; else `running` for a `queued` or `running` Run; else `saved` when there is no Run or the file was saved since; else the Run's `passed` or `failed` |
 | `fileStateLabel(state)` | "Saved", "Unsaved", "Running", "Passed", "Failed" |
+| `toggleConsole(open, key)` | Pure. `open` is `{ debug, output }`; flips `key` and leaves the other console as it is |
+| `openConsole(open, key)` | Pure. Sets `key` open and leaves the other as it is; returns `open` itself when it already is |
+| `parseConsolesOpen(stored)` | The stored `{ debug, output }`; both open for nothing stored, text that is not JSON, or another shape |
 
 Out of scope: several open files (tabs), an unsaved-changes guard, autocompletion.
 
@@ -290,24 +293,24 @@ API errors show `errorText(error)` (1.3) in a `role="alert"` on the page. Deleti
 | File state       | `status` named "File state" with "Saved", "Unsaved", "Running", "Passed" or "Failed"                                                                                                     |
 | Header           | buttons "Save", "Run", "Toggle consoles" (`aria-expanded`)                                                                                                                              |
 | Source           | `textbox` labelled "Test file YAML"                                                                                                                                                     |
-| Splits           | `separator`s "Resize consoles", "Resize Problems and Run"                                                                                                                               |
-| Problems console | `region` named "Problems"; button "Problems console" (`aria-expanded`); one `listitem` per diagnostic with a button "Line <n>: <message>"; text "No problems"                         |
-| Run console      | `region` named "Run"; button "Run console" (`aria-expanded`); errors in a `role="alert"` (1.9)                                                                                         |
+| Split            | `separator` "Resize consoles", the only one on the page besides "Resize sidebar"                                                                                                      |
+| Debug console    | `region` named "Debug"; button "Debug console" (`aria-expanded`); one `listitem` per diagnostic with a button "Line <n>: <message>"; text "No problems"                         |
+| Output console   | `region` named "Output"; button "Output console" (`aria-expanded`); errors in a `role="alert"` (1.9)                                                                                         |
 | Status bar       | `region` named "Status bar" with the file state, the problems button, "Ln <n>, Col <n>" and a "Toggle consoles" button                                                                 |
 | Variables page   | `region` named by its heading "Variables" (level 1); `list` "Variables" with one `listitem` per Variable showing its name and `****` or its value; buttons "Show value of <NAME>" (`aria-pressed`) and "Delete <NAME>"; inputs labelled "Name" and "Value" (password); button "Save"; errors in a `role="alert"` |
 
 #### Tests
-- Unit: `problemsSummary`, `formatDiagnostic`, `diagnosticRanges`, `hasNewDiagnostics`, `fileState`, `fileStateLabel`, the validation helpers (5.6), and the API client functions (5.1).
-- E2E `editor.e2e.ts`: the starter source and the file state, with no Validate or Upload button; save and reload; upload from the sidebar; the diagnostics of the invalid fixtures listed as the user types and marked on their lines, with no Validate button; the size limit; `Ctrl+S` and `Ctrl+Enter`; a clicked problem moves the cursor; at 1366×768 the editor fills the space between the sidebar and the consoles within 3px, about 60 / 40, with Problems over Run split evenly, and the page does not scroll; a collapsed Problems console stays collapsed after a reload and while the YAML is valid, and opens for a new problem; the whole column hides and reopens from the header or the status bar; Run opens a collapsed Run console; on a phone the consoles are under the editor; Save and `Ctrl+S` show the diagnostics the save answers.
+- Unit: `problemsSummary`, `formatDiagnostic`, `diagnosticRanges`, `hasNewDiagnostics`, `fileState`, `fileStateLabel`, `toggleConsole` and `openConsole` for every combination of open consoles, `parseConsolesOpen`, the validation helpers (5.6), and the API client functions (5.1).
+- E2E `editor.e2e.ts`: the starter source and the file state, with no Validate or Upload button; save and reload; upload from the sidebar; the diagnostics of the invalid fixtures listed as the user types and marked on their lines, with no Validate button; the size limit; `Ctrl+S` and `Ctrl+Enter`; a clicked problem moves the cursor; at 1366×768 the editor fills the space between the sidebar and the consoles within 3px, about 60 / 40, with Debug over Output sharing the column evenly and no handle between them, and the page does not scroll; a collapsed Debug console stays collapsed after a reload and while the YAML is valid, and opens for a new problem; the whole column hides and reopens from the header or the status bar; Run opens a collapsed Output console; each console opens and collapses on its own in every combination, the column toggle keeps their state, and opening one by itself leaves the other as it is; on a phone the consoles are under the editor; Save and `Ctrl+S` show the diagnostics the save answers.
 - E2E `variables.e2e.ts`: a new user adds Variable `BASE`; it is listed with `****` and its value shows only with the toggle; replacing it and deleting it; an invalid name shows the alert without a request; the value limits.
 
 ### 1.9 Runs: live progress and history
 
-A Run's details (steps, screenshots, report, source when it ran) have one component, `RunReport`, shown in two places: the **Run details sheet**, which slides in from the right over most of the editor, and the Run's own page `/runs/[runId]`, which keeps working as a full page. Both load the Run and follow its Live Progress with the same hook, `useRun(runId, onFinal)` (`lib/use-run.ts`), and render steps with the same `StepList`, because the backend uses one `Step` shape for Live Progress and the Report. The Run console in the editor uses `useRun` too.
+A Run's details (steps, screenshots, report, source when it ran) have one component, `RunReport`, shown in two places: the **Run details sheet**, which slides in from the right over most of the editor, and the Run's own page `/runs/[runId]`, which keeps working as a full page. Both load the Run and follow its Live Progress with the same hook, `useRun(runId, onFinal)` (`lib/use-run.ts`), and render steps with the same `StepList`, because the backend uses one `Step` shape for Live Progress and the Report. The Output console in the editor uses `useRun` too.
 
-#### Run console (editor page)
+#### Output console (editor page)
 
-A `region` named "Run" in the editor's console column (1.7).
+A `region` named "Output" in the editor's console column (1.7).
 
 | Part | Behavior |
 | ---- | -------- |
@@ -353,7 +356,7 @@ Below the steps, a collapsed "Source when it ran" section shows the Run's `sourc
 
 | Element | Role and name |
 | ------- | ------------- |
-| Run console | `region` named "Run"; text "<passed>/<total> passed"; `list` "Progress" with one `listitem` per step; button "Open run details" |
+| Output console | `region` named "Output"; text "<passed>/<total> passed"; `list` "Progress" with one `listitem` per step; button "Open run details" |
 | Runs list | `region` named "Runs"; one `listitem` per Run containing a `link` to the Run; text "No runs yet" when empty |
 | Sheet | `dialog` named by the file name; link "Open full page"; button "Close" |
 | Run heading | `heading` named by the file name (page) |
@@ -365,7 +368,7 @@ Below the steps, a collapsed "Source when it ran" section shows the Run's `sourc
 
 #### Tests
 - Unit: the helpers above (5.4) and `getRun`, `listRuns`, `getBaseUrl` (5.1).
-- E2E `runs.e2e.ts`: Run in the editor is followed live in the Run console without a navigation, to "6/6 passed", with the history and the sidebar status updated; the sheet shows the steps; the Run page, opened through "Open full page", for every other case.
+- E2E `runs.e2e.ts`: Run in the editor is followed live in the Output console without a navigation, to "6/6 passed", with the history and the sidebar status updated; the sheet shows the steps; the Run page, opened through "Open full page", for every other case.
 - E2E `reports.e2e.ts`: the history lists every Run newest first and opens each in the sheet with its own source; the sheet covers most of the editor from the right, closes with Escape, the close button and a click on the uncovered part, keeps the editor's draft, and opens full page at the Run's URL.
 
 Out of scope: project or module dashboards, charts, filters, pagination, showing dialog records.
@@ -713,7 +716,7 @@ This fallback is implemented in the client itself when the backend response is n
 | `lib/editor.ts`                               | Editor helpers (1.7)                                        |
 | `lib/runs.ts`                                 | Run helpers (1.9)                                           |
 | `lib/use-run.ts`                              | `useRun()`: a Run loaded and followed live (1.9)            |
-| `lib/panel-layout.ts`                         | `usePanelLayout()`: split sizes kept per browser (1.6, 1.7) |
+| `lib/panel-layout.ts`                         | `usePanelLayout()`, `useConsolesOpen()`: split sizes and open consoles kept per browser (1.6, 1.7) |
 | `lib/use-media-query.ts`                      | `useMediaQuery()`: the 768px breakpoint (1.6, 1.7)          |
 | `lib/workspace-context.tsx`                   | `useWorkspace()`: `me`, `tree`, `refreshTree`               |
 | `lib/routes.ts`                               | `WORKSPACE_HOME`, the overview's path `/files`              |
@@ -735,7 +738,7 @@ This fallback is implemented in the client itself when the backend response is n
 | `components/workspace/confirm-delete-dialog.tsx` | Delete confirmation dialog (1.11)                        |
 | `components/workspace/code-editor.tsx`        | The CodeMirror YAML editor (1.7)                            |
 | `components/workspace/console-panel.tsx`      | A collapsible console of the console column (1.7)           |
-| `components/workspace/run-list.tsx`           | Run history in the Run console (1.9)                        |
+| `components/workspace/run-list.tsx`           | Run history in the Output console (1.9)                        |
 | `components/workspace/run-report.tsx`         | A Run's details, shared by the sheet and the page (1.9)     |
 | `components/workspace/run-details-sheet.tsx`  | The Run details sheet (1.9)                                 |
 | `components/workspace/step-list.tsx`          | Shared step list for live progress and report (1.9)         |
@@ -854,7 +857,7 @@ src/app/frontend/
 | E2E  | Sidebar: create in place, duplicate names, name rules, width and full names (1.6)                                | `src/tests/e2e/sidebar.e2e.ts`                          |
 | E2E  | Editor: diagnostics as you type, save, upload, shortcuts, layout, consoles (1.7)                                 | `src/tests/e2e/editor.e2e.ts`                           |
 | E2E  | Variables page: add, show and hide, replace, invalid name, delete (1.8)                                          | `src/tests/e2e/variables.e2e.ts`                        |
-| E2E  | Runs: the Run console, the sheet and the Run page (1.9)                                                          | `src/tests/e2e/runs.e2e.ts`, `reports.e2e.ts`           |
+| E2E  | Runs: the Output console, the sheet and the Run page (1.9)                                                          | `src/tests/e2e/runs.e2e.ts`, `reports.e2e.ts`           |
 | E2E  | Files overview: empty state, grouped list, open a file (1.10)                                                    | `src/tests/e2e/overview.e2e.ts`                         |
 | E2E  | Rename in place, F2, duplicate rename, delete open file, delete Project (1.11)                                   | `src/tests/e2e/sidebar-actions.e2e.ts`                  |
 
@@ -1064,6 +1067,9 @@ These exact values are the source of truth for the API client tests and are inte
 4. `hasNewDiagnostics`: a diagnostic added → `true`; the same ones in another order → `false`; one removed → `false`; one moved to another line → `true`
 5. `fileState`: dirty → `unsaved`, also while a Run is running; `queued` or `running` → `running`; `passed`/`failed` with nothing saved since → that status; saved since the Run → `saved`; no Run → `saved`
 6. `fileStateLabel`: each state → its label
+7. `toggleConsole`: from each of the four combinations, toggling either console changes only that one; the input is not changed
+8. `openConsole`: opening either console from any combination never closes the other
+9. `parseConsolesOpen`: a stored `{"debug":false,"output":true}` is read; `null`, `{`, `{"problems":50,"run":50}` and a non-boolean value give both open
 
 ### 5.4 Exact run helper unit-test cases
 

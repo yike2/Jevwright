@@ -196,7 +196,7 @@ These rules follow the VS Code UX guidelines for the regions of an editor-like a
 | Sidebar | The Projects tree and the account | Whole pages, or a single command that could be a button |
 | Page header | The file or Run name, its status, and the page's actions; the primary action (Run) is the only `default` button | More than one primary action |
 | Editor area | The open file, or a page such as Variables | A dialog for something the user keeps open while working |
-| Panel (console) | Output of the open file: Problems, the Run and its history | Actions on other files |
+| Panel (console) | Output of the open file: the Debug console (its problems), the Output console (its Run and history) | Actions on other files |
 | Status bar | The open file's state, its problems count, the cursor, the consoles toggle | Messages that need an answer |
 | Sheet | Details the user looks at over the editor and closes again: a Run's details | Forms |
 | Inline, next to its source | Field problems, diagnostics on their line, a name problem under the tree input, a save or run error | Toasts for things the user is looking at |
@@ -207,8 +207,8 @@ These rules follow the VS Code UX guidelines for the regions of an editor-like a
 | Region | Default | Rule |
 | ------ | ------- | ---- |
 | Header | One compact row | File name, file state badge, Save, Run (the one `default` button), the consoles toggle |
-| Editor \| consoles | 60% / 40% | A horizontal split; the console column collapses to nothing, and each console to its 32px header |
-| Problems / Run | 50% / 50% | A vertical split in the console column |
+| Editor \| consoles | 60% / 40% | A horizontal split; the console column collapses to nothing |
+| Debug / Output | Even | The two consoles stacked in the console column, with no handle between them; each collapses to its 32px header on its own, and an open one takes the room a collapsed one leaves |
 | Status bar | 28px | Along the bottom, `background` with a top border, `text-xs` |
 | Narrow screens | Below 768px | The consoles stack under the editor in a vertical split |
 
@@ -226,7 +226,7 @@ Split sizes are kept per browser. The handles are 1px `border` lines with a wide
 | `Tabs` | Alternative views of one thing, such as the replayed Runs and the Web / CLI quick start on the landing page |
 | `Dialog` | The delete confirmation (frontend.md 1.11) and the screenshot viewer (1.9) |
 | `Sheet` | From the right, over most of the page, for a Run's details (frontend.md 1.9); closes with Escape, its close button, or a click on the uncovered part |
-| `Resizable` | Every split of the workspace: the sidebar width, editor \| consoles, Problems / Run; 1px handles |
+| `Resizable` | The sidebar width and editor \| consoles, the workspace's only splits; 1px handles |
 | `Tooltip` | A tree name cut off with an ellipsis, on hover and on keyboard focus; never the only place of a name |
 | Code editor | CodeMirror 6 with a theme from the tokens: `--code` surface, `--syntax-*` highlighting, `--accent` active line, `--destructive` wavy underline and gutter marker for a diagnostic, `--popover` for its hover message (frontend.md 1.7) |
 | `Input`, `Label` | Every field has a visible `Label`; a problem shows under the field (6) |
@@ -244,7 +244,7 @@ These rules apply to every message the frontend shows and every `message` the ba
 4. No blame, no jokes, no "Oops"; avoid "invalid", "illegal" and "fatal" in favor of the rule itself. No "please" or "sorry" in routine messages.
 5. Keep codes and internals secondary. A diagnostic code such as `E005` may follow the sentence; a stack trace, an HTTP status or zod's wording never replaces it.
 6. A button names its action in one or two words: "Run", "Add the Quick Start project", "Log in". Not "OK" or "Click here".
-7. Show the message next to its source, as visible text: under the field with `role="alert"`, `aria-invalid` and `aria-describedby`; diagnostics on their line in the editor and in the Problems console with their line.
+7. Show the message next to its source, as visible text: under the field with `role="alert"`, `aria-invalid` and `aria-describedby`; diagnostics on their line in the editor and in the Debug console with their line.
 8. Keep the user's input on an error; only a password may be cleared.
 9. `failed` is a status. In prose use "couldn't" or "cannot": "Cannot reach the server. Check your connection and try again."
 
