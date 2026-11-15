@@ -1,12 +1,12 @@
 # Frontend
 
-The Frontend is the browser app for Jevwright: an App Router Next.js client that authenticates with the backend, manages the user's workspace through the REST API, and lets the user edit, validate and run Test Files and follow their Runs.
+The Frontend is the browser app for Jevwright: an App Router Next.js client that authenticates with the backend, manages the user's workspace through the REST API, and lets the user edit Test Files in a code editor that checks them as they type, run them, and follow their Runs.
 
 ## 1. Functional Definition
 
 ### 1.1 Scope
 
-This module covers the frontend package: the Next.js scaffold, generated API types, the auth-aware fetch client, the landing page, a two-mode login/register page, the workspace layout and sidebar, the files overview, the test file editor, Project Variables, and the Run pages (live progress, history and reports). Tokens, themes, layouts, component rules and message wording are in [design-system.md](design-system.md).
+This module covers the frontend package: the Next.js scaffold, generated API types, the auth-aware fetch client, the landing page, a two-mode login/register page, the workspace layout and sidebar, the files overview, the test file editor with its consoles, the Variables page, and the Run details (live progress, history and reports) as a sheet and a page. Tokens, themes, layouts, component rules and message wording are in [design-system.md](design-system.md).
 
 | Area    | Scope                                                                                                          |
 | ------- | -------------------------------------------------------------------------------------------------------------- |
@@ -15,7 +15,8 @@ This module covers the frontend package: the Next.js scaffold, generated API typ
 | Styling | Tailwind v4 with `@tailwindcss/postcss`; no `tailwind.config.ts`; the tokens of [design-system.md](design-system.md) as shadcn variables; Light, Dark and System themes with `next-themes` |
 | API     | OpenAPI-generated types from `docs/api/openapi.json`; native fetch wrapper                                     |
 | Auth    | Bearer token from login/register responses; token stored in `localStorage`                                     |
-| Pages   | `/` landing page; `/login` and `/register` two-mode auth form; workspace layout with sidebar; `/files` files overview; `/files/[testFileId]` editor; `/runs/[runId]` Run page |
+| Pages   | `/` landing page; `/login` and `/register` two-mode auth form; workspace layout with sidebar; `/files` files overview; `/files/[testFileId]` editor; `/projects/[projectId]/variables` Variables page; `/runs/[runId]` Run page |
+| Editor  | CodeMirror 6 with `@codemirror/lang-yaml` and `@codemirror/lint` (1.7)                                          |
 | Tests   | Vitest for the API client, lib helpers, landing content and token contrast; Playwright E2E for the landing page, themes, auth, Quick Start, sidebar, editor, Variables, overview and the full flow |
 
 
@@ -132,32 +133,44 @@ The root layout remains a server component, while the workspace layout and pages
 
 ### 1.6 Workspace sidebar
 
-The workspace is every authenticated page. A shared layout guards auth, renders the sidebar on the left and the page on the right.
+The workspace is every authenticated page. A shared layout guards auth and fills the window like a code editor: the sidebar on the left and the page on the right, edge to edge, separated only by the 1px resize handle; the window itself never scrolls, and the sidebar and the page scroll on their own. Pages use the full width: no centered column and no outer margin around the editor (design-system.md 4.1).
 
 | Route                 | Page                                    |
 | --------------------- | --------------------------------------- |
 | `/files`              | Files overview (1.10)                   |
-| `/files/[testFileId]` | Test file editor (1.7) and its Runs list (1.9) |
-| `/runs/[runId]`       | Run: live progress and report (1.9)     |
+| `/files/[testFileId]` | Test file editor, its consoles and its Run history (1.7, 1.9) |
+| `/projects/[projectId]/variables` | Project Variables (1.8)     |
+| `/runs/[runId]`       | Run: live progress and report, full page (1.9) |
 
 | Element         | Behavior                                                                                                                     |
 | --------------- | ---------------------------------------------------------------------------------------------------------------------------- |
 | Logo            | Above the tree, outside the "Projects" navigation: a link to the landing page `/` named "Jevwright home"                     |
-| Header          | "Projects" with a "+" that opens the New Project dialog                                                                      |
+| Width           | A draggable split (shadcn `resizable`): 320px by default, 220px at least and 600px at most, kept per browser in `localStorage` under `jevwright:sidebar`. The handle is a `separator` named "Resize sidebar" that also moves with the arrow keys |
+| Header          | "Projects" with a "+" that adds a new Project row (below)                                                                     |
 | Tree            | Projects → Modules → Test Files from `GET /tree`, in API order. Projects and Modules toggle open/closed; all open by default |
-| Row "+"         | On a Project: New Module dialog. On a Module: New Test File dialog                                                           |
-| Row "Variables" | On a Project: opens the Variables dialog (1.8)                                                                              |
+| Row "+"         | On a Project: a new Module row. On a Module: a new Test File row                                                             |
+| Row "Variables" | On a Project: a link to its Variables page (1.8)                                                                             |
+| Row "Upload file" | On a Module: opens a file picker accepting `.yaml` and `.yml`; the file becomes a new Test File in that Module named `uploadedTestFileName(file.name)`, with the file's text as its source, and opens. A name that breaks the rules, or a taken one, shows `<file name>: <problem>` in a `role="alert"` under the Module row and adds nothing |
 | Row actions     | On every Project, Module and Test File: Rename and Delete (1.11)                                                             |
+| Long names      | A name cut off with an ellipsis shows in full in a tooltip on hover and on keyboard focus (shadcn `tooltip`); the row's accessible name is always the full name |
 | Status icon     | From `statusOf(latestRun)`, with the icon and role of design-system.md 2.3: `passed` check, `failed` cross, `active` spinner, `none` dashed circle |
 | Selection       | The Test File in the current route is highlighted                                                                            |
 | Account         | Initials, email from `me`, the theme switch (design-system.md 3), Log out (clears the token, goes to `/login`)               |
-| Narrow screens  | Sidebar hidden behind a ☰ button                                                                                             |
+| Narrow screens  | Below 768px the sidebar is hidden behind a ☰ button and takes the screen when open                                           |
 
-Names follow the backend rules (`backend.md` 1.3), and the dialogs check them as the user types: Project and Module names with `nameProblem`, Test File names with `testFileNameProblem` (1.3). A problem shows under the input once the user has typed or submitted, and a submit with a problem sends nothing.
+#### Naming in place
 
-A Test File's name is typed before a fixed `.yaml`, shown after the input like a file manager's extension; the Rename input shows the name without it (`testFileBaseName`). `toTestFileName` adds the suffix, and the new file is created with `starterSource(name)`. After creation the page navigates to the new file.
+New and renamed rows are named in the tree itself, like a file manager; there is no dialog (`components/workspace/inline-name-input.tsx`).
 
-Create dialogs submit `POST /projects`, `POST /projects/:id/modules`, or `POST /modules/:id/test-files`, then reload the tree. API errors (such as `409 conflict`) show inside the dialog via `errorText` (1.3), and the dialog stays open.
+| Step | Behavior |
+| ---- | -------- |
+| Open | "+" adds a row with an empty input under its parent (opening the parent). Rename, or F2 on a focused row, turns that row's name into an input in the same spot, focused, with the name selected. A Test File's input holds the name without `.yaml` (`testFileBaseName`), and the fixed `.yaml` stays shown after it, as Windows selects a name without its extension |
+| Type | The name is checked as the user types: Project and Module names with `nameProblem`, Test File names with `testFileNameProblem` (1.3). A problem shows under the input in a `role="alert"`, and the input gets `aria-invalid` and `aria-describedby` |
+| Save | Enter or a click away saves. A name with a problem sends nothing and keeps the input open. An unchanged name, or a new row left empty by a click away, closes the input without a request; Enter on an empty new row shows "Enter a name." |
+| Cancel | Escape closes the input and restores the name; a new row disappears |
+| Fail | A save that fails, such as `409 conflict` for a taken name, keeps the input open with `errorText(error)` (1.3) under it |
+
+Create submits `POST /projects`, `POST /projects/:id/modules`, or `POST /modules/:id/test-files` (`toTestFileName(name)`, created with `starterSource(name)`), then reloads the tree; a new Test File opens. Names follow the backend rules (`backend.md` 1.3).
 
 The tree is loaded once in the layout and exposed through a `refreshTree()` context, so later pages (editor save, finished run) can update the status dots.
 
@@ -166,6 +179,7 @@ The tree is loaded once in the layout and exposed through a `refreshTree()` cont
 | `statusOf(latestRun)`   | `null` → `none`; `queued`/`running` → `active`; `passed` → `passed`; `failed` → `failed`                                                                        |
 | `toTestFileName(input)` | Trims and adds `.yaml`; a trailing `.yaml` already typed is not doubled; empty input stays `""` |
 | `testFileBaseName(name)` | The name without a trailing `.yaml`, for the Rename input |
+| `uploadedTestFileName(fileName)` | The uploaded file's name with `.yaml` in place of a `.yaml` or `.yml` extension, any case: `checkout.yml` → `checkout.yaml` |
 | `starterSource(name)`   | A valid Test Case: `name` is the file name without `.yaml`, one `open` step with `url: "https://example.com"`                                                   |
 | `initials(email)`       | First two characters of the part before `@`, upper-cased                                                                                                        |
 
@@ -185,87 +199,124 @@ E2E tests locate elements by role and accessible name, so these names are part o
 | Element               | Role and name                                                                                                                                                                                  |
 | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Logo                  | link "Jevwright home" to `/`                                                                                                                                                                   |
-| Sidebar               | `navigation` named "Projects"                                                                                                                                                                  |
+| Sidebar               | `navigation` named "Projects"; `separator` "Resize sidebar"                                                                                                                                    |
 | Header "+"            | button "New project"                                                                                                                                                                           |
 | Project row "+"       | button "New module in <project name>"                                                                                                                                                          |
-| Project row Variables | button "Variables for <project name>"                                                                                                                                                          |
+| Project row Variables | link "Variables for <project name>"                                                                                                                                                            |
 | Module row "+"        | button "New test file in <module name>"                                                                                                                                                        |
-| Dialogs               | `dialog` titled "New project", "New module", or "New test file"; text input labelled "Name"; buttons "Create" and "Cancel"; an API error renders in a `role="alert"` element inside the dialog |
+| Module row Upload     | button "Upload file to <module name>"                                                                                                                                                          |
+| Name input            | `textbox` labelled "Name" in the row; its problem in a `role="alert"` under it                                                                                                                 |
 | Test File             | link named by the file name; the current one has `aria-current="page"`                                                                                                                         |
 | Status icon           | inside the Test File link; `data-status` of `none`, `active`, `passed`, or `failed`, with a title: "Never run", "Running", "Passed", "Failed"                                                  |
+| Full name             | the tooltip (`data-slot="tooltip-content"`) with the full name                                                                                                                                 |
 | Account               | the text "Signed in as <email>"; `group` "Theme" with buttons "Light", "Dark", "System"; button "Log out"                                                                                     |
 
 #### Tests
-- Unit: the four helpers above.
-- E2E `sidebar.e2e.ts`: a new user with an empty workspace creates a Project, a Module, and a Test File through the dialogs; each appears in the tree; the new file opens at `/files/<id>`, is marked current, and has status `none`; after a reload the tree is unchanged.
-- E2E: creating a second Project with the same name keeps the dialog open and shows an alert.
+- Unit: the helpers above.
+- E2E `sidebar.e2e.ts`: a new user with an empty workspace creates a Project, a Module, and a Test File in place, with no dialog; each appears in the tree; the new file opens at `/files/<id>`, is marked current, and has status `none`; after a reload the tree is unchanged; a taken name keeps the input open with an alert; name rules as the user types; the sidebar widens with its handle, keeps its width after a reload, and shows a cut-off name in full on hover and focus.
 
 ### 1.7 Test file editor
 
-`/files/[testFileId]` loads the Test File with `GET /test-files/:id` and edits its source in a plain textarea. The page keeps two strings: `saved` (the last source from the API) and `draft` (the textarea). The file is dirty when `draft !== saved`.
+`/files/[testFileId]` loads the Test File with `GET /test-files/:id` and edits it in a code editor laid out like VS Code: the editor on the left, a console column on the right with **Problems** on top and **Run** below it, and a status bar along the bottom. The page fills the space next to the sidebar and never scrolls; the editor and each console scroll on their own. The page keeps two strings: `saved` (the last source from the API) and `draft` (the editor). The file is dirty when `draft !== saved`.
 
 | State       | Render                                                                              |
 | ----------- | ----------------------------------------------------------------------------------- |
 | Pending     | `Loading…`                                                                          |
 | `404`       | "Test file not found"                                                               |
 | Other error | `errorText(error)` (1.3) in a `role="alert"`                                        |
-| Loaded      | File name heading, toolbar (Upload file, Validate, Save, Run), textarea, result bar, Runs list (1.9) |
+| Loaded      | Header (file name, file state, Save, Run, the consoles toggle), the editor and the console column, the status bar |
 
-| Action      | Behavior                                                                                                                                                                                                                                                                           |
-| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Edit        | Updates `draft`; shows "Unsaved changes" while dirty; clears the result bar                                                                                                                                                                                                        |
-| Validate    | `POST /test-files/validate { source: draft }`; shows the diagnostics in the result bar                                                                                                                                                                                             |
-| Save        | Enabled only when dirty. `PATCH /test-files/:id { source: draft }`; on success `saved` and `draft` become the returned `testFile.source`, so the editor keeps showing what was saved, the returned diagnostics are shown, and `refreshTree()` is called. On failure the draft is kept and `errorText(error)` is shown in a `role="alert"` |
-| Upload file | Opens a file picker accepting `.yaml` and `.yml`; the chosen file's text replaces `draft` (not saved until Save)                                                                                                                                                                   |
-| Run         | Saves first when dirty (stops if the save fails), then `POST /test-files/:id/runs`. `202`: shows "Run queued." in a `role="status"` with a "View run" link to `/runs/<id>` next to it (outside the status element), reloads the Runs list (1.9), and calls `refreshTree()`. `422`: shows `ApiError.details` (Diagnostic[]) in the result bar. Other errors: `role="alert"`                      |
+#### Layout
 
-Buttons are disabled while their request is in flight. A failing `refreshTree()` shows its message in the page's `role="alert"`; the save or run itself still counts as done.
+| Part | Behavior |
+| ---- | -------- |
+| Splits | Two draggable splits (shadcn `resizable`, react-resizable-panels): editor \| consoles, 60% / 40% by default, and Problems / Run, 50% / 50%. Each is kept per browser in `localStorage` (`jevwright:editor`, `jevwright:consoles`; `jevwright:editor-narrow` below 768px). The handles are `separator`s that also move with the arrow keys |
+| Consoles | Each console's header ("Problems console", "Run console") collapses it to its header and reopens it. The console column collapses completely (the editor takes the full width) with the toggle in the header or the one in the status bar; a collapsed column is `inert` |
+| Opening by itself | A collapsed console opens when it has something to report: Problems when new diagnostics arrive (`hasNewDiagnostics`), also from a refused Run; Run when the user clicks **Run** (and it stays open while the Run is live and after it ends). Nothing else reopens it, so a collapsed Problems console stays collapsed while the user types valid YAML |
+| Narrow screens | Below 768px the consoles stack under the editor in a vertical split |
+| Edges | The editor, the console column and the sidebar sit edge to edge, separated only by their 1px handles, with the code a few px from the gutter |
 
-The result bar is a `region` named "Validation". It shows `validationSummary(diagnostics)`, then one list item per diagnostic with `formatDiagnostic(d)`. Diagnostics have a line but no column.
+#### Editor
+
+`components/workspace/code-editor.tsx` wraps CodeMirror 6 without a React wrapper package: YAML highlighting (`@codemirror/lang-yaml` with a `HighlightStyle` on the `--syntax-*` tokens, design-system.md 2.1), line numbers, the active line, history, bracket matching, and Tab to indent (Escape then Tab moves the focus on). The theme is `EditorView.theme` on the design tokens, reconfigured with `dark` when next-themes' `resolvedTheme` changes. Its content is a `textbox` labelled "Test file YAML".
+
+While the user types, the page waits 400 ms after the last change, then sends `POST /test-files/validate { source: draft }`. The newest answer for the source in the editor wins; the diagnostics are shown on their line with `@codemirror/lint` (a wavy underline from the line's first non-blank character to its end, a marker in the gutter, the message on hover; `diagnosticRanges`), and listed in the Problems console. A failed check shows `errorText(error)` in the Problems console's `role="alert"`.
+
+| Action      | Behavior |
+| ----------- | -------- |
+| Edit        | Updates `draft`; the file state becomes Unsaved while dirty |
+| Save, `Ctrl/Cmd+S` | Enabled only when dirty. `PATCH /test-files/:id { source: draft }`; on success `saved` and `draft` become the returned `testFile.source`, the returned diagnostics are shown, and `refreshTree()` is called. On failure the draft is kept and `errorText(error)` is shown in a `role="alert"` under the header |
+| Run, `Ctrl/Cmd+Enter` | Opens the Run console, saves first when dirty (stops if the save fails), then `POST /test-files/:id/runs`. `202`: the Run console follows the new Run (1.9), its history reloads, and `refreshTree()` is called. `422`: `ApiError.details` (Diagnostic[]) become the Problems, the Problems console opens, and the Run console shows `errorText(error)` in a `role="alert"`. Other errors: the Run console's `role="alert"` |
+
+The shortcuts work wherever the focus is on the page; they are handled before the editor's own keys, so `Ctrl+Enter` does not insert a line. Buttons are disabled while their request is in flight. A failing `refreshTree()` shows its message in the page's `role="alert"`; the save or run itself still counts as done. Upload is in the sidebar (1.6).
+
+#### Status
+
+The file state shows as a badge next to the file name and at the left of the status bar, in place of banners. It is `fileState({ dirty, runStatus, savedSinceRun })`, where `runStatus` is the followed Run's status or else the tree's `latestRun`, and `savedSinceRun` is set by a save and cleared by a Run. The status bar also shows `problemsSummary` (a button that opens Problems), the latest Run's status, the cursor as "Ln <line>, Col <column>", and the consoles toggle.
+
+#### Problems console
+
+A `region` named "Problems". The header shows `problemsSummary(diagnostics)`. Each diagnostic is a list item with a button "Line <line>: <message>" (`formatDiagnostic`) and its code after it; the button moves the cursor to the start of the line's text, scrolls it into view and focuses the editor. With none it shows "No problems".
 
 | Helper                  | Rule                                                                               |
 | ----------------------- | ---------------------------------------------------------------------------------- |
-| `validationSummary(ds)` | `[]` → "Valid. Ready to run."; 1 → "1 validation error"; n → "n validation errors" |
+| `problemsSummary(ds)`   | `[]` → "No problems"; 1 → "1 problem"; n → "n problems"                            |
 | `formatDiagnostic(d)`   | "Line <line>: <message>"                                                           |
+| `diagnosticRanges(source, ds)` | Pure. Each diagnostic as `{ from, to, line, message, code }`: its line from the first non-blank character to the end, an empty or blank line as an empty range at its start; a line past the end is the last line, a line below 1 the first. Diagnostics have a line but no column |
+| `hasNewDiagnostics(previous, next)` | True when `next` has a diagnostic (by line, code and message) that `previous` does not |
+| `fileState({ dirty, runStatus, savedSinceRun })` | `unsaved` when dirty; else `running` for a `queued` or `running` Run; else `saved` when there is no Run or the file was saved since; else the Run's `passed` or `failed` |
+| `fileStateLabel(state)` | "Saved", "Unsaved", "Running", "Passed", "Failed" |
 
-Out of scope: validating while typing, line numbers, keyboard shortcuts, an unsaved-changes guard.
+Out of scope: several open files (tabs), an unsaved-changes guard, autocompletion.
 
 ### 1.8 Project Variables
 
-The "Variables for <project>" button opens the Variables dialog. It lists the Project's Variable names from `GET /projects/:id/variables`; values are write-only and never shown.
+A Project row's "Variables for <project>" link opens `/projects/[projectId]/variables`, a page in the editor area. It lists the Project's Variables from `GET /projects/:id/variables` by name, each value shown as `****` (the same mask whatever its length) with a show/hide toggle; the API answers the values (`backend.md` 1.3).
 
 | Action | Behavior                                                                                                                                                                                                                                                                                 |
 | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Open   | Loads the names; an empty list shows "No variables yet"                                                                                                                                                                                                                                  |
-| Save   | Enabled when Name and Value are non-empty. Shows the problem of `variableNameProblem`, then `variableValueProblem` (1.3), without calling the API; otherwise `PUT /projects/:id/variables/:name { value }`, then reloads the names and clears the form. An existing name is replaced |
-| Delete | `DELETE /projects/:id/variables/:name`, then reloads the names                                                                                                                                                                                                                           |
+| Open   | Loads the Variables; an empty list shows "No variables yet"                                                                                                                                                                                                                              |
+| Show value | A toggle per Variable shows its value in place of `****`, and hides it again. Values start hidden on every visit |
+| Save   | Enabled when Name and Value are non-empty. Shows the problem of `variableNameProblem`, then `variableValueProblem` (1.3), without calling the API; otherwise `PUT /projects/:id/variables/:name { value }`, then reloads the list and clears the form. An existing name is replaced |
+| Delete | `DELETE /projects/:id/variables/:name`, then reloads the list                                                                                                                                                                                                                           |
 
-API errors show `errorText(error)` (1.3) in a `role="alert"` inside the dialog, and the dialog stays open.
+API errors show `errorText(error)` (1.3) in a `role="alert"` on the page. Deleting the open page's Project goes to `/files`.
 
 #### Accessible names (editor and Variables)
 
 | Element          | Role and name                                                                                                                                                                           |
 | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | File name        | `heading` named by the file name                                                                                                                                                        |
-| Unsaved marker   | text "Unsaved changes"                                                                                                                                                                  |
-| Toolbar          | buttons "Upload file", "Validate", "Save", "Run"                                                                                                                                        |
-| Source           | textbox labelled "Test file YAML"                                                                                                                                                       |
-| Result bar       | `region` named "Validation"; summary text; one `listitem` per diagnostic                                                                                                                |
-| Run feedback     | `role="status"` with "Run queued."                                                                                                                                                      |
-| Variables dialog | `dialog` titled "Variables"; one `listitem` per name with button "Delete <NAME>"; inputs labelled "Name" and "Value" (password); buttons "Save" and "Close"; errors in a `role="alert"` |
+| File state       | `status` named "File state" with "Saved", "Unsaved", "Running", "Passed" or "Failed"                                                                                                     |
+| Header           | buttons "Save", "Run", "Toggle consoles" (`aria-expanded`)                                                                                                                              |
+| Source           | `textbox` labelled "Test file YAML"                                                                                                                                                     |
+| Splits           | `separator`s "Resize consoles", "Resize Problems and Run"                                                                                                                               |
+| Problems console | `region` named "Problems"; button "Problems console" (`aria-expanded`); one `listitem` per diagnostic with a button "Line <n>: <message>"; text "No problems"                         |
+| Run console      | `region` named "Run"; button "Run console" (`aria-expanded`); errors in a `role="alert"` (1.9)                                                                                         |
+| Status bar       | `region` named "Status bar" with the file state, the problems button, "Ln <n>, Col <n>" and a "Toggle consoles" button                                                                 |
+| Variables page   | `region` named by its heading "Variables" (level 1); `list` "Variables" with one `listitem` per Variable showing its name and `****` or its value; buttons "Show value of <NAME>" (`aria-pressed`) and "Delete <NAME>"; inputs labelled "Name" and "Value" (password); button "Save"; errors in a `role="alert"` |
 
 #### Tests
-- Unit: `validationSummary`, `formatDiagnostic`, the validation helpers (5.6), and the new API client functions (5.1).
-- E2E `editor.e2e.ts`: a new user creates a Test File; the textarea shows the starter source; an invalid edit shows "Unsaved changes" and Validate shows "1 validation error" with a "Line …" item; restoring a valid source and saving hides "Unsaved changes"; after a reload the saved source is shown; Run shows "Run queued.".
-- E2E `variables.e2e.ts`: a new user adds Variable `BASE`; it is listed and its value is not shown; an invalid name shows the alert; Delete removes it.
+- Unit: `problemsSummary`, `formatDiagnostic`, `diagnosticRanges`, `hasNewDiagnostics`, `fileState`, `fileStateLabel`, the validation helpers (5.6), and the API client functions (5.1).
+- E2E `editor.e2e.ts`: the starter source and the file state; save and reload; upload from the sidebar; the diagnostics of the invalid fixtures listed as the user types and marked on their lines, with no Validate button; the size limit; `Ctrl+S` and `Ctrl+Enter`; a clicked problem moves the cursor; at 1366×768 the editor fills the space between the sidebar and the consoles within 3px, about 60 / 40, with Problems over Run split evenly, and the page does not scroll; a collapsed Problems console stays collapsed after a reload and while the YAML is valid, and opens for a new problem; the whole column hides and reopens from the header or the status bar; Run opens a collapsed Run console; on a phone the consoles are under the editor.
+- E2E `variables.e2e.ts`: a new user adds Variable `BASE`; it is listed with `****` and its value shows only with the toggle; replacing it and deleting it; an invalid name shows the alert without a request; the value limits.
 
 ### 1.9 Runs: live progress and history
 
-A Run has one page, `/runs/[runId]`, used both while it runs (live progress) and after it finishes (report). The editor page lists the file's recent Runs. Both render steps with the same `StepList` component, because the backend uses one `Step` shape for Live Progress and the Report.
+A Run's details (steps, screenshots, report, source when it ran) have one component, `RunReport`, shown in two places: the **Run details sheet**, which slides in from the right over most of the editor, and the Run's own page `/runs/[runId]`, which keeps working as a full page. Both load the Run and follow its Live Progress with the same hook, `useRun(runId, onFinal)` (`lib/use-run.ts`), and render steps with the same `StepList`, because the backend uses one `Step` shape for Live Progress and the Report. The Run console in the editor uses `useRun` too.
 
-#### Runs list (editor page)
+#### Run console (editor page)
 
-Below the result bar, a `region` named "Runs" loads `GET /runs?testFileId=<id>&limit=20` with the page and again after a successful Run. Each Run is one list item with a link to `/runs/<id>` whose text is `runStatusLabel(status)`, the trigger time (`createdAt`, `toLocaleString()`), and `formatDuration(durationMs)`. An empty list shows "No runs yet". There is no pagination. A failed load shows `errorText(error)` (1.3) in a `role="alert"` inside the region.
+A `region` named "Run" in the editor's console column (1.7).
+
+| Part | Behavior |
+| ---- | -------- |
+| Live Run | After **Run**, the new Run: a status badge (`runStatusLabel`), "<passed>/<total> passed" once the summary exists, its duration, the Run error as `runErrorText(error)`, and a compact list named "Progress" with one item per step ("Step <n>", the action, "line <line>", the status and a failed step's `reason`), in an `aria-live="polite"` area. "Open run details" opens the sheet. When the Run is final, the history reloads and `refreshTree()` is called |
+| History | A `region` named "Runs" loads `GET /runs?testFileId=<id>&limit=20` with the page and again after a Run starts and ends. Each Run is one list item with a link to `/runs/<id>` whose text is `runStatusLabel(status)`, the trigger time (`createdAt`, `toLocaleString()`), and `formatDuration(durationMs)`, newest first; a click opens the sheet, and a click with a modifier key opens the page as a link does. An empty list shows "No runs yet". There is no pagination. A failed load shows `errorText(error)` (1.3) in a `role="alert"` inside the region |
+
+#### Run details sheet
+
+`components/workspace/run-details-sheet.tsx`, `RunDetailsSheet({ runId, onClose })`: a shadcn `sheet` from the right, as wide as 85% of the window (at least 40rem, at most the window), over the page with its overlay. It is a `dialog` named by the Run's file name, with "Open full page" (a link to `/runs/<id>`), the close button "Close", and `RunReport` below. Escape, the close button, or a click on the uncovered part of the page closes it; the editor under it stays mounted with its draft, cursor and scroll position. `runId` of `null` closes it, so the files overview can reuse it.
 
 #### Run page
 
@@ -273,17 +324,17 @@ Below the result bar, a `region` named "Runs" loads `GET /runs?testFileId=<id>&l
 | ---- | -------- |
 | Load | `GET /runs/:id`. Pending: `Loading…`; `404`, also for a malformed id (`backend.md` 1.7): "Run not found"; other errors: `errorText(error)` (1.3) in a `role="alert"` and nothing else |
 | Finished Run (`passed`/`failed`) | Steps come from `run.report.steps`. A Run without a Report (`interrupted`/`internal` error) shows no steps and "No step results" |
-| Active Run (`queued`/`running`) | Opens the WebSocket at `liveUrl(baseUrl, runId, token)` and folds every message into `{ run, steps }` with `applyLiveMessage`. When a `status` message makes the Run final, the page reloads `GET /runs/:id` (for the Report and trace) and calls `refreshTree()` |
-| Socket closes early | If the socket closes before the Run is final, the page keeps the last state and shows "Live progress disconnected" in a `role="alert"` |
-| Leave the page | The socket is closed |
+| Active Run (`queued`/`running`) | Opens the WebSocket at `liveUrl(baseUrl, runId, token)` and folds every message into `{ run, steps }` with `applyLiveMessage`. When a `status` message makes the Run final, it reloads `GET /runs/:id` (for the Report and trace) and calls `onFinal`; the page calls `refreshTree()` |
+| Socket closes early | If the socket closes before the Run is final, the last state stays and "Live progress disconnected" shows in a `role="alert"` |
+| Leave | The socket is closed |
 
-The header shows the file name as the heading, "Status: <runStatusLabel>", the trigger time, `formatDuration(durationMs)`, the summary as "<passed>/<total> passed" once it exists, and the Run error as `runErrorText(error)` when there is one. A "Back to <fileName>" link goes to `/files/<testFileId>` (hidden when `testFileId` is `null`). After the Run is final, a "Download report" link points to `runFileUrl(baseUrl, runId, "report.json", token)`, and a "Download trace" link to `runFileUrl(…, report.trace, token)` when `report.trace` exists.
+The page header shows a "Back to <fileName>" link to `/files/<testFileId>` (hidden when `testFileId` is `null`) and the file name as the heading. `RunReport` shows "Status: <runStatusLabel>", the trigger time, `formatDuration(durationMs)`, the summary as "<passed>/<total> passed" once it exists, and the Run error as `runErrorText(error)` when there is one. After the Run is final, a "Download report" link points to `runFileUrl(baseUrl, runId, "report.json", token)`, and a "Download trace" link to `runFileUrl(…, report.trace, token)` when `report.trace` exists.
 
 `StepList` renders an ordered list named "Steps". Each step is one list item with "Step <index + 1>", the action, "line <line>", `runStatusLabel`-style status text (Pending, Running, Passed, Failed), and, when present, `formatDuration(durationMs)`, the locate method, the failure `reason`, and the screenshot as an `img` with alt "Step <index + 1> screenshot" from `runFileUrl(baseUrl, runId, step.screenshot, token)`. Dialog records are not shown.
 
 The screenshot is a button named "Open step <n> screenshot full size". It opens a dialog named "Step <n> screenshot" with the image at full size (alt "Step <n> screenshot, full size"), scrolling when it is larger than the window; Escape or a click outside closes it.
 
-Below the steps, a collapsed "Source when it ran" section shows the Run's `source` from `GET /runs/:id` in a `pre` with the same name, so a Run of an earlier version of the file shows that version. Live Progress messages carry no source, so the page keeps the one it loaded.
+Below the steps, a collapsed "Source when it ran" section shows the Run's `source` from `GET /runs/:id` in a `pre` with the same name, so a Run of an earlier version of the file shows that version. Live Progress messages carry no source, so the one loaded is kept.
 
 | Helper | Rule |
 | ------ | ---- |
@@ -292,6 +343,7 @@ Below the steps, a collapsed "Source when it ran" section shows the Run's `sourc
 | `formatDuration(ms)` | `null` or `undefined` → "—"; under 1000 → "<ms> ms"; otherwise seconds with one decimal, "<s> s" |
 | `liveUrl(baseUrl, runId, token)` | `baseUrl` with `http` → `ws` and `https` → `wss`, then `/runs/<runId>/live?token=<encodeURIComponent(token)>` |
 | `runFileUrl(baseUrl, runId, path, token)` | `<baseUrl>/runs/<runId>/files/<path>?token=<encodeURIComponent(token)>` |
+| `isFinalStatus(status)` | `true` for `passed` and `failed`, `false` for `queued` and `running` |
 | `runErrorText(error)` | `timeout` → "Timed out: <message>"; `interrupted` → "Interrupted: <message>"; `infrastructure` → "Browser error: <message>"; `internal` → "Something went wrong while running the test. Try running it again.", since its message is the server's error name |
 | `applyLiveMessage(state, message)` | Pure. `snapshot` → `{ run, steps }` from the message; `step` → the step with the same `index` is replaced (inserted in `index` order if absent); `status` → `run` replaced, steps kept. Never mutates `state` |
 
@@ -301,18 +353,20 @@ Below the steps, a collapsed "Source when it ran" section shows the Run's `sourc
 
 | Element | Role and name |
 | ------- | ------------- |
+| Run console | `region` named "Run"; text "<passed>/<total> passed"; `list` "Progress" with one `listitem` per step; button "Open run details" |
 | Runs list | `region` named "Runs"; one `listitem` per Run containing a `link` to the Run; text "No runs yet" when empty |
-| Editor run link | `link` "View run" |
-| Run heading | `heading` named by the file name |
+| Sheet | `dialog` named by the file name; link "Open full page"; button "Close" |
+| Run heading | `heading` named by the file name (page) |
 | Run status | text "Status: <label>" |
 | Steps | `list` named "Steps"; one `listitem` per step containing "Step <n>" |
 | Screenshot | `img` with alt "Step <n> screenshot" |
-| Links | "Back to <fileName>", "Download report", "Download trace" |
+| Links | "Back to <fileName>" (page), "Download report", "Download trace" |
 | Disconnect | `role="alert"` with "Live progress disconnected" |
 
 #### Tests
-- Unit: the six helpers above (5.4) and `getRun`, `listRuns`, `getBaseUrl` (5.1).
-- E2E `flow.e2e.ts` (the full PRD flow, #84): a new user creates a Test File, enters a valid source, Validate shows "Valid. Ready to run.", saves, clicks Run and sees "Run queued.", follows "View run" to `/runs/<id>`, sees the file name heading, a "Status: …" text, and a "Steps" list with one item containing "Step 1"; "Back to <file>" returns to the editor, where the "Runs" region lists one Run. The test does not wait for the Run to finish.
+- Unit: the helpers above (5.4) and `getRun`, `listRuns`, `getBaseUrl` (5.1).
+- E2E `runs.e2e.ts`: Run in the editor is followed live in the Run console without a navigation, to "6/6 passed", with the history and the sidebar status updated; the sheet shows the steps; the Run page, opened through "Open full page", for every other case.
+- E2E `reports.e2e.ts`: the history lists every Run newest first and opens each in the sheet with its own source; the sheet covers most of the editor from the right, closes with Escape, the close button and a click on the uncovered part, keeps the editor's draft, and opens full page at the Run's URL.
 
 Out of scope: project or module dashboards, charts, filters, pagination, showing dialog records.
 
@@ -358,10 +412,10 @@ Every Project, Module and Test File row in the sidebar has a Rename and a Delete
 
 | Action | Behavior |
 | ------ | -------- |
-| Rename | Opens the name dialog titled "Rename project", "Rename module", or "Rename test file", prefilled with the current name; a Test File's name is shown without its fixed `.yaml` (1.6) and normalized with `toTestFileName`. Names are checked as in 1.6. Save is disabled while the normalized name is empty or equal to the current name. Submits `PATCH /projects/:id`, `PATCH /modules/:id`, or `PATCH /test-files/:id` with `{ name }`, then calls `refreshTree()` and closes |
-| Delete | Opens a confirmation dialog titled "Delete project", "Delete module", or "Delete test file" with the text `confirmDeleteText(kind, name)`. Delete submits `DELETE /projects/:id`, `DELETE /modules/:id`, or `DELETE /test-files/:id`. If `deletesTestFile(tree, target, currentTestFileId)` is true, the page navigates with `router.replace("/files")`. Then it calls `refreshTree()` and closes |
+| Rename | The button, or F2 on the focused row, names the row in place (1.6): a Test File's name shows without its fixed `.yaml` and is saved with `toTestFileName`. Submits `PATCH /projects/:id`, `PATCH /modules/:id`, or `PATCH /test-files/:id` with `{ name }`, then calls `refreshTree()` |
+| Delete | Opens a confirmation dialog titled "Delete project", "Delete module", or "Delete test file" with the text `confirmDeleteText(kind, name)`. Delete submits `DELETE /projects/:id`, `DELETE /modules/:id`, or `DELETE /test-files/:id`. If `deletesTestFile(tree, target, currentTestFileId)` is true, or the open Variables page belongs to the deleted Project, the page navigates with `router.replace("/files")`. Then it calls `refreshTree()` and closes |
 
-API errors (such as `409 conflict` on rename) show `errorText(error)` (1.3) in a `role="alert"` inside the dialog, and the dialog stays open. Buttons are disabled while the request is in flight. A failing `refreshTree()` after a successful change closes the dialog and is otherwise ignored, as in 1.6.
+API errors on delete show `errorText(error)` (1.3) in a `role="alert"` inside the dialog, and the dialog stays open; a failing rename keeps its input open with the message (1.6). Buttons are disabled while the request is in flight. A failing `refreshTree()` after a successful change is ignored, as in 1.6.
 
 The editor heading (1.7) shows the Test File's name from the tree when the file is in it, falling back to the loaded `testFile.name`, so renaming the open file updates the heading at once.
 
@@ -379,16 +433,16 @@ The backend cascades: deleting a Project deletes its Modules, Test Files and Var
 | Element | Role and name |
 | ------- | ------------- |
 | Row buttons | "Rename project <name>", "Delete project <name>", "Rename module <name>", "Delete module <name>", "Rename test file <name>", "Delete test file <name>" |
-| Rename dialog | `dialog` titled "Rename project", "Rename module", or "Rename test file"; text input labelled "Name"; buttons "Save" and "Cancel"; errors in a `role="alert"` |
+| Rename input | `textbox` labelled "Name" in the row, as in 1.6 |
 | Delete dialog | `dialog` titled "Delete project", "Delete module", or "Delete test file"; the confirmation text; buttons "Delete" and "Cancel"; errors in a `role="alert"` |
 
 Row buttons sit next to the Test File link, never inside it. They may be revealed on hover on wide screens, but must stay in the accessibility tree and be shown on keyboard focus. The dialogs' "Delete" button shares a prefix with the row buttons, so E2E tests scope it to the dialog.
 
 #### Tests
-- Unit: `confirmDeleteText`, `deletesTestFile` (5.5), and the new API client functions (5.1).
+- Unit: `confirmDeleteText`, `deletesTestFile` (5.5), and the API client functions (5.1).
 - E2E `sidebar-actions.e2e.ts`:
-  - a new user creates a Project, a Module and a Test File; renaming the Test File shows the new name in the sidebar and the editor heading;
-  - renaming a second Project to the first Project's name keeps the dialog open and shows an alert;
+  - renaming the open Test File in place selects its name without `.yaml`, which stays after the input, and shows the new name in the sidebar and the editor heading; a Module by Enter and a Project by a click away;
+  - F2 renames the focused row, Escape restores the name, a taken name keeps the input open with an alert, and a problem shows as the user types;
   - deleting the open Test File returns to `/files` and removes its link;
   - deleting the Project shows the cascade text in the confirmation, then the "Test files" region shows "No test files yet".
 
@@ -405,7 +459,7 @@ The frontend package uses these exact versions:
 - `@tailwindcss/postcss@4.3.5`
 - `openapi-typescript@7.13.0`
 
-shadcn tooling and UI primitives are pinned exactly (no `^`). Primitives are added with `shadcn add` only as pages need them (currently `badge`, `button`, `card`, `dialog`, `input`, `label`, `tabs`, `toggle`, `toggle-group`); every dependency that command adds is pinned to its exact installed version and listed below. `next-themes` is the theme provider that shadcn's Next.js dark-mode guide uses (design-system.md 3).
+shadcn tooling and UI primitives are pinned exactly (no `^`). Primitives are added with `shadcn add` only as pages need them (currently `badge`, `button`, `card`, `dialog`, `input`, `label`, `resizable`, `sheet`, `tabs`, `toggle`, `toggle-group`, `tooltip`); every dependency that command adds is pinned to its exact installed version and listed below. `next-themes` is the theme provider that shadcn's Next.js dark-mode guide uses (design-system.md 3).
 
 
 
@@ -416,6 +470,15 @@ shadcn tooling and UI primitives are pinned exactly (no `^`). Primitives are add
 - `class-variance-authority@0.7.1`
 - `lucide-react@1.64.0`
 - `next-themes@0.4.6`
+- `react-resizable-panels@4.16.0`, which shadcn's `resizable` wraps
+
+The editor (1.7) uses CodeMirror 6, which ships as separate packages; only these are installed, with no React wrapper and no `basicSetup` bundle, so the editor loads what it uses:
+
+- `@codemirror/state@6.7.6`, `@codemirror/view@6.43.15`: the document and the view
+- `@codemirror/commands@6.11.1`: the default keys and history
+- `@codemirror/language@6.13.1`, `@lezer/highlight@1.2.5`: highlighting with the design tokens
+- `@codemirror/lang-yaml@6.1.3`: the YAML grammar
+- `@codemirror/lint@6.9.7`: the diagnostics on their lines
 
 The repo does not use `eslint-config-next`; instead the root `eslint.config.js` is extended to include `.tsx` and the frontend package files.
 
@@ -582,7 +645,7 @@ export function createApiClient(config?: ApiClientConfig): {
   updateTestFile(testFileId: string, source: string): Promise<UpdateTestFileResponse>; // { testFile, diagnostics }
   validateSource(source: string): Promise<ValidateResponse>; // { diagnostics }
   startRun(testFileId: string): Promise<Run>; // 202; 422 rejects with ApiError whose details are Diagnostic[]
-  listVariables(projectId: string): Promise<VariableListResponse>; // { items: string[] }
+  listVariables(projectId: string): Promise<VariableListResponse>; // { items: { name, value }[] }
   setVariable(projectId: string, name: string, value: string): Promise<void>; // 204
   deleteVariable(projectId: string, name: string): Promise<void>; // 204
   listRuns(testFileId: string): Promise<RunListResponse>; // GET /runs?testFileId=&limit=20 → { items, nextCursor }
@@ -637,8 +700,9 @@ This fallback is implemented in the client itself when the backend response is n
 | `app/login/page.tsx`, `app/register/page.tsx` | The auth form in Log in or Register mode                    |
 | `app/(workspace)/layout.tsx`                  | Auth guard, loads `me` and the tree, renders the sidebar    |
 | `app/(workspace)/files/page.tsx`              | Files overview and Add the Quick Start project (1.10)       |
-| `app/(workspace)/files/[testFileId]/page.tsx` | Test file editor (1.7) and Runs list (1.9)                  |
-| `app/(workspace)/runs/[runId]/page.tsx`       | Run page: live progress and report (1.9)                    |
+| `app/(workspace)/files/[testFileId]/page.tsx` | Test file editor, consoles and status bar (1.7, 1.9)        |
+| `app/(workspace)/projects/[projectId]/variables/page.tsx` | Variables page (1.8)                            |
+| `app/(workspace)/runs/[runId]/page.tsx`       | Run page: live progress and report, full page (1.9)         |
 | `lib/api.ts`                                  | Fetch wrapper, `ApiError`, `NetworkError`, typed API functions |
 | `lib/api-schema.ts`                           | Generated OpenAPI types from `docs/api/openapi.json`        |
 | `lib/format-error.ts`                         | Any error → the lines a user sees (`formatError`, `errorText`, 1.3) |
@@ -646,8 +710,11 @@ This fallback is implemented in the client itself when the backend response is n
 | `lib/utils.ts`                                | Re-exports `cn` from the `cn` package for shadcn components |
 | `lib/sidebar.ts`                              | Sidebar helpers (1.6, 1.10 `statusTitle`, 1.11)             |
 | `lib/overview.ts`                             | Overview helper `overviewGroups` (1.10)                     |
-| `lib/editor.ts`                               | Editor and Variables helpers (1.7, 1.8)                     |
+| `lib/editor.ts`                               | Editor helpers (1.7)                                        |
 | `lib/runs.ts`                                 | Run helpers (1.9)                                           |
+| `lib/use-run.ts`                              | `useRun()`: a Run loaded and followed live (1.9)            |
+| `lib/panel-layout.ts`                         | `usePanelLayout()`: split sizes kept per browser (1.6, 1.7) |
+| `lib/use-media-query.ts`                      | `useMediaQuery()`: the 768px breakpoint (1.6, 1.7)          |
 | `lib/workspace-context.tsx`                   | `useWorkspace()`: `me`, `tree`, `refreshTree`               |
 | `lib/routes.ts`                               | `WORKSPACE_HOME`, the overview's path `/files`              |
 | `lib/auth-guard.ts`                           | `checkSession()`: the auth pages' guard (1.5)               |
@@ -662,11 +729,15 @@ This fallback is implemented in the client itself when the backend response is n
 | `components/landing/brand-mark.tsx`           | The product mark                                            |
 | `components/theme/`                           | Theme provider and switch (design-system.md 3)              |
 | `components/workspace/status-badge.tsx`       | Status icons and badges (design-system.md 2.3)              |
-| `components/workspace/sidebar-nav.tsx`        | Sidebar tree, dialogs, account                              |
-| `components/workspace/create-name-dialog.tsx` | Shared name dialog for create (1.6) and rename (1.11)       |
+| `components/workspace/sidebar-nav.tsx`        | Sidebar tree, naming in place, upload, account              |
+| `components/workspace/inline-name-input.tsx`  | A row's name as an input in place (1.6, 1.11)               |
+| `components/workspace/tree-name.tsx`          | The full-name tooltip of a cut-off row (1.6)                |
 | `components/workspace/confirm-delete-dialog.tsx` | Delete confirmation dialog (1.11)                        |
-| `components/workspace/variables-dialog.tsx`   | Variables dialog (1.8)                                      |
-| `components/workspace/run-list.tsx`           | Runs list on the editor page (1.9)                          |
+| `components/workspace/code-editor.tsx`        | The CodeMirror YAML editor (1.7)                            |
+| `components/workspace/console-panel.tsx`      | A collapsible console of the console column (1.7)           |
+| `components/workspace/run-list.tsx`           | Run history in the Run console (1.9)                        |
+| `components/workspace/run-report.tsx`         | A Run's details, shared by the sheet and the page (1.9)     |
+| `components/workspace/run-details-sheet.tsx`  | The Run details sheet (1.9)                                 |
 | `components/workspace/step-list.tsx`          | Shared step list for live progress and report (1.9)         |
 | `components/ui/`                              | shadcn primitives                                           |
 
@@ -688,6 +759,10 @@ src/app/frontend/
 │       │   ├── page.tsx
 │       │   └── [testFileId]/
 │       │       └── page.tsx
+│       ├── projects/
+│       │   └── [projectId]/
+│       │       └── variables/
+│       │           └── page.tsx
 │       └── runs/
 │           └── [runId]/
 │               └── page.tsx
@@ -711,17 +786,24 @@ src/app/frontend/
 │   │   ├── dialog.tsx
 │   │   ├── input.tsx
 │   │   ├── label.tsx
+│   │   ├── resizable.tsx
+│   │   ├── sheet.tsx
 │   │   ├── tabs.tsx
 │   │   ├── toggle-group.tsx
-│   │   └── toggle.tsx
+│   │   ├── toggle.tsx
+│   │   └── tooltip.tsx
 │   └── workspace/
+│       ├── code-editor.tsx
 │       ├── confirm-delete-dialog.tsx
-│       ├── create-name-dialog.tsx
+│       ├── console-panel.tsx
+│       ├── inline-name-input.tsx
+│       ├── run-details-sheet.tsx
 │       ├── run-list.tsx
+│       ├── run-report.tsx
 │       ├── sidebar-nav.tsx
 │       ├── status-badge.tsx
 │       ├── step-list.tsx
-│       └── variables-dialog.tsx
+│       └── tree-name.tsx
 ├── lib/
 │   ├── api.ts
 │   ├── api-schema.ts
@@ -730,9 +812,12 @@ src/app/frontend/
 │   ├── landing.ts
 │   ├── landing-runs/    # the replayed Run reports
 │   ├── overview.ts
+│   ├── panel-layout.ts
 │   ├── routes.ts
 │   ├── runs.ts
 │   ├── sidebar.ts
+│   ├── use-media-query.ts
+│   ├── use-run.ts
 │   ├── utils.ts
 │   ├── validation.ts
 │   └── workspace-context.tsx
@@ -757,7 +842,7 @@ src/app/frontend/
 | Unit | Form checks (1.3)                                                                                                | `src/tests/unit/app/frontend/validation.test.ts`        |
 | Unit | Sidebar helpers (1.6, 1.10, 1.11)                                                                                | `src/tests/unit/app/frontend/sidebar.test.ts`           |
 | Unit | Overview helper (1.10)                                                                                           | `src/tests/unit/app/frontend/overview.test.ts`          |
-| Unit | Editor and Variables helpers (1.7, 1.8)                                                                          | `src/tests/unit/app/frontend/editor.test.ts`            |
+| Unit | Editor helpers (1.7)                                                                                             | `src/tests/unit/app/frontend/editor.test.ts`            |
 | Unit | Run helpers (1.9)                                                                                                | `src/tests/unit/app/frontend/runs.test.ts`              |
 | Unit | Auth page guard: no token, accepted, rejected and cleared, network and server failures (1.5)                    | `src/tests/unit/app/frontend/auth-guard.test.ts`        |
 | Unit | Landing content checked against the code: actions, receipts, replayed reports, stats, Quick Start Modules (1.14) | `src/tests/unit/app/frontend/landing.test.ts`           |
@@ -766,12 +851,12 @@ src/app/frontend/
 | E2E  | Themes: system default, persisted choice, no flash, switch placement (design-system.md 3)                       | `src/tests/e2e/theme.e2e.ts`                            |
 | E2E  | Quick Start: seeded on register and runnable, added from the empty overview, `409` message (1.10)                | `src/tests/e2e/quick-start.e2e.ts`                      |
 | E2E  | Auth flow                                                                                                        | `src/tests/e2e/auth.e2e.ts`                             |
-| E2E  | Sidebar create flow and duplicate name (1.6)                                                                     | `src/tests/e2e/sidebar.e2e.ts`                          |
-| E2E  | Editor: validate, save, reload, run (1.7)                                                                        | `src/tests/e2e/editor.e2e.ts`                           |
-| E2E  | Variables: add, invalid name, delete (1.8)                                                                       | `src/tests/e2e/variables.e2e.ts`                        |
-| E2E  | Full flow: create, validate, save, run, live view, history (1.9)                                                 | `src/tests/e2e/flow.e2e.ts`                             |
+| E2E  | Sidebar: create in place, duplicate names, name rules, width and full names (1.6)                                | `src/tests/e2e/sidebar.e2e.ts`                          |
+| E2E  | Editor: diagnostics as you type, save, upload, shortcuts, layout, consoles (1.7)                                 | `src/tests/e2e/editor.e2e.ts`                           |
+| E2E  | Variables page: add, show and hide, replace, invalid name, delete (1.8)                                          | `src/tests/e2e/variables.e2e.ts`                        |
+| E2E  | Runs: the Run console, the sheet and the Run page (1.9)                                                          | `src/tests/e2e/runs.e2e.ts`, `reports.e2e.ts`           |
 | E2E  | Files overview: empty state, grouped list, open a file (1.10)                                                    | `src/tests/e2e/overview.e2e.ts`                         |
-| E2E  | Rename, duplicate rename, delete open file, delete Project (1.11)                                                | `src/tests/e2e/sidebar-actions.e2e.ts`                  |
+| E2E  | Rename in place, F2, duplicate rename, delete open file, delete Project (1.11)                                   | `src/tests/e2e/sidebar-actions.e2e.ts`                  |
 
 The tests use `fetchImpl`, `getToken`, `setToken`, and `onUnauthorized` injection where applicable; no DOM environment is required. The expected values are written by hand from mocked payloads and backend contract behavior, never generated from implementation output.
 
@@ -906,8 +991,8 @@ The tests use `fetchImpl`, `getToken`, `setToken`, and `onUnauthorized` injectio
     - mocked response: `422 { error: { code: "invalid_test", message: "Test file has errors", details: [{ code: "E005", message: "Unknown action \"aiAct\"", line: 3 }] } }`
     - expected: `ApiError` with status `422`, code `invalid_test`, those details
 
-15. `it("sends GET /projects/p-1/variables and resolves the names", async () => { ... })`
-    - expected value: `{ items: ["BASE", "SWAG_PASSWORD"] }`
+15. `it("sends GET /projects/p-1/variables and resolves the Variables with their values", async () => { ... })`
+    - expected value: `{ items: [{ name: "BASE", value: "http://127.0.0.1:8080" }, { name: "SWAG_PASSWORD", value: "secret_sauce" }] }`
 
 16. `it("sends PUT /projects/p-1/variables/BASE with the value and resolves undefined on 204", async () => { ... })`
     - call: `setVariable("p-1", "BASE", "https://demo.example.com")`
@@ -973,13 +1058,12 @@ These exact values are the source of truth for the API client tests and are inte
 
 `editor.test.ts` imports `@/app/frontend/lib/editor.js`.
 
-1. `validationSummary`
-   - `[]` → `"Valid. Ready to run."`
-   - one diagnostic → `"1 validation error"`
-   - two diagnostics → `"2 validation errors"`
-
+1. `problemsSummary`: `[]` → `"No problems"`; one diagnostic → `"1 problem"`; two → `"2 problems"`
 2. `formatDiagnostic({ code: "E005", message: "Unknown action \"aiAct\"", line: 3 })` → `Line 3: Unknown action "aiAct"`
-
+3. `diagnosticRanges` on `name: "x"\nsteps:\n  - aiAct: "go"\n`: line 3 → `{ from: 19, to: 32 }`; the empty line 4 → `{ from: 33, to: 33 }`; line 9 of `a: 1` → `{ from: 0, to: 4, line: 1 }`; line 1 of `""` → `{ from: 0, to: 0 }`; each keeps its message and code
+4. `hasNewDiagnostics`: a diagnostic added → `true`; the same ones in another order → `false`; one removed → `false`; one moved to another line → `true`
+5. `fileState`: dirty → `unsaved`, also while a Run is running; `queued` or `running` → `running`; `passed`/`failed` with nothing saved since → that status; saved since the Run → `saved`; no Run → `saved`
+6. `fileStateLabel`: each state → its label
 
 ### 5.4 Exact run helper unit-test cases
 
@@ -999,6 +1083,7 @@ These exact values are the source of truth for the API client tests and are inte
    - a `step` message for index 1 when only index 0 exists → two steps in index order
    - the input state object is not mutated (compare with a deep copy)
 7. `runErrorText`: each `kind` gives the line of 1.9, and an `internal` error's message is not shown
+8. `isFinalStatus`: `passed`, `failed` → `true`; `queued`, `running` → `false`
 
 ### 5.5 Exact sidebar and overview helper unit-test cases
 
@@ -1036,4 +1121,4 @@ These exact values are the source of truth for the API client tests and are inte
 5. `variableNameProblem`: `"BASE"`, `"_BASE_1"`, `"API_KEY2"` → `null`; `"base"`, `"1BASE"`, `"MY-VAR"`, `"MY VAR"`, `""` → the sentence with the example
 6. `variableValueProblem`: 10,000 characters → `null`; 10,001 → the value sentence
 
-`sidebar.test.ts` also covers `toTestFileName` (`"login"`, `"login.yaml"`, and `"  login  "` → `"login.yaml"`; `"v1.2"` → `"v1.2.yaml"`; `""` and `"   "` → `""`) and `testFileBaseName` (`"sign-in.yaml"` → `"sign-in"`; `"notes"` → `"notes"`).
+`sidebar.test.ts` also covers `toTestFileName` (`"login"`, `"login.yaml"`, and `"  login  "` → `"login.yaml"`; `"v1.2"` → `"v1.2.yaml"`; `""` and `"   "` → `""`) and `testFileBaseName` (`"sign-in.yaml"` → `"sign-in"`; `"notes"` → `"notes"`), and `uploadedTestFileName` (`"checkout.yaml"`, `"checkout.yml"` → `"checkout.yaml"`; `"Checkout.YML"` → `"Checkout.yaml"`; `"v1.2.yaml"` → `"v1.2.yaml"`).

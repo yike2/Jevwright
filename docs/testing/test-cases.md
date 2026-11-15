@@ -45,7 +45,7 @@ Each case has an ID `TC-<AREA>-<nn>`, a title, its priority, execution type, the
 | `AUTH` | Register, log in, log out, access without a token |
 | `QS` | The Quick Start project |
 | `WS` | Sidebar: Projects, Modules, Test Files, rename, delete |
-| `ED` | Editor: edit, upload, validate, save |
+| `ED` | Editor: edit, problems as you type, save, upload, shortcuts, layout and consoles |
 | `VAR` | Project Variables |
 | `RUN` | Running a Test File, Live Progress, the Run Queue |
 | `RPT` | Run page after the Run: steps, screenshots, report, trace, history |
@@ -90,7 +90,7 @@ The deployed frontend and API, with the Demo App at its public `DEMO_DOMAIN` (`d
 
 ### 2.4 Test files
 
-The test files are in `src/tests/e2e/fixtures/`, grouped by expected outcome. E2E tests read them from there; manual testers load them with **Upload file** (TC-ED-03) or paste them (Appendix A). The first line of each file states its expected result. Every file uses only `{{BASE}}` and `{{SWAG_PASSWORD}}`, except `pass/variable-value.yaml`, which also needs `{{DISPLAY_NAME}}` (TC-VAR-06), so each runs unchanged locally and in production.
+The test files are in `src/tests/e2e/fixtures/`, grouped by expected outcome. E2E tests read them from there; manual testers add them with a Module's **Upload file** (TC-ED-03) or paste them (Appendix A). The first line of each file states its expected result. Every file uses only `{{BASE}}` and `{{SWAG_PASSWORD}}`, except `pass/variable-value.yaml`, which also needs `{{DISPLAY_NAME}}` (TC-VAR-06), so each runs unchanged locally and in production.
 
 | File | Locates by | Expected outcome | Used by |
 | ---- | ---------- | ---------------- | ------- |
@@ -135,10 +135,10 @@ The test files are in `src/tests/e2e/fixtures/`, grouped by expected outcome. E2
 Cases refer to these instead of repeating them.
 
 - **S1 Sign up**: open `/login`, click **Register** (the mode button), enter a new email and the password, click **Register** in the form. You are on `/files` and the sidebar shows the email. Delete the Quick Start project (2.3).
-- **S2 Create the workspace**: in the sidebar, click **New project**, name it `Demo Shop`, **Create**; on `Demo Shop` click **New module in Demo Shop**, name it `Shopping`, **Create**.
-- **S3 Set the Variables**: click **Variables for Demo Shop**; save `BASE` and `SWAG_PASSWORD` with the values of 2.3; **Close**.
-- **S4 Add a Test File**: on `Shopping` click **New test file in Shopping**, enter the name, **Create**; the editor opens. Load the fixture with **Upload file**, then click **Save**.
-- **S5 Run**: in the editor click **Run**, then **View run**. Wait until the status is final (`Passed` or `Failed`).
+- **S2 Create the workspace**: in the sidebar, click **New project**, type `Demo Shop` into the new row and press Enter; on `Demo Shop` click **New module in Demo Shop**, type `Shopping`, Enter.
+- **S3 Set the Variables**: click **Variables for Demo Shop**; on the Variables page save `BASE` and `SWAG_PASSWORD` with the values of 2.3.
+- **S4 Add a Test File**: on `Shopping` click **Upload file to Shopping** and choose the fixture; a Test File named after it is created and opens. For another name, click **New test file in Shopping**, type the name, Enter, and paste the fixture, then **Save**.
+- **S5 Run**: in the editor click **Run**; the Run console follows it. Click **Open run details**, then **Open full page**, and wait until the status is final (`Passed` or `Failed`).
 
 ## 4. Test Cases
 
@@ -325,7 +325,7 @@ Expected: the login succeeds; the sidebar shows the email as registered.
 Covers US-4.3.7. Pre: signed in, with the workspace open in two tabs.
 
 1. In tab 1, click **Log out**.
-2. In tab 2, open a Project's **Variables** dialog or reload the page.
+2. In tab 2, open a Project's **Variables** page or reload the page.
 
 Expected: tab 2 goes to `/login` on its next request, since both tabs share the stored token.
 
@@ -352,10 +352,10 @@ Expected: the page stays on `/login` and shows the form; the stored token is rem
 Covers PRD 4.2.2. Pre: the backend's `DEMO_APP_URL` is the Demo App of 2.1 or 2.2.
 
 1. Open `/register`, enter a new email and the password, and click **Register** in the form.
-2. Click **Variables for Quick Start**.
-3. Open `sign-in-and-see-products.yaml` from the overview and do S5.
+2. Click **Variables for Quick Start**, then go back to `/files`.
+3. Open `sign-in-and-see-products.yaml` from the overview and click **Run**.
 
-Expected: step 1 opens `/files`, where the overview shows the heading `Quick Start` with the Modules `1 Passing tests`, `2 Failing tests - see why they fail`, `3 Invalid files - fix the errors`, and `4 Jev - find and check by description`, in that order, and their files (`docs/tech/backend.md` 1.10); step 2 lists `BASE` and `SWAG_PASSWORD`; in step 3 the editor shows the three header lines (what it does, `# Expect:`, `# Try:`) and `baseUrl: "{{BASE}}"`, and the Run passes.
+Expected: step 1 opens `/files`, where the overview shows the heading `Quick Start` with the Modules `1 Passing tests`, `2 Failing tests - see why they fail`, `3 Invalid files - fix the errors`, and `4 Jev - find and check by description`, in that order, and their files (`docs/tech/backend.md` 1.10); step 2 lists `BASE` and `SWAG_PASSWORD`; in step 3 the editor shows the three header lines (what it does, `# Expect:`, `# Try:`) and `baseUrl: "{{BASE}}"`, and Run makes the file state "Passed".
 
 #### TC-QS-02 Add the Quick Start project to an empty workspace — P1, E2E
 
@@ -391,10 +391,10 @@ Expected: each result matches the `# Expect:` line of its file: the passing file
 Covers US-4.3.3. Pre: S1.
 
 1. Do S2.
-2. Click **New test file in Shopping**, enter `login` (no extension), **Create**.
+2. Click **New test file in Shopping**, type `login` (no extension) into the new row, press Enter.
 3. Reload the page.
 
-Expected: the tree shows `Demo Shop → Shopping → login.yaml`; the editor opens at `/files/<id>` with the heading `login.yaml`; the file link is marked current and its status dot is gray with the title "Never run"; after the reload the tree is the same.
+Expected: no dialog opens: each "New …" adds a row with a focused, empty input, and `.yaml` shows after the Test File's input; the tree shows `Demo Shop → Shopping → login.yaml`; the editor opens at `/files/<id>` with the heading `login.yaml`; the file link is marked current and its status dot is gray with the title "Never run"; after the reload the tree is the same.
 
 #### TC-WS-02 Duplicate names in one parent — P1, E2E
 
@@ -405,7 +405,7 @@ Covers US-4.3.3. Pre: S1, S2, and `login.yaml` in `Shopping`.
 3. Create a second Test File named `login.yaml` in `Shopping`.
 4. Create a Project named `Other`, a Module `Shopping` in it, and `login.yaml` in that Module.
 
-Expected: steps 1–3 keep their dialog open with an alert, and nothing is added; step 4 succeeds, since names are unique only within their parent.
+Expected: steps 1–3 keep the row's input open with an alert under it, and nothing is added; Escape removes the row; step 4 succeeds, since names are unique only within their parent.
 
 #### TC-WS-03 Name length boundaries — P2, E2E
 
@@ -415,18 +415,17 @@ Covers US-4.3.3. Pre: S1.
 2. Create a Project with a 100-character name.
 3. Create a Project with a 101-character name.
 
-Expected: step 1 is refused (the dialog stays open); step 2 succeeds; step 3 shows an alert in the dialog and adds nothing.
+Expected: step 1 is refused with "Enter a name." under the input; step 2 succeeds; step 3 shows "Names can be at most 100 characters." under the input as it is typed and adds nothing.
 
-#### TC-WS-04 Rename a Project, a Module, and the open Test File — P1, E2E
+#### TC-WS-04 Rename a Project, a Module, and the open Test File in place — P1, E2E
 
 Covers US-4.3.3. Pre: S1, S2, `login.yaml` open in the editor.
 
-1. **Rename test file login.yaml** → `sign-in`, **Save**.
-2. **Rename module Shopping** → `Checkout`, **Save**.
-3. **Rename project Demo Shop** → `Swag Labs`, **Save**.
-4. Open **Rename test file sign-in.yaml** and leave the name unchanged.
+1. Click **Rename test file login.yaml**, type `sign-in`, press Enter.
+2. Click **Rename module Shopping**, type `Checkout`, press Enter.
+3. Click **Rename project Demo Shop**, type `Swag Labs`, click somewhere else.
 
-Expected: steps 1–3 update the tree at once; the Test File's Rename input shows the name without `.yaml`, which is shown after it; after step 1 the editor heading is `sign-in.yaml`; in step 4 the input shows `sign-in` and **Save** is disabled.
+Expected: no dialog opens; the row's name turns into a focused input in the same spot with the name selected, and a Test File's input holds the name without `.yaml`, which stays shown after it; steps 1–3 update the tree at once; after step 1 the editor heading is `sign-in.yaml`.
 
 #### TC-WS-05 Delete the open Test File — P1, E2E
 
@@ -461,29 +460,49 @@ Covers US-4.3.3. Pre: S1.
 2. Create a Project named `  Padded  `.
 3. Create a Project named three spaces.
 
-Expected: step 1 shows the name unchanged, also after a reload; step 2 is saved as `Padded`; step 3 keeps the dialog open with an alert and adds nothing.
+Expected: step 1 shows the name unchanged, also after a reload; step 2 is saved as `Padded`; step 3 keeps the input open with an alert and adds nothing.
 
 #### TC-WS-09 Test File names use letters, digits, `-`, `_` and `.`, before a fixed `.yaml` — P1, E2E
 
 Covers US-4.3.3. Pre: S1, S2.
 
-1. Open **New test file in Shopping**: `.yaml` is shown after the Name input.
+1. Click **New test file in Shopping**: `.yaml` is shown after the new row's input.
 2. Create Test Files named `sign in`, `商店`, and `a/b`, one at a time.
 3. Create Test Files named `  spaced  `, `v1.2`, and `pasted.yaml`.
 
-Expected: each name of step 2 keeps the dialog open with `Use only letters, digits, -, _ and ., with no spaces.` under the input, marked invalid, and adds nothing; step 3 creates `spaced.yaml`, `v1.2.yaml`, and `pasted.yaml` (a typed `.yaml` is not doubled).
+Expected: each name of step 2 shows `Use only letters, digits, -, _ and ., with no spaces.` under the input as it is typed, the input is marked invalid, Enter sends nothing and adds nothing; step 3 creates `spaced.yaml`, `v1.2.yaml`, and `pasted.yaml` (a typed `.yaml` is not doubled).
+
+#### TC-WS-10 A wider sidebar and full names — P1, E2E
+
+Covers US-4.3.3. Pre: S1, a Project with a name longer than the sidebar is wide.
+
+1. Hover the Project's row, then move the pointer away and focus the row with Tab.
+2. Drag the sidebar's edge (or focus it and press → a few times) to widen it.
+3. Reload the page.
+
+Expected: steps 1 show the full name in a tooltip, on hover and on focus; step 2 widens the sidebar, between a minimum and a maximum width; after step 3 the width is kept.
+
+#### TC-WS-11 F2, Escape and a taken name — P1, E2E
+
+Covers US-4.3.3. Pre: S1, S2, `login.yaml` and `checkout.yaml` in `Shopping`.
+
+1. Focus the `login.yaml` row, press F2, type `changed`, press Escape.
+2. Press F2 again, type `checkout`, press Enter.
+3. Press Escape; rename the Project and clear its name.
+
+Expected: step 1 restores `login.yaml`; step 2 keeps the input open with the backend's conflict message under it, linked with `aria-describedby`; step 3 shows "Enter a name." under the input as it is typed, the input marked invalid.
 
 ### 4.3 Editor (`ED`)
 
-#### TC-ED-01 Starter source and unsaved changes — P0, E2E
+#### TC-ED-01 Starter source and the file state — P0, E2E
 
 Covers US-4.3.3. Pre: S1, S2, a new Test File `editor.yaml`.
 
-1. Look at the textarea.
+1. Look at the editor and its header.
 2. Type a character.
 3. Delete it again.
 
-Expected: step 1 shows `name: "editor"` with one `open` step; step 2 shows "Unsaved changes" and enables **Save**; step 3 hides "Unsaved changes" and disables **Save**.
+Expected: step 1 shows `name: "editor"` with one `open` step, with YAML highlighting and line numbers, the file state "Saved", and no **Validate** button; step 2 shows "Unsaved" in the header and the status bar and enables **Save**; step 3 shows "Saved" and disables **Save**.
 
 #### TC-ED-02 Save, keep showing, and reload — P0, E2E
 
@@ -492,42 +511,41 @@ Covers US-4.3.3. Pre: TC-ED-01.
 1. Replace the source with `pass/sign-in.yaml`, click **Save**.
 2. Reload the page.
 
-Expected: after step 1 "Unsaved changes" disappears, the textarea still shows the saved source, and the result bar shows "Valid. Ready to run."; after step 2 the textarea shows the saved source.
+Expected: after step 1 the file state is "Saved", the editor still shows the saved source, and the Problems console shows "No problems" ("Valid. Ready to run." is not shown); after step 2 the editor shows the saved source.
 
 #### TC-ED-03 Upload a file — P1, E2E
 
-Covers US-4.3.3. Pre: S1, S2, a new Test File.
+Covers US-4.3.3. Pre: S1, S2.
 
-1. Click **Upload file** and choose `pass/checkout.yaml`.
-2. Reload the page without saving.
-3. Upload it again and click **Save**.
+1. On `Shopping`, click **Upload file to Shopping** and choose `pass/checkout.yaml`.
+2. Upload it again.
 
-Expected: step 1 replaces the textarea with the file and shows "Unsaved changes"; step 2 shows the old source (Upload does not save); step 3 saves it. The picker accepts `.yaml` and `.yml`.
+Expected: step 1 creates `checkout.yaml` in `Shopping` with the file's text, opens it, and marks it current; the editor shows the file, "Saved". Step 2 shows the conflict message, starting with the file name, under the Module row and adds nothing. The picker accepts `.yaml` and `.yml`; a `.yml` file becomes a `.yaml` Test File.
 
-#### TC-ED-04 Validate a file with several errors — P0, E2E
+#### TC-ED-04 A file with several errors, as it is typed — P0, E2E
 
 Covers US-4.3.1. Pre: S1, S2, a new Test File.
 
-1. Load `invalid/multiple-errors.yaml`; click **Validate**.
+1. Paste `invalid/multiple-errors.yaml` and wait a moment.
 2. Click **Save**.
 
-Expected: the result bar shows "7 validation errors" and one item per row of the table in 2.4, as `Line <line>: <message>`, in line order; no browser is started. Save still saves the file and shows the same diagnostics.
+Expected: without any button, the Problems console shows "7 problems" and one item per row of the table in 2.4, as `Line <line>: <message>` with its code, in line order; each of the 7 lines has a wavy underline and a marker in the gutter, and hovering it shows the message; no browser is started. Save still saves the file and shows the same diagnostics.
 
-#### TC-ED-05 Validate a YAML syntax error — P1, E2E
+#### TC-ED-05 A YAML syntax error — P1, E2E
 
 Covers US-4.3.1. Pre: S1, S2, a new Test File.
 
-1. Load `invalid/yaml-syntax.yaml`; click **Validate**.
+1. Paste `invalid/yaml-syntax.yaml`.
 
-Expected: "1 validation error" and `Line 7: Nested mappings are not allowed in compact mappings`.
+Expected: "1 problem" and `Line 7: Nested mappings are not allowed in compact mappings`.
 
 #### TC-ED-06 Fix the errors — P1, E2E
 
 Covers US-4.3.1. Pre: TC-ED-04.
 
-1. Replace the source with `pass/sign-in.yaml`; click **Validate**.
+1. Replace the source with `pass/sign-in.yaml`.
 
-Expected: "Valid. Ready to run." with no list items; editing again clears the result bar.
+Expected: "No problems", no list items, and no marks in the editor.
 
 #### TC-ED-07 Source size limit (boundary) — P2, E2E
 
@@ -536,24 +554,84 @@ Covers US-4.3.3. Pre: S1, S2, a new Test File.
 1. Save a valid source padded with a YAML comment to exactly 262,144 characters.
 2. Save it with one more character.
 
-Expected: step 1 saves; step 2 shows `The test file is too long: it can be at most 262,144 characters.` in an alert, and keeps the draft.
+Expected: step 1 saves; step 2 shows `The test file is too long: it can be at most 262,144 characters.` in an alert, and keeps the draft ("Unsaved").
 
 #### TC-ED-08 A file with no steps at all — P2, E2E
 
 Covers US-4.3.1. Pre: S1, S2, a new Test File.
 
-1. Clear the textarea; click **Validate**.
-2. Load `invalid/empty.yaml` (a comment only); click **Validate**.
+1. Clear the editor.
+2. Paste `invalid/empty.yaml` (a comment only).
 
-Expected: both show "1 validation error" and `Line 1: The root must be an object`.
+Expected: both show `Line 1: The root must be an object`.
 
 #### TC-ED-09 Integer limits (boundary) — P2, E2E
 
 Covers US-4.3.1. Pre: S1, S2, a new Test File.
 
-1. Load `invalid/timeout-bounds.yaml`; click **Validate**.
+1. Paste `invalid/timeout-bounds.yaml`.
 
-Expected: "2 validation errors": `Line 5: "ms" must be a positive integer up to 2147483647` and the same at line 7 (`1e3`). Line 3 (`timeoutMs: 2147483647`) and line 6 (`ms: 1`) are valid.
+Expected: "2 problems": `Line 5: "ms" must be a positive integer up to 2147483647` and the same at line 7 (`1e3`). Line 3 (`timeoutMs: 2147483647`) and line 6 (`ms: 1`) are valid.
+
+#### TC-ED-10 Keyboard shortcuts — P1, E2E
+
+Covers US-4.3.3, US-4.3.4. Pre: S1, S2, a Test File open.
+
+1. Change the source, press `Ctrl+S` (`Cmd+S` on macOS).
+2. Press `Ctrl+Enter` (`Cmd+Enter`).
+
+Expected: step 1 saves (the state leaves "Unsaved"); step 2 starts a Run, listed in the Run console's history, and inserts no line into the source.
+
+#### TC-ED-11 Go to a problem — P1, E2E
+
+Covers US-4.3.1. Pre: TC-ED-04.
+
+1. Click `Line 7: Unknown action "aiAct"` in the Problems console.
+
+Expected: the editor has the focus with the cursor at the start of line 7's text; the status bar shows "Ln 7, Col 3".
+
+#### TC-ED-12 The editor fills the window — P1, E2E
+
+Covers US-4.3.3. Pre: S1, S2, a Test File open, a 1366×768 window (also check 1280×800 by hand).
+
+1. Look at the page.
+
+Expected: the sidebar, the editor and the console column sit edge to edge, separated only by 1px lines, with no centered column or margin; the editor's width is the window's minus the sidebar's and the console column's (within 3px), about 60 / 40 with the consoles; Problems is above Run and both are as high; the page itself does not scroll.
+
+#### TC-ED-13 Collapsed consoles stay collapsed — P1, E2E
+
+Covers US-4.3.1. Pre: S1, S2, a valid Test File open.
+
+1. Click **Problems console** to collapse it; reload the page.
+2. Type valid YAML.
+3. Type an error.
+
+Expected: after step 1 it is still collapsed; step 2 leaves it collapsed; step 3 opens it with the new problem.
+
+#### TC-ED-14 Hide and show the console column — P1, E2E
+
+Covers US-4.3.3. Pre: S1, S2, a Test File open.
+
+1. Click **Toggle consoles** in the header.
+2. Click **Toggle consoles** in the status bar.
+
+Expected: step 1 hides the console column and the editor takes the full width; step 2 shows it again.
+
+#### TC-ED-15 Run opens the Run console — P1, E2E
+
+Covers US-4.3.4. Pre: S1, S2, a Test File open, the Run console collapsed.
+
+1. Click **Run**.
+
+Expected: the Run console opens and shows the new Run with **Open run details**.
+
+#### TC-ED-16 The editor on a phone — P2, E2E
+
+Covers US-4.3.3. Pre: S1, S2, a Test File open, a 390px wide window.
+
+1. Look at the page.
+
+Expected: the consoles are under the editor; nothing scrolls sideways.
 
 ### 4.4 Project Variables (`VAR`)
 
@@ -561,16 +639,17 @@ Expected: "2 validation errors": `Line 5: "ms" must be a positive integer up to 
 
 Covers US-4.3.3. Pre: S1, S2.
 
-1. Open **Variables for Demo Shop**: it shows "No variables yet".
+1. Click **Variables for Demo Shop**: the Variables page opens in the editor area and shows "No variables yet".
 2. Save `BASE` with the value of 2.3.
-3. Save `BASE` again with another value.
-4. Click **Delete BASE**.
+3. Click **Show value of BASE**, then click it again.
+4. Save `BASE` again with another value.
+5. Click **Delete BASE**.
 
-Expected: after step 2 `BASE` is listed once and its value is not shown anywhere; step 3 keeps one `BASE`; step 4 removes it.
+Expected: after step 2 `BASE` is listed once with its value as `****`, and the value is not shown anywhere; step 3 shows the value, then `****` again; step 4 keeps one `BASE`; step 5 removes it.
 
 #### TC-VAR-02 Invalid Variable names — P1, E2E
 
-Covers US-4.3.3. Pre: S1, S2, the Variables dialog open.
+Covers US-4.3.3. Pre: S1, S2, the Variables page open.
 
 1. Save `base` with any value.
 2. Save `1BASE`.
@@ -596,13 +675,13 @@ Expected: step 1 fails with `Variable {{BASE}} is not set`; Variables of `Demo S
 
 #### TC-VAR-05 Variable value limits (boundary) — P2, E2E
 
-Covers US-4.3.3. Pre: S1, S2, the Variables dialog open.
+Covers US-4.3.3. Pre: S1, S2, the Variables page open.
 
 1. Fill only the Name, then only the Value.
 2. Save `LONG` with a value of 10,000 characters.
 3. Save `LONG` with a value of 10,001 characters.
 
-Expected: step 1 keeps **Save** disabled; step 2 lists `LONG`; step 3 shows `A Variable value can be at most 10,000 characters.` in the dialog's alert without a request, and the dialog stays open.
+Expected: step 1 keeps **Save** disabled; step 2 lists `LONG`; step 3 shows `A Variable value can be at most 10,000 characters.` in the page's alert without a request, and keeps the value.
 
 #### TC-VAR-06 A value with special characters — P1, E2E
 
@@ -619,14 +698,12 @@ Expected: `Passed`, "3/3 passed": the value is typed into the prompt and read ba
 Covers US-4.3.4. Pre: S1–S3.
 
 1. S4 with `pass/sign-in.yaml`.
-2. Click **Run**.
-3. Click **View run** and watch the page without reloading.
+2. Click **Run** and watch the Run console without reloading.
+3. Click **Open run details**.
 
 Expected:
-- Step 2 shows "Run queued." and the Runs list gains one Run.
-- On the Run page the heading is `sign-in.yaml`; the status moves from `Queued` or `Running` to `Passed` without a reload.
-- The "Steps" list has 6 items; each moves from Pending to Running to Passed, in order.
-- At the end: "6/6 passed", a duration, every element step shows `selector`, and the sidebar dot is green with the title "Passed".
+- Step 2 shows no banner: the Run console gains the Run in its history and follows it, without a navigation, from `Queued` or `Running` to `Passed`; its "Progress" list has 6 items that move from Pending to Running to Passed, in order; at the end it shows "6/6 passed" and a duration, the file state is "Passed", and the sidebar dot is green with the title "Passed".
+- Step 3 opens the sheet named `sign-in.yaml` with "Status: Passed" and 6 steps; every element step shows `selector`.
 
 #### TC-RUN-02 Run a longer flow — P1, E2E
 
@@ -673,7 +750,7 @@ Expected: `Failed` within about 5 s; step 2 Failed with locate method `selector`
 Covers US-4.3.4. Pre: S1–S3; `RUN_CONCURRENCY=1`; no other Run active.
 
 1. S4 with `pass/slow.yaml` as `slow.yaml`, click **Run**.
-2. Within 5 s, S4 with `pass/sign-in.yaml` as `sign-in.yaml`, click **Run**, then **View run**.
+2. Within 5 s, S4 with `pass/sign-in.yaml` as `sign-in.yaml`, click **Run**, then **Open run details**.
 
 Expected: the second Run shows `Queued` while `slow.yaml` runs, then `Running`, then `Passed`, all without a reload. Both Runs pass.
 
@@ -681,7 +758,7 @@ Expected: the second Run shows `Queued` while `slow.yaml` runs, then `Running`, 
 
 Covers US-4.3.4. Pre: S1–S3.
 
-1. S4 with `pass/slow.yaml`, click **Run**, wait 3 s, then click **View run**.
+1. S4 with `pass/slow.yaml`, click **Run**, wait 3 s, then open the Run's page from the Run console's history with a middle click or its URL.
 
 Expected: steps already done show as Passed at once (the snapshot); the rest follow live; the Run ends `Passed`.
 
@@ -705,15 +782,15 @@ Expected: `Failed` after about 10 s; the header shows `Timed out: The run did no
 
 Covers US-4.3.1. Pre: S1–S3.
 
-1. S4 with `invalid/multiple-errors.yaml`; click **Run**.
+1. S4 with `invalid/multiple-errors.yaml`; collapse the Problems console; click **Run**.
 
-Expected: no "Run queued."; the result bar shows the 7 diagnostics; the Runs list still shows "No runs yet".
+Expected: no Run is queued: the Run console shows the refusal in an alert, the Problems console opens with the 7 diagnostics, and the history still shows "No runs yet".
 
 #### TC-RUN-12 Run with unsaved changes — P1, E2E
 
 Covers US-4.3.4. Pre: S1–S3, a saved Test File.
 
-1. Load `pass/sign-in.yaml` without saving; click **Run**.
+1. Paste `pass/checkout.yaml` without saving; click **Run**.
 2. Reload the page.
 
 Expected: Run saves first, then queues the Run; after the reload the saved source is the new one; the Run uses the new source.
@@ -740,7 +817,7 @@ Covers US-4.3.4. Pre: S1–S3, S4 with `pass/sign-in.yaml`.
 
 1. Double-click **Run**.
 
-Expected: one "Run queued."; after a reload the Runs list shows exactly one Run, since **Run** is disabled while its request is in flight.
+Expected: one Run in the Run console; after a reload the history shows exactly one Run, since **Run** is disabled while its request is in flight.
 
 #### TC-RUN-16 The file is deleted while its Run waits — P1, E2E
 
@@ -787,7 +864,7 @@ Covers US-4.3.5. Pre: TC-RUN-01.
 Expected:
 - Each step shows "Step n", its action, "line n", "Passed", a duration, and a screenshot with alt "Step n screenshot"; element steps also show `selector`.
 - `report.json` has `status: "passed"`, `summary` `{ total: 6, passed: 6, failed: 0, pending: 0 }`, and one entry per step; `trace.zip` opens in `pnpm exec playwright show-trace`.
-- Step 3 returns to the editor, where the Runs list shows the Run as "Passed" with its trigger time and duration.
+- Step 3 returns to the editor, where the Run console's history shows the Run as "Passed" with its trigger time and duration.
 
 #### TC-RPT-02 Report of a failed Run — P1, E2E
 
@@ -803,8 +880,9 @@ Expected: the screenshot shows the checkout overview with `Total: $32.39`; click
 Covers US-4.3.5. Pre: S1–S3, S4 with `pass/sign-in.yaml`.
 
 1. Run it three times; between Runs, replace the source with `fail/wrong-total.yaml` once and save.
+2. Click each Run in the Run console's history, and close the sheet with Escape.
 
-Expected: the Runs list shows three Runs, newest first, each with status, trigger time, and duration; each link opens its Run, whose "Source when it ran" section shows the source as it was when it ran.
+Expected: the history shows three Runs, newest first, each with status, trigger time, and duration; each opens its Run in the sheet, whose "Source when it ran" section shows the source as it was when it ran.
 
 #### TC-RPT-04 Runs are kept after their file is deleted — P2, E2E
 
@@ -813,6 +891,16 @@ Covers US-4.3.5. Pre: TC-RPT-01; note the Run URL.
 1. Delete `sign-in.yaml`; open the noted Run URL.
 
 Expected: the Run page still shows its steps and report; the "Back to …" link is hidden.
+
+#### TC-RPT-07 Run details in a sheet over the editor — P1, E2E
+
+Covers US-4.3.5. Pre: S1–S3, a finished Run of `sign-in.yaml`, the file open with an unsaved change, a 1366×768 window.
+
+1. Click the Run in the history; press Escape.
+2. Open it again and click **Close**; open it again and click the uncovered part of the page on the left.
+3. Open it again and click **Open full page**.
+
+Expected: the sheet slides in from the right over most of the editor (more than 60% of the window) without a navigation, with the Run's steps; each way of step 1 and 2 closes it, and the editor still holds the unsaved draft ("Unsaved"); step 3 opens `/runs/<id>`.
 
 #### TC-RPT-05 A Run that does not exist — P2, E2E
 
@@ -995,9 +1083,9 @@ Expected: the docs load; the Run answers `202` and then its result, with the sha
 
 Pre: S1–S3, a Test File.
 
-1. Without a mouse, sign in, create a Project, Module, and Test File, open the Variables dialog, edit, save, run, and open the Run.
+1. Without a mouse, sign in, create a Project, Module, and Test File (F2 to rename one), open the Variables page, edit, save with `Ctrl+S`, run with `Ctrl+Enter`, resize the splits with the arrow keys, collapse and reopen each console, and open and close the Run details.
 
-Expected: every control is reachable with Tab and has a visible focus ring; dialogs take focus and close with Escape; row actions show on focus.
+Expected: every control is reachable with Tab and has a visible focus ring, the split handles included; Tab leaves the editor after Escape; dialogs and the sheet take focus and close with Escape; row actions show on focus; a collapsed console column is skipped.
 
 #### TC-A11Y-02 Status and live updates — P2, Manual
 
@@ -1017,11 +1105,11 @@ Expected: every status has text or a title, not only a color; step updates are a
 
 | Requirement | Cases |
 | ----------- | ----- |
-| US-4.3.1 Validation | ED-04 – ED-06, ED-08, ED-09, RUN-11, CLI-01 |
+| US-4.3.1 Validation | ED-04 – ED-06, ED-08, ED-09, ED-11, ED-13, RUN-11, CLI-01 |
 | US-4.3.2 Locating | RUN-05, RUN-06, JEV-01 – JEV-05 |
-| US-4.3.3 Organization and authoring | WS-01 – WS-09, ED-01 – ED-03, ED-07, VAR-01, VAR-02, VAR-04, VAR-05 |
-| US-4.3.4 Live execution | RUN-01 – RUN-19, VAR-03, VAR-06 |
-| US-4.3.5 History and reports | RPT-01 – RPT-06, RUN-16 |
+| US-4.3.3 Organization and authoring | WS-01 – WS-11, ED-01 – ED-03, ED-07, ED-10, ED-12, ED-14, ED-16, VAR-01, VAR-02, VAR-04, VAR-05 |
+| US-4.3.4 Live execution | RUN-01 – RUN-19, ED-10, ED-15, VAR-03, VAR-06 |
+| US-4.3.5 History and reports | RPT-01 – RPT-07, RUN-16 |
 | US-4.3.6 Local CLI | CLI-01, CLI-02 |
 | US-4.3.7 Authentication and isolation | AUTH-01 – AUTH-10, SEC-01 – SEC-03, SEC-05 – SEC-07 |
 | PRD 4.2.2 Landing page and Quick Start | LAND-01 – LAND-08, QS-01 – QS-04 |

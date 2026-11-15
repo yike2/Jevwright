@@ -33,7 +33,7 @@ The Backend is one Express service that stores users' test files, runs them with
 | Validating | `POST /test-files/validate` analyzes a source without saving it |
 | Moving | `PATCH /test-files/:id` with a `moduleId` moves the Test File to another of the user's Modules |
 | Deleting | Deleting a Project deletes its Modules, Test Files, and Variables; deleting a Module deletes its Test Files. Runs are kept: their `testFileId`, `moduleId`, or `projectId` becomes `null`, and they keep their source, file name, and test name. `GET /runs?projectId=` still lists a deleted file's Runs while the Project exists |
-| Variables | Names follow `[A-Z_][A-Z0-9_]*`. The API returns names only, never values |
+| Variables | Names follow `[A-Z_][A-Z0-9_]*`. The API lists each Variable with its value, for its owner only; the frontend masks values until the user shows one (frontend.md 1.8) |
 | Order | Projects, Modules, Test Files, and Variable names are listed by name, in `/tree` as in their own lists |
 
 ### 1.4 Runs
@@ -206,7 +206,7 @@ Conventions every route follows:
 | `GET` / `POST` | `/projects` | `{ name }` | `200 { items: Project[] }` / `201 Project` |
 | `POST` | `/projects/quick-start` | – | `201 Project`, the Quick Start project (1.10); `409` when one exists |
 | `PATCH` / `DELETE` | `/projects/:projectId` | `{ name }` | `200 Project` / `204` |
-| `GET` | `/projects/:projectId/variables` | – | `200 { items: string[] }`, names only |
+| `GET` | `/projects/:projectId/variables` | – | `200 { items: { name, value }[] }`, by name |
 | `PUT` / `DELETE` | `/projects/:projectId/variables/:name` | `{ value }` | `204` / `204` |
 | `GET` / `POST` | `/projects/:projectId/modules` | `{ name }` | `200 { items: Module[] }` / `201 Module` |
 | `PATCH` / `DELETE` | `/modules/:moduleId` | `{ name }` | `200 Module` / `204` |
@@ -327,7 +327,7 @@ Integration tests need PostgreSQL: CI runs a `postgres` service container, and l
 | Unit | Deploy files: the Playwright image of the pinned `playwright`, Node of `.nvmrc`, `--dev` only in the development scripts, migrate before start, Caddy to `backend:4000`, one Postgres version in compose, `compose.dev.yaml`, and CI; the Demo App served on `DEMO_DOMAIN` like `serveDemoApp()`; `DEMO_APP_URL` from `DEMO_DOMAIN` in compose and production's public Demo App by default in the preview, the fixtures kept in the image, the browser container's `run-server` version, a firewall rule for every range of `NON_PUBLIC_RANGES`, root and capabilities dropped, memory, CPU, and process limits, `NET_ADMIN` and its own network | `src/tests/unit/app/backend/deploy.test.ts` |
 | Integration | Database: unique names per parent, cascade deletes, Runs kept with `null` ids | `src/tests/integration/app/backend/db.test.ts` |
 | Integration | Auth: register, the Quick Start project on register, nothing created for a duplicate email, login, wrong password, `401` without or with a bad token | `src/tests/integration/app/backend/auth.test.ts` |
-| Integration | Workspace: CRUD of every level, unique names, moving a Test File, cascade deletes, `404` for another user's data, saving a source with diagnostics, saving answers the source, conflict messages per level, variables return names only, adding the Quick Start project and its `409` | `src/tests/integration/app/backend/workspace.test.ts` |
+| Integration | Workspace: CRUD of every level, unique names, moving a Test File, cascade deletes, `404` for another user's data, saving a source with diagnostics, saving answers the source, conflict messages per level, variables are listed with their values, adding the Quick Start project and its `409` | `src/tests/integration/app/backend/workspace.test.ts` |
 | Integration | Runs: `422` for an invalid file, `202` and `queued`, a second Run stays `queued` while one runs, the final row and Report, Run errors, files served with Bearer or `?token=` and traversal rejected, a Run on a `run-server` at `BROWSER_ENDPOINT`, a Run capped at the longest run time, `GET /runs` filters, order, and cursor paging, restart recovery | `src/tests/integration/app/backend/runs.test.ts` |
 | Integration | Live Progress over a real WebSocket: snapshot with every step `pending`, `running` and finished steps with screenshots, final status, a finished Run's snapshot, `4401` and `4404` | `src/tests/integration/app/backend/live.test.ts` |
 | Integration | Core with `network: "public"`: a page on `127.0.0.1` is blocked | `src/tests/integration/core/browser/` |

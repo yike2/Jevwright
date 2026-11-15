@@ -73,7 +73,12 @@ Shared setup for the tests. Requests go straight to the backend at `API_URL` (`h
 | `startRun(api, testFileId)` | Triggers a Run; returns its id |
 | `runToEnd(api, testFileId)` | `startRun`, then polls `GET /runs/:id` for up to 60 s until the Run is `passed` or `failed`; returns its id |
 | `waitForFinalStatus(page)` | Waits up to 60 s until the Run page shows `Status: Passed` or `Status: Failed`; returns the label |
-| `runFromEditor(page, testFileId)` | Shared step S5: opens the editor, clicks **Run**, expects "Run queued.", follows **View run**, and returns `waitForFinalStatus(page)` |
+| `sidebarOf(page)` | The sidebar's "Projects" navigation |
+| `createInSidebar(page, opener, name)` | Clicks a sidebar "New …" button, types `name` into the new row's "Name" input, and presses Enter; returns the input |
+| `editorOf(page)` | The editor page's parts by role and name (frontend.md 1.7): `source`, `state`, `save`, `run`, `problems`, `runConsole`, `statusBar` |
+| `sourceOf(page)` | The editor's whole text. CodeMirror renders only the lines in view, so it reads the document through the view CodeMirror keeps on its content element, as `EditorView.findFromDOM` does |
+| `problemItemsOf(page)` | The Problems console's "Line <n>: <message>" buttons |
+| `runFromEditor(page, testFileId)` | Shared step S5: opens the editor, clicks **Run**, clicks **Open run details** in the Run console, follows **Open full page** to `/runs/<id>`, and returns `waitForFinalStatus(page)` |
 
 `api` methods throw when the response status is not the expected one, so a setup failure shows as the setup step, not as a later assertion.
 
@@ -90,12 +95,12 @@ Shared setup for the tests. Requests go straight to the backend at `API_URL` (`h
 | `src/tests/e2e/theme.e2e.ts` | TC-THEME-01 – 04 |
 | `src/tests/e2e/auth.e2e.ts` | TC-AUTH-01 – 05, 07 – 10 |
 | `src/tests/e2e/quick-start.e2e.ts` | TC-QS-01 – 03 |
-| `src/tests/e2e/sidebar.e2e.ts` | TC-WS-01 – 03, 08, 09 |
-| `src/tests/e2e/sidebar-actions.e2e.ts` | TC-WS-04 – 06 |
-| `src/tests/e2e/editor.e2e.ts` | TC-ED-01 – 09 |
+| `src/tests/e2e/sidebar.e2e.ts` | TC-WS-01 – 03, 08 – 10 |
+| `src/tests/e2e/sidebar-actions.e2e.ts` | TC-WS-04 – 06, 11 |
+| `src/tests/e2e/editor.e2e.ts` | TC-ED-01 – 16 |
 | `src/tests/e2e/variables.e2e.ts` | TC-VAR-01 – 06 |
 | `src/tests/e2e/runs.e2e.ts` | TC-RUN-01 – 12, 15 – 19 |
-| `src/tests/e2e/reports.e2e.ts` | TC-RPT-01 – 06 |
+| `src/tests/e2e/reports.e2e.ts` | TC-RPT-01 – 07 |
 | `src/tests/e2e/overview.e2e.ts` | TC-OV-01 – 02 |
 | `src/tests/e2e/security.e2e.ts` | TC-SEC-01 – 03, 05 – 07 |
 
