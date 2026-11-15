@@ -162,3 +162,4 @@ src/app/backend/src/generated/
 test-results/
 playwright-report/
 .DS_Store
+jevwright-reports/
