@@ -61,12 +61,18 @@ Good test files:
 
 ## 3. Upload it and set the Variables
 
-In the web workspace, open the **+** menu on a Project or a folder and choose **Upload files…**, or drag `.yaml` files or
-whole folders from your computer onto a Project or folder in the sidebar. You can also choose **New test file** and
-paste the YAML into the editor.
+In the web workspace, create a Project with the **+** next to "Projects" (1) if you have none. Then open the **+** menu
+on a Project or a folder and choose **Upload files…** (2), or drag `.yaml` files or whole folders from your computer
+onto a Project or folder in the sidebar. You can also choose **New test file** in the same menu and paste the YAML into
+the editor.
 
-Then open the Project's **Variables** (in the sidebar, under the Project) and set every Variable the file uses, such as
-`BASE`. Every file in the Project, in any folder, uses the Project's Variables.
+![The sidebar with markers on the + next to Projects (1) and the menu of a folder's + with New folder, New test file and Upload files… (2); markers 3 and 4 show the status icons of a passed and a failed file](/screenshots/sidebar.webp)
+
+Then click the key icon on the Project's row to open its Variables, and set every Variable the file uses, such as
+`BASE`: type its **Name** (3) and **Value** (4) and click **Save** (5). Every file in the Project, in any folder, uses
+the Project's Variables.
+
+![The Variables page of the Quick Start project, with markers on the row of BASE (1), its eye button (2), the Name field (3), the Value field (4) and Save (5)](/screenshots/variables.webp)
 
 The file is checked when it arrives and every time you save: the **Debug console** lists every problem with its line.
 
@@ -84,13 +90,22 @@ The file is checked when it arrives and every time you save: the **Debug console
 
 ## 4. Run it and read the report
 
-Click **Run**. The **Output console** follows each step live; when the Run ends, **Open run details** shows the report:
-each step's status, its duration, how its element was found (`selector`, `visual` or `dom`), the reason of a failed step,
-and a screenshot of the page after each step. The report also offers **Download report** (the JSON report) and
-**Download trace**, a Playwright trace that you can open at [trace.playwright.dev](https://trace.playwright.dev) to step
-through the Run with the page, the network and the console.
+Click **Run** at the top right of the editor. The **Output console** follows each step live: the Run's status (1),
+the steps that passed (2), the one running (3) and the ones still to come (4).
 
-A Run stops at the first failed step; the steps after it stay **Pending**.
+![The Output console during a Run, with markers on the Running badge (1), the passed step 1 (2), the running step 2 (3) and the pending steps 3 to 8 (4)](/screenshots/run-live.webp)
+
+When the Run ends, **Open run details** shows the report: the Run's status (1), each step's status and duration, how
+its element was found (5), the reason of a failed step, and a screenshot of the page after each step (4).
+
+![A report beside the editor, with markers on the status (1), Open full page (2), Download report (3), the screenshot of step 1 (4) and the locate method "selector" of step 2 (5)](/screenshots/report.webp)
+
+The report also offers **Download report** (3), the JSON report, and **Download trace**, a Playwright trace that you can
+open at [trace.playwright.dev](https://trace.playwright.dev) to step through the Run with the page, the network and the
+console.
+
+A Run stops at the first failed step; the steps after it stay **Pending**. The file's **History**, below the steps in
+the Output console, keeps every Run, newest first; click one to open its report.
 
 ### What can go wrong
 

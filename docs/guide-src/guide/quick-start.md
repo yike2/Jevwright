@@ -19,8 +19,16 @@ setting that cookie (see `buy-a-backpack.yaml` below).
 
 ## 1. Register
 
-Open the [web workspace](https://app.94.72.126.118.sslip.io) and register with an email and a password. Your account
-starts with a **Quick Start** project in the sidebar. Its Variables are already set:
+Open the [web workspace](https://app.94.72.126.118.sslip.io) and click **Sign in**. Choose **Register** (1), enter your
+email (2) and a password (3), and click **Register** (4).
+
+![The sign-in page in Register mode, with markers on the Register tab (1), the Email field (2), the Password field (3) and the Register button (4)](/screenshots/register.webp)
+
+Your account starts with a **Quick Start** project in the sidebar:
+
+![The sidebar of a new account: the Quick Start project with its Variables key icon (1), the folder "1 Passing tests" (2) and the file sign-in-and-see-products.yaml (3); the files overview lists the same files on the right](/screenshots/quick-start-project.webp)
+
+Its Variables are already set; the key icon on the project's row (1) opens them:
 
 | Variable | Value |
 | --- | --- |
@@ -32,7 +40,9 @@ Quick Start project** under the sidebar's tree brings it back.
 
 ## 2. Pick a file
 
-Each file opens with three comment lines: what it does, what to expect, and something to try.
+The project holds four numbered folders, such as **1 Passing tests** (2 in the picture above). Click a file in a
+folder, such as `sign-in-and-see-products.yaml` (3), to open it in the editor. Each file opens with three comment
+lines: what it does, what to expect, and something to try.
 
 | Feature | Folder | File |
 | --- | --- | --- |
@@ -52,8 +62,10 @@ Each file opens with three comment lines: what it does, what to expect, and some
 
 ## 3. Run a passing test
 
-Open `sign-in-and-see-products.yaml` and click **Run** (or press `Ctrl+Enter`). The **Output console** on the right
-follows the Run live, step by step. A passing Run ends like this:
+Open `sign-in-and-see-products.yaml` and click **Run** (1) at the top right, or press `Ctrl+Enter`. The **Output
+console** on the right follows the Run live, one line per step (2). A passing Run ends like this:
+
+![The editor after a passing Run, with markers on the Run button (1), the six passed steps in the Output console (2) and the Open run details button (3)](/screenshots/run-passed.webp)
 
 ```text
 Passed  6/6 passed
@@ -65,20 +77,30 @@ Step 5  waitFor  line 18  Passed
 Step 6  assert   line 20  Passed
 ```
 
-Click **Open run details** to see the report: every step with its duration, how its element was found (`selector`
-here), and a screenshot of the page after it.
+Click **Open run details** (3) to see the report, which slides in over the editor:
+
+- the Run's status, when it started, its duration and how many steps passed (1);
+- **Open full page** (2) opens the report on its own page, and **Download report** (3) saves it as JSON;
+- every step, with a screenshot of the page after it (4) and how its element was found (5), `selector` here.
+
+![The report of the passing Run beside the editor, with markers on the status (1), Open full page (2), Download report (3), the screenshot of step 1 (4) and the locate method "selector" of step 2 (5)](/screenshots/report.webp)
 
 ## 4. Run a failing test
 
 Open `wrong-total-fails-at-the-total.yaml` and run it. It expects a total of `$99.99`, but the shop charges `$32.39`, so
-step 10 fails, and steps 11 and 12 stay **Pending**, because a Run stops at the first failed step. The failed step shows
-its reason and a screenshot of the page at that moment:
+the Run ends **Failed** (1): step 10 fails with its reason (2), and steps 11 and 12 stay **Pending** (3), because a Run
+stops at the first failed step. **History** (4) keeps the Run, newest first.
+
+![The Output console after a failed Run, with markers on the Failed badge (1), step 10 with its reason (2), the pending steps 11 and 12 (3) and the Run in History (4)](/screenshots/run-failed.webp)
+
+The reason says what the browser found:
 
 ```text
 Text of "[data-test="total-label"]" did not contain "Total: $99.99" within 3000ms; it was "Total: $32.39"
 ```
 
-Do what the file's `# Try:` line says, fix the total, and run it again.
+**Open run details** shows the same reason with a screenshot of the page at that moment. Do what the file's `# Try:`
+line says, fix the total, and run it again.
 
 ## 5. Let Jev find and judge
 
@@ -95,10 +117,18 @@ Open the files in **4 Jev - find and check by description**:
 - `judge-a-true-statement.yaml` and `judge-a-false-statement.yaml` check the page with a `statement` in plain words,
   which Jev judges from a screenshot. The false one fails with a reason that starts with `Statement does not hold`.
 
+In the report of `find-and-check-with-jev.yaml`, step 2 shows `visual` (1) and step 3 shows `dom` (2):
+
+![The report of find-and-check-with-jev.yaml, with markers on the locate method "visual" of step 2 (1) and "dom" of step 3 (2), each above the step's screenshot](/screenshots/report-jev.webp)
+
 ## 6. Fix an invalid file
 
-Open `seven-errors-at-once.yaml`. The **Debug console** lists every problem with its line and its code, such as
-`Line 9: Unknown action "aiAct"` with `E005`, and the editor underlines each line. Click a problem to jump to its line.
+Open `seven-errors-at-once.yaml`. The editor underlines each line with a problem (1), and the **Debug console** lists
+every problem with its line and its code (2), such as `Line 9: Unknown action "aiAct"` with `E005`. Click a problem to
+jump to its line.
+
+![seven-errors-at-once.yaml in the editor, with markers on the underlined line 5 (1) and its problem "Line 5" with code E007 at the top of the Debug console (2)](/screenshots/diagnostics.webp)
+
 A file with problems cannot run. Fix them one by one; the list updates as you type and when you save. The
 [Diagnostics](../reference/diagnostics.md) page explains every code.
 
