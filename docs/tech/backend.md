@@ -139,7 +139,7 @@ The Project's folders, files and headers are a manifest in `workspace/quick-star
 | `1 Passing tests` | `sign-in-and-see-products.yaml`, `buy-a-backpack.yaml`, `locked-out-user-sees-an-error.yaml` | `pass/sign-in.yaml`, `pass/checkout.yaml`, `pass/locked-out.yaml` |
 | `2 Failing tests - see why they fail` | `wrong-total-fails-at-the-total.yaml`, `missing-button-fails.yaml`, `unexpected-alert-fails.yaml` | `fail/wrong-total.yaml`, `fail/missing-element.yaml`, `fail/unexpected-dialog.yaml` |
 | `3 Invalid files - fix the errors` | `seven-errors-at-once.yaml`, `yaml-syntax-error.yaml` | `invalid/multiple-errors.yaml`, `invalid/yaml-syntax.yaml` |
-| `4 Jev - find and check by description` | `find-elements-by-description.yaml` (`target` locating), `fall-back-from-a-stale-selector.yaml` (a stale `selector` falls back to its `target`), `judge-a-true-statement.yaml`, `judge-a-false-statement.yaml` (`statement` judging) | `jev/target-add-to-cart.yaml`, `jev/stale-selector.yaml`, `jev/statement-holds.yaml`, `jev/statement-fails.yaml` |
+| `4 Jev - find and check by description` | `find-and-check-with-jev.yaml` (`visual` and `dom` locating and `statement` judging in one Run), `find-elements-by-description.yaml` (`target` locating), `fall-back-from-a-stale-selector.yaml` (a stale `selector` falls back to its `target`), `judge-a-true-statement.yaml`, `judge-a-false-statement.yaml` (`statement` judging) | `jev/find-and-check.yaml`, `jev/target-add-to-cart.yaml`, `jev/stale-selector.yaml`, `jev/statement-holds.yaml`, `jev/statement-fails.yaml` |
 
 | Variable | Value |
 | -------- | ----- |

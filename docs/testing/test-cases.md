@@ -114,6 +114,7 @@ The test files are in `src/tests/e2e/fixtures/`, grouped by expected outcome. E2
 | `invalid/yaml-syntax.yaml` | – | 1 validation error (`E001`) at line 7 | ED-05 |
 | `invalid/empty.yaml` | – | 1 validation error (`E002`) at line 1: a comment only | ED-08 |
 | `invalid/timeout-bounds.yaml` | – | 2 validation errors (`E007`) at lines 5 and 7 | ED-09 |
+| `jev/find-and-check.yaml` | `target`, `selector` | Passed, 8/8; steps 2–3 by Jev, step 3 usually `dom`; Jev judges step 8 | JEV-06, QS-04 |
 | `jev/target-add-to-cart.yaml` | `target` | Passed; steps 2–3 by `visual` or `dom` | JEV-01, QS-04 |
 | `jev/stale-selector.yaml` | both | Passed; step 4 falls back to Jev | JEV-02, QS-04 |
 | `jev/statement-holds.yaml` | `selector` | Passed; Jev judges step 4, step 5 is a fallback pass | JEV-03, QS-04 |
@@ -186,10 +187,11 @@ Expected: every logo links to `/` ("Jevwright home"), signed in or not; step 3 o
 
 Covers PRD 4.2.2. Pre: none.
 
-1. Open `/`; in **Run replay** click **Show all steps**, then the button of step 4.
-2. Choose the tab `sign-in-and-see-products.yaml` and click **Show all steps**.
+1. Open `/`; in **Run replay** click **Show all steps**, then the button of step 3.
+2. Choose the tab `fall-back-from-a-stale-selector.yaml` and click **Show all steps**.
+3. Choose the tab `sign-in-and-see-products.yaml` and click **Show all steps**.
 
-Expected: step 1 opens on the tab `fall-back-from-a-stale-selector.yaml` and lists six steps; step 4 is `click`, `Passed`, with the badge **AI locate**, the other steps have no badge, no step shows a method name such as `selector`, and the screenshot "Step 4 screenshot" shows; in step 2 no step has an **AI locate** or **AI assert** badge.
+Expected: the replay has the tabs `find-and-check-with-jev.yaml`, `fall-back-from-a-stale-selector.yaml` and `sign-in-and-see-products.yaml`, in that order; step 1 opens on the first and lists eight steps; steps 2 and 3 are `click` with the badge **AI locate**, step 8 is `assert` with the badge **AI assert**, the other steps have no badge, no step shows a method name such as `selector`, and the screenshot "Step 3 screenshot" shows; in step 2 six steps are listed and only step 4, `click`, has the badge **AI locate**; in step 3 no step has an **AI locate** or **AI assert** badge.
 
 #### TC-LAND-06 The replay with reduced motion — P2, E2E
 
@@ -197,7 +199,7 @@ Covers AGENTS.md 7.2. Pre: the system set to reduce motion.
 
 1. Open `/`.
 
-Expected: the replay shows all six steps as `Passed` at once, with no animation.
+Expected: the replay shows all eight steps of its first tab as `Passed` at once, with no animation.
 
 #### TC-LAND-07 Quick start on the web — P2, E2E
 
@@ -394,7 +396,7 @@ Covers PRD 4.2.2. Pre: TC-QS-01.
 2. On a backend with a real `OPENROUTER_API_KEY`, run every file of the `4 Jev` folder (Live).
 3. In one file, do what its `# Try:` line says, and run or validate it again.
 
-Expected: each result matches the `# Expect:` line of its file: the passing files pass, the failing files fail at the stated step, the invalid files show their validation errors, two lines below the fixture's lines because of the header (`seven-errors-at-once.yaml` at lines 5, 8, 9, 10, 15, 17 and 20), and cannot run, and the Jev files pass or fail as TC-JEV-01 – TC-JEV-04 state; in step 3 the result changes as the line says.
+Expected: each result matches the `# Expect:` line of its file: the passing files pass, the failing files fail at the stated step, the invalid files show their validation errors, two lines below the fixture's lines because of the header (`seven-errors-at-once.yaml` at lines 5, 8, 9, 10, 15, 17 and 20), and cannot run, and the Jev files pass or fail as TC-JEV-01 – TC-JEV-04 and TC-JEV-06 state; in step 3 the result changes as the line says.
 
 #### TC-QS-05 The Quick Start project is offered whenever none is named Quick Start — P1, E2E
 
@@ -1263,6 +1265,15 @@ Covers US-4.3.2. Pre: S1–S3, a Test File whose step 2 is `click: { target: "Pu
 
 Expected: `Failed`; step 2's reason lists `visual` and `dom`, each with why it failed; a screenshot is recorded.
 
+#### TC-JEV-06 Locate by screenshot and by DOM, then judge — P1, Live
+
+Covers US-4.3.2. Pre: S1–S3.
+
+1. S4 with `jev/find-and-check.yaml`; S5.
+2. Open the screenshots of steps 3 and 8.
+
+Expected: `Passed`, "8/8 passed"; steps 2–3 show `visual` or `dom`, never `selector`, step 3 usually `dom`, since the red T-shirt's View details button is its picture with no visible label; step 4 confirms the red T-shirt's page opened, and step 8, a `statement` alone, is judged by Jev. In step 2 the screenshot of step 3 shows the Test.allTheThings() T-Shirt (Red) page and the one of step 8 the cart with the Sauce Labs Backpack and that T-shirt.
+
 ### 4.10 CLI and API smoke (`CLI`, `API`)
 
 #### TC-CLI-01 Validate from the command line — P1, Manual
@@ -1322,7 +1333,7 @@ Expected: every status has text or a title, not only a color; step updates are a
 | Requirement | Cases |
 | ----------- | ----- |
 | US-4.3.1 Validation | ED-04 – ED-06, ED-08, ED-09, ED-11, ED-13, ED-17, ED-22, RUN-11, CLI-01 |
-| US-4.3.2 Locating | RUN-05, RUN-06, JEV-01 – JEV-05 |
+| US-4.3.2 Locating | RUN-05, RUN-06, JEV-01 – JEV-06 |
 | US-4.3.3 Organization and authoring | WS-01 – WS-11, ED-01 – ED-03, ED-07, ED-10, ED-12, ED-14, ED-16, ED-18 – ED-20, VAR-01, VAR-02, VAR-04, VAR-05 |
 | US-4.3.4 Live execution | RUN-01 – RUN-20, ED-10, ED-15, VAR-03, VAR-06 |
 | US-4.3.5 History and reports | RPT-01 – RPT-07, RUN-16 |
@@ -1886,4 +1897,34 @@ steps:
       selector: '[data-test="shopping-cart-link"]'
   - assert:
       statement: "The cart has no items"
+```
+
+### `jev/find-and-check.yaml`
+
+```yaml
+# Expect: passed, 8/8; Jev locates steps 2-3 ("visual" or "dom", step 3 usually "dom") and judges step 8's statement
+# The Demo App keeps the signed-in user in the session-username cookie, so setting it skips the sign-in page.
+name: "Find and check with Jev"
+description: "Jev finds one button on the screenshot, one by its name in the page, and judges the cart"
+baseUrl: "{{BASE}}"
+cookies:
+  session-username: "standard_user"
+steps:
+  - open:
+      url: "/inventory.html"
+  - click:
+      target: "'Add to cart' button of the Sauce Labs Backpack"
+  - click:
+      target: "'View details' button of the Test.allTheThings() T-Shirt (Red)"
+  - assert:
+      selector: '[data-test="inventory-item-name"]'
+      text: "Test.allTheThings() T-Shirt (Red)"
+  - click:
+      selector: '[data-test="add-to-cart"]'
+  - click:
+      selector: '[data-test="shopping-cart-link"]'
+  - waitFor:
+      url: "**/cart.html"
+  - assert:
+      statement: "The cart lists two items, the Sauce Labs Backpack and the Test.allTheThings() T-Shirt (Red), each with a price"
 ```

@@ -44,6 +44,7 @@ Each file opens with three comment lines: what it does, what to expect, and some
 | An alert the step does not expect | 2 Failing tests - see why they fail | `unexpected-alert-fails.yaml` |
 | Every problem of a file listed at once | 3 Invalid files - fix the errors | `seven-errors-at-once.yaml` |
 | A YAML syntax error | 3 Invalid files - fix the errors | `yaml-syntax-error.yaml` |
+| Jev finding one element on the screenshot, one in the page, and judging a `statement` | 4 Jev - find and check by description | `find-and-check-with-jev.yaml` |
 | Jev finding elements from descriptions only | 4 Jev - find and check by description | `find-elements-by-description.yaml` |
 | Jev saving a step whose selector is out of date | 4 Jev - find and check by description | `fall-back-from-a-stale-selector.yaml` |
 | Jev judging a true `statement` | 4 Jev - find and check by description | `judge-a-true-statement.yaml` |
@@ -83,6 +84,10 @@ Do what the file's `# Try:` line says, fix the total, and run it again.
 
 Open the files in **4 Jev - find and check by description**:
 
+- `find-and-check-with-jev.yaml` shows all three ways Jev helps. Jev finds the backpack's Add to cart button on the
+  screenshot (`visual`). The red T-shirt's View details button is its picture, with no label you can see, so Jev
+  finds it by its name in the page instead (`dom`). The last step is a `statement` alone, which Jev judges from a
+  screenshot. The other steps are plain selectors and checks.
 - `find-elements-by-description.yaml` has no selectors for its buttons, only a `target` such as `"'Add to cart' button
   of the Sauce Labs Backpack"`. The report shows `visual` or `dom` for those steps: Jev found them.
 - `fall-back-from-a-stale-selector.yaml` has a selector that no longer matches. The step also has a `target`, so Jev
