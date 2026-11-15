@@ -129,12 +129,11 @@ On the server:
    POSTGRES_PASSWORD=$(openssl rand -hex 24)
    JWT_SECRET=$(openssl rand -hex 32)
    OPENROUTER_API_KEY=<the same key as production>
-   DEMO_APP_URL=https://<production's DEMO_DOMAIN>
    EOF
    chmod 600 .env
    ```
 
-   `DEMO_APP_URL` gives the Quick Start project of every preview account production's public Demo App as its `BASE` (`docs/tech/backend.md` 1.10); without it those projects get no `BASE`.
+The preview's Quick Start projects get production's public Demo App as `BASE` from `compose.preview.yaml` (`docs/tech/backend.md` 1.10); add `DEMO_APP_URL` to this `.env` only to point them at another one.
 
 Then create the `preview` environment in GitHub (4.1).
 

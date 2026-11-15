@@ -113,10 +113,10 @@ The test files are in `src/tests/e2e/fixtures/`, grouped by expected outcome. E2
 | `invalid/yaml-syntax.yaml` | – | 1 validation error (`E001`) at line 7 | ED-05 |
 | `invalid/empty.yaml` | – | 1 validation error (`E002`) at line 1: a comment only | ED-08 |
 | `invalid/timeout-bounds.yaml` | – | 2 validation errors (`E007`) at lines 5 and 7 | ED-09 |
-| `jev/target-sign-in.yaml` | `target` | Passed; steps 2–4 by `visual` or `dom` | JEV-01 |
-| `jev/stale-selector.yaml` | both | Passed; step 4 falls back to Jev | JEV-02 |
-| `jev/statement-holds.yaml` | `selector` | Passed; Jev judges step 8, step 9 is a fallback pass | JEV-03 |
-| `jev/statement-fails.yaml` | `selector` | Failed at step 8: the statement does not hold | JEV-04 |
+| `jev/target-sign-in.yaml` | `target` | Passed; steps 2–4 by `visual` or `dom` | JEV-01, QS-04 |
+| `jev/stale-selector.yaml` | both | Passed; step 4 falls back to Jev | JEV-02, QS-04 |
+| `jev/statement-holds.yaml` | `selector` | Passed; Jev judges step 8, step 9 is a fallback pass | JEV-03, QS-04 |
+| `jev/statement-fails.yaml` | `selector` | Failed at step 8: the statement does not hold | JEV-04, QS-04 |
 
 `invalid/multiple-errors.yaml` reports these diagnostics, one per error code it covers:
 
@@ -295,7 +295,7 @@ Covers PRD 4.2.2. Pre: the backend's `DEMO_APP_URL` is the Demo App of 2.1 or 2.
 2. Click **Variables for Quick Start**.
 3. Open `sign-in.yaml` from the overview and do S5.
 
-Expected: step 1 opens `/files`, where the overview shows the heading `Quick Start` with the Modules `Failing`, `Invalid`, and `Passing` and their files (`docs/tech/backend.md` 1.10); step 2 lists `BASE` and `SWAG_PASSWORD`; in step 3 the editor shows `baseUrl: "{{BASE}}"` and the Run passes.
+Expected: step 1 opens `/files`, where the overview shows the heading `Quick Start` with the Modules `1 Passing`, `2 Failing`, `3 Invalid`, and `4 Jev`, in that order, and their files (`docs/tech/backend.md` 1.10); step 2 lists `BASE` and `SWAG_PASSWORD`; in step 3 the editor shows `baseUrl: "{{BASE}}"` and the Run passes.
 
 #### TC-QS-02 Add the Quick Start project to an empty workspace — P1, E2E
 
@@ -318,9 +318,10 @@ Expected: an alert says `You already have a project named Quick Start. Rename or
 
 Covers PRD 4.2.2. Pre: TC-QS-01.
 
-1. Run every file of `Passing` and `Failing`, and validate both files of `Invalid`.
+1. Run every file of `1 Passing` and `2 Failing`, and validate both files of `3 Invalid`.
+2. On a backend with a real `OPENROUTER_API_KEY`, run every file of `4 Jev` (Live).
 
-Expected: each result matches the first-line comment of its file (2.4): the `Passing` files pass, the `Failing` files fail at the stated step, and the `Invalid` files show their validation errors and cannot run.
+Expected: each result matches the first-line comment of its file (2.4): the `1 Passing` files pass, the `2 Failing` files fail at the stated step, the `3 Invalid` files show their validation errors and cannot run, and the `4 Jev` files pass or fail as TC-JEV-01 – TC-JEV-04 state.
 
 ### 4.2 Workspace sidebar (`WS`)
 

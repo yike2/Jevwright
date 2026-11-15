@@ -9,7 +9,7 @@ import { hashPassword, verifyPassword } from "./password.js";
 import { quickStartProject } from "../workspace/quick-start.js";
 import { signToken } from "./token.js";
 
-export type AuthDeps = { db: Db; jwtSecret: string; demoAppUrl?: string | undefined };
+export type AuthDeps = { db: Db; jwtSecret: string; demoAppUrl: string };
 
 type Credentials = { email: string; password: string };
 

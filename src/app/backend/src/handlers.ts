@@ -9,8 +9,8 @@ export type HandlerDeps = {
   jwtSecret: string;
   runsDir: string;
   enqueue: (runId: string) => void;
-  // The Quick Start project's BASE (backend.md 1.10); without it the project has no BASE.
-  demoAppUrl?: string | undefined;
+  // The Quick Start project's BASE (backend.md 1.10).
+  demoAppUrl: string;
 };
 
 /** Every implemented route's handler, keyed like AppDeps.handlers. */

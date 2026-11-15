@@ -35,7 +35,7 @@ Copy `.env.example` to `.env` in the repository root if you have not, and set:
 | `JWT_SECRET` | Any 32 characters or more, e.g. from `openssl rand -hex 32` |
 | `CORS_ORIGIN` | `http://localhost:3000`, the frontend dev server's origin |
 | `OPENROUTER_API_KEY` | A real key for `target` and `statement` steps, which call Jev; any non-empty value when tests use selectors only |
-| `DEMO_APP_URL` | `http://127.0.0.1:8080`, the local Demo App of 7, which every new account's Quick Start project takes as its `BASE` (`docs/tech/backend.md` 1.10). Leave it empty and Quick Start projects get no `BASE` |
+| `DEMO_APP_URL` | `http://127.0.0.1:8080`, the local Demo App of 7, which every new account's Quick Start project takes as its `BASE` (`docs/tech/backend.md` 1.10). `pnpm backend` uses this value when it is missing; the files of the Quick Start project's `4 Jev` Module call Jev, so they need a real `OPENROUTER_API_KEY` |
 
 Leave `BROWSER_ENDPOINT` unset and `HOST` at `127.0.0.1`; dev mode refuses to start on an address other machines can reach. The backend reads this `.env` from whichever directory it starts in.
 

@@ -37,7 +37,7 @@ flowchart LR
   C --> D[Report and traces]
 ```
 
-1. Playwright starts the backend with `DEMO_APP_URL=http://127.0.0.1:8080`, so the Quick Start project's `BASE` is the local Demo App, and waits for `http://127.0.0.1:4000/api/v1/health`.
+1. Playwright starts the backend with `DEMO_APP_URL=http://127.0.0.1:8080`, so the Quick Start project's `BASE` is the local Demo App (no test runs its `4 Jev` files, which call Jev), and waits for `http://127.0.0.1:4000/api/v1/health`.
 2. It starts the frontend and waits for `http://localhost:3000/login`.
 3. It starts the Demo App and waits for `http://127.0.0.1:8080/`.
 4. It runs every `*.e2e.ts` file in Chromium with `baseURL` `http://localhost:3000`, one worker at a time.

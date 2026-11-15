@@ -8,7 +8,7 @@ import { isUniqueViolation } from "../http/prisma-errors.js";
 import { quickStartProject } from "./quick-start.js";
 import { ownedModule, ownedProject, ownedTestFile, toModule, toProject, toTestFile } from "./owned.js";
 
-export type WorkspaceDeps = { db: Db; demoAppUrl?: string | undefined };
+export type WorkspaceDeps = { db: Db; demoAppUrl: string };
 
 // The validated inputs of the routes, as api/contract.ts parses them.
 type Name = { name: string };

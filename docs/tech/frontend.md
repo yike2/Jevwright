@@ -341,7 +341,7 @@ The sidebar has links with the same names, so E2E tests scope overview lookups t
 #### Tests
 - Unit: `overviewGroups`, `statusTitle` (5.5).
 - E2E `overview.e2e.ts`: a user with an empty workspace opens `/files` and sees "No test files yet"; after creating a Project, a Module and a Test File and opening `/files` again, the "Test files" region shows the Project and Module headings and the file link with "Never run"; clicking the link opens `/files/<id>`.
-- E2E `quick-start.e2e.ts`: an account registered through the form lands on `/files` with the Quick Start project, its Passing, Failing and Invalid Modules and its Variables `BASE` and `SWAG_PASSWORD`, and its `sign-in.yaml` passes; an empty workspace's "Add the Quick Start project" adds it to the overview and the sidebar; with a project named Quick Start already there, the button shows the backend's `409` message.
+- E2E `quick-start.e2e.ts`: an account registered through the form lands on `/files` with the Quick Start project, its `1 Passing`, `2 Failing`, `3 Invalid` and `4 Jev` Modules and its Variables `BASE` and `SWAG_PASSWORD`, and its `sign-in.yaml` passes; an empty workspace's "Add the Quick Start project" adds it to the overview and the sidebar; with a project named Quick Start already there, the button shows the backend's `409` message.
 
 Out of scope: filters, sorting, charts, pagination, distinguishing `queued` from `running`.
 

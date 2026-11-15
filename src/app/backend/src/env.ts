@@ -12,9 +12,12 @@ const ENV = z.object({
   // Only this machine by default, so a local backend is not open to its network; the image sets 0.0.0.0.
   HOST: z.string().min(1).default("127.0.0.1"),
   BROWSER_ENDPOINT: z.url({ protocol: /^wss?$/ }).optional(),
-  // The Quick Start project's BASE (backend.md 1.10). Empty counts as unset, so compose can pass ${DEMO_APP_URL:-}.
-  DEMO_APP_URL: z.preprocess((value) => (value === "" ? undefined : value), z.url({ protocol: /^https?$/ }).optional()),
+  // The Quick Start project's BASE (backend.md 1.10); an empty value counts as missing.
+  DEMO_APP_URL: z.preprocess((value) => (value === "" ? undefined : value), z.url({ protocol: /^https?$/ })),
 });
+
+/** The Demo App of docs/deploy/demo-app.md on a developer's machine, dev mode's DEMO_APP_URL when none is set. */
+export const LOCAL_DEMO_APP_URL = "http://127.0.0.1:8080";
 
 export type Env = z.infer<typeof ENV>;
 
@@ -29,7 +32,9 @@ export function parseEnv(
   source: Record<string, string | undefined>,
   options: { dev?: boolean } = {},
 ): { ok: true; env: Env; runNetwork: Network } | { ok: false; problems: string[] } {
-  const parsed = ENV.safeParse(source);
+  // Dev mode runs next to a local Demo App, so a developer's older .env without DEMO_APP_URL still starts.
+  const filled = options.dev && !source.DEMO_APP_URL ? { ...source, DEMO_APP_URL: LOCAL_DEMO_APP_URL } : source;
+  const parsed = ENV.safeParse(filled);
   if (parsed.success) {
     if (!options.dev) return { ok: true, env: parsed.data, runNetwork: "public" };
     // Dev mode's Runs can open this machine's private addresses, so only this machine may reach the backend.
