@@ -53,7 +53,7 @@ git shortlog -sn --no-merges main
 | Yike | CLI and its integration tests | #11 | #51, #52 |
 | Yike | Snapshot fix, ESLint and Prettier, flaky browser tests | #53, #33, #57 | #54, #55, #58 |
 
-## Sprint 2 (2026-11-08 – 2026-11-15): backend, web frontend, CI/CD
+## Sprint 2 (2026-11-09 – 2026-11-15): backend, web frontend, CI/CD
 
 | Partner | Work | Issues | PRs |
 | --- | --- | --- | --- |
