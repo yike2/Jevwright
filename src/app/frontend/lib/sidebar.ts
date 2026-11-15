@@ -1,4 +1,5 @@
 import type { paths } from "./api-schema.js";
+import { allTestFiles, type TreeProject } from "./tree.js";
 
 /** The Quick Start project's name, as the backend creates it (backend.md 1.10). */
 export const QUICK_START = "Quick Start";
@@ -122,4 +123,10 @@ export function deletesTestFile(
 /** Whether the workspace has a Project named Quick Start, so "Add the Quick Start project" is not offered. */
 export function hasQuickStart(tree: readonly { name: string }[]): boolean {
   return tree.some((project) => project.name === QUICK_START);
+}
+
+/** Whether any Test File in the tree has a Run that is queued or running, so the tree reloads while it runs. */
+export function hasActiveRun(tree: readonly TreeProject[]): boolean {
+  void allTestFiles(tree);
+  return false;
 }

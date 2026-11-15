@@ -266,6 +266,8 @@ test("TC-RUN-15 queues one run for a double click", async ({ page }) => {
   await expect(page.getByRole("region", { name: "Runs" }).getByRole("listitem")).toHaveCount(1);
   const { items } = await api<{ items: unknown[] }>("GET", `/runs?testFileId=${testFileId}`);
   expect(items).toHaveLength(1);
+  const dot = sidebarOf(page).getByRole("link", { name: "sign-in.yaml", exact: true }).locator("[data-status]");
+  await expect(dot).toHaveAttribute("data-status", "passed", { timeout: 60_000 });
 });
 
 test("TC-RUN-16 finishes a queued run whose file was deleted", async ({ page }) => {

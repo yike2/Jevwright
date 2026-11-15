@@ -4,6 +4,7 @@ import type { LiveMessage, Run, Step } from "@/app/frontend/lib/api.js";
 import {
   applyLiveMessage,
   formatDuration,
+  isFinalLiveMessage,
   isFinalStatus,
   liveUrl,
   runErrorText,
@@ -177,5 +178,25 @@ describe("isFinalStatus", () => {
 
   it.each(["queued", "running"] as const)("is false for %s", (status) => {
     expect(isFinalStatus(status)).toBe(false);
+  });
+});
+
+describe("isFinalLiveMessage", () => {
+  it.each(["passed", "failed"] as const)("is true for a %s status or snapshot message", (status) => {
+    const run: Run = { ...queueRun, status };
+    expect(isFinalLiveMessage({ type: "status", run })).toBe(true);
+    expect(isFinalLiveMessage({ type: "snapshot", run, steps: [] })).toBe(true);
+  });
+
+  it.each(["queued", "running"] as const)("is false for a %s status or snapshot message", (status) => {
+    const run: Run = { ...queueRun, status };
+    expect(isFinalLiveMessage({ type: "status", run })).toBe(false);
+    expect(isFinalLiveMessage({ type: "snapshot", run, steps: [] })).toBe(false);
+  });
+
+  it("is false for a step message", () => {
+    expect(isFinalLiveMessage({ type: "step", step: { ...pendingStep, status: "passed", durationMs: 10 } })).toBe(
+      false,
+    );
   });
 });

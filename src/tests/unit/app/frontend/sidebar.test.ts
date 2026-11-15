@@ -3,6 +3,7 @@ import type { TreeResponse } from "@/app/frontend/lib/api.js";
 import {
   confirmDeleteText,
   deletesTestFile,
+  hasActiveRun,
   initials,
   starterSource,
   statusOf,
@@ -215,5 +216,33 @@ describe("hasQuickStart", () => {
   it("is false without a Project named exactly Quick Start", () => {
     expect(hasQuickStart([])).toBe(false);
     expect(hasQuickStart([inProject("p-1", "Quick Start 2"), inProject("p-2", "quick start")])).toBe(false);
+  });
+});
+
+describe("hasActiveRun", () => {
+  it.each(["queued", "running"] as const)("is true when a file at any depth is %s", (status) => {
+    const active: LatestRun = { id: "run-1", status, createdAt: "2026-11-13T00:00:00.000Z" };
+    const tree = [
+      inProject("p-1", "Shop", {
+        folders: [folder("f-1", "Auth", { testFiles: [file("tf-1", "login.yaml", active)] })],
+      }),
+    ];
+    expect(hasActiveRun(tree)).toBe(true);
+  });
+
+  it("is false when every file has finished or never run", () => {
+    const passed: LatestRun = { id: "run-1", status: "passed", createdAt: "2026-11-13T00:00:00.000Z" };
+    const failed: LatestRun = { id: "run-2", status: "failed", createdAt: "2026-11-13T00:00:00.000Z" };
+    const tree = [
+      inProject("p-1", "Shop", {
+        testFiles: [file("tf-1", "smoke.yaml", passed)],
+        folders: [
+          folder("f-1", "Auth", {
+            testFiles: [file("tf-2", "login.yaml", failed), file("tf-3", "logout.yaml")],
+          }),
+        ],
+      }),
+    ];
+    expect(hasActiveRun(tree)).toBe(false);
   });
 });

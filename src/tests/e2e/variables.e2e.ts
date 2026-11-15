@@ -105,6 +105,11 @@ test("TC-VAR-04 uses only the variables of the file's own project", async ({ pag
 
   const firstStep = page.getByRole("list", { name: "Steps" }).getByRole("listitem").first();
   await expect(firstStep).toContainText("Variable {{BASE}} is not set");
+  const dot = page
+    .getByRole("navigation", { name: "Projects", exact: true })
+    .getByRole("link", { name: "sign-in.yaml", exact: true })
+    .locator("[data-status]");
+  await expect(dot).toHaveAttribute("data-status", "failed");
 });
 
 test("TC-VAR-05 needs a name and a value of at most 10,000 characters", async ({ page }) => {
