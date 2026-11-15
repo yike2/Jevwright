@@ -111,7 +111,6 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            /** @description JWT: send as Authorization: Bearer */
                             token: string;
                             user: {
                                 /** Format: uuid */
@@ -136,7 +135,6 @@ export interface paths {
                                 code: "invalid_request";
                                 message: string;
                                 details: {
-                                    /** @description e.g. body.email */
                                     path: string;
                                     message: string;
                                 }[];
@@ -152,7 +150,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -201,7 +198,6 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            /** @description JWT: send as Authorization: Bearer */
                             token: string;
                             user: {
                                 /** Format: uuid */
@@ -226,7 +222,6 @@ export interface paths {
                                 code: "invalid_request";
                                 message: string;
                                 details: {
-                                    /** @description e.g. body.email */
                                     path: string;
                                     message: string;
                                 }[];
@@ -242,7 +237,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -298,7 +292,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -322,7 +315,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Every Project with its Modules and Test Files, for the sidebar and the files overview */
+        /** Every Project with its folders and Test Files, nested, for the sidebar and the files overview */
         get: {
             parameters: {
                 query?: never;
@@ -347,38 +340,26 @@ export interface paths {
                                 createdAt: string;
                                 /** Format: date-time */
                                 updatedAt: string;
-                                modules: {
+                                folders: components["schemas"]["TreeFolder"][];
+                                testFiles: {
                                     /** Format: uuid */
                                     id: string;
                                     /** Format: uuid */
                                     projectId: string;
+                                    folderId: string | null;
                                     name: string;
                                     /** Format: date-time */
                                     createdAt: string;
                                     /** Format: date-time */
                                     updatedAt: string;
-                                    testFiles: {
+                                    latestRun: {
                                         /** Format: uuid */
                                         id: string;
-                                        /** Format: uuid */
-                                        moduleId: string;
-                                        name: string;
+                                        /** @enum {string} */
+                                        status: "queued" | "running" | "passed" | "failed";
                                         /** Format: date-time */
                                         createdAt: string;
-                                        /** Format: date-time */
-                                        updatedAt: string;
-                                        latestRun: {
-                                            /** Format: uuid */
-                                            id: string;
-                                            /** @enum {string} */
-                                            status: "queued" | "running" | "passed" | "failed";
-                                            /**
-                                             * Format: date-time
-                                             * @description Trigger time
-                                             */
-                                            createdAt: string;
-                                        } | null;
-                                    }[];
+                                    } | null;
                                 }[];
                             }[];
                         };
@@ -392,7 +373,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -453,7 +433,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -508,7 +487,6 @@ export interface paths {
                                 code: "invalid_request";
                                 message: string;
                                 details: {
-                                    /** @description e.g. body.email */
                                     path: string;
                                     message: string;
                                 }[];
@@ -524,7 +502,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -539,7 +516,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -565,7 +541,7 @@ export interface paths {
         put?: never;
         /**
          * Add the Quick Start project
-         * @description Adds the Quick Start project that every new account gets: Modules of passing, failing, and invalid example Test Files, and the Variables BASE and SWAG_PASSWORD.
+         * @description Adds the Quick Start project that every new account gets: folders of passing, failing, invalid, and Jev example Test Files, and the Variables BASE and SWAG_PASSWORD.
          */
         post: {
             parameters: {
@@ -601,7 +577,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -616,7 +591,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -641,7 +615,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Delete a Project with its Modules, Test Files, and Variables; Runs are kept */
+        /** Delete a Project with its folders, Test Files, and Variables; Runs are kept */
         delete: {
             parameters: {
                 query?: never;
@@ -672,7 +646,6 @@ export interface paths {
                                 code: "invalid_request";
                                 message: string;
                                 details: {
-                                    /** @description e.g. body.email */
                                     path: string;
                                     message: string;
                                 }[];
@@ -688,7 +661,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -703,7 +675,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -761,7 +732,6 @@ export interface paths {
                                 code: "invalid_request";
                                 message: string;
                                 details: {
-                                    /** @description e.g. body.email */
                                     path: string;
                                     message: string;
                                 }[];
@@ -777,7 +747,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -792,7 +761,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -807,7 +775,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -863,7 +830,6 @@ export interface paths {
                                 code: "invalid_request";
                                 message: string;
                                 details: {
-                                    /** @description e.g. body.email */
                                     path: string;
                                     message: string;
                                 }[];
@@ -879,7 +845,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -894,7 +859,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -933,7 +897,6 @@ export interface paths {
             requestBody: {
                 content: {
                     "application/json": {
-                        /** @description At most 10,000 characters */
                         value: string;
                     };
                 };
@@ -958,7 +921,6 @@ export interface paths {
                                 code: "invalid_request";
                                 message: string;
                                 details: {
-                                    /** @description e.g. body.email */
                                     path: string;
                                     message: string;
                                 }[];
@@ -974,7 +936,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -989,7 +950,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -1004,7 +964,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -1046,7 +1005,6 @@ export interface paths {
                                 code: "invalid_request";
                                 message: string;
                                 details: {
-                                    /** @description e.g. body.email */
                                     path: string;
                                     message: string;
                                 }[];
@@ -1062,7 +1020,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -1077,7 +1034,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -1091,14 +1047,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/projects/{projectId}/modules": {
+    "/projects/{projectId}/folders": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** List a Project's Modules */
+        /** List every folder of a Project, at any level */
         get: {
             parameters: {
                 query?: never;
@@ -1110,7 +1066,7 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description Modules */
+                /** @description Folders, by name */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -1122,6 +1078,7 @@ export interface paths {
                                 id: string;
                                 /** Format: uuid */
                                 projectId: string;
+                                parentId: string | null;
                                 name: string;
                                 /** Format: date-time */
                                 createdAt: string;
@@ -1143,7 +1100,6 @@ export interface paths {
                                 code: "invalid_request";
                                 message: string;
                                 details: {
-                                    /** @description e.g. body.email */
                                     path: string;
                                     message: string;
                                 }[];
@@ -1159,7 +1115,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -1174,7 +1129,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -1184,7 +1138,7 @@ export interface paths {
             };
         };
         put?: never;
-        /** Create a Module */
+        /** Create a folder in a Project or in one of its folders, at most 4 levels deep counting the Project */
         post: {
             parameters: {
                 query?: never;
@@ -1198,6 +1152,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         name: string;
+                        parentId?: string | null;
                     };
                 };
             };
@@ -1213,6 +1168,7 @@ export interface paths {
                             id: string;
                             /** Format: uuid */
                             projectId: string;
+                            parentId: string | null;
                             name: string;
                             /** Format: date-time */
                             createdAt: string;
@@ -1221,7 +1177,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description A field breaks its rule */
+                /** @description A field breaks its rule, or the folder would be more than 4 levels deep */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -1233,7 +1189,6 @@ export interface paths {
                                 code: "invalid_request";
                                 message: string;
                                 details: {
-                                    /** @description e.g. body.email */
                                     path: string;
                                     message: string;
                                 }[];
@@ -1249,14 +1204,13 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
                         };
                     };
                 };
-                /** @description No such resource for this user, or an id that is not a uuid */
+                /** @description No such Project, or no such parent folder in it, for this user */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -1264,14 +1218,13 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
                         };
                     };
                 };
-                /** @description The name is taken */
+                /** @description A folder or Test File in the parent has the name */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -1279,7 +1232,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -1294,7 +1246,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/modules/{moduleId}": {
+    "/folders/{folderId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1304,13 +1256,13 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Delete a Module with its Test Files; Runs are kept */
+        /** Delete a folder with every folder and Test File inside; Runs are kept */
         delete: {
             parameters: {
                 query?: never;
                 header?: never;
                 path: {
-                    moduleId: string;
+                    folderId: string;
                 };
                 cookie?: never;
             };
@@ -1335,7 +1287,6 @@ export interface paths {
                                 code: "invalid_request";
                                 message: string;
                                 details: {
-                                    /** @description e.g. body.email */
                                     path: string;
                                     message: string;
                                 }[];
@@ -1351,7 +1302,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -1366,7 +1316,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -1377,25 +1326,28 @@ export interface paths {
         };
         options?: never;
         head?: never;
-        /** Rename a Module */
+        /** Rename a folder, or move it with everything inside to another folder or Project */
         patch: {
             parameters: {
                 query?: never;
                 header?: never;
                 path: {
-                    moduleId: string;
+                    folderId: string;
                 };
                 cookie?: never;
             };
             requestBody: {
                 content: {
                     "application/json": {
-                        name: string;
+                        name?: string;
+                        /** Format: uuid */
+                        projectId?: string;
+                        parentId?: string | null;
                     };
                 };
             };
             responses: {
-                /** @description Renamed */
+                /** @description Saved */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -1406,6 +1358,7 @@ export interface paths {
                             id: string;
                             /** Format: uuid */
                             projectId: string;
+                            parentId: string | null;
                             name: string;
                             /** Format: date-time */
                             createdAt: string;
@@ -1414,7 +1367,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description A field breaks its rule */
+                /** @description A field breaks its rule, the move goes into the folder itself or one of its folders, or a folder would be more than 4 levels deep */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -1426,7 +1379,6 @@ export interface paths {
                                 code: "invalid_request";
                                 message: string;
                                 details: {
-                                    /** @description e.g. body.email */
                                     path: string;
                                     message: string;
                                 }[];
@@ -1442,14 +1394,13 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
                         };
                     };
                 };
-                /** @description No such resource for this user, or an id that is not a uuid */
+                /** @description No such folder, or no such target Project or folder, for this user */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -1457,14 +1408,13 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
                         };
                     };
                 };
-                /** @description The name is taken */
+                /** @description A folder or Test File in the target parent has the name */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -1472,7 +1422,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -1483,26 +1432,26 @@ export interface paths {
         };
         trace?: never;
     };
-    "/modules/{moduleId}/test-files": {
+    "/projects/{projectId}/test-files": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** List a Module's Test Files */
+        /** List every Test File of a Project, at any level */
         get: {
             parameters: {
                 query?: never;
                 header?: never;
                 path: {
-                    moduleId: string;
+                    projectId: string;
                 };
                 cookie?: never;
             };
             requestBody?: never;
             responses: {
-                /** @description Test Files, without sources */
+                /** @description Test Files, without sources, by name */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -1513,9 +1462,9 @@ export interface paths {
                                 /** Format: uuid */
                                 id: string;
                                 /** Format: uuid */
-                                moduleId: string;
+                                projectId: string;
+                                folderId: string | null;
                                 name: string;
-                                /** @description In GET /test-files/{testFileId} and in the answer of saving a Test File, not in lists */
                                 source?: string;
                                 /** Format: date-time */
                                 createdAt: string;
@@ -1537,7 +1486,6 @@ export interface paths {
                                 code: "invalid_request";
                                 message: string;
                                 details: {
-                                    /** @description e.g. body.email */
                                     path: string;
                                     message: string;
                                 }[];
@@ -1553,7 +1501,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -1568,7 +1515,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -1584,7 +1530,7 @@ export interface paths {
                 query?: never;
                 header?: never;
                 path: {
-                    moduleId: string;
+                    projectId: string;
                 };
                 cookie?: never;
             };
@@ -1592,8 +1538,8 @@ export interface paths {
                 content: {
                     "application/json": {
                         name: string;
-                        /** @description The .yaml source, at most 256 Ki characters */
                         source: string;
+                        folderId?: string | null;
                     };
                 };
             };
@@ -1609,9 +1555,9 @@ export interface paths {
                                 /** Format: uuid */
                                 id: string;
                                 /** Format: uuid */
-                                moduleId: string;
+                                projectId: string;
+                                folderId: string | null;
                                 name: string;
-                                /** @description In GET /test-files/{testFileId} and in the answer of saving a Test File, not in lists */
                                 source?: string;
                                 /** Format: date-time */
                                 createdAt: string;
@@ -1619,10 +1565,8 @@ export interface paths {
                                 updatedAt: string;
                             };
                             diagnostics: {
-                                /** @description E001–E008, see syntax-analyzer.md 3.3 */
                                 code: string;
                                 message: string;
-                                /** @description 1-based */
                                 line: number;
                             }[];
                         };
@@ -1640,7 +1584,6 @@ export interface paths {
                                 code: "invalid_request";
                                 message: string;
                                 details: {
-                                    /** @description e.g. body.email */
                                     path: string;
                                     message: string;
                                 }[];
@@ -1656,14 +1599,13 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
                         };
                     };
                 };
-                /** @description No such resource for this user, or an id that is not a uuid */
+                /** @description No such Project, or no such folder in it, for this user */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -1671,14 +1613,13 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
                         };
                     };
                 };
-                /** @description The name is taken */
+                /** @description A folder or Test File in the parent has the name */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -1686,7 +1627,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -1701,7 +1641,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -1736,7 +1675,6 @@ export interface paths {
             requestBody: {
                 content: {
                     "application/json": {
-                        /** @description The .yaml source, at most 256 Ki characters */
                         source: string;
                     };
                 };
@@ -1750,10 +1688,8 @@ export interface paths {
                     content: {
                         "application/json": {
                             diagnostics: {
-                                /** @description E001–E008, see syntax-analyzer.md 3.3 */
                                 code: string;
                                 message: string;
-                                /** @description 1-based */
                                 line: number;
                             }[];
                         };
@@ -1771,7 +1707,6 @@ export interface paths {
                                 code: "invalid_request";
                                 message: string;
                                 details: {
-                                    /** @description e.g. body.email */
                                     path: string;
                                     message: string;
                                 }[];
@@ -1787,7 +1722,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -1802,7 +1736,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -1846,9 +1779,9 @@ export interface paths {
                             /** Format: uuid */
                             id: string;
                             /** Format: uuid */
-                            moduleId: string;
+                            projectId: string;
+                            folderId: string | null;
                             name: string;
-                            /** @description In GET /test-files/{testFileId} and in the answer of saving a Test File, not in lists */
                             source?: string;
                             /** Format: date-time */
                             createdAt: string;
@@ -1869,7 +1802,6 @@ export interface paths {
                                 code: "invalid_request";
                                 message: string;
                                 details: {
-                                    /** @description e.g. body.email */
                                     path: string;
                                     message: string;
                                 }[];
@@ -1885,7 +1817,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -1900,7 +1831,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -1942,7 +1872,6 @@ export interface paths {
                                 code: "invalid_request";
                                 message: string;
                                 details: {
-                                    /** @description e.g. body.email */
                                     path: string;
                                     message: string;
                                 }[];
@@ -1958,7 +1887,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -1973,7 +1901,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -1984,7 +1911,7 @@ export interface paths {
         };
         options?: never;
         head?: never;
-        /** Rename, move to another Module, or change the source of a Test File; saved even with diagnostics */
+        /** Rename, move to another folder or Project, or change the source of a Test File; saved even with diagnostics */
         patch: {
             parameters: {
                 query?: never;
@@ -1998,10 +1925,10 @@ export interface paths {
                 content: {
                     "application/json": {
                         name?: string;
-                        /** Format: uuid */
-                        moduleId?: string;
-                        /** @description The .yaml source, at most 256 Ki characters */
                         source?: string;
+                        /** Format: uuid */
+                        projectId?: string;
+                        folderId?: string | null;
                     };
                 };
             };
@@ -2017,9 +1944,9 @@ export interface paths {
                                 /** Format: uuid */
                                 id: string;
                                 /** Format: uuid */
-                                moduleId: string;
+                                projectId: string;
+                                folderId: string | null;
                                 name: string;
-                                /** @description In GET /test-files/{testFileId} and in the answer of saving a Test File, not in lists */
                                 source?: string;
                                 /** Format: date-time */
                                 createdAt: string;
@@ -2027,10 +1954,8 @@ export interface paths {
                                 updatedAt: string;
                             };
                             diagnostics: {
-                                /** @description E001–E008, see syntax-analyzer.md 3.3 */
                                 code: string;
                                 message: string;
-                                /** @description 1-based */
                                 line: number;
                             }[];
                         };
@@ -2048,7 +1973,6 @@ export interface paths {
                                 code: "invalid_request";
                                 message: string;
                                 details: {
-                                    /** @description e.g. body.email */
                                     path: string;
                                     message: string;
                                 }[];
@@ -2064,14 +1988,13 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
                         };
                     };
                 };
-                /** @description No such Test File, or no such target Module, for this user */
+                /** @description No such Test File, or no such target Project or folder, for this user */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -2079,14 +2002,13 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
                         };
                     };
                 };
-                /** @description The name is taken in the target Module */
+                /** @description A folder or Test File in the target parent has the name */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -2094,7 +2016,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -2109,7 +2030,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -2150,21 +2070,14 @@ export interface paths {
                         "application/json": {
                             /** Format: uuid */
                             id: string;
-                            /** @description null once the Test File is deleted */
                             testFileId: string | null;
-                            /** @description null once the Project is deleted */
                             projectId: string | null;
-                            /** @description null once the Module is deleted */
-                            moduleId: string | null;
                             fileName: string;
-                            /** @description The TestCase name from the source */
+                            path: string;
                             name: string;
                             /** @enum {string} */
                             status: "queued" | "running" | "passed" | "failed";
-                            /**
-                             * Format: date-time
-                             * @description Trigger time
-                             */
+                            /** Format: date-time */
                             createdAt: string;
                             startedAt: string | null;
                             finishedAt: string | null;
@@ -2175,19 +2088,14 @@ export interface paths {
                                 failed: number;
                                 pending: number;
                             } | null;
-                            /** @description Why the Run ended early: timeout, crash, restart, or a server error */
                             error: {
                                 /** @enum {string} */
                                 kind: "timeout" | "infrastructure" | "interrupted" | "internal";
-                                /** @description Redacted; no Variable values */
                                 message: string;
                             } | null;
-                            /** @description Only in GET /runs/{runId} */
                             source?: string;
-                            /** @description Only in GET /runs/{runId}, once the Run has finished */
                             report?: {
                                 file: string;
-                                /** @description The TestCase name */
                                 name: string;
                                 /** @enum {string} */
                                 status: "passed" | "failed";
@@ -2200,7 +2108,6 @@ export interface paths {
                                     failed: number;
                                     pending: number;
                                 };
-                                /** @description One per step, in order; never `running` */
                                 steps: ({
                                     index: number;
                                     line: number;
@@ -2222,10 +2129,7 @@ export interface paths {
                                     /** Format: date-time */
                                     startedAt: string;
                                     durationMs: number;
-                                    /**
-                                     * @description Element actions only
-                                     * @enum {string}
-                                     */
+                                    /** @enum {string} */
                                     locateMethod?: "selector" | "visual" | "dom";
                                     dialogs: {
                                         /** @enum {string} */
@@ -2233,10 +2137,8 @@ export interface paths {
                                         message: string;
                                         /** @enum {string} */
                                         answer: "accepted" | "dismissed";
-                                        /** @description false for a dialog the step did not expect */
                                         expected: boolean;
                                     }[];
-                                    /** @description Path under /runs/{runId}/files/, e.g. screenshots/step-0.png */
                                     screenshot?: string;
                                     /** @constant */
                                     status: "passed";
@@ -2247,10 +2149,7 @@ export interface paths {
                                     /** Format: date-time */
                                     startedAt: string;
                                     durationMs: number;
-                                    /**
-                                     * @description Element actions only
-                                     * @enum {string}
-                                     */
+                                    /** @enum {string} */
                                     locateMethod?: "selector" | "visual" | "dom";
                                     dialogs: {
                                         /** @enum {string} */
@@ -2258,19 +2157,14 @@ export interface paths {
                                         message: string;
                                         /** @enum {string} */
                                         answer: "accepted" | "dismissed";
-                                        /** @description false for a dialog the step did not expect */
                                         expected: boolean;
                                     }[];
-                                    /** @description Path under /runs/{runId}/files/, e.g. screenshots/step-0.png */
                                     screenshot?: string;
                                     /** @constant */
                                     status: "failed";
-                                    /** @description Redacted by Core */
                                     reason: string;
                                 })[];
-                                /** @description trace.zip under /runs/{runId}/files/; absent when empty */
                                 trace?: string;
-                                /** @description Core's Run error; absent when the Run ended normally */
                                 error?: {
                                     /** @enum {string} */
                                     kind: "timeout" | "infrastructure";
@@ -2292,7 +2186,6 @@ export interface paths {
                                 code: "invalid_request";
                                 message: string;
                                 details: {
-                                    /** @description e.g. body.email */
                                     path: string;
                                     message: string;
                                 }[];
@@ -2308,7 +2201,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -2323,7 +2215,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -2342,10 +2233,8 @@ export interface paths {
                                 code: "invalid_test";
                                 message: string;
                                 details: {
-                                    /** @description E001–E008, see syntax-analyzer.md 3.3 */
                                     code: string;
                                     message: string;
-                                    /** @description 1-based */
                                     line: number;
                                 }[];
                             };
@@ -2395,21 +2284,14 @@ export interface paths {
                             items: {
                                 /** Format: uuid */
                                 id: string;
-                                /** @description null once the Test File is deleted */
                                 testFileId: string | null;
-                                /** @description null once the Project is deleted */
                                 projectId: string | null;
-                                /** @description null once the Module is deleted */
-                                moduleId: string | null;
                                 fileName: string;
-                                /** @description The TestCase name from the source */
+                                path: string;
                                 name: string;
                                 /** @enum {string} */
                                 status: "queued" | "running" | "passed" | "failed";
-                                /**
-                                 * Format: date-time
-                                 * @description Trigger time
-                                 */
+                                /** Format: date-time */
                                 createdAt: string;
                                 startedAt: string | null;
                                 finishedAt: string | null;
@@ -2420,19 +2302,14 @@ export interface paths {
                                     failed: number;
                                     pending: number;
                                 } | null;
-                                /** @description Why the Run ended early: timeout, crash, restart, or a server error */
                                 error: {
                                     /** @enum {string} */
                                     kind: "timeout" | "infrastructure" | "interrupted" | "internal";
-                                    /** @description Redacted; no Variable values */
                                     message: string;
                                 } | null;
-                                /** @description Only in GET /runs/{runId} */
                                 source?: string;
-                                /** @description Only in GET /runs/{runId}, once the Run has finished */
                                 report?: {
                                     file: string;
-                                    /** @description The TestCase name */
                                     name: string;
                                     /** @enum {string} */
                                     status: "passed" | "failed";
@@ -2445,7 +2322,6 @@ export interface paths {
                                         failed: number;
                                         pending: number;
                                     };
-                                    /** @description One per step, in order; never `running` */
                                     steps: ({
                                         index: number;
                                         line: number;
@@ -2467,10 +2343,7 @@ export interface paths {
                                         /** Format: date-time */
                                         startedAt: string;
                                         durationMs: number;
-                                        /**
-                                         * @description Element actions only
-                                         * @enum {string}
-                                         */
+                                        /** @enum {string} */
                                         locateMethod?: "selector" | "visual" | "dom";
                                         dialogs: {
                                             /** @enum {string} */
@@ -2478,10 +2351,8 @@ export interface paths {
                                             message: string;
                                             /** @enum {string} */
                                             answer: "accepted" | "dismissed";
-                                            /** @description false for a dialog the step did not expect */
                                             expected: boolean;
                                         }[];
-                                        /** @description Path under /runs/{runId}/files/, e.g. screenshots/step-0.png */
                                         screenshot?: string;
                                         /** @constant */
                                         status: "passed";
@@ -2492,10 +2363,7 @@ export interface paths {
                                         /** Format: date-time */
                                         startedAt: string;
                                         durationMs: number;
-                                        /**
-                                         * @description Element actions only
-                                         * @enum {string}
-                                         */
+                                        /** @enum {string} */
                                         locateMethod?: "selector" | "visual" | "dom";
                                         dialogs: {
                                             /** @enum {string} */
@@ -2503,19 +2371,14 @@ export interface paths {
                                             message: string;
                                             /** @enum {string} */
                                             answer: "accepted" | "dismissed";
-                                            /** @description false for a dialog the step did not expect */
                                             expected: boolean;
                                         }[];
-                                        /** @description Path under /runs/{runId}/files/, e.g. screenshots/step-0.png */
                                         screenshot?: string;
                                         /** @constant */
                                         status: "failed";
-                                        /** @description Redacted by Core */
                                         reason: string;
                                     })[];
-                                    /** @description trace.zip under /runs/{runId}/files/; absent when empty */
                                     trace?: string;
-                                    /** @description Core's Run error; absent when the Run ended normally */
                                     error?: {
                                         /** @enum {string} */
                                         kind: "timeout" | "infrastructure";
@@ -2523,7 +2386,6 @@ export interface paths {
                                     };
                                 };
                             }[];
-                            /** @description null on the last page */
                             nextCursor: string | null;
                         };
                     };
@@ -2540,7 +2402,6 @@ export interface paths {
                                 code: "invalid_request";
                                 message: string;
                                 details: {
-                                    /** @description e.g. body.email */
                                     path: string;
                                     message: string;
                                 }[];
@@ -2556,7 +2417,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -2601,21 +2461,14 @@ export interface paths {
                         "application/json": {
                             /** Format: uuid */
                             id: string;
-                            /** @description null once the Test File is deleted */
                             testFileId: string | null;
-                            /** @description null once the Project is deleted */
                             projectId: string | null;
-                            /** @description null once the Module is deleted */
-                            moduleId: string | null;
                             fileName: string;
-                            /** @description The TestCase name from the source */
+                            path: string;
                             name: string;
                             /** @enum {string} */
                             status: "queued" | "running" | "passed" | "failed";
-                            /**
-                             * Format: date-time
-                             * @description Trigger time
-                             */
+                            /** Format: date-time */
                             createdAt: string;
                             startedAt: string | null;
                             finishedAt: string | null;
@@ -2626,19 +2479,14 @@ export interface paths {
                                 failed: number;
                                 pending: number;
                             } | null;
-                            /** @description Why the Run ended early: timeout, crash, restart, or a server error */
                             error: {
                                 /** @enum {string} */
                                 kind: "timeout" | "infrastructure" | "interrupted" | "internal";
-                                /** @description Redacted; no Variable values */
                                 message: string;
                             } | null;
-                            /** @description Only in GET /runs/{runId} */
                             source?: string;
-                            /** @description Only in GET /runs/{runId}, once the Run has finished */
                             report?: {
                                 file: string;
-                                /** @description The TestCase name */
                                 name: string;
                                 /** @enum {string} */
                                 status: "passed" | "failed";
@@ -2651,7 +2499,6 @@ export interface paths {
                                     failed: number;
                                     pending: number;
                                 };
-                                /** @description One per step, in order; never `running` */
                                 steps: ({
                                     index: number;
                                     line: number;
@@ -2673,10 +2520,7 @@ export interface paths {
                                     /** Format: date-time */
                                     startedAt: string;
                                     durationMs: number;
-                                    /**
-                                     * @description Element actions only
-                                     * @enum {string}
-                                     */
+                                    /** @enum {string} */
                                     locateMethod?: "selector" | "visual" | "dom";
                                     dialogs: {
                                         /** @enum {string} */
@@ -2684,10 +2528,8 @@ export interface paths {
                                         message: string;
                                         /** @enum {string} */
                                         answer: "accepted" | "dismissed";
-                                        /** @description false for a dialog the step did not expect */
                                         expected: boolean;
                                     }[];
-                                    /** @description Path under /runs/{runId}/files/, e.g. screenshots/step-0.png */
                                     screenshot?: string;
                                     /** @constant */
                                     status: "passed";
@@ -2698,10 +2540,7 @@ export interface paths {
                                     /** Format: date-time */
                                     startedAt: string;
                                     durationMs: number;
-                                    /**
-                                     * @description Element actions only
-                                     * @enum {string}
-                                     */
+                                    /** @enum {string} */
                                     locateMethod?: "selector" | "visual" | "dom";
                                     dialogs: {
                                         /** @enum {string} */
@@ -2709,19 +2548,14 @@ export interface paths {
                                         message: string;
                                         /** @enum {string} */
                                         answer: "accepted" | "dismissed";
-                                        /** @description false for a dialog the step did not expect */
                                         expected: boolean;
                                     }[];
-                                    /** @description Path under /runs/{runId}/files/, e.g. screenshots/step-0.png */
                                     screenshot?: string;
                                     /** @constant */
                                     status: "failed";
-                                    /** @description Redacted by Core */
                                     reason: string;
                                 })[];
-                                /** @description trace.zip under /runs/{runId}/files/; absent when empty */
                                 trace?: string;
-                                /** @description Core's Run error; absent when the Run ended normally */
                                 error?: {
                                     /** @enum {string} */
                                     kind: "timeout" | "infrastructure";
@@ -2743,7 +2577,6 @@ export interface paths {
                                 code: "invalid_request";
                                 message: string;
                                 details: {
-                                    /** @description e.g. body.email */
                                     path: string;
                                     message: string;
                                 }[];
@@ -2759,7 +2592,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -2774,7 +2606,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -2833,7 +2664,6 @@ export interface paths {
                                 code: "invalid_request";
                                 message: string;
                                 details: {
-                                    /** @description e.g. body.email */
                                     path: string;
                                     message: string;
                                 }[];
@@ -2849,7 +2679,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -2864,7 +2693,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -2922,7 +2750,6 @@ export interface paths {
                                 code: "invalid_request";
                                 message: string;
                                 details: {
-                                    /** @description e.g. body.email */
                                     path: string;
                                     message: string;
                                 }[];
@@ -2938,7 +2765,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -2953,7 +2779,6 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                                 code: string;
                                 message: string;
                             };
@@ -2991,11 +2816,12 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
         };
-        Module: {
+        Folder: {
             /** Format: uuid */
             id: string;
             /** Format: uuid */
             projectId: string;
+            parentId: string | null;
             name: string;
             /** Format: date-time */
             createdAt: string;
@@ -3006,9 +2832,9 @@ export interface components {
             /** Format: uuid */
             id: string;
             /** Format: uuid */
-            moduleId: string;
+            projectId: string;
+            folderId: string | null;
             name: string;
-            /** @description In GET /test-files/{testFileId} and in the answer of saving a Test File, not in lists */
             source?: string;
             /** Format: date-time */
             createdAt: string;
@@ -3016,10 +2842,8 @@ export interface components {
             updatedAt: string;
         };
         Diagnostic: {
-            /** @description E001–E008, see syntax-analyzer.md 3.3 */
             code: string;
             message: string;
-            /** @description 1-based */
             line: number;
         };
         /** @enum {string} */
@@ -3030,7 +2854,6 @@ export interface components {
             failed: number;
             pending: number;
         };
-        /** @description A step; `running` appears only in Live Progress */
         Step: {
             index: number;
             line: number;
@@ -3052,10 +2875,7 @@ export interface components {
             /** Format: date-time */
             startedAt: string;
             durationMs: number;
-            /**
-             * @description Element actions only
-             * @enum {string}
-             */
+            /** @enum {string} */
             locateMethod?: "selector" | "visual" | "dom";
             dialogs: {
                 /** @enum {string} */
@@ -3063,10 +2883,8 @@ export interface components {
                 message: string;
                 /** @enum {string} */
                 answer: "accepted" | "dismissed";
-                /** @description false for a dialog the step did not expect */
                 expected: boolean;
             }[];
-            /** @description Path under /runs/{runId}/files/, e.g. screenshots/step-0.png */
             screenshot?: string;
             /** @constant */
             status: "passed";
@@ -3077,10 +2895,7 @@ export interface components {
             /** Format: date-time */
             startedAt: string;
             durationMs: number;
-            /**
-             * @description Element actions only
-             * @enum {string}
-             */
+            /** @enum {string} */
             locateMethod?: "selector" | "visual" | "dom";
             dialogs: {
                 /** @enum {string} */
@@ -3088,25 +2903,20 @@ export interface components {
                 message: string;
                 /** @enum {string} */
                 answer: "accepted" | "dismissed";
-                /** @description false for a dialog the step did not expect */
                 expected: boolean;
             }[];
-            /** @description Path under /runs/{runId}/files/, e.g. screenshots/step-0.png */
             screenshot?: string;
             /** @constant */
             status: "failed";
-            /** @description Redacted by Core */
             reason: string;
         };
         RunError: {
             /** @enum {string} */
             kind: "timeout" | "infrastructure" | "interrupted" | "internal";
-            /** @description Redacted; no Variable values */
             message: string;
         };
         Report: {
             file: string;
-            /** @description The TestCase name */
             name: string;
             /** @enum {string} */
             status: "passed" | "failed";
@@ -3119,7 +2929,6 @@ export interface components {
                 failed: number;
                 pending: number;
             };
-            /** @description One per step, in order; never `running` */
             steps: ({
                 index: number;
                 line: number;
@@ -3141,10 +2950,7 @@ export interface components {
                 /** Format: date-time */
                 startedAt: string;
                 durationMs: number;
-                /**
-                 * @description Element actions only
-                 * @enum {string}
-                 */
+                /** @enum {string} */
                 locateMethod?: "selector" | "visual" | "dom";
                 dialogs: {
                     /** @enum {string} */
@@ -3152,10 +2958,8 @@ export interface components {
                     message: string;
                     /** @enum {string} */
                     answer: "accepted" | "dismissed";
-                    /** @description false for a dialog the step did not expect */
                     expected: boolean;
                 }[];
-                /** @description Path under /runs/{runId}/files/, e.g. screenshots/step-0.png */
                 screenshot?: string;
                 /** @constant */
                 status: "passed";
@@ -3166,10 +2970,7 @@ export interface components {
                 /** Format: date-time */
                 startedAt: string;
                 durationMs: number;
-                /**
-                 * @description Element actions only
-                 * @enum {string}
-                 */
+                /** @enum {string} */
                 locateMethod?: "selector" | "visual" | "dom";
                 dialogs: {
                     /** @enum {string} */
@@ -3177,19 +2978,14 @@ export interface components {
                     message: string;
                     /** @enum {string} */
                     answer: "accepted" | "dismissed";
-                    /** @description false for a dialog the step did not expect */
                     expected: boolean;
                 }[];
-                /** @description Path under /runs/{runId}/files/, e.g. screenshots/step-0.png */
                 screenshot?: string;
                 /** @constant */
                 status: "failed";
-                /** @description Redacted by Core */
                 reason: string;
             })[];
-            /** @description trace.zip under /runs/{runId}/files/; absent when empty */
             trace?: string;
-            /** @description Core's Run error; absent when the Run ended normally */
             error?: {
                 /** @enum {string} */
                 kind: "timeout" | "infrastructure";
@@ -3199,21 +2995,14 @@ export interface components {
         Run: {
             /** Format: uuid */
             id: string;
-            /** @description null once the Test File is deleted */
             testFileId: string | null;
-            /** @description null once the Project is deleted */
             projectId: string | null;
-            /** @description null once the Module is deleted */
-            moduleId: string | null;
             fileName: string;
-            /** @description The TestCase name from the source */
+            path: string;
             name: string;
             /** @enum {string} */
             status: "queued" | "running" | "passed" | "failed";
-            /**
-             * Format: date-time
-             * @description Trigger time
-             */
+            /** Format: date-time */
             createdAt: string;
             startedAt: string | null;
             finishedAt: string | null;
@@ -3224,19 +3013,14 @@ export interface components {
                 failed: number;
                 pending: number;
             } | null;
-            /** @description Why the Run ended early: timeout, crash, restart, or a server error */
             error: {
                 /** @enum {string} */
                 kind: "timeout" | "infrastructure" | "interrupted" | "internal";
-                /** @description Redacted; no Variable values */
                 message: string;
             } | null;
-            /** @description Only in GET /runs/{runId} */
             source?: string;
-            /** @description Only in GET /runs/{runId}, once the Run has finished */
             report?: {
                 file: string;
-                /** @description The TestCase name */
                 name: string;
                 /** @enum {string} */
                 status: "passed" | "failed";
@@ -3249,7 +3033,6 @@ export interface components {
                     failed: number;
                     pending: number;
                 };
-                /** @description One per step, in order; never `running` */
                 steps: ({
                     index: number;
                     line: number;
@@ -3271,10 +3054,7 @@ export interface components {
                     /** Format: date-time */
                     startedAt: string;
                     durationMs: number;
-                    /**
-                     * @description Element actions only
-                     * @enum {string}
-                     */
+                    /** @enum {string} */
                     locateMethod?: "selector" | "visual" | "dom";
                     dialogs: {
                         /** @enum {string} */
@@ -3282,10 +3062,8 @@ export interface components {
                         message: string;
                         /** @enum {string} */
                         answer: "accepted" | "dismissed";
-                        /** @description false for a dialog the step did not expect */
                         expected: boolean;
                     }[];
-                    /** @description Path under /runs/{runId}/files/, e.g. screenshots/step-0.png */
                     screenshot?: string;
                     /** @constant */
                     status: "passed";
@@ -3296,10 +3074,7 @@ export interface components {
                     /** Format: date-time */
                     startedAt: string;
                     durationMs: number;
-                    /**
-                     * @description Element actions only
-                     * @enum {string}
-                     */
+                    /** @enum {string} */
                     locateMethod?: "selector" | "visual" | "dom";
                     dialogs: {
                         /** @enum {string} */
@@ -3307,19 +3082,14 @@ export interface components {
                         message: string;
                         /** @enum {string} */
                         answer: "accepted" | "dismissed";
-                        /** @description false for a dialog the step did not expect */
                         expected: boolean;
                     }[];
-                    /** @description Path under /runs/{runId}/files/, e.g. screenshots/step-0.png */
                     screenshot?: string;
                     /** @constant */
                     status: "failed";
-                    /** @description Redacted by Core */
                     reason: string;
                 })[];
-                /** @description trace.zip under /runs/{runId}/files/; absent when empty */
                 trace?: string;
-                /** @description Core's Run error; absent when the Run ended normally */
                 error?: {
                     /** @enum {string} */
                     kind: "timeout" | "infrastructure";
@@ -3335,43 +3105,68 @@ export interface components {
             createdAt: string;
             /** Format: date-time */
             updatedAt: string;
-            modules: {
+            folders: components["schemas"]["TreeFolder"][];
+            testFiles: {
                 /** Format: uuid */
                 id: string;
                 /** Format: uuid */
                 projectId: string;
+                folderId: string | null;
                 name: string;
                 /** Format: date-time */
                 createdAt: string;
                 /** Format: date-time */
                 updatedAt: string;
-                testFiles: {
+                latestRun: {
                     /** Format: uuid */
                     id: string;
-                    /** Format: uuid */
-                    moduleId: string;
-                    name: string;
+                    /** @enum {string} */
+                    status: "queued" | "running" | "passed" | "failed";
                     /** Format: date-time */
                     createdAt: string;
-                    /** Format: date-time */
-                    updatedAt: string;
-                    latestRun: {
-                        /** Format: uuid */
-                        id: string;
-                        /** @enum {string} */
-                        status: "queued" | "running" | "passed" | "failed";
-                        /**
-                         * Format: date-time
-                         * @description Trigger time
-                         */
-                        createdAt: string;
-                    } | null;
-                }[];
+                } | null;
+            }[];
+        };
+        TreeFolder: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            projectId: string;
+            /** @description The folder it sits in; null directly in the Project */
+            parentId: string | null;
+            name: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            folders: components["schemas"]["TreeFolder"][];
+            testFiles: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                projectId: string;
+                /** @description The folder it sits in; null directly in the Project */
+                folderId: string | null;
+                name: string;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+                latestRun: {
+                    /** Format: uuid */
+                    id: string;
+                    /** @enum {string} */
+                    status: "queued" | "running" | "passed" | "failed";
+                    /**
+                     * Format: date-time
+                     * @description Trigger time
+                     */
+                    createdAt: string;
+                } | null;
             }[];
         };
         ErrorBody: {
             error: {
-                /** @description invalid_request, unauthorized, not_found, conflict, too_large, invalid_test, internal, not_implemented; more may be added */
                 code: string;
                 message: string;
             };
@@ -3382,7 +3177,6 @@ export interface components {
                 code: "invalid_request";
                 message: string;
                 details: {
-                    /** @description e.g. body.email */
                     path: string;
                     message: string;
                 }[];
@@ -3394,10 +3188,8 @@ export interface components {
                 code: "invalid_test";
                 message: string;
                 details: {
-                    /** @description E001–E008, see syntax-analyzer.md 3.3 */
                     code: string;
                     message: string;
-                    /** @description 1-based */
                     line: number;
                 }[];
             };
@@ -3408,21 +3200,14 @@ export interface components {
             run: {
                 /** Format: uuid */
                 id: string;
-                /** @description null once the Test File is deleted */
                 testFileId: string | null;
-                /** @description null once the Project is deleted */
                 projectId: string | null;
-                /** @description null once the Module is deleted */
-                moduleId: string | null;
                 fileName: string;
-                /** @description The TestCase name from the source */
+                path: string;
                 name: string;
                 /** @enum {string} */
                 status: "queued" | "running" | "passed" | "failed";
-                /**
-                 * Format: date-time
-                 * @description Trigger time
-                 */
+                /** Format: date-time */
                 createdAt: string;
                 startedAt: string | null;
                 finishedAt: string | null;
@@ -3433,15 +3218,12 @@ export interface components {
                     failed: number;
                     pending: number;
                 } | null;
-                /** @description Why the Run ended early: timeout, crash, restart, or a server error */
                 error: {
                     /** @enum {string} */
                     kind: "timeout" | "infrastructure" | "interrupted" | "internal";
-                    /** @description Redacted; no Variable values */
                     message: string;
                 } | null;
             };
-            /** @description Every step of the source; not yet run ones are `pending` */
             steps: ({
                 index: number;
                 line: number;
@@ -3463,10 +3245,7 @@ export interface components {
                 /** Format: date-time */
                 startedAt: string;
                 durationMs: number;
-                /**
-                 * @description Element actions only
-                 * @enum {string}
-                 */
+                /** @enum {string} */
                 locateMethod?: "selector" | "visual" | "dom";
                 dialogs: {
                     /** @enum {string} */
@@ -3474,10 +3253,8 @@ export interface components {
                     message: string;
                     /** @enum {string} */
                     answer: "accepted" | "dismissed";
-                    /** @description false for a dialog the step did not expect */
                     expected: boolean;
                 }[];
-                /** @description Path under /runs/{runId}/files/, e.g. screenshots/step-0.png */
                 screenshot?: string;
                 /** @constant */
                 status: "passed";
@@ -3488,10 +3265,7 @@ export interface components {
                 /** Format: date-time */
                 startedAt: string;
                 durationMs: number;
-                /**
-                 * @description Element actions only
-                 * @enum {string}
-                 */
+                /** @enum {string} */
                 locateMethod?: "selector" | "visual" | "dom";
                 dialogs: {
                     /** @enum {string} */
@@ -3499,38 +3273,27 @@ export interface components {
                     message: string;
                     /** @enum {string} */
                     answer: "accepted" | "dismissed";
-                    /** @description false for a dialog the step did not expect */
                     expected: boolean;
                 }[];
-                /** @description Path under /runs/{runId}/files/, e.g. screenshots/step-0.png */
                 screenshot?: string;
                 /** @constant */
                 status: "failed";
-                /** @description Redacted by Core */
                 reason: string;
             })[];
         } | {
             /** @constant */
             type: "status";
-            /** @description The Run after the change */
             run: {
                 /** Format: uuid */
                 id: string;
-                /** @description null once the Test File is deleted */
                 testFileId: string | null;
-                /** @description null once the Project is deleted */
                 projectId: string | null;
-                /** @description null once the Module is deleted */
-                moduleId: string | null;
                 fileName: string;
-                /** @description The TestCase name from the source */
+                path: string;
                 name: string;
                 /** @enum {string} */
                 status: "queued" | "running" | "passed" | "failed";
-                /**
-                 * Format: date-time
-                 * @description Trigger time
-                 */
+                /** Format: date-time */
                 createdAt: string;
                 startedAt: string | null;
                 finishedAt: string | null;
@@ -3541,18 +3304,15 @@ export interface components {
                     failed: number;
                     pending: number;
                 } | null;
-                /** @description Why the Run ended early: timeout, crash, restart, or a server error */
                 error: {
                     /** @enum {string} */
                     kind: "timeout" | "infrastructure" | "interrupted" | "internal";
-                    /** @description Redacted; no Variable values */
                     message: string;
                 } | null;
             };
         } | {
             /** @constant */
             type: "step";
-            /** @description A step; `running` appears only in Live Progress */
             step: {
                 index: number;
                 line: number;
@@ -3574,10 +3334,7 @@ export interface components {
                 /** Format: date-time */
                 startedAt: string;
                 durationMs: number;
-                /**
-                 * @description Element actions only
-                 * @enum {string}
-                 */
+                /** @enum {string} */
                 locateMethod?: "selector" | "visual" | "dom";
                 dialogs: {
                     /** @enum {string} */
@@ -3585,10 +3342,8 @@ export interface components {
                     message: string;
                     /** @enum {string} */
                     answer: "accepted" | "dismissed";
-                    /** @description false for a dialog the step did not expect */
                     expected: boolean;
                 }[];
-                /** @description Path under /runs/{runId}/files/, e.g. screenshots/step-0.png */
                 screenshot?: string;
                 /** @constant */
                 status: "passed";
@@ -3599,10 +3354,7 @@ export interface components {
                 /** Format: date-time */
                 startedAt: string;
                 durationMs: number;
-                /**
-                 * @description Element actions only
-                 * @enum {string}
-                 */
+                /** @enum {string} */
                 locateMethod?: "selector" | "visual" | "dom";
                 dialogs: {
                     /** @enum {string} */
@@ -3610,14 +3362,11 @@ export interface components {
                     message: string;
                     /** @enum {string} */
                     answer: "accepted" | "dismissed";
-                    /** @description false for a dialog the step did not expect */
                     expected: boolean;
                 }[];
-                /** @description Path under /runs/{runId}/files/, e.g. screenshots/step-0.png */
                 screenshot?: string;
                 /** @constant */
                 status: "failed";
-                /** @description Redacted by Core */
                 reason: string;
             };
         };
@@ -3627,21 +3376,14 @@ export interface components {
             run: {
                 /** Format: uuid */
                 id: string;
-                /** @description null once the Test File is deleted */
                 testFileId: string | null;
-                /** @description null once the Project is deleted */
                 projectId: string | null;
-                /** @description null once the Module is deleted */
-                moduleId: string | null;
                 fileName: string;
-                /** @description The TestCase name from the source */
+                path: string;
                 name: string;
                 /** @enum {string} */
                 status: "queued" | "running" | "passed" | "failed";
-                /**
-                 * Format: date-time
-                 * @description Trigger time
-                 */
+                /** Format: date-time */
                 createdAt: string;
                 startedAt: string | null;
                 finishedAt: string | null;
@@ -3652,15 +3394,12 @@ export interface components {
                     failed: number;
                     pending: number;
                 } | null;
-                /** @description Why the Run ended early: timeout, crash, restart, or a server error */
                 error: {
                     /** @enum {string} */
                     kind: "timeout" | "infrastructure" | "interrupted" | "internal";
-                    /** @description Redacted; no Variable values */
                     message: string;
                 } | null;
             };
-            /** @description Every step of the source; not yet run ones are `pending` */
             steps: ({
                 index: number;
                 line: number;
@@ -3682,10 +3421,7 @@ export interface components {
                 /** Format: date-time */
                 startedAt: string;
                 durationMs: number;
-                /**
-                 * @description Element actions only
-                 * @enum {string}
-                 */
+                /** @enum {string} */
                 locateMethod?: "selector" | "visual" | "dom";
                 dialogs: {
                     /** @enum {string} */
@@ -3693,10 +3429,8 @@ export interface components {
                     message: string;
                     /** @enum {string} */
                     answer: "accepted" | "dismissed";
-                    /** @description false for a dialog the step did not expect */
                     expected: boolean;
                 }[];
-                /** @description Path under /runs/{runId}/files/, e.g. screenshots/step-0.png */
                 screenshot?: string;
                 /** @constant */
                 status: "passed";
@@ -3707,10 +3441,7 @@ export interface components {
                 /** Format: date-time */
                 startedAt: string;
                 durationMs: number;
-                /**
-                 * @description Element actions only
-                 * @enum {string}
-                 */
+                /** @enum {string} */
                 locateMethod?: "selector" | "visual" | "dom";
                 dialogs: {
                     /** @enum {string} */
@@ -3718,39 +3449,28 @@ export interface components {
                     message: string;
                     /** @enum {string} */
                     answer: "accepted" | "dismissed";
-                    /** @description false for a dialog the step did not expect */
                     expected: boolean;
                 }[];
-                /** @description Path under /runs/{runId}/files/, e.g. screenshots/step-0.png */
                 screenshot?: string;
                 /** @constant */
                 status: "failed";
-                /** @description Redacted by Core */
                 reason: string;
             })[];
         };
         LiveStatus: {
             /** @constant */
             type: "status";
-            /** @description The Run after the change */
             run: {
                 /** Format: uuid */
                 id: string;
-                /** @description null once the Test File is deleted */
                 testFileId: string | null;
-                /** @description null once the Project is deleted */
                 projectId: string | null;
-                /** @description null once the Module is deleted */
-                moduleId: string | null;
                 fileName: string;
-                /** @description The TestCase name from the source */
+                path: string;
                 name: string;
                 /** @enum {string} */
                 status: "queued" | "running" | "passed" | "failed";
-                /**
-                 * Format: date-time
-                 * @description Trigger time
-                 */
+                /** Format: date-time */
                 createdAt: string;
                 startedAt: string | null;
                 finishedAt: string | null;
@@ -3761,11 +3481,9 @@ export interface components {
                     failed: number;
                     pending: number;
                 } | null;
-                /** @description Why the Run ended early: timeout, crash, restart, or a server error */
                 error: {
                     /** @enum {string} */
                     kind: "timeout" | "infrastructure" | "interrupted" | "internal";
-                    /** @description Redacted; no Variable values */
                     message: string;
                 } | null;
             };
@@ -3773,7 +3491,6 @@ export interface components {
         LiveStepMessage: {
             /** @constant */
             type: "step";
-            /** @description A step; `running` appears only in Live Progress */
             step: {
                 index: number;
                 line: number;
@@ -3795,10 +3512,7 @@ export interface components {
                 /** Format: date-time */
                 startedAt: string;
                 durationMs: number;
-                /**
-                 * @description Element actions only
-                 * @enum {string}
-                 */
+                /** @enum {string} */
                 locateMethod?: "selector" | "visual" | "dom";
                 dialogs: {
                     /** @enum {string} */
@@ -3806,10 +3520,8 @@ export interface components {
                     message: string;
                     /** @enum {string} */
                     answer: "accepted" | "dismissed";
-                    /** @description false for a dialog the step did not expect */
                     expected: boolean;
                 }[];
-                /** @description Path under /runs/{runId}/files/, e.g. screenshots/step-0.png */
                 screenshot?: string;
                 /** @constant */
                 status: "passed";
@@ -3820,10 +3532,7 @@ export interface components {
                 /** Format: date-time */
                 startedAt: string;
                 durationMs: number;
-                /**
-                 * @description Element actions only
-                 * @enum {string}
-                 */
+                /** @enum {string} */
                 locateMethod?: "selector" | "visual" | "dom";
                 dialogs: {
                     /** @enum {string} */
@@ -3831,14 +3540,11 @@ export interface components {
                     message: string;
                     /** @enum {string} */
                     answer: "accepted" | "dismissed";
-                    /** @description false for a dialog the step did not expect */
                     expected: boolean;
                 }[];
-                /** @description Path under /runs/{runId}/files/, e.g. screenshots/step-0.png */
                 screenshot?: string;
                 /** @constant */
                 status: "failed";
-                /** @description Redacted by Core */
                 reason: string;
             };
         };

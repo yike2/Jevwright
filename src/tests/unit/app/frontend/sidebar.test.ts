@@ -10,8 +10,10 @@ import {
   testFileBaseName,
   toTestFileName,
   uploadedTestFileName,
+  hasQuickStart,
   type LatestRun,
 } from "@/app/frontend/lib/sidebar.js";
+import { file, folder, inProject } from "./tree-builders.js";
 
 describe("statusOf", () => {
   it("returns 'none' when latestRun is null", () => {
@@ -146,13 +148,13 @@ describe("statusTitle", () => {
 describe("confirmDeleteText", () => {
   it("returns project cascade confirmation text", () => {
     expect(confirmDeleteText("project", "Shop")).toBe(
-      'Delete project "Shop" and all its modules, test files and variables? Run history is kept.',
+      'Delete project "Shop" and all its folders, test files and variables? Run history is kept.',
     );
   });
 
-  it("returns module cascade confirmation text", () => {
-    expect(confirmDeleteText("module", "Cart")).toBe(
-      'Delete module "Cart" and all its test files? Run history is kept.',
+  it("returns folder cascade confirmation text", () => {
+    expect(confirmDeleteText("folder", "Cart")).toBe(
+      'Delete folder "Cart" and every folder and test file in it? Run history is kept.',
     );
   });
 
@@ -162,58 +164,15 @@ describe("confirmDeleteText", () => {
 });
 
 describe("deletesTestFile", () => {
+  // Project 1: login.yaml in auth/session/; Project 2: checkout.yaml directly in it.
   const tree: TreeResponse = {
     items: [
-      {
-        id: "p-1",
-        name: "Project 1",
-        createdAt: "2026-11-13T00:00:00.000Z",
-        updatedAt: "2026-11-13T00:00:00.000Z",
-        modules: [
-          {
-            id: "m-1",
-            projectId: "p-1",
-            name: "Module 1",
-            createdAt: "2026-11-13T00:00:00.000Z",
-            updatedAt: "2026-11-13T00:00:00.000Z",
-            testFiles: [
-              {
-                id: "tf-1",
-                moduleId: "m-1",
-                name: "login.yaml",
-                createdAt: "2026-11-13T00:00:00.000Z",
-                updatedAt: "2026-11-13T00:00:00.000Z",
-                latestRun: null,
-              },
-            ],
-          },
+      inProject("p-1", "Project 1", {
+        folders: [
+          folder("f-1", "auth", { folders: [folder("f-2", "session", { testFiles: [file("tf-1", "login.yaml")] })] }),
         ],
-      },
-      {
-        id: "p-2",
-        name: "Project 2",
-        createdAt: "2026-11-13T00:00:00.000Z",
-        updatedAt: "2026-11-13T00:00:00.000Z",
-        modules: [
-          {
-            id: "m-2",
-            projectId: "p-2",
-            name: "Module 2",
-            createdAt: "2026-11-13T00:00:00.000Z",
-            updatedAt: "2026-11-13T00:00:00.000Z",
-            testFiles: [
-              {
-                id: "tf-2",
-                moduleId: "m-2",
-                name: "checkout.yaml",
-                createdAt: "2026-11-13T00:00:00.000Z",
-                updatedAt: "2026-11-13T00:00:00.000Z",
-                latestRun: null,
-              },
-            ],
-          },
-        ],
-      },
+      }),
+      inProject("p-2", "Project 2", { folders: [folder("f-3", "other")], testFiles: [file("tf-2", "checkout.yaml")] }),
     ],
   };
 
@@ -225,16 +184,18 @@ describe("deletesTestFile", () => {
     expect(deletesTestFile(tree, { kind: "testFile", id: "tf-2" }, "tf-1")).toBe(false);
   });
 
-  it("returns true for deleting the module that contains the current test file", () => {
-    expect(deletesTestFile(tree, { kind: "module", id: "m-1" }, "tf-1")).toBe(true);
+  it("returns true for deleting a folder that holds the current test file at any depth", () => {
+    expect(deletesTestFile(tree, { kind: "folder", id: "f-2" }, "tf-1")).toBe(true);
+    expect(deletesTestFile(tree, { kind: "folder", id: "f-1" }, "tf-1")).toBe(true);
   });
 
-  it("returns false for deleting a different module", () => {
-    expect(deletesTestFile(tree, { kind: "module", id: "m-2" }, "tf-1")).toBe(false);
+  it("returns false for deleting a different folder", () => {
+    expect(deletesTestFile(tree, { kind: "folder", id: "f-3" }, "tf-1")).toBe(false);
   });
 
   it("returns true for deleting the project that contains the current test file", () => {
     expect(deletesTestFile(tree, { kind: "project", id: "p-1" }, "tf-1")).toBe(true);
+    expect(deletesTestFile(tree, { kind: "project", id: "p-2" }, "tf-2")).toBe(true);
   });
 
   it("returns false for deleting a different project", () => {
@@ -243,5 +204,16 @@ describe("deletesTestFile", () => {
 
   it("returns false when current test file id is null", () => {
     expect(deletesTestFile(tree, { kind: "project", id: "p-1" }, null)).toBe(false);
+  });
+});
+
+describe("hasQuickStart", () => {
+  it("is true when a Project is named Quick Start", () => {
+    expect(hasQuickStart([inProject("p-1", "Shop"), inProject("p-2", "Quick Start")])).toBe(true);
+  });
+
+  it("is false without a Project named exactly Quick Start", () => {
+    expect(hasQuickStart([])).toBe(false);
+    expect(hasQuickStart([inProject("p-1", "Quick Start 2"), inProject("p-2", "quick start")])).toBe(false);
   });
 });

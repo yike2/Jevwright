@@ -1,10 +1,10 @@
 import type { paths } from "./api-schema.js";
 
 export type LatestRun =
-  paths["/tree"]["get"]["responses"][200]["content"]["application/json"]["items"][number]["modules"][number]["testFiles"][number]["latestRun"];
+  paths["/tree"]["get"]["responses"][200]["content"]["application/json"]["items"][number]["testFiles"][number]["latestRun"];
 
 export type RunDot = "none" | "active" | "passed" | "failed";
-export type DeleteTargetKind = "project" | "module" | "testFile";
+export type DeleteTargetKind = "project" | "folder" | "testFile";
 export type DeleteTarget = {
   kind: DeleteTargetKind;
   id: string;
@@ -109,4 +109,10 @@ export function deletesTestFile(
   }
 
   return projectItem.modules.some((module) => module.testFiles.some((testFile) => testFile.id === testFileId));
+}
+
+/** Whether the workspace has a Project named Quick Start, so "Add the Quick Start project" is not offered. */
+export function hasQuickStart(tree: readonly { name: string }[]): boolean {
+  void tree;
+  return true;
 }

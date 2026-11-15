@@ -6,7 +6,7 @@ import { quickStartProject } from "@/app/backend/src/workspace/quick-start.js";
 import {
   ACTIONS,
   LOCATE_METHODS,
-  QUICK_START_MODULES,
+  QUICK_START_FOLDERS,
   REPLAY_RUNS,
   RUN_RECEIPT,
   STATS,
@@ -17,11 +17,11 @@ const PUBLIC = new URL("../../../../app/frontend/public/", import.meta.url);
 // The receipts come from the Quick Start files as the backend seeds them.
 const seeded = (name: string) =>
   (
-    quickStartProject("https://demo.example.com").modules as {
+    quickStartProject("https://demo.example.com").folders as {
       create: { testFiles: { create: { name: string; source: string }[] } }[];
     }
   ).create
-    .flatMap((module) => module.testFiles.create)
+    .flatMap((folder) => folder.testFiles.create)
     .find((testFile) => testFile.name === name)!.source;
 
 // Every claim on the landing page is checked against the code it describes (frontend.md 1.14).
@@ -82,9 +82,9 @@ describe("landing page content", () => {
     ]);
   });
 
-  it("describes the Quick Start Modules the backend creates, in order", () => {
-    const modules = (quickStartProject("https://demo.example.com").modules as { create: { name: string }[] }).create;
+  it("describes the Quick Start folders the backend creates, in order", () => {
+    const folders = (quickStartProject("https://demo.example.com").folders as { create: { name: string }[] }).create;
 
-    expect(QUICK_START_MODULES.map((module) => module.name)).toEqual(modules.map((module) => module.name));
+    expect(QUICK_START_FOLDERS.map((folder) => folder.name)).toEqual(folders.map((folder) => folder.name));
   });
 });

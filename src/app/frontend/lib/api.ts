@@ -1,15 +1,18 @@
 import type { components, paths } from "./api-schema.js";
 
+/** Where a folder or Test File sits: a folder of a Project, or the Project itself when `folderId` is null. */
+export type Parent = { projectId: string; folderId: string | null };
+
 export type User = components["schemas"]["User"];
 export type Diagnostic = components["schemas"]["Diagnostic"];
 export type LoginResponse = paths["/auth/login"]["post"]["responses"][200]["content"]["application/json"];
 export type RegisterResponse = paths["/auth/register"]["post"]["responses"][201]["content"]["application/json"];
 export type TreeResponse = paths["/tree"]["get"]["responses"][200]["content"]["application/json"];
 export type CreateProjectResponse = paths["/projects"]["post"]["responses"][201]["content"]["application/json"];
-export type CreateModuleResponse =
-  paths["/projects/{projectId}/modules"]["post"]["responses"][201]["content"]["application/json"];
+export type CreateFolderResponse =
+  paths["/projects/{projectId}/folders"]["post"]["responses"][201]["content"]["application/json"];
 export type CreateTestFileResponse =
-  paths["/modules/{moduleId}/test-files"]["post"]["responses"][201]["content"]["application/json"];
+  paths["/projects/{projectId}/test-files"]["post"]["responses"][201]["content"]["application/json"];
 export type TestFile = components["schemas"]["TestFile"];
 export type Run = components["schemas"]["Run"];
 export type RunListResponse = paths["/runs"]["get"]["responses"][200]["content"]["application/json"];
@@ -19,8 +22,8 @@ export type UpdateTestFileResponse =
   paths["/test-files/{testFileId}"]["patch"]["responses"][200]["content"]["application/json"];
 export type UpdateProjectResponse =
   paths["/projects/{projectId}"]["patch"]["responses"][200]["content"]["application/json"];
-export type UpdateModuleResponse =
-  paths["/modules/{moduleId}"]["patch"]["responses"][200]["content"]["application/json"];
+export type UpdateFolderResponse =
+  paths["/folders/{folderId}"]["patch"]["responses"][200]["content"]["application/json"];
 export type ValidateResponse = paths["/test-files/validate"]["post"]["responses"][200]["content"]["application/json"];
 export type VariableListResponse =
   paths["/projects/{projectId}/variables"]["get"]["responses"][200]["content"]["application/json"];
@@ -147,8 +150,8 @@ export function createApiClient(config: ApiClientConfig = {}): {
   getTree(): Promise<TreeResponse>;
   createProject(name: string): Promise<CreateProjectResponse>;
   addQuickStart(): Promise<CreateProjectResponse>;
-  createModule(projectId: string, name: string): Promise<CreateModuleResponse>;
-  createTestFile(moduleId: string, name: string, source: string): Promise<CreateTestFileResponse>;
+  createFolder(parent: Parent, name: string): Promise<CreateFolderResponse>;
+  createTestFile(parent: Parent, name: string, source: string): Promise<CreateTestFileResponse>;
   getTestFile(testFileId: string): Promise<TestFile>;
   updateTestFile(testFileId: string, source: string): Promise<UpdateTestFileResponse>;
   validateSource(source: string): Promise<ValidateResponse>;
@@ -159,10 +162,12 @@ export function createApiClient(config: ApiClientConfig = {}): {
   listRuns(testFileId: string): Promise<RunListResponse>;
   getRun(runId: string): Promise<Run>;
   renameProject(projectId: string, name: string): Promise<UpdateProjectResponse>;
-  renameModule(moduleId: string, name: string): Promise<UpdateModuleResponse>;
+  renameFolder(folderId: string, name: string): Promise<UpdateFolderResponse>;
   renameTestFile(testFileId: string, name: string): Promise<UpdateTestFileResponse>;
+  moveFolder(folderId: string, to: Parent): Promise<UpdateFolderResponse>;
+  moveTestFile(testFileId: string, to: Parent): Promise<UpdateTestFileResponse>;
   deleteProject(projectId: string): Promise<void>;
-  deleteModule(moduleId: string): Promise<void>;
+  deleteFolder(folderId: string): Promise<void>;
   deleteTestFile(testFileId: string): Promise<void>;
 } {
   const defaultBaseUrl = "http://127.0.0.1:4000/api/v1";
@@ -304,24 +309,17 @@ export function createApiClient(config: ApiClientConfig = {}): {
     return request<CreateProjectResponse>("/projects/quick-start", { method: "POST" });
   };
 
-  const createModule = async (projectId: string, name: string): Promise<CreateModuleResponse> => {
-    return request<CreateModuleResponse>(`/projects/${projectId}/modules`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ name }),
-    });
+  const createFolder = async (parent: Parent, name: string): Promise<CreateFolderResponse> => {
+    void parent;
+    void name;
+    return undefined as never;
   };
 
-  const createTestFile = async (moduleId: string, name: string, source: string): Promise<CreateTestFileResponse> => {
-    return request<CreateTestFileResponse>(`/modules/${moduleId}/test-files`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ name, source }),
-    });
+  const createTestFile = async (parent: Parent, name: string, source: string): Promise<CreateTestFileResponse> => {
+    void parent;
+    void name;
+    void source;
+    return undefined as never;
   };
 
   const getTestFile = async (testFileId: string): Promise<TestFile> => {
@@ -397,14 +395,22 @@ export function createApiClient(config: ApiClientConfig = {}): {
     });
   };
 
-  const renameModule = async (moduleId: string, name: string): Promise<UpdateModuleResponse> => {
-    return request<UpdateModuleResponse>(`/modules/${moduleId}`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ name }),
-    });
+  const renameFolder = async (folderId: string, name: string): Promise<UpdateFolderResponse> => {
+    void folderId;
+    void name;
+    return undefined as never;
+  };
+
+  const moveFolder = async (folderId: string, to: Parent): Promise<UpdateFolderResponse> => {
+    void folderId;
+    void to;
+    return undefined as never;
+  };
+
+  const moveTestFile = async (testFileId: string, to: Parent): Promise<UpdateTestFileResponse> => {
+    void testFileId;
+    void to;
+    return undefined as never;
   };
 
   const renameTestFile = async (testFileId: string, name: string): Promise<UpdateTestFileResponse> => {
@@ -423,10 +429,8 @@ export function createApiClient(config: ApiClientConfig = {}): {
     });
   };
 
-  const deleteModule = async (moduleId: string): Promise<void> => {
-    await request<void>(`/modules/${moduleId}`, {
-      method: "DELETE",
-    });
+  const deleteFolder = async (folderId: string): Promise<void> => {
+    void folderId;
   };
 
   const deleteTestFile = async (testFileId: string): Promise<void> => {
@@ -447,7 +451,7 @@ export function createApiClient(config: ApiClientConfig = {}): {
     getTree,
     createProject,
     addQuickStart,
-    createModule,
+    createFolder,
     createTestFile,
     getTestFile,
     updateTestFile,
@@ -459,10 +463,12 @@ export function createApiClient(config: ApiClientConfig = {}): {
     listRuns,
     getRun,
     renameProject,
-    renameModule,
+    renameFolder,
     renameTestFile,
+    moveFolder,
+    moveTestFile,
     deleteProject,
-    deleteModule,
+    deleteFolder,
     deleteTestFile,
   };
 }

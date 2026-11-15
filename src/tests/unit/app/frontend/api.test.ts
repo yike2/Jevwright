@@ -3,13 +3,13 @@ import { describe, expect, it, vi } from "vitest";
 import {
   NetworkError,
   createApiClient,
-  type CreateModuleResponse,
+  type CreateFolderResponse,
   type CreateProjectResponse,
   type CreateTestFileResponse,
   type Run,
   type RunListResponse,
   type TestFile,
-  type UpdateModuleResponse,
+  type UpdateFolderResponse,
   type UpdateProjectResponse,
   type UpdateTestFileResponse,
   type ValidateResponse,
@@ -245,17 +245,21 @@ describe("api client", () => {
           name: "Demo Shop",
           createdAt: "2026-11-13T00:00:00.000Z",
           updatedAt: "2026-11-13T00:00:00.000Z",
-          modules: [
+          testFiles: [],
+          folders: [
             {
-              id: "module-1",
+              id: "folder-1",
               projectId: "project-1",
+              parentId: null,
               name: "Auth",
               createdAt: "2026-11-13T00:00:00.000Z",
               updatedAt: "2026-11-13T00:00:00.000Z",
+              folders: [],
               testFiles: [
                 {
                   id: "test-file-1",
-                  moduleId: "module-1",
+                  projectId: "project-1",
+                  folderId: "folder-1",
                   name: "login.yaml",
                   createdAt: "2026-11-13T00:00:00.000Z",
                   updatedAt: "2026-11-13T00:00:00.000Z",
@@ -314,23 +318,24 @@ describe("api client", () => {
     await expect(client.createProject("Demo Shop")).resolves.toEqual(project);
   });
 
-  it('sends POST /projects/p1/modules with body {"name":"Auth"} and returns the created module', async () => {
-    const createdModule: CreateModuleResponse = {
-      id: "module-1",
+  it('sends POST /projects/p1/folders with body {"name":"Auth","parentId":"f0"} and returns the created folder', async () => {
+    const created: CreateFolderResponse = {
+      id: "folder-1",
       projectId: "p1",
+      parentId: "f0",
       name: "Auth",
       createdAt: "2026-11-13T00:00:00.000Z",
       updatedAt: "2026-11-13T00:00:00.000Z",
     };
 
     const fetchImpl = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
-      expect(url).toBe("http://localhost:4000/api/v1/projects/p1/modules");
+      expect(url).toBe("http://localhost:4000/api/v1/projects/p1/folders");
       expect(init?.method).toBe("POST");
       const headers = new Headers(init?.headers ?? {});
       expect(headers.get("Authorization")).toBe("Bearer jwt-token");
       expect(headers.get("Content-Type")).toBe("application/json");
-      expect(init?.body).toBe('{"name":"Auth"}');
-      return makeResponse(createdModule, 201);
+      expect(init?.body).toBe('{"name":"Auth","parentId":"f0"}');
+      return makeResponse(created, 201);
     });
 
     const client = createApiClient({
@@ -340,14 +345,15 @@ describe("api client", () => {
       fetchImpl,
     });
 
-    await expect(client.createModule("p1", "Auth")).resolves.toEqual(createdModule);
+    await expect(client.createFolder({ projectId: "p1", folderId: "f0" }, "Auth")).resolves.toEqual(created);
   });
 
-  it('sends POST /modules/m1/test-files with body {"name":"login.yaml","source":"name: x\\n"} and returns the created test file', async () => {
+  it('sends POST /projects/p1/test-files with body {"name":"login.yaml","source":"name: x\\n","folderId":null} and returns the created test file', async () => {
     const testFile: CreateTestFileResponse = {
       testFile: {
         id: "test-file-1",
-        moduleId: "m1",
+        projectId: "p1",
+        folderId: null,
         name: "login.yaml",
         source: "name: x\n",
         createdAt: "2026-11-13T00:00:00.000Z",
@@ -357,12 +363,12 @@ describe("api client", () => {
     };
 
     const fetchImpl = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
-      expect(url).toBe("http://localhost:4000/api/v1/modules/m1/test-files");
+      expect(url).toBe("http://localhost:4000/api/v1/projects/p1/test-files");
       expect(init?.method).toBe("POST");
       const headers = new Headers(init?.headers ?? {});
       expect(headers.get("Authorization")).toBe("Bearer jwt-token");
       expect(headers.get("Content-Type")).toBe("application/json");
-      expect(init?.body).toBe('{"name":"login.yaml","source":"name: x\\n"}');
+      expect(init?.body).toBe('{"name":"login.yaml","source":"name: x\\n","folderId":null}');
       return makeResponse(testFile, 201);
     });
 
@@ -373,7 +379,9 @@ describe("api client", () => {
       fetchImpl,
     });
 
-    await expect(client.createTestFile("m1", "login.yaml", "name: x\n")).resolves.toEqual(testFile);
+    await expect(
+      client.createTestFile({ projectId: "p1", folderId: null }, "login.yaml", "name: x\n"),
+    ).resolves.toEqual(testFile);
   });
 
   it("sends POST /projects/quick-start without a body and resolves the Quick Start project", async () => {
@@ -445,7 +453,8 @@ describe("api client", () => {
   it("sends GET /test-files/tf-1 and resolves the Test File", async () => {
     const testFile: TestFile = {
       id: "tf-1",
-      moduleId: "m-1",
+      projectId: "p-1",
+      folderId: "f-1",
       name: "login.yaml",
       source: 'name: login\nsteps:\n  - open:\n      url: "https://example.com"\n',
       createdAt: "2026-11-13T00:00:00.000Z",
@@ -473,7 +482,8 @@ describe("api client", () => {
   it("sends PATCH /test-files/tf-1 with the source and resolves { testFile, diagnostics }", async () => {
     const testFile: TestFile = {
       id: "tf-1",
-      moduleId: "m-1",
+      projectId: "p-1",
+      folderId: "f-1",
       name: "login.yaml",
       source: "name: x",
       createdAt: "2026-11-13T00:00:00.000Z",
@@ -534,8 +544,8 @@ describe("api client", () => {
       id: "run-1",
       testFileId: "tf-1",
       projectId: "p-1",
-      moduleId: "m-1",
       fileName: "login.yaml",
+      path: "Auth/login.yaml",
       name: "login",
       status: "queued",
       createdAt: "2026-11-13T00:00:00.000Z",
@@ -669,8 +679,8 @@ describe("api client", () => {
       id: "run-1",
       testFileId: "tf-1",
       projectId: "p-1",
-      moduleId: "m-1",
       fileName: "login.yaml",
+      path: "Auth/login.yaml",
       name: "login",
       status: "queued",
       createdAt: "2026-11-13T00:00:00.000Z",
@@ -710,8 +720,8 @@ describe("api client", () => {
       id: "run-1",
       testFileId: "tf-1",
       projectId: "p-1",
-      moduleId: "m-1",
       fileName: "login.yaml",
+      path: "Auth/login.yaml",
       name: "login",
       status: "running",
       createdAt: "2026-11-13T00:00:00.000Z",
@@ -783,17 +793,18 @@ describe("api client", () => {
     await expect(client.renameProject("p-1", "Shop")).resolves.toEqual(response);
   });
 
-  it("sends PATCH /modules/m-1 with the name and resolves the body", async () => {
-    const response: UpdateModuleResponse = {
-      id: "m-1",
+  it("sends PATCH /folders/f-1 with the name and resolves the body", async () => {
+    const response: UpdateFolderResponse = {
+      id: "f-1",
       projectId: "p-1",
+      parentId: null,
       name: "Cart",
       createdAt: "2026-11-13T00:00:00.000Z",
       updatedAt: "2026-11-13T00:00:00.000Z",
     };
 
     const fetchImpl = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
-      expect(url).toBe("http://localhost:4000/api/v1/modules/m-1");
+      expect(url).toBe("http://localhost:4000/api/v1/folders/f-1");
       expect(init?.method).toBe("PATCH");
       const headers = new Headers(init?.headers ?? {});
       expect(headers.get("Authorization")).toBe("Bearer jwt-token");
@@ -809,14 +820,74 @@ describe("api client", () => {
       fetchImpl,
     });
 
-    await expect(client.renameModule("m-1", "Cart")).resolves.toEqual(response);
+    await expect(client.renameFolder("f-1", "Cart")).resolves.toEqual(response);
+  });
+
+  it('sends PATCH /folders/f-1 with {"projectId":"p-2","parentId":null} to move it directly into a Project', async () => {
+    const response: UpdateFolderResponse = {
+      id: "f-1",
+      projectId: "p-2",
+      parentId: null,
+      name: "Cart",
+      createdAt: "2026-11-13T00:00:00.000Z",
+      updatedAt: "2026-11-13T00:00:00.000Z",
+    };
+
+    const fetchImpl = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+      expect(url).toBe("http://localhost:4000/api/v1/folders/f-1");
+      expect(init?.method).toBe("PATCH");
+      expect(new Headers(init?.headers ?? {}).get("Content-Type")).toBe("application/json");
+      expect(init?.body).toBe('{"projectId":"p-2","parentId":null}');
+      return makeResponse(response, 200);
+    });
+
+    const client = createApiClient({
+      baseUrl: "http://localhost:4000/api/v1",
+      getToken: () => "jwt-token",
+      setToken: () => undefined,
+      fetchImpl,
+    });
+
+    await expect(client.moveFolder("f-1", { projectId: "p-2", folderId: null })).resolves.toEqual(response);
+  });
+
+  it('sends PATCH /test-files/tf-1 with {"projectId":"p-1","folderId":"f-2"} to move it into a folder', async () => {
+    const response: UpdateTestFileResponse = {
+      testFile: {
+        id: "tf-1",
+        projectId: "p-1",
+        folderId: "f-2",
+        name: "login.yaml",
+        createdAt: "2026-11-13T00:00:00.000Z",
+        updatedAt: "2026-11-13T00:00:00.000Z",
+      },
+      diagnostics: [],
+    };
+
+    const fetchImpl = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+      expect(url).toBe("http://localhost:4000/api/v1/test-files/tf-1");
+      expect(init?.method).toBe("PATCH");
+      expect(new Headers(init?.headers ?? {}).get("Content-Type")).toBe("application/json");
+      expect(init?.body).toBe('{"projectId":"p-1","folderId":"f-2"}');
+      return makeResponse(response, 200);
+    });
+
+    const client = createApiClient({
+      baseUrl: "http://localhost:4000/api/v1",
+      getToken: () => "jwt-token",
+      setToken: () => undefined,
+      fetchImpl,
+    });
+
+    await expect(client.moveTestFile("tf-1", { projectId: "p-1", folderId: "f-2" })).resolves.toEqual(response);
   });
 
   it("sends PATCH /test-files/tf-1 with the name and resolves { testFile, diagnostics }", async () => {
     const response: UpdateTestFileResponse = {
       testFile: {
         id: "tf-1",
-        moduleId: "m-1",
+        projectId: "p-1",
+        folderId: null,
         name: "checkout.yaml",
         createdAt: "2026-11-13T00:00:00.000Z",
         updatedAt: "2026-11-13T00:00:00.000Z",
@@ -863,9 +934,9 @@ describe("api client", () => {
     await expect(client.deleteProject("p-1")).resolves.toBeUndefined();
   });
 
-  it("sends DELETE /modules/m-1 and resolves undefined on 204", async () => {
+  it("sends DELETE /folders/f-1 and resolves undefined on 204", async () => {
     const fetchImpl = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
-      expect(url).toBe("http://localhost:4000/api/v1/modules/m-1");
+      expect(url).toBe("http://localhost:4000/api/v1/folders/f-1");
       expect(init?.method).toBe("DELETE");
       const headers = new Headers(init?.headers ?? {});
       expect(headers.get("Authorization")).toBe("Bearer jwt-token");
@@ -879,7 +950,7 @@ describe("api client", () => {
       fetchImpl,
     });
 
-    await expect(client.deleteModule("m-1")).resolves.toBeUndefined();
+    await expect(client.deleteFolder("f-1")).resolves.toBeUndefined();
   });
 
   it("sends DELETE /test-files/tf-1 and resolves undefined on 204", async () => {

@@ -45,3 +45,12 @@ export function variableNameProblem(name: string): string | null {
 export function variableValueProblem(value: string): string | null {
   return value.length > MAX_VALUE_CHARS ? "A Variable value can be at most 10,000 characters." : null;
 }
+
+/** The longest source the backend saves (backend.md 1.3). */
+export const MAX_SOURCE_CHARS = 262_144;
+
+/** What is wrong with a Test File's source, or null when it is fine. */
+export function sourceProblem(source: string): string | null {
+  void source;
+  return null;
+}

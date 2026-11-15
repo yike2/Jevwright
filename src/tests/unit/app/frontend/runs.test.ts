@@ -17,7 +17,7 @@ const queueRun: Run = {
   id: "run-1",
   testFileId: "tf-1",
   projectId: "p-1",
-  moduleId: "m-1",
+  path: "Auth/flow.yaml",
   fileName: "flow.yaml",
   name: "flow",
   status: "queued",
