@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { alertsOf, API_URL, PASSWORD, uniqueEmail, WORKSPACE } from "./support.js";
+import { alertsOf, API_URL, PASSWORD, signUp, uniqueEmail, WORKSPACE } from "./support.js";
 
 async function submit(page: Page, mode: "Log in" | "Register", email: string, password: string): Promise<void> {
   await page.goto("/login");
@@ -94,4 +94,25 @@ test("TC-AUTH-08 sends another tab to the login page after logging out", async (
   await other.reload();
 
   await expect(other).toHaveURL("/login");
+});
+
+test("TC-AUTH-09 sends a signed-in user from the auth pages to the workspace", async ({ page }) => {
+  await signUp(page);
+
+  for (const path of ["/login", "/register"]) {
+    await page.goto(path);
+    await expect(page).toHaveURL(WORKSPACE);
+    await expect(page.getByRole("navigation", { name: "Projects" })).toBeVisible();
+  }
+});
+
+test("TC-AUTH-10 shows the form and clears a token the backend rejects", async ({ page }) => {
+  await page.goto("/login");
+  await page.evaluate(() => window.localStorage.setItem("auth-token", "invalid"));
+
+  await page.reload();
+
+  await expect(page.locator("form").getByRole("button", { name: "Log in" })).toBeVisible();
+  await expect(page).toHaveURL("/login");
+  expect(await page.evaluate(() => window.localStorage.getItem("auth-token"))).toBeNull();
 });
