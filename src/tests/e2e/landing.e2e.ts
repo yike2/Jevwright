@@ -79,7 +79,10 @@ test("TC-LAND-04 the logo leads to the landing page everywhere, signed in or not
 test("TC-LAND-05 replays the Run with every Jev use first, badging only the steps Jev worked on", async ({ page }) => {
   await page.goto("/");
   const replay = page.getByRole("region", { name: "Run replay" });
-  const steps = replay.getByRole("list", { name: "Replay steps" }).getByRole("listitem");
+  // Scoped to the selected tab's panel: right after a tab switch, the previous panel can still be in the DOM.
+  const panel = (file: string) => replay.getByRole("tabpanel", { name: file });
+  let steps = panel("find-and-check-with-jev.yaml").getByRole("list", { name: "Replay steps" }).getByRole("listitem");
+  const showAll = (file: string) => panel(file).getByRole("button", { name: "Show all steps", exact: true }).click();
   const badged = async (expected: Record<number, string>, count: number) => {
     for (let index = 0; index < count; index += 1) {
       const badge = expected[index];
@@ -97,7 +100,7 @@ test("TC-LAND-05 replays the Run with every Jev use first, badging only the step
     "aria-selected",
     "true",
   );
-  await replay.getByRole("button", { name: "Show all steps", exact: true }).click();
+  await showAll("find-and-check-with-jev.yaml");
   await expect(steps).toHaveCount(8);
   await expect(steps.nth(1)).toContainText("click");
   await expect(steps.nth(2)).toContainText("click");
@@ -110,15 +113,19 @@ test("TC-LAND-05 replays the Run with every Jev use first, badging only the step
   await expect(replay.getByRole("img", { name: "Step 3 screenshot" })).toBeVisible();
 
   await replay.getByRole("tab", { name: "fall-back-from-a-stale-selector.yaml" }).click();
-  await replay.getByRole("button", { name: "Show all steps", exact: true }).click();
+  await showAll("fall-back-from-a-stale-selector.yaml");
+  steps = panel("fall-back-from-a-stale-selector.yaml")
+    .getByRole("list", { name: "Replay steps" })
+    .getByRole("listitem");
   await expect(steps).toHaveCount(6);
   await expect(steps.nth(3)).toContainText("click");
   await badged({ 3: "AI locate" }, 6);
 
   await replay.getByRole("tab", { name: "sign-in-and-see-products.yaml" }).click();
-  await replay.getByRole("button", { name: "Show all steps", exact: true }).click();
+  await showAll("sign-in-and-see-products.yaml");
+  steps = panel("sign-in-and-see-products.yaml").getByRole("list", { name: "Replay steps" }).getByRole("listitem");
   await expect(steps.nth(3)).toContainText("click");
-  await expect(replay.getByText(/AI locate|AI assert/)).toHaveCount(0);
+  await expect(panel("sign-in-and-see-products.yaml").getByText(/AI locate|AI assert/)).toHaveCount(0);
 });
 
 test("TC-LAND-06 shows every step at once when the visitor prefers reduced motion", async ({ page }) => {
