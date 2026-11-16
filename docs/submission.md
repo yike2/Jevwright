@@ -7,7 +7,7 @@ Where to find each Project 2 deliverable and documentation requirement.
 | Deliverable | Where |
 | --- | --- |
 | GitHub repository | https://github.com/yike2/Jevwright ([commit counts and PRs per partner](contributions.md)) |
-| Deployed app | https://app.94.72.126.118.sslip.io (API: https://api.94.72.126.118.sslip.io/api/v1) |
+| Deployed app | https://app.94.72.126.118.sslip.io (API: base URL `https://api.94.72.126.118.sslip.io/api/v1`, [Swagger UI](https://api.94.72.126.118.sslip.io/api/v1/docs)) |
 | Documentation package | This page and the [README](../README.md) |
 | Demo video | [10-minute demo on Loom](https://www.loom.com/share/299ce4646c1b4169a25d9a1706585e6e) |
 | Individual reflections | [Yike Li](reflections/yike-li.md), [Zhimin Gan](reflections/zhimin-gan.md) (also submitted separately on Canvas) |

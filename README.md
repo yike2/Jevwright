@@ -8,7 +8,7 @@ Jevwright is an AI-assisted web testing platform built on Jev and Playwright. Te
 | --- | --- |
 | Web app | https://app.94.72.126.118.sslip.io |
 | User guide | https://yike2.github.io/Jevwright/guide/ |
-| REST API | https://api.94.72.126.118.sslip.io/api/v1 |
+| REST API | Base URL `https://api.94.72.126.118.sslip.io/api/v1`; health check at https://api.94.72.126.118.sslip.io/api/v1/health |
 | API docs (Swagger UI) | https://api.94.72.126.118.sslip.io/api/v1/docs, also at https://yike2.github.io/Jevwright/api/ |
 | Demo App (the site the benchmark tests) | https://demo.94.72.126.118.sslip.io |
 | PR preview | https://preview.94.72.126.118.sslip.io (the latest PR whose CI passed) |
