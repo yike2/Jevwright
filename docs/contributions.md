@@ -5,7 +5,7 @@ Who did what in Jevwright, by partner and sprint. The sprint retrospectives in [
 | Partner | GitHub |
 | --- | --- |
 | Yike Li | [@yike2](https://github.com/yike2) |
-| Zhimin Gan | [@Min-gzm](https://github.com/Min-gzm) (earlier commits appear as `min`, `x`, and `Phaethon`; [`.mailmap`](../.mailmap) maps them to one name) |
+| Zhimin Gan | [@Pha-e-thon](https://github.com/Pha-e-thon) (earlier commits appear as `min`, `x`, and `Phaethon`; [`.mailmap`](../.mailmap) maps them to one name) |
 
 ## Summary
 
@@ -24,8 +24,8 @@ To check the numbers yourself:
 git shortlog -sn --no-merges main
 ```
 
-- Pull requests by author: [Yike](https://github.com/yike2/Jevwright/pulls?q=is%3Apr+author%3Ayike2), [Zhimin](https://github.com/yike2/Jevwright/pulls?q=is%3Apr+author%3AMin-gzm)
-- Reviews: [by Yike](https://github.com/yike2/Jevwright/pulls?q=is%3Apr+reviewed-by%3Ayike2), [by Zhimin](https://github.com/yike2/Jevwright/pulls?q=is%3Apr+reviewed-by%3AMin-gzm)
+- Pull requests by author: [Yike](https://github.com/yike2/Jevwright/pulls?q=is%3Apr+author%3Ayike2), [Zhimin](https://github.com/yike2/Jevwright/pulls?q=is%3Apr+author%3APha-e-thon)
+- Reviews: [by Yike](https://github.com/yike2/Jevwright/pulls?q=is%3Apr+reviewed-by%3Ayike2), [by Zhimin](https://github.com/yike2/Jevwright/pulls?q=is%3Apr+reviewed-by%3APha-e-thon)
 
 ## Planning and setup (2026-10-26 – 2026-10-30)
 

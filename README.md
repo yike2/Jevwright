@@ -200,7 +200,7 @@ Both partners worked in **VS Code with GitHub Copilot** as the AI IDE harness, g
 - Sprint 1: Jev Harness (#7), Element Locator (#37), Asserter (#38), Run Pipeline (#39, #43), CLI (#11), and the first CI workflow and ESLint (#32, #33).
 - Sprint 2: the web frontend's features, from the Next.js scaffold and API client to login, sidebar, editor, live progress, history and reports, files overview, and rename/delete (#78–#84, #97, #98); deployment to the VPS (#85), automatic deployment (#86), the multi-stage pipeline (#101), and PR previews (#102).
 
-**Zhimin Gan** ([@Min-gzm](https://github.com/Min-gzm))
+**Zhimin Gan** ([@Pha-e-thon](https://github.com/Pha-e-thon))
 
 - Sprint 1: Syntax Analyzer (#9), Browser Adapter (#8), Report (#10), Executor (#23), the Demo App and benchmark suite (#29–#31), and Core fixes (#59, #61, #62).
 - Sprint 2: the whole backend, from design to auth, workspace API, Runs, Live Progress, private network blocking, and OpenAPI (#64–#71); the architecture diagrams (#72); sequential image builds on the server (#105); the frontend design system, light and dark themes, landing page, Quick Start project, and code-editor layout (#110–#112).

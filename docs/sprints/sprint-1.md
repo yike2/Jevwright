@@ -5,7 +5,7 @@
 | Dates | 2026-11-01 – 2026-11-08 (planning 2026-10-26 – 2026-10-30) |
 | Milestone | [Sprint 1](https://github.com/yike2/Jevwright/milestone/1) |
 | Standups | [GitHub Discussions](https://github.com/yike2/Jevwright/discussions) |
-| Partners | Yike Li ([@yike2](https://github.com/yike2)), Zhimin Gan ([@Min-gzm](https://github.com/Min-gzm)) |
+| Partners | Yike Li ([@yike2](https://github.com/yike2)), Zhimin Gan ([@Pha-e-thon](https://github.com/Pha-e-thon)) |
 
 ## Goal
 
