@@ -34,7 +34,7 @@ Merging to `main` deploys the app automatically; see [Deployment and CI/CD](#dep
 | --- | --- |
 | Layered architecture | [docs/archify/jevwright-architecture/index.html](docs/archify/jevwright-architecture/index.html) (open in a browser) |
 | Run sequence | [docs/archify/jevwright-sequence/index.html](docs/archify/jevwright-sequence/index.html) |
-| Database schema (ER diagram) | [docs/tech/backend.md](docs/tech/backend.md), section 3.3 |
+| Database schema (ER diagram) | [docs/archify/jevwright-database/index.html](docs/archify/jevwright-database/index.html); tables and keys in [docs/tech/backend.md](docs/tech/backend.md), section 3.3 |
 
 In short: the **Core** (`src/core`) parses a test file, drives Chromium through Playwright, locates elements (selector → Jev Visual Locate → Jev DOM Locate), judges assertions, and writes a report. The **CLI** (`src/cli`) and the **Backend** (`src/app/backend`, Express + PostgreSQL via Prisma) both run tests through the Core. The **Frontend** (`src/app/frontend`, Next.js + Tailwind CSS) talks only to the Backend's REST API and WebSocket.
 
@@ -42,11 +42,12 @@ Tech stack: TypeScript, Next.js, React, Tailwind CSS, shadcn/ui, Node.js, Expres
 
 ## Getting started
 
-Requirements: Node.js 22+, pnpm (`npm install -g pnpm`), and Docker (for PostgreSQL when running the backend locally).
+Requirements: Node.js 22 (`.nvmrc`), pnpm 9 through `corepack enable`, which installs the version pinned in `package.json`, and Docker (for PostgreSQL and the Demo App when running the web app locally).
 
 ```bash
 git clone https://github.com/yike2/Jevwright.git
 cd Jevwright
+corepack enable
 pnpm install
 pnpm exec playwright install --with-deps chromium   # browser for runs and tests; system libraries need sudo
 ```
@@ -72,7 +73,9 @@ The remaining variables have defaults or are only used for deployment; see the c
 
 ### Web app (frontend + backend)
 
-1. Start PostgreSQL in Docker, apply the migrations, and run the backend. The full guide, including the debugger and troubleshooting, is [docs/deploy/backend-local.md](docs/deploy/backend-local.md):
+The full guide, with the configuration, the local Demo App, the debugger, and troubleshooting, is [docs/deploy/local.md](docs/deploy/local.md). In short:
+
+1. Start PostgreSQL in Docker, apply the migrations, and run the backend:
 
    ```bash
    docker compose -f compose.dev.yaml up -d postgres
@@ -86,9 +89,9 @@ The remaining variables have defaults or are only used for deployment; see the c
    pnpm frontend         # Next.js dev server on port 3000
    ```
 
-3. Open **http://localhost:3000** (not `127.0.0.1:3000`: the backend's CORS default is `http://localhost:3000`).
+3. Open **http://localhost:3000** (not `127.0.0.1:3000`: the backend accepts browser calls from `CORS_ORIGIN` only, `http://localhost:3000` in `.env.example`).
 
-The frontend reads the API URL from `NEXT_PUBLIC_API_URL` (default `http://127.0.0.1:4000/api/v1`); see [docs/tech/frontend.md](docs/tech/frontend.md). To run tests against a local Demo App, see [docs/deploy/demo-app.md](docs/deploy/demo-app.md).
+The frontend reads the API URL from `NEXT_PUBLIC_API_URL` (default `http://127.0.0.1:4000/api/v1`); see [docs/tech/frontend.md](docs/tech/frontend.md). The Quick Start project's tests need the local Demo App on port 8080; see [docs/deploy/local.md](docs/deploy/local.md), step 5.
 
 ### CLI
 
@@ -143,7 +146,7 @@ Production runs on one VPS with Docker Compose: PostgreSQL, the backend, a brows
 | Guide | Covers |
 | --- | --- |
 | [docs/deploy/ci-cd.md](docs/deploy/ci-cd.md) | The pipeline, environments and secrets, the preview environment, manual deploys |
-| [docs/deploy/backend-local.md](docs/deploy/backend-local.md) | Running the backend locally |
+| [docs/deploy/local.md](docs/deploy/local.md) | Running the whole app locally: PostgreSQL, backend, frontend, and Demo App |
 | [docs/deploy/backend-prod.md](docs/deploy/backend-prod.md) | Deploying the backend to a server |
 | [docs/deploy/frontend-prod.md](docs/deploy/frontend-prod.md) | Deploying the frontend |
 | [docs/deploy/demo-app.md](docs/deploy/demo-app.md) | The Demo App, locally and in production |

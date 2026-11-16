@@ -23,7 +23,7 @@ Rules:
 
 | Environment | Where | Configuration |
 | ----------- | ----- | ------------- |
-| Local | A developer's machine (`docs/deploy/backend-local.md`) | The repository's `.env` and `src/app/frontend/.env.local` |
+| Local | A developer's machine (`docs/deploy/local.md`) | The repository's `.env` and `src/app/frontend/.env.local` |
 | CI | GitHub Actions runners | Job-level `env` in `ci.yml`; no real secrets |
 | Preview | The VPS, compose project `jevwright-preview` from its own checkout (4) | The preview checkout's `.env`; the GitHub environment `preview` |
 | Production | The VPS (`docs/deploy/backend-prod.md`, `docs/deploy/frontend-prod.md`) | The server's `.env`; the GitHub environment `production` |

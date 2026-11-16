@@ -1,6 +1,6 @@
 # Deploying the Frontend to a Server
 
-This guide adds the Jevwright frontend at `https://<APP_DOMAIN>` to a server already set up with `backend-prod.md`. It uses the `frontend` service in `compose.yaml`, the frontend site in `Caddyfile`, and `src/app/frontend/Dockerfile`.
+This guide covers the frontend's part of the deployment in `backend-prod.md`, which builds and starts it at `https://<APP_DOMAIN>` with the rest. It uses the `frontend` service in `compose.yaml`, the frontend site in `Caddyfile`, and `src/app/frontend/Dockerfile`.
 
 ## What runs
 

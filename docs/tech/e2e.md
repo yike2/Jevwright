@@ -24,7 +24,7 @@ The cases they automate, and the test files they run, are in `docs/testing/test-
 
 ### 1.2 Prerequisites (local)
 
-- PostgreSQL running and migrated (`docs/deploy/backend-local.md` steps 2–4), with the root `.env` configured.
+- PostgreSQL running and migrated (`docs/deploy/local.md` steps 2–4), with the root `.env` configured.
 - Chromium installed: `pnpm exec playwright install chromium`.
 - Ports 3000, 4000, and 8080 free, or already serving this repository's frontend, backend, and Demo App.
 
